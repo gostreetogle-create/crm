@@ -1,0 +1,205 @@
+{
+  "_meta": {
+    "file": "docs/backend-map/small_dictionaries.json",
+    "purpose": "Малые справочники (кирпичики): перечисления со стабильным machine key и человекочитаемым названием. Их используют поля сущностей в entities_from_dictionaries.json (через ref в description или суффикс Key в имени поля).",
+    "readme": "docs/backend-map/README.md",
+    "companion": "docs/backend-map/entities_from_dictionaries.json",
+    "provenance": "Исторически из бизнес-доков примера (вне репо / по поставкам); дальнейшие правки — по входящим из analysis_hub/inbox и по согласованию.",
+    "structure": {
+      "dictionaries": "Объект: ключ = имя справочника (snake_case). Значение: rus (заголовок), description (откуда правило / зачем), items[] — элементы.",
+      "item": "key — не менять после релиза в проде; rus — можно менять в UI; description — опционально."
+    },
+    "update_rules": [
+      "Новое перечисление из таблицы/дока — добавить блок в dictionaries, не дублировать существующий ключ.",
+      "Если значение уже есть в другом справочнике — расширить тот справочник или явно зафиксировать merge в README.",
+      "После изменения key в items — проверить entities: поля со ссылкой на этот справочник.",
+      "После правок — node scripts/generate-backend-map-overview.cjs (синхронизация OVERVIEW.generated.md)."
+    ]
+  },
+  "version": "1.2",
+  "dictionaries": {
+    "goods_status": {
+      "rus": "Статусы готовности товара",
+      "description": "WORKFLOW_STATUSES: товар в каталоге.",
+      "items": [
+        {
+          "key": "goods_ready",
+          "rus": "Укомплектованы данными",
+          "description": "Товар готов к КП/заказам"
+        }
+      ]
+    },
+    "proposal_status": {
+      "rus": "Статусы КП (Proposal)",
+      "description": "Стабильные key; name можно менять в админке.",
+      "items": [
+        {
+          "key": "proposal_draft",
+          "rus": "Черновик",
+          "description": "Планируемое расширение; до появления ключа в БД может быть только UI."
+        },
+        {
+          "key": "proposal_waiting",
+          "rus": "Ожидание"
+        },
+        {
+          "key": "proposal_approved",
+          "rus": "Согласовано"
+        },
+        {
+          "key": "proposal_paid",
+          "rus": "Оплачено",
+          "description": "Фиксирующий статус: версия неизменяема для edit/delete."
+        }
+      ]
+    },
+    "order_status": {
+      "rus": "Статусы заказа (Order)",
+      "description": "Пример ключей из WORKFLOW_STATUSES.",
+      "items": [
+        {
+          "key": "order_planned",
+          "rus": "Спланировано"
+        },
+        {
+          "key": "order_procured",
+          "rus": "Закуплено"
+        },
+        {
+          "key": "order_designed",
+          "rus": "Спроектировано"
+        },
+        {
+          "key": "order_manufactured",
+          "rus": "Изготовлено"
+        },
+        {
+          "key": "order_shipped",
+          "rus": "Отгружено"
+        }
+      ]
+    },
+    "system_role": {
+      "rus": "Системные роли (RBAC)",
+      "description": "RBAC.md: ключи ролей.",
+      "items": [
+        {
+          "key": "role_director",
+          "rus": "Директор"
+        },
+        {
+          "key": "role_manager",
+          "rus": "Менеджер"
+        },
+        {
+          "key": "role_accounting",
+          "rus": "Бухгалтер"
+        },
+        {
+          "key": "role_production_head",
+          "rus": "Начальник производства"
+        },
+        {
+          "key": "role_worker",
+          "rus": "Рабочий"
+        }
+      ]
+    },
+    "permission_page": {
+      "rus": "Права: страницы (page.*)",
+      "description": "RBAC базовые keys.",
+      "items": [
+        {
+          "key": "page.clients.view",
+          "rus": "Клиенты — просмотр"
+        },
+        {
+          "key": "page.organizations.view",
+          "rus": "Организации — просмотр"
+        },
+        {
+          "key": "page.catalog.view",
+          "rus": "Каталог — просмотр"
+        },
+        {
+          "key": "page.proposals.view",
+          "rus": "КП — просмотр"
+        },
+        {
+          "key": "page.orders.view",
+          "rus": "Заказы — просмотр"
+        },
+        {
+          "key": "page.admin.view",
+          "rus": "Админка — просмотр"
+        }
+      ]
+    },
+    "permission_bl": {
+      "rus": "Права: бизнес-действия (bl.*)",
+      "description": "RBAC MVP.",
+      "items": [
+        {
+          "key": "bl.proposals.edit",
+          "rus": "КП — редактирование"
+        },
+        {
+          "key": "bl.proposals.change_status",
+          "rus": "КП — смена статуса"
+        },
+        {
+          "key": "bl.proposals.delete",
+          "rus": "КП — удаление"
+        },
+        {
+          "key": "bl.orders.read",
+          "rus": "Заказы — чтение"
+        },
+        {
+          "key": "bl.documents.shipment",
+          "rus": "Документы — отгрузка"
+        },
+        {
+          "key": "bl.documents.work_act",
+          "rus": "Документы — акт работ"
+        },
+        {
+          "key": "bl.users.manage",
+          "rus": "Пользователи — управление"
+        }
+      ]
+    },
+    "stock_movement_type": {
+      "rus": "Тип движения остатка",
+      "description": "BL_PAGES: StockMovement.",
+      "items": [
+        {
+          "key": "in",
+          "rus": "Приход"
+        },
+        {
+          "key": "out",
+          "rus": "Расход"
+        },
+        {
+          "key": "transfer",
+          "rus": "Перемещение"
+        }
+      ]
+    },
+    "commercial_document_type": {
+      "rus": "Тип коммерческого документа",
+      "description": "BL_PAGES: CommercialDocument.",
+      "items": [
+        {
+          "key": "invoice",
+          "rus": "Счёт"
+        },
+        {
+          "key": "contract",
+          "rus": "Договор"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,1146 @@
+{
+  "_meta": {
+    "file": "docs/backend-map/entities_from_dictionaries.json",
+    "purpose": "Сущности (логические таблицы/агрегаты): имя на русском, описание домена, список полей для проектирования БД и форм.",
+    "readme": "docs/backend-map/README.md",
+    "companion": "docs/backend-map/small_dictionaries.json",
+    "references": [
+      "docs/backend-map/small_dictionaries.json"
+    ],
+    "provenance": "Исторически из бизнес-доков примера (вне репо / по поставкам); актуализация — из analysis_hub/inbox и из docs/ при появлении новых требований.",
+    "field_conventions": {
+      "key": "machine name поля (camelCase в JSON здесь; в БД может быть snake — решать при миграции).",
+      "rus": "подпись в UI/доках.",
+      "type": "uuid | string | int | float | boolean | date | datetime | json — логический тип, не привязка к конкретному SQL.",
+      "required": "обязательность на уровне модели; бизнес-optional может быть true с пометкой в description.",
+      "description": "смысл поля, ref → dictionaries.<name>, связи с другими сущностями, оговорки."
+    },
+    "entity_shape": {
+      "entities": "Ключ объекта = короткий id сущности (snake_case). Значение: name, description?, fields[].",
+      "open_questions": "_open_questions в корне — незакрытые продуктовые/модельные вопросы до уточнения."
+    },
+    "update_rules": [
+      "Новая сущность из входящей таблицы — добавить блок в entities, связать FK и справочники в description.",
+      "Новое поле — проверить, не является ли значение малым справочником; если да — вынести в small_dictionaries и оставить ref.",
+      "Версию version поднимать при осмысленном изменении схемы (minor при добавлениях).",
+      "После правок — node scripts/generate-backend-map-overview.cjs (синхронизация OVERVIEW.generated.md)."
+    ]
+  },
+  "version": "1.2",
+  "entities": {
+    "category": {
+      "name": "Категория",
+      "description": "Справочник каталога; tenant organizationId.",
+      "fields": [
+        {
+          "key": "id",
+          "rus": "Идентификатор",
+          "type": "uuid",
+          "required": true,
+          "description": "PK"
+        },
+        {
+          "key": "organizationId",
+          "rus": "Организация",
+          "type": "uuid",
+          "required": true,
+          "description": "Tenant"
+        },
+        {
+          "key": "name",
+          "rus": "Название",
+          "type": "string",
+          "required": true
+        },
+        {
+          "key": "parentId",
+          "rus": "Родительская категория",
+          "type": "uuid",
+          "required": false,
+          "description": "Дерево, опционально"
+        },
+        {
+          "key": "isActive",
+          "rus": "Активна",
+          "type": "boolean",
+          "required": false,
+          "description": "Деактивация вместо удаления при ссылках"
+        },
+        {
+          "key": "sortOrder",
+          "rus": "Порядок сортировки",
+          "type": "int",
+          "required": false
+        }
+      ]
+    },
+    "material": {
+      "name": "Материал",
+      "description": "Справочник; listPrice — закупка для costPrice.",
+      "fields": [
+        {
+          "key": "id",
+          "rus": "Идентификатор",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "key": "organizationId",
+          "rus": "Организация",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "key": "name",
+          "rus": "Название",
+          "type": "string",
+          "required": true
+        },
+        {
+          "key": "code",
+          "rus": "Код",
+          "type": "string",
+          "required": false
+        },
+        {
+          "key": "notes",
+          "rus": "Заметки",
+          "type": "string",
+          "required": false
+        },
+        {
+          "key": "listPrice",
+          "rus": "Цена закупки",
+          "type": "float",
+          "required": false,
+          "description": "Участвует в расчёте Product.costPrice"
+        },
+        {
+          "key": "isActive",
+          "rus": "Активен",
+          "type": "boolean",
+          "required": false
+        },
+        {
+          "key": "unitId",
+          "rus": "Единица измерения",
+          "type": "uuid",
+          "required": false,
+          "description": "Опционально: отдельная сущность Unit или поле"
+        }
+      ]
+    },
+    "part_type": {
+      "name": "Тип детали",
+      "description": "PartType; specTemplate для ТЗ.",
+      "fields": [
+        {
+          "key": "id",
+          "rus": "Идентификатор",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "key": "organizationId",
+          "rus": "Организация",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "key": "name",
+          "rus": "Название",
+          "type": "string",
+          "required": true
+        },
+        {
+          "key": "description",
+          "rus": "Описание / ТЗ",
+          "type": "string",
+          "required": false
+        },
+        {
+          "key": "specTemplate",
+          "rus": "Шаблон спецификации",
+          "type": "json",
+          "required": false,
+          "description": "JSON или строка для печати"
+        },
+        {
+          "key": "isActive",
+          "rus": "Активен",
+          "type": "boolean",
+          "required": false
+        }
+      ]
+    },
+    "product": {
+      "name": "Товар",
+      "description": "Логический товар каталога; состав — ProductSpecification; mounts/functionalities — join.",
+      "fields": [
+        {
+          "key": "id",
+          "rus": "Идентификатор",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "key": "organizationId",
+          "rus": "Организация",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "key": "name",
+          "rus": "Наименование",
+          "type": "string",
+          "required": true
+        },
+        {
+          "key": "sku",
+          "rus": "Артикул/SKU",
+          "type": "string",
+          "required": false
+        },
+        {
+          "key": "categoryId",
+          "rus": "Категория",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "key": "partTypeId",
+          "rus": "Тип детали",
+          "type": "uuid",
+          "required": false
+        },
+        {
+          "key": "materialId",
+          "rus": "Материал (карточка)",
+          "type": "uuid",
+          "required": false
+        },
+        {
+          "key": "listPrice",
+          "rus": "Цена продажи",
+          "type": "float",
+          "required": true,
+          "description": "База для КП"
+        },
+        {
+          "key": "costPrice",
+          "rus": "Себестоимость",
+          "type": "float",
+          "required": false,
+          "description": "Сервер; не правит клиент"
+        },
+        {
+          "key": "variants",
+          "rus": "Легаси-варианты (JSON)",
+          "type": "json",
+          "required": false,
+          "description": "Импорт Ø и цены по варианту"
+        },
+        {
+          "key": "goodsStatusKey",
+          "rus": "Статус готовности товара",
+          "type": "string",
+          "required": false,
+          "description": "ref → dictionaries.goods_status"
+        }
+      ]
+    },
+    "product_specification": {
+      "name": "Строка состава товара",
+      "description": "ProductSpecification: тип детали + опц. материал; несколько на товар.",
+      "fields": [
+        {
+          "key": "id",
+          "rus": "Идентификатор",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "key": "productId",
+          "rus": "Товар",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "key": "partTypeId",
+          "rus": "Тип детали",
+          "type": "uuid",
+          "required": false
+        },
+        {
+          "key": "materialId",
+          "rus": "Материал",
+          "type": "uuid",
+          "required": false
+        }
+      ]
+    },
+    "mount_type": {
+      "name": "Вид монтажа",
+      "description": "Справочник; связь с товаром ProductMount.",
+      "fields": [
+        {
+          "key": "id",
+          "rus": "Идентификатор",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "key": "organizationId",
+          "rus": "Организация",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "key": "name",
+          "rus": "Название",
+          "type": "string",
+          "required": true
+        },
+        {
+          "key": "isActive",
+          "rus": "Активен",
+          "type": "boolean",
+          "required": false
+        }
+      ]
+    },
+    "functionality": {
+      "name": "Функциональность",
+      "description": "Справочник; ProductFunctionality.",
+      "fields": [
+        {
+          "key": "id",
+          "rus": "Идентификатор",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "key": "organizationId",
+          "rus": "Организация",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "key": "name",
+          "rus": "Название",
+          "type": "string",
+          "required": true
+        },
+        {
+          "key": "isActive",
+          "rus": "Активна",
+          "type": "boolean",
+          "required": false
+        }
+      ]
+    },
+    "proposal_root": {
+      "name": "КП (корень)",
+      "description": "Proposal root; номер КП не меняется при версиях 01/02/03.",
+      "fields": [
+        {
+          "key": "id",
+          "rus": "Идентификатор",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "key": "number",
+          "rus": "Номер КП (визуальный)",
+          "type": "string",
+          "required": false,
+          "description": "Напр. №0236"
+        },
+        {
+          "key": "clientId",
+          "rus": "Клиент",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "key": "organizationId",
+          "rus": "Организация (исполнитель)",
+          "type": "uuid",
+          "required": true
+        }
+      ]
+    },
+    "proposal_version": {
+      "name": "Версия КП",
+      "description": "ProposalVersion; шапка, статус, НДС snapshot, скидки.",
+      "fields": [
+        {
+          "key": "id",
+          "rus": "Идентификатор",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "key": "proposalId",
+          "rus": "Корень КП",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "key": "versionNo",
+          "rus": "Номер версии",
+          "type": "int",
+          "required": true,
+          "description": "01/02/03 внутренне"
+        },
+        {
+          "key": "currentStatusKey",
+          "rus": "Статус",
+          "type": "string",
+          "required": true,
+          "description": "ref → dictionaries.proposal_status"
+        },
+        {
+          "key": "discountPercent",
+          "rus": "Скидка на документ %",
+          "type": "float",
+          "required": false
+        },
+        {
+          "key": "roundingAmount",
+          "rus": "Округление / коррекция суммы",
+          "type": "float",
+          "required": false
+        },
+        {
+          "key": "targetTotal",
+          "rus": "Целевая итоговая сумма",
+          "type": "float",
+          "required": false
+        },
+        {
+          "key": "vatPercentSnapshot",
+          "rus": "НДС % (снимок)",
+          "type": "float",
+          "required": false
+        }
+      ]
+    },
+    "proposal_item": {
+      "name": "Строка КП (снимок)",
+      "description": "ProposalItem: не пересчитывать из каталога после фиксации.",
+      "fields": [
+        {
+          "key": "id",
+          "rus": "Идентификатор",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "key": "proposalVersionId",
+          "rus": "Версия КП",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "key": "lineNo",
+          "rus": "Номер позиции",
+          "type": "int",
+          "required": true
+        },
+        {
+          "key": "title",
+          "rus": "Наименование в строке",
+          "type": "string",
+          "required": false
+        },
+        {
+          "key": "lineKind",
+          "rus": "Тип строки (товар/услуга)",
+          "type": "string",
+          "required": false,
+          "description": "Эквивалент из OWNER_DECISIONS"
+        },
+        {
+          "key": "isCustom",
+          "rus": "Произвольная позиция",
+          "type": "boolean",
+          "required": false
+        },
+        {
+          "key": "productSpecificationId",
+          "rus": "Ссылка на спецификацию",
+          "type": "uuid",
+          "required": false
+        },
+        {
+          "key": "quantity",
+          "rus": "Количество",
+          "type": "float",
+          "required": true
+        },
+        {
+          "key": "unit",
+          "rus": "Единица",
+          "type": "string",
+          "required": false
+        },
+        {
+          "key": "catalogPrice",
+          "rus": "Каталожная цена (снимок)",
+          "type": "float",
+          "required": false
+        },
+        {
+          "key": "orgMarkupPercent",
+          "rus": "Наценка орг % (снимок)",
+          "type": "float",
+          "required": false
+        },
+        {
+          "key": "clientMarkupPercent",
+          "rus": "Наценка клиента % (снимок)",
+          "type": "float",
+          "required": false
+        },
+        {
+          "key": "unitPrice",
+          "rus": "Цена за единицу",
+          "type": "float",
+          "required": true
+        },
+        {
+          "key": "lineTotal",
+          "rus": "Сумма строки",
+          "type": "float",
+          "required": true
+        },
+        {
+          "key": "vatRate",
+          "rus": "Ставка НДС (снимок)",
+          "type": "float",
+          "required": false
+        },
+        {
+          "key": "lineDiscountPercent",
+          "rus": "Скидка на строку %",
+          "type": "float",
+          "required": false
+        }
+      ]
+    },
+    "object_address": {
+      "name": "Адрес объекта",
+      "description": "Привязка к КП; в доке — либо отдельная сущность, либо поля в Proposal.",
+      "fields": [
+        {
+          "key": "id",
+          "rus": "Идентификатор",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "key": "proposalId",
+          "rus": "КП",
+          "type": "uuid",
+          "required": true
+        }
+      ]
+    },
+    "commercial_document": {
+      "name": "Коммерческий документ",
+      "description": "Счёт/договор.",
+      "fields": [
+        {
+          "key": "id",
+          "rus": "Идентификатор",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "key": "typeKey",
+          "rus": "Тип",
+          "type": "string",
+          "required": true,
+          "description": "ref → dictionaries.commercial_document_type"
+        },
+        {
+          "key": "proposalId",
+          "rus": "КП",
+          "type": "uuid",
+          "required": false
+        },
+        {
+          "key": "orderId",
+          "rus": "Заказ",
+          "type": "uuid",
+          "required": false
+        },
+        {
+          "key": "clientId",
+          "rus": "Клиент",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "key": "number",
+          "rus": "Номер",
+          "type": "string",
+          "required": false
+        },
+        {
+          "key": "documentDate",
+          "rus": "Дата",
+          "type": "date",
+          "required": false
+        },
+        {
+          "key": "status",
+          "rus": "Статус документа",
+          "type": "string",
+          "required": false
+        }
+      ]
+    },
+    "commercial_document_line": {
+      "name": "Строка коммерческого документа",
+      "fields": [
+        {
+          "key": "id",
+          "rus": "Идентификатор",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "key": "commercialDocumentId",
+          "rus": "Документ",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "key": "description",
+          "rus": "Описание",
+          "type": "string",
+          "required": false
+        },
+        {
+          "key": "amount",
+          "rus": "Сумма",
+          "type": "float",
+          "required": false
+        },
+        {
+          "key": "proposalItemId",
+          "rus": "Строка КП (трассировка)",
+          "type": "uuid",
+          "required": false
+        }
+      ]
+    },
+    "order": {
+      "name": "Заказ",
+      "fields": [
+        {
+          "key": "id",
+          "rus": "Идентификатор",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "key": "organizationId",
+          "rus": "Организация",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "key": "clientId",
+          "rus": "Клиент",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "key": "proposalId",
+          "rus": "КП (источник)",
+          "type": "uuid",
+          "required": false
+        },
+        {
+          "key": "statusKey",
+          "rus": "Статус",
+          "type": "string",
+          "required": true,
+          "description": "ref → dictionaries.order_status"
+        }
+      ]
+    },
+    "order_line": {
+      "name": "Строка заказа",
+      "description": "Снимок товара + комплектация; связь с КП через sourceProposalId + lineNo + скрытый sourceProposalVersionId.",
+      "fields": [
+        {
+          "key": "id",
+          "rus": "Идентификатор",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "key": "orderId",
+          "rus": "Заказ",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "key": "lineNo",
+          "rus": "Номер строки",
+          "type": "int",
+          "required": true
+        },
+        {
+          "key": "sourceProposalId",
+          "rus": "КП корень",
+          "type": "uuid",
+          "required": false
+        },
+        {
+          "key": "sourceProposalVersionId",
+          "rus": "Версия КП (скрыто)",
+          "type": "uuid",
+          "required": false
+        },
+        {
+          "key": "sourceProposalItemLineNo",
+          "rus": "Номер позиции в КП",
+          "type": "int",
+          "required": false
+        },
+        {
+          "key": "productionCode",
+          "rus": "Код производства",
+          "type": "string",
+          "required": false,
+          "description": "№КП-№пп"
+        },
+        {
+          "key": "quantity",
+          "rus": "Количество",
+          "type": "float",
+          "required": true
+        },
+        {
+          "key": "unit",
+          "rus": "Единица",
+          "type": "string",
+          "required": false
+        }
+      ]
+    },
+    "work_kind": {
+      "name": "Вид работ",
+      "description": "Справочник производства.",
+      "fields": [
+        {
+          "key": "id",
+          "rus": "Идентификатор",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "key": "organizationId",
+          "rus": "Организация",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "key": "name",
+          "rus": "Название",
+          "type": "string",
+          "required": true
+        },
+        {
+          "key": "code",
+          "rus": "Код",
+          "type": "string",
+          "required": false
+        },
+        {
+          "key": "isActive",
+          "rus": "Активен",
+          "type": "boolean",
+          "required": false
+        },
+        {
+          "key": "sortOrder",
+          "rus": "Порядок",
+          "type": "int",
+          "required": false
+        }
+      ]
+    },
+    "performer": {
+      "name": "Исполнитель",
+      "description": "Отдельный справочник или только User — открытый вопрос в BUSINESS_LOGIC.",
+      "fields": [
+        {
+          "key": "id",
+          "rus": "Идентификатор",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "key": "userId",
+          "rus": "Пользователь",
+          "type": "uuid",
+          "required": false
+        },
+        {
+          "key": "displayName",
+          "rus": "ФИО",
+          "type": "string",
+          "required": true
+        },
+        {
+          "key": "isActive",
+          "rus": "Активен",
+          "type": "boolean",
+          "required": false
+        }
+      ]
+    },
+    "operation_assignment": {
+      "name": "Назначение работы",
+      "fields": [
+        {
+          "key": "id",
+          "rus": "Идентификатор",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "key": "orderLineId",
+          "rus": "Строка заказа",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "key": "workKindId",
+          "rus": "Вид работ",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "key": "performerId",
+          "rus": "Исполнитель",
+          "type": "uuid",
+          "required": false
+        },
+        {
+          "key": "status",
+          "rus": "Статус операции",
+          "type": "string",
+          "required": false
+        },
+        {
+          "key": "plannedAt",
+          "rus": "План",
+          "type": "datetime",
+          "required": false
+        },
+        {
+          "key": "doneAt",
+          "rus": "Факт",
+          "type": "datetime",
+          "required": false
+        }
+      ]
+    },
+    "warehouse": {
+      "name": "Склад",
+      "fields": [
+        {
+          "key": "id",
+          "rus": "Идентификатор",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "key": "organizationId",
+          "rus": "Организация",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "key": "name",
+          "rus": "Название",
+          "type": "string",
+          "required": true
+        },
+        {
+          "key": "address",
+          "rus": "Адрес",
+          "type": "string",
+          "required": false
+        },
+        {
+          "key": "isActive",
+          "rus": "Активен",
+          "type": "boolean",
+          "required": false
+        }
+      ]
+    },
+    "stock": {
+      "name": "Остаток",
+      "fields": [
+        {
+          "key": "id",
+          "rus": "Идентификатор",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "key": "warehouseId",
+          "rus": "Склад",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "key": "productSpecificationId",
+          "rus": "Спецификация",
+          "type": "uuid",
+          "required": false
+        },
+        {
+          "key": "sku",
+          "rus": "SKU",
+          "type": "string",
+          "required": false
+        },
+        {
+          "key": "quantity",
+          "rus": "Количество",
+          "type": "float",
+          "required": true
+        },
+        {
+          "key": "reservedQuantity",
+          "rus": "Резерв",
+          "type": "float",
+          "required": false
+        }
+      ]
+    },
+    "stock_movement": {
+      "name": "Движение склада",
+      "fields": [
+        {
+          "key": "id",
+          "rus": "Идентификатор",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "key": "typeKey",
+          "rus": "Тип",
+          "type": "string",
+          "required": true,
+          "description": "ref → dictionaries.stock_movement_type"
+        },
+        {
+          "key": "warehouseId",
+          "rus": "Склад",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "key": "quantity",
+          "rus": "Количество",
+          "type": "float",
+          "required": true
+        },
+        {
+          "key": "refType",
+          "rus": "Тип основания",
+          "type": "string",
+          "required": false
+        },
+        {
+          "key": "refId",
+          "rus": "Ид основания",
+          "type": "uuid",
+          "required": false
+        }
+      ]
+    },
+    "organization": {
+      "name": "Организация",
+      "description": "Клиент/исполнитель; markup, vat для ценообразования.",
+      "fields": [
+        {
+          "key": "id",
+          "rus": "Идентификатор",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "key": "markup",
+          "rus": "Наценка организации %",
+          "type": "float",
+          "required": false,
+          "description": "PRICING: Organization.markup"
+        },
+        {
+          "key": "vatPercent",
+          "rus": "НДС %",
+          "type": "float",
+          "required": false,
+          "description": "PRICING: vatPercent"
+        },
+        {
+          "key": "prefix",
+          "rus": "Префикс (PDF шаблоны)",
+          "type": "string",
+          "required": false,
+          "description": "PROPOSAL_PDF_TEMPLATES"
+        }
+      ]
+    },
+    "client": {
+      "name": "Клиент",
+      "fields": [
+        {
+          "key": "id",
+          "rus": "Идентификатор",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "key": "clientMarkup",
+          "rus": "Наценка клиента %",
+          "type": "float",
+          "required": false
+        },
+        {
+          "key": "discount",
+          "rus": "Скидка клиента %",
+          "type": "float",
+          "required": false,
+          "description": "Предзаполнение discountPercent КП"
+        }
+      ]
+    },
+    "unit": {
+      "name": "Единица измерения",
+      "description": "Опциональная сущность; в BL_PAGES — поле или справочник.",
+      "fields": [
+        {
+          "key": "id",
+          "rus": "Идентификатор",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "key": "code",
+          "rus": "Код",
+          "type": "string",
+          "required": true
+        },
+        {
+          "key": "name",
+          "rus": "Название",
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    "role": {
+      "name": "Роль (RBAC)",
+      "description": "RBAC.md: ключ роли + отображаемое имя.",
+      "fields": [
+        {
+          "key": "id",
+          "rus": "Идентификатор",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "key": "key",
+          "rus": "Ключ роли",
+          "type": "string",
+          "required": true,
+          "description": "ref/совпадение с dictionaries.system_role"
+        },
+        {
+          "key": "name",
+          "rus": "Название",
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    "permission": {
+      "name": "Право (RBAC)",
+      "fields": [
+        {
+          "key": "id",
+          "rus": "Идентификатор",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "key": "key",
+          "rus": "Ключ permission",
+          "type": "string",
+          "required": true,
+          "description": "page.* или bl.*"
+        },
+        {
+          "key": "description",
+          "rus": "Описание",
+          "type": "string",
+          "required": false
+        }
+      ]
+    },
+    "role_permission": {
+      "name": "Роль — право",
+      "fields": [
+        {
+          "key": "roleId",
+          "rus": "Роль",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "key": "permissionId",
+          "rus": "Право",
+          "type": "uuid",
+          "required": true
+        }
+      ]
+    },
+    "user_role": {
+      "name": "Пользователь — роль (M2M)",
+      "fields": [
+        {
+          "key": "userId",
+          "rus": "Пользователь",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "key": "roleId",
+          "rus": "Роль",
+          "type": "uuid",
+          "required": true
+        }
+      ]
+    }
+  },
+  "_open_questions": [
+    "Перformer: отдельный справочник Performer или только User с ролью worker (BUSINESS_LOGIC §6).",
+    "ObjectAddress: отдельная таблица или поля в Proposal (BL_PAGES).",
+    "Один КП → один или несколько заказов (BUSINESS_LOGIC §6).",
+    "Единицы измерения: отдельная сущность Unit или поле у Material/строки (BL_PAGES).",
+    "Точный перечень полей Client/User из контракта не дублировал здесь — при синхронизации с кодом дополнить из FRONTEND_CONTRACT."
+  ]
+}
