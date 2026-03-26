@@ -1,0 +1,23 @@
+.uiButton {
+  border: 1px solid var(--border-color);
+  background: var(--surface);
+  color: var(--text-primary);
+  border-radius: var(--radius-card);
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+.uiButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.uiButtonSoft {
+  background: var(--surface-soft);
+}
+
+.uiButtonDanger {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+

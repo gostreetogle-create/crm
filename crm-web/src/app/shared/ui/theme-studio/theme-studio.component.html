@@ -1,0 +1,24 @@
+<section class="studio">
+  <div class="studioTop">
+    <h3>Theme studio (JSON entry point)</h3>
+    <p>Скопируй JSON, отдай дизайнеру, вставь обратно и нажми Apply JSON.</p>
+  </div>
+
+  <form [formGroup]="form">
+    <div class="actions">
+      <label>
+        Preset:
+        <select formControlName="selectedPreset">
+          <option *ngFor="let p of presets" [value]="p.name">{{ p.name }}</option>
+        </select>
+      </label>
+      <button type="button" (click)="applyPreset()">Apply preset</button>
+      <button type="button" (click)="applyJson()">Apply JSON</button>
+      <button type="button" (click)="resetToCurrent()">Sync from current</button>
+    </div>
+
+    <textarea formControlName="jsonText" rows="18"></textarea>
+  </form>
+  <div class="msg" [class.error]="messageKind === 'error'">{{ message }}</div>
+</section>
+

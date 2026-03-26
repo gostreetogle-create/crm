@@ -1,0 +1,25 @@
+<table class="fieldsTable">
+  <thead>
+    <tr>
+      <th>Поле</th>
+      <th>Русское имя</th>
+      <th>Тип</th>
+      <th>Required</th>
+      <th>Комментарий</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let f of fields">
+      <td class="codeCell"><code>{{ f.key }}</code></td>
+      <td>{{ f.label }}</td>
+      <td><span class="typePill">{{ f.type }}</span></td>
+      <td>
+        <span class="reqBadge" [class.reqYes]="f.required" [class.reqNo]="!f.required">
+          {{ f.required ? 'да' : 'нет' }}
+        </span>
+      </td>
+      <td class="commentCell">{{ f.comment || '—' }}</td>
+    </tr>
+  </tbody>
+</table>
+

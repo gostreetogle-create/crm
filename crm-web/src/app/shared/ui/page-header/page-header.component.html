@@ -1,0 +1,17 @@
+<header class="top">
+  <div class="titleBlock">
+    <h1>{{ title }}</h1>
+    <p class="subtitle">{{ subtitle }}</p>
+  </div>
+
+  <div class="facts">
+    <div class="fact" *ngFor="let f of facts">
+      <div class="factLabel">{{ f.label }}</div>
+      <div class="factValue">
+        {{ f.value }}
+        <code *ngIf="f.code">{{ f.code }}</code>
+      </div>
+    </div>
+  </div>
+</header>
+

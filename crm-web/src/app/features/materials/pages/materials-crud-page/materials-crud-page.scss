@@ -1,0 +1,73 @@
+:host {
+  display: block;
+}
+
+.toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 10px;
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.itemsTable {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.itemsTable th,
+.itemsTable td {
+  text-align: left;
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.itemsTable th {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.actions {
+  white-space: nowrap;
+}
+
+.actions app-ui-button + app-ui-button {
+  margin-left: 6px;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.wide {
+  grid-column: 1 / -1;
+}
+
+.checkbox {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.formActions {
+  display: flex;
+  gap: 8px;
+}
+
+.emptyText {
+  color: var(--text-muted);
+}
+
+@media (max-width: 860px) {
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+}
+

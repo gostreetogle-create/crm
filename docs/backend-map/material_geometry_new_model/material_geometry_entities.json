@@ -1,0 +1,183 @@
+{
+  "_meta": {
+    "file": "docs/backend-map/material_geometry_new_model/material_geometry_entities.json",
+    "purpose": "Новая модель: сущности для справочников material/geometry/detail.",
+    "readme": "docs/backend-map/material_geometry_new_model/material_geometry_model.md",
+    "field_conventions": {
+      "key": "machine name поля",
+      "rus": "для UI/доков",
+      "type": "uuid|string|int|float|boolean|date|datetime|json",
+      "required": "обязательность на уровне модели"
+    },
+    "open_assumptions": [
+      "Единицы хранения для геометрии в mm.",
+      "Расчет веса в будущем планируется на базе плотности (densityKgM3) и набора параметров геометрии."
+    ]
+  },
+  "version": "0.1",
+  "entities": {
+    "material": {
+      "name": "Материал",
+      "description": "Справочник материалов (сталь, алюминий и т.п.). Содержит параметры для будущих расчетов веса/обработки.",
+      "fields": [
+        {
+          "key": "id",
+          "rus": "Идентификатор",
+          "type": "uuid",
+          "required": true,
+          "description": "PK"
+        },
+        {
+          "key": "organizationId",
+          "rus": "Организация",
+          "type": "uuid",
+          "required": true,
+          "description": "Tenant"
+        },
+        {
+          "key": "name",
+          "rus": "Наименование",
+          "type": "string",
+          "required": true
+        },
+        {
+          "key": "code",
+          "rus": "Код",
+          "type": "string",
+          "required": false
+        },
+        {
+          "key": "densityKgM3",
+          "rus": "Плотность (кг/м3)",
+          "type": "float",
+          "required": false,
+          "description": "База для расчетов веса в будущем."
+        },
+        {
+          "key": "properties",
+          "rus": "Свойства материала",
+          "type": "json",
+          "required": false,
+          "description": "Универсальное хранилище тех.параметров (марка стали, термообработка, доп. свойства)."
+        },
+        {
+          "key": "colorName",
+          "rus": "Цвет (название)",
+          "type": "string",
+          "required": false,
+          "description": "Для визуального выбора в UI."
+        },
+        {
+          "key": "colorHex",
+          "rus": "Цвет (HEX)",
+          "type": "string",
+          "required": false,
+          "description": "Например: #2F6BFF. Если не нужен — можно не заполнять."
+        },
+        {
+          "key": "notes",
+          "rus": "Заметки",
+          "type": "string",
+          "required": false
+        },
+        {
+          "key": "isActive",
+          "rus": "Активен",
+          "type": "boolean",
+          "required": false,
+          "description": "Деактивация вместо удаления при ссылках."
+        }
+      ]
+    },
+    "geometry": {
+      "name": "Геометрия",
+      "description": "Справочник геометрических параметров детали. Форма определяет набор реально используемых полей.",
+      "fields": [
+        {
+          "key": "id",
+          "rus": "Идентификатор",
+          "type": "uuid",
+          "required": true,
+          "description": "PK"
+        },
+        {
+          "key": "organizationId",
+          "rus": "Организация",
+          "type": "uuid",
+          "required": true,
+          "description": "Tenant"
+        },
+        {
+          "key": "name",
+          "rus": "Наименование",
+          "type": "string",
+          "required": true
+        },
+        {
+          "key": "shapeKey",
+          "rus": "Тип геометрии",
+          "type": "string",
+          "required": true,
+          "description": "Ключ формулы/типа геометрии (значения: rectangular/cylindrical/tube/plate/custom)."
+        },
+        {
+          "key": "heightMm",
+          "rus": "Высота (мм)",
+          "type": "float",
+          "required": false
+        },
+        {
+          "key": "lengthMm",
+          "rus": "Длина (мм)",
+          "type": "float",
+          "required": false
+        },
+        {
+          "key": "widthMm",
+          "rus": "Ширина (мм)",
+          "type": "float",
+          "required": false
+        },
+        {
+          "key": "diameterMm",
+          "rus": "Диаметр (мм)",
+          "type": "float",
+          "required": false
+        },
+        {
+          "key": "thicknessMm",
+          "rus": "Толщина (мм)",
+          "type": "float",
+          "required": false
+        },
+        {
+          "key": "extraParameters",
+          "rus": "Доп. параметры (универсально)",
+          "type": "json",
+          "required": false,
+          "description": "Для кастомных формул/параметров, которые не укладываются в базовые поля."
+        },
+        {
+          "key": "notes",
+          "rus": "Заметки",
+          "type": "string",
+          "required": false
+        },
+        {
+          "key": "isActive",
+          "rus": "Активен",
+          "type": "boolean",
+          "required": false,
+          "description": "Деактивация вместо удаления при ссылках."
+        }
+      ]
+    }
+  },
+  "_open_questions": [
+    "Единицы измерения для geometry фиксируем в мм (height/length/width/diameter/thickness)?",
+    "Нужна ли отдельная величина/единица для толщины (толщина бывает в зависимости от shapeKey)?",
+    "Для будущего расчета веса достаточно densityKgM3 + набора geometry-параметров? (или добавится коэффициент/поправка).",
+    "Цвет материала: достаточно colorName/colorHex в material, или хотим отдельный справочник цветов?"
+  ]
+}
+

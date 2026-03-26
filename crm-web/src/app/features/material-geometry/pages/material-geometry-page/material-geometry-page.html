@@ -1,0 +1,24 @@
+<app-page-shell>
+  <app-page-header
+    title="Новая модель справочников"
+    subtitle="Показываем поля для единичных таблиц: material и geometry."
+    [facts]="(facts$ | async) ?? []"
+  ></app-page-header>
+
+  <ng-container *ngIf="model$ | async as model; else loadingState">
+    <app-content-card title="material">
+      <app-fields-table [fields]="model.materialFields"></app-fields-table>
+    </app-content-card>
+
+    <app-content-card title="geometry">
+      <app-fields-table [fields]="model.geometryFields"></app-fields-table>
+    </app-content-card>
+  </ng-container>
+
+  <ng-template #loadingState>
+    <app-content-card title="Загрузка модели">
+      <p>Подгружаем структуру полей...</p>
+    </app-content-card>
+  </ng-template>
+</app-page-shell>
+

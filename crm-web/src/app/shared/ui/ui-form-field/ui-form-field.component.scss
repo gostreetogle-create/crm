@@ -1,0 +1,41 @@
+:host {
+  display: block;
+}
+
+.fieldLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+}
+
+:host ::ng-deep input,
+:host ::ng-deep select,
+:host ::ng-deep textarea {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-card);
+  background: var(--surface-soft);
+  color: var(--text-primary);
+  padding: 8px 10px;
+  font: inherit;
+}
+
+:host(.invalid) ::ng-deep input,
+:host(.invalid) ::ng-deep select,
+:host(.invalid) ::ng-deep textarea {
+  border-color: var(--field-invalid-border, var(--danger));
+}
+
+:host(.invalid) ::ng-deep input:focus,
+:host(.invalid) ::ng-deep select:focus,
+:host(.invalid) ::ng-deep textarea:focus {
+  outline: 2px solid var(--field-invalid-focus, var(--danger));
+  outline-offset: 1px;
+}
+
+.fieldError {
+  color: var(--danger);
+  font-size: 12px;
+  line-height: 1.2;
+}
+

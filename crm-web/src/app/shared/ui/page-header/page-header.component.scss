@@ -1,0 +1,55 @@
+.top {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+
+.titleBlock h1 {
+  margin: 0;
+  font-size: 28px;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  margin: 8px 0 0;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
+.facts {
+  display: grid;
+  gap: 10px;
+  justify-items: end;
+}
+
+.fact {
+  background: var(--surface-soft);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-card);
+  padding: 10px 12px;
+  backdrop-filter: blur(6px);
+}
+
+.factLabel {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.factValue {
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+@media (max-width: 820px) {
+  .top {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .facts {
+    justify-items: start;
+  }
+}
+

@@ -1,0 +1,64 @@
+.studio {
+  border: 1px dashed var(--border-color);
+  border-radius: var(--radius-card);
+  padding: 14px;
+  background: var(--surface-soft);
+  margin-top: 18px;
+}
+
+.studioTop h3 {
+  margin: 0 0 6px;
+  font-size: 16px;
+}
+
+.studioTop p {
+  margin: 0 0 12px;
+  color: var(--text-muted);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+select,
+button,
+textarea {
+  font: inherit;
+}
+
+select,
+button {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  color: var(--text-primary);
+  padding: 7px 10px;
+}
+
+button {
+  cursor: pointer;
+}
+
+textarea {
+  width: 100%;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-card);
+  padding: 10px;
+  background: var(--bg-base);
+  color: var(--text-primary);
+}
+
+.msg {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--success);
+}
+
+.msg.error {
+  color: var(--danger);
+}
+
