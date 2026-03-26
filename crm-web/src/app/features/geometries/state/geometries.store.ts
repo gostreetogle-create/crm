@@ -24,6 +24,7 @@ export type GeometriesState = {
 };
 
 export const GeometriesStore = signalStore(
+  { providedIn: 'root' },
   withState<GeometriesState>({
     items: [],
     loading: false,

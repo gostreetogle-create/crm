@@ -27,6 +27,14 @@ export type ThemeTokens = {
   uiButtonPaddingY: string;
   uiButtonPaddingX: string;
 
+  uiButtonPrimaryBg: string;
+  uiButtonPrimaryText: string;
+  uiButtonPrimaryBorderColor: string;
+
+  uiButtonSoftBg: string;
+  uiButtonSoftText: string;
+  uiButtonSoftBorderColor: string;
+
   uiCardPadding: string;
   uiCardMarginTop: string;
   uiCardTitleMarginBottom: string;

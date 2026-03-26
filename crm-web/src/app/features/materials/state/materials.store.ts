@@ -23,6 +23,7 @@ export type MaterialsState = {
 };
 
 export const MaterialsStore = signalStore(
+  { providedIn: 'root' },
   withState<MaterialsState>({
     items: [],
     loading: false,

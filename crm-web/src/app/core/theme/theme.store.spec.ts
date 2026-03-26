@@ -13,10 +13,10 @@ describe('ThemeStore', () => {
   });
 
   it('applyPreset updates theme and dirty flag', () => {
-    store['applyPreset']('graphite');
+    store['applyPreset']('dark');
 
-    expect(store.theme().name).toBe('graphite');
-    expect(store.preset()).toBe('graphite');
+    expect(store.theme().name).toBe('dark');
+    expect(store.preset()).toBe('dark');
     expect(store.isDirty()).toBe(true);
   });
 
@@ -29,17 +29,18 @@ describe('ThemeStore', () => {
     );
 
     expect(result.ok).toBe(true);
-    expect(store.theme().name).toBe('custom');
+    // ThemeStore нормализует любые темы в light/dark
+    expect(store.theme().name).toBe('light');
     expect(store.isDirty()).toBe(true);
   });
 
   it('saveToStorage clears dirty flag', () => {
-    store['applyPreset']('sand');
+    store['applyPreset']('light');
     expect(store.isDirty()).toBe(true);
 
     store['saveToStorage']();
 
     expect(store.isDirty()).toBe(false);
-    expect(localStorage.getItem('crm-web.theme.tokens.v1')).toContain('"name":"sand"');
+    expect(localStorage.getItem('crm-web.theme.tokens.v1')).toContain('"name":"light"');
   });
 });

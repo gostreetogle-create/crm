@@ -20,6 +20,27 @@ export type ThemeState = {
 
 const STORAGE_KEY = 'crm-web.theme.tokens.v1';
 
+const AVAILABLE_THEME_NAMES = new Set(['light', 'dark']);
+
+function isDarkHexColor(value: string): boolean {
+  if (!value.startsWith('#')) return false;
+  const hex = value.slice(1);
+  if (hex.length !== 6) return false;
+  const r = Number.parseInt(hex.slice(0, 2), 16);
+  const g = Number.parseInt(hex.slice(2, 4), 16);
+  const b = Number.parseInt(hex.slice(4, 6), 16);
+  if (Number.isNaN(r) || Number.isNaN(g) || Number.isNaN(b)) return false;
+  // relative luminance (sRGB)
+  const lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+  return lum < 0.5;
+}
+
+function normalizeTheme(theme: ThemeTokens): ThemeTokens {
+  if (AVAILABLE_THEME_NAMES.has(theme.name)) return theme;
+  const name = isDarkHexColor(theme.bgBase) ? 'dark' : 'light';
+  return { ...theme, name };
+}
+
 function applyThemeToCssVars(theme: ThemeTokens): void {
   const root = document.documentElement.style;
   root.setProperty('--font-family-base', theme.fontFamilyBase);
@@ -45,6 +66,12 @@ function applyThemeToCssVars(theme: ThemeTokens): void {
   root.setProperty('--ui-input-padding-x', theme.uiInputPaddingX);
   root.setProperty('--ui-button-padding-y', theme.uiButtonPaddingY);
   root.setProperty('--ui-button-padding-x', theme.uiButtonPaddingX);
+  root.setProperty('--ui-button-primary-bg', theme.uiButtonPrimaryBg);
+  root.setProperty('--ui-button-primary-text', theme.uiButtonPrimaryText);
+  root.setProperty('--ui-button-primary-border-color', theme.uiButtonPrimaryBorderColor);
+  root.setProperty('--ui-button-soft-bg', theme.uiButtonSoftBg);
+  root.setProperty('--ui-button-soft-text', theme.uiButtonSoftText);
+  root.setProperty('--ui-button-soft-border-color', theme.uiButtonSoftBorderColor);
   root.setProperty('--ui-card-padding', theme.uiCardPadding);
   root.setProperty('--ui-card-margin-top', theme.uiCardMarginTop);
   root.setProperty('--ui-card-title-margin-bottom', theme.uiCardTitleMarginBottom);
@@ -131,13 +158,15 @@ export const ThemeStore = signalStore(
   withMethods((store) => {
     const saved = readThemeFromStorage();
     if (saved) {
-      patchState(store, { theme: saved, preset: saved.name, isDirty: false });
+      const normalized = normalizeTheme(saved);
+      patchState(store, { theme: normalized, preset: normalized.name, isDirty: false });
     } else {
       const parsedEntry = parseThemeJson(THEME_JSON_ENTRY_RAW);
       if (parsedEntry.ok) {
+        const normalized = normalizeTheme(parsedEntry.theme);
         patchState(store, {
-          theme: parsedEntry.theme,
-          preset: parsedEntry.theme.name,
+          theme: normalized,
+          preset: normalized.name,
           isDirty: false,
         });
       }
@@ -155,19 +184,22 @@ export const ThemeStore = signalStore(
 
     return {
       applyTheme: (theme: ThemeTokens) => {
-        patchState(store, { theme, preset: theme.name, isDirty: true });
+        const normalized = normalizeTheme(theme);
+        patchState(store, { theme: normalized, preset: normalized.name, isDirty: true });
       },
       applyPreset: (presetName: string) => {
         const preset = THEME_PRESETS.find((p) => p.name === presetName);
         if (!preset) return;
-        patchState(store, { theme: preset, preset: preset.name, isDirty: true });
+        const normalized = normalizeTheme(preset);
+        patchState(store, { theme: normalized, preset: normalized.name, isDirty: true });
       },
       applyThemeFromJson: (rawJson: string): { ok: boolean; error?: string } => {
         const result = parseThemeJson(rawJson);
         if (!result.ok) return { ok: false, error: result.error };
+        const normalized = normalizeTheme(result.theme);
         patchState(store, {
-          theme: result.theme,
-          preset: result.theme.name,
+          theme: normalized,
+          preset: normalized.name,
           isDirty: true,
         });
         return { ok: true };
@@ -175,7 +207,8 @@ export const ThemeStore = signalStore(
       loadFromStorage: () => {
         const theme = readThemeFromStorage();
         if (!theme) return;
-        patchState(store, { theme, preset: theme.name, isDirty: false });
+        const normalized = normalizeTheme(theme);
+        patchState(store, { theme: normalized, preset: normalized.name, isDirty: false });
       },
       saveToStorage: () => {
         try {
@@ -193,7 +226,8 @@ export const ThemeStore = signalStore(
                 if (event.key !== STORAGE_KEY) return;
                 const theme = readThemeFromStorage();
                 if (!theme) return;
-                patchState(store, { theme, preset: theme.name, isDirty: false });
+                const normalized = normalizeTheme(theme);
+                patchState(store, { theme: normalized, preset: normalized.name, isDirty: false });
               })
             )
           )

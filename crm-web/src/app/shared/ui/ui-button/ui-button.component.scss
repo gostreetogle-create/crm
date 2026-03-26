@@ -1,7 +1,7 @@
 .uiButton {
-  border: 1px solid var(--border-color);
-  background: var(--surface);
-  color: var(--text-primary);
+  border: 1px solid var(--ui-button-primary-border-color);
+  background: var(--ui-button-primary-bg);
+  color: var(--ui-button-primary-text);
   border-radius: var(--radius-card);
   padding: var(--ui-button-padding-y) var(--ui-button-padding-x);
   cursor: pointer;
@@ -13,7 +13,9 @@
 }
 
 .uiButtonSoft {
-  background: var(--surface-soft);
+  background: var(--ui-button-soft-bg);
+  border-color: var(--ui-button-soft-border-color);
+  color: var(--ui-button-soft-text);
 }
 
 .uiButtonDanger {

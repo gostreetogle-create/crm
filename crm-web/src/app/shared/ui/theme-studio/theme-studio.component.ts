@@ -19,15 +19,15 @@ export class ThemeStudioComponent {
   messageKind: 'ok' | 'error' = 'ok';
   private readonly fb = new FormBuilder();
   readonly form = this.fb.nonNullable.group({
-    selectedPreset: ['blueprint'],
+    selectedPreset: ['light'],
     jsonText: [''],
   });
 
   constructor() {
-    this.presets = THEME_PRESETS;
+    this.presets = THEME_PRESETS.filter((p) => p.name === 'light' || p.name === 'dark');
     const current = this.store['getCurrentTheme']();
     this.form.patchValue({
-      selectedPreset: current.name || this.presets[0]?.name || 'blueprint',
+      selectedPreset: current.name || this.presets[0]?.name || 'light',
       jsonText: this.store['getCurrentThemeJson'](),
     });
     effect(() => {

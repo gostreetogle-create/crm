@@ -13,7 +13,7 @@ import { ThemeTokens } from '../../theme/theme-schema';
 })
 export class ThemePickerComponent {
   private readonly store = inject(ThemeStore);
-  readonly presets: ThemeTokens[] = THEME_PRESETS;
+  readonly presets: ThemeTokens[] = THEME_PRESETS.filter((p) => p.name === 'light' || p.name === 'dark');
   readonly selectedName = computed(() => this.store['theme']().name);
 
   onPresetChange(name: string): void {
