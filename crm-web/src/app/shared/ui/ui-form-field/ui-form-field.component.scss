@@ -18,7 +18,16 @@
 }
 
 .ui-form-field input,
-.ui-form-field select,
+.ui-form-field select {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-card);
+  background: var(--surface-soft);
+  color: var(--text-primary);
+  padding: var(--ui-input-padding-y) var(--ui-input-padding-x);
+  font: inherit;
+  min-height: var(--ui-control-min-height);
+}
+
 .ui-form-field textarea {
   border: 1px solid var(--border-color);
   border-radius: var(--radius-card);

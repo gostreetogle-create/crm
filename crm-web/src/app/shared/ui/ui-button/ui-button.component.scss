@@ -23,3 +23,13 @@
   color: var(--danger);
 }
 
+.uiButtonSquare {
+  padding: 0;
+  width: var(--ui-control-min-height);
+  height: var(--ui-control-min-height);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
