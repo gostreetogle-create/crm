@@ -1,0 +1,35 @@
+<nav class="pagination" *ngIf="pageCount > 1" aria-label="Пагинация">
+  <app-ui-button
+    variant="soft"
+    [square]="true"
+    [disabled]="!canPrev()"
+    (clicked)="go(page - 1)"
+    aria-label="Предыдущая страница"
+  >
+    ‹
+  </app-ui-button>
+
+  <div class="pages" role="list">
+    <app-ui-button
+      *ngFor="let p of pages()"
+      [variant]="p === page ? 'primary' : 'soft'"
+      [square]="true"
+      (clicked)="go(p)"
+      role="listitem"
+      [attr.aria-current]="p === page ? 'page' : null"
+    >
+      {{ p }}
+    </app-ui-button>
+  </div>
+
+  <app-ui-button
+    variant="soft"
+    [square]="true"
+    [disabled]="!canNext()"
+    (clicked)="go(page + 1)"
+    aria-label="Следующая страница"
+  >
+    ›
+  </app-ui-button>
+</nav>
+

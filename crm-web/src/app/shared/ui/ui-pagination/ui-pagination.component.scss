@@ -1,0 +1,15 @@
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ui-space-10);
+  margin-top: var(--ui-card-title-margin-bottom);
+}
+
+.pages {
+  display: flex;
+  gap: var(--ui-space-1);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+

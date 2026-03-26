@@ -61,6 +61,7 @@
   --ui-page-shell-padding-top: 24px;
   --ui-page-shell-padding-x: 16px;
   --ui-page-shell-padding-bottom: 48px;
+  --ui-page-shell-max-width: min(1560px, calc(100vw - (var(--ui-page-shell-padding-x) * 2)));
   --ui-space-1: 4px;
   --ui-row-action-btn-radius: 8px;
   --ui-shadow-card-offset-y: 8px;

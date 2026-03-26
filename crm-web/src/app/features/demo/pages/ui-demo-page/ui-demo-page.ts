@@ -12,12 +12,23 @@ import { PageShellComponent } from '../../../../shared/ui/page-shell/page-shell.
 import { UiButtonComponent } from '../../../../shared/ui/ui-button/ui-button.component';
 import { UiFormFieldComponent } from '../../../../shared/ui/ui-form-field/ui-form-field.component';
 import { confirmDeleteAction } from '../../../../shared/utils/confirm-delete';
+import { ProductCardComponent } from '../../../../shared/ui/product-card/public-api';
+import { UiPaginationComponent } from '../../../../shared/ui/ui-pagination/ui-pagination.component';
 
 type DemoRow = {
   id: string;
   name: string;
   category: string;
   status: string;
+};
+
+type DemoProduct = {
+  id: string;
+  category: string;
+  title: string;
+  sku: string;
+  price: number;
+  imageSeed: string;
 };
 
 @Component({
@@ -33,6 +44,8 @@ type DemoRow = {
     UiButtonComponent,
     UiFormFieldComponent,
     UiModal,
+    ProductCardComponent,
+    UiPaginationComponent,
   ],
   templateUrl: './ui-demo-page.html',
   styleUrl: './ui-demo-page.scss',
@@ -50,6 +63,136 @@ export class UiDemoPage {
   readonly searchTerm = signal('');
   readonly sortBy = signal<'name' | 'category' | 'status'>('name');
   readonly filterCategory = signal<'all' | string>('all');
+
+  // Showcase (products)
+  readonly productSearch = signal('');
+  readonly productSort = signal<'priceDesc' | 'priceAsc'>('priceDesc');
+  readonly productCategory = signal<'all' | string>('all');
+  readonly productPage = signal(1);
+  readonly productPageSize = 8;
+
+  readonly products = signal<DemoProduct[]>([
+    {
+      id: 'p-1501',
+      category: 'Уличные тренажёры «STREET IRON»',
+      title: 'Уличный тренажёр — Подтягивание «STREET IRON»',
+      sku: 'УТ1501',
+      price: 125_000,
+      imageSeed: 'ut1501',
+    },
+    {
+      id: 'p-1502',
+      category: 'Уличные тренажёры «STREET IRON»',
+      title: 'Уличный тренажёр — Жим от плеч «STREET IRON»',
+      sku: 'УТ1502',
+      price: 125_000,
+      imageSeed: 'ut1502',
+    },
+    {
+      id: 'p-1503',
+      category: 'Уличные тренажёры «STREET IRON»',
+      title: 'Уличный тренажёр — Тяга на себя «STREET IRON»',
+      sku: 'УТ1503',
+      price: 120_000,
+      imageSeed: 'ut1503',
+    },
+    {
+      id: 'p-1504',
+      category: 'Уличные тренажёры «STREET IRON»',
+      title: 'Уличный тренажёр — Брусья/жим «STREET IRON»',
+      sku: 'УТ1504',
+      price: 119_000,
+      imageSeed: 'ut1504',
+    },
+    {
+      id: 'p-1601',
+      category: 'Уличные тренажёры «STREET IRON»',
+      title: 'Уличный тренажёр — Гиперэкстензия «STREET IRON»',
+      sku: 'УТ1601',
+      price: 132_000,
+      imageSeed: 'ut1601',
+    },
+    {
+      id: 'p-1602',
+      category: 'Уличные тренажёры «STREET IRON»',
+      title: 'Уличный тренажёр — Гребная тяга «STREET IRON»',
+      sku: 'УТ1602',
+      price: 128_000,
+      imageSeed: 'ut1602',
+    },
+    {
+      id: 'p-1701',
+      category: 'Уличные тренажёры «STREET IRON»',
+      title: 'Уличный тренажёр — Присед «STREET IRON»',
+      sku: 'УТ1701',
+      price: 109_000,
+      imageSeed: 'ut1701',
+    },
+    {
+      id: 'p-1702',
+      category: 'Уличные тренажёры «STREET IRON»',
+      title: 'Уличный тренажёр — Жим ногами «STREET IRON»',
+      sku: 'УТ1702',
+      price: 141_000,
+      imageSeed: 'ut1702',
+    },
+    {
+      id: 'p-1801',
+      category: 'Уличные тренажёры «STREET IRON»',
+      title: 'Уличный тренажёр — Степпер «STREET IRON»',
+      sku: 'УТ1801',
+      price: 98_000,
+      imageSeed: 'ut1801',
+    },
+  ]);
+
+  readonly productCategoryOptions = computed<FilterOption[]>(() => {
+    const categories = Array.from(new Set(this.products().map((p) => p.category))).sort((a, b) =>
+      a.localeCompare(b),
+    );
+    return [{ value: 'all', label: 'Категория: все' }].concat(
+      categories.map((c) => ({ value: c, label: `Категория: ${c}` })),
+    );
+  });
+
+  readonly productSortOptions: FilterOption[] = [
+    { value: 'priceDesc', label: 'Сортировка: цена ↓' },
+    { value: 'priceAsc', label: 'Сортировка: цена ↑' },
+  ];
+
+  readonly filteredProducts = computed(() => {
+    const term = this.productSearch().trim().toLowerCase();
+    const category = this.productCategory();
+    const sort = this.productSort();
+
+    const items = this.products()
+      .filter((p) => (category === 'all' ? true : p.category === category))
+      .filter((p) => {
+        if (!term) return true;
+        return (
+          p.title.toLowerCase().includes(term) ||
+          p.sku.toLowerCase().includes(term) ||
+          p.category.toLowerCase().includes(term)
+        );
+      })
+      .sort((a, b) => {
+        if (sort === 'priceAsc') return a.price - b.price;
+        return b.price - a.price;
+      });
+
+    return items;
+  });
+
+  readonly productPageCount = computed(() => {
+    return Math.max(1, Math.ceil(this.filteredProducts().length / this.productPageSize));
+  });
+
+  readonly visibleProducts = computed(() => {
+    const totalPages = this.productPageCount();
+    const current = Math.min(Math.max(1, this.productPage()), totalPages);
+    const start = (current - 1) * this.productPageSize;
+    return this.filteredProducts().slice(start, start + this.productPageSize);
+  });
 
   readonly columns: TableColumn[] = [
     { key: 'name', label: 'Название' },
@@ -175,6 +318,27 @@ export class UiDemoPage {
 
   onFilterCategory(value: string): void {
     this.filterCategory.set(value || 'all');
+  }
+
+  onProductSearch(value: string): void {
+    this.productSearch.set(value);
+    this.productPage.set(1);
+  }
+
+  onProductSortChange(value: string): void {
+    if (value === 'priceAsc' || value === 'priceDesc') {
+      this.productSort.set(value);
+      this.productPage.set(1);
+    }
+  }
+
+  onProductCategory(value: string): void {
+    this.productCategory.set(value || 'all');
+    this.productPage.set(1);
+  }
+
+  onProductPageChange(page: number): void {
+    this.productPage.set(page);
   }
 
   hasMainError(controlName: 'name' | 'category'): boolean {

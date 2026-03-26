@@ -1,0 +1,109 @@
+.productCard {
+  background: var(--surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-card);
+  padding: var(--ui-card-padding);
+  box-shadow:
+    0 var(--ui-shadow-card-offset-y) var(--ui-shadow-card-blur) var(--shadow-color),
+    0 var(--ui-shadow-card-thin-offset-y) 0 var(--shadow-color);
+}
+
+.productMedia {
+  width: 100%;
+  aspect-ratio: 1 / 1; // квадратная медиа-зона (1:1), как на e-commerce карточках
+  overflow: hidden;
+  border-radius: var(--radius-card);
+  margin-bottom: var(--ui-card-title-margin-bottom);
+}
+
+.productImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; // визуально ровно, как на топ e-commerce карточках
+  display: block;
+}
+
+.productTop {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--ui-nav-gap);
+  align-items: center;
+  margin-bottom: var(--ui-space-1);
+}
+
+.productTitle {
+  margin: 0;
+  font-size: var(--font-size-card-title);
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.productSubtitle {
+  color: var(--text-muted);
+  line-height: 1.25;
+  font-size: var(--font-size-small);
+}
+
+.productTag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px var(--ui-input-padding-x);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-color);
+  background: var(--surface-soft);
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.productSkuRow {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--ui-nav-gap);
+  align-items: baseline;
+  margin-top: var(--ui-card-title-margin-bottom);
+}
+
+.productSkuLabel {
+  color: var(--text-muted);
+  font-size: var(--font-size-small);
+}
+
+.productSkuValue {
+  font-size: var(--font-size-small);
+}
+
+.productDescription {
+  margin-top: var(--ui-card-title-margin-bottom);
+  color: var(--text-muted);
+}
+
+.productDivider {
+  height: 1px;
+  background: var(--border-color);
+  margin-top: var(--ui-card-title-margin-bottom);
+  margin-bottom: var(--ui-card-title-margin-bottom);
+}
+
+.productFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--ui-nav-gap);
+}
+
+.productPrice {
+  font-weight: 700;
+  font-size: var(--font-size-card-title);
+}
+
+.productActions {
+  display: flex;
+  gap: var(--ui-space-10);
+}
+

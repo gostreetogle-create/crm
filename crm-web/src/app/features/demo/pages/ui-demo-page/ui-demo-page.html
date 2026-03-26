@@ -89,6 +89,45 @@
       <app-ui-button [type]="'submit'" [form]="'demo-main-form'">Создать запись</app-ui-button>
     </div>
   </app-content-card>
+
+  <app-content-card title="Карточки товаров (витрина)">
+    <div class="productShowcaseTop">
+      <app-filters-bar
+        searchPlaceholder="Поиск по товарам / артикулу..."
+        [sortOptions]="productSortOptions"
+        [filterOptions]="productCategoryOptions()"
+        [selectedSort]="productSort()"
+        [selectedFilter]="productCategory()"
+        (searchChange)="onProductSearch($event)"
+        (sortChange)="onProductSortChange($any($event))"
+        (filterChange)="onProductCategory($any($event))"
+      ></app-filters-bar>
+    </div>
+
+    <div class="productGrid">
+      @for (p of visibleProducts(); track p.id) {
+        <app-product-card
+          [title]="p.title"
+          [subtitle]="p.category"
+          skuLabel="Артикул"
+          [skuValue]="p.sku"
+          [price]="p.price.toLocaleString('ru-RU') + ' ₽'"
+          [imageSrc]="'https://picsum.photos/seed/' + p.imageSeed + '/640/640'"
+        >
+          <div product-actions>
+            <app-ui-button variant="soft" [square]="true">☆</app-ui-button>
+            <app-ui-button variant="soft" [square]="true">🛒</app-ui-button>
+          </div>
+        </app-product-card>
+      }
+    </div>
+
+    <app-ui-pagination
+      [page]="productPage()"
+      [pageCount]="productPageCount()"
+      (pageChange)="onProductPageChange($event)"
+    ></app-ui-pagination>
+  </app-content-card>
 </app-page-shell>
 
 <ui-modal

@@ -11,7 +11,7 @@
 }
 
 .page {
-  max-width: 1100px;
+  max-width: var(--ui-page-shell-max-width);
   margin: 0 auto;
 }
 

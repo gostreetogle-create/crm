@@ -1,0 +1,41 @@
+<section class="productCard">
+  <div class="productMedia" *ngIf="imageSrc">
+    <img
+      class="productImage"
+      [src]="imageSrc!"
+      [alt]="imageAlt || title"
+    />
+  </div>
+
+  <!-- Future: allow custom media block (e.g., thumbnails gallery, icon, etc.) -->
+  <ng-content select="[product-media]"></ng-content>
+
+  <div class="productTop">
+    <div class="productSubtitle" *ngIf="subtitle">{{ subtitle }}</div>
+    <span class="productTag" *ngIf="tag">{{ tag }}</span>
+  </div>
+
+  <h3 class="productTitle">{{ title }}</h3>
+
+  <div class="productSkuRow" *ngIf="skuLabel || skuValue">
+    <div class="productSkuLabel">{{ skuLabel || 'Артикул' }}</div>
+    <div class="productSkuValue">{{ skuValue }}</div>
+  </div>
+
+  <!-- Future: extra meta blocks (e.g., specs, availability, counts) -->
+  <ng-content select="[product-extra]"></ng-content>
+
+  <div class="productDescription" *ngIf="description">{{ description }}</div>
+
+  <ng-content></ng-content>
+
+  <div class="productDivider" aria-hidden="true"></div>
+
+  <div class="productFooter">
+    <div class="productPrice" *ngIf="price">{{ price }}</div>
+    <div class="productActions">
+      <ng-content select="[product-actions]"></ng-content>
+    </div>
+  </div>
+</section>
+
