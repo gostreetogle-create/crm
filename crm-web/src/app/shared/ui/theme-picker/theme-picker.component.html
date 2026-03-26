@@ -2,7 +2,7 @@
   <label for="themePickerSelect">Theme</label>
   <select
     id="themePickerSelect"
-    [value]="selectedName"
+    [value]="selectedName()"
     (change)="onPresetChange($any($event.target).value)"
   >
     <option *ngFor="let p of presets" [value]="p.name">{{ p.name }}</option>

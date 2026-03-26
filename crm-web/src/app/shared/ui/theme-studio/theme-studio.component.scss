@@ -1,27 +1,27 @@
 .studio {
   border: 1px dashed var(--border-color);
   border-radius: var(--radius-card);
-  padding: 14px;
+  padding: var(--ui-space-14);
   background: var(--surface-soft);
-  margin-top: 18px;
+  margin-top: var(--ui-card-margin-top);
 }
 
 .studioTop h3 {
-  margin: 0 0 6px;
-  font-size: 16px;
+  margin: 0 0 var(--ui-space-0p5);
+  font-size: var(--font-size-base);
 }
 
 .studioTop p {
-  margin: 0 0 12px;
+  margin: 0 0 var(--ui-card-title-margin-bottom);
   color: var(--text-muted);
 }
 
 .actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--ui-nav-gap);
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: var(--ui-button-padding-x);
 }
 
 select,
@@ -36,7 +36,7 @@ button {
   border-radius: var(--radius-card);
   background: var(--surface);
   color: var(--text-primary);
-  padding: 7px 10px;
+  padding: var(--ui-space-7) var(--ui-button-padding-x);
 }
 
 button {
@@ -47,14 +47,14 @@ textarea {
   width: 100%;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-card);
-  padding: 10px;
+  padding: var(--ui-button-padding-x);
   background: var(--bg-base);
   color: var(--text-primary);
 }
 
 .msg {
-  margin-top: 8px;
-  font-size: 13px;
+  margin-top: var(--ui-input-padding-y);
+  font-size: var(--ui-table-head-font-size);
   color: var(--success);
 }
 

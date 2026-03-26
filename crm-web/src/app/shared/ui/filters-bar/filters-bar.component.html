@@ -1,0 +1,20 @@
+<div class="filtersBar">
+  <input
+    type="text"
+    [placeholder]="searchPlaceholder"
+    (input)="onSearch($any($event.target).value)"
+  />
+
+  <select [value]="selectedSort" (change)="onSort($any($event.target).value)">
+    @for (option of sortOptions; track option.value) {
+      <option [value]="option.value">{{ option.label }}</option>
+    }
+  </select>
+
+  <select [value]="selectedFilter" (change)="onFilter($any($event.target).value)">
+    @for (option of filterOptions; track option.value) {
+      <option [value]="option.value">{{ option.label }}</option>
+    }
+  </select>
+</div>
+

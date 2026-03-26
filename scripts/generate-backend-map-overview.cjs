@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Генерирует docs/backend-map/OVERVIEW.generated.md из всех *.json в docs/backend-map/
- * (кроме файлов, имя которых начинается с точки или заканчивается иначе).
+ * рекурсивно (включая вложенные папки).
  *
  * Запуск из корня репозитория:
  *   node scripts/generate-backend-map-overview.cjs
@@ -26,10 +26,24 @@ function listJsonFiles() {
     console.error("Нет папки:", BACKEND_MAP_DIR);
     process.exit(1);
   }
-  return fs
-    .readdirSync(BACKEND_MAP_DIR)
-    .filter((f) => f.endsWith(".json") && !f.startsWith("."))
-    .sort();
+  const result = [];
+
+  function walk(dir, relBase = "") {
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    for (const e of entries) {
+      if (e.name.startsWith(".")) continue;
+      const abs = path.join(dir, e.name);
+      const rel = path.join(relBase, e.name).replace(/\\/g, "/");
+      if (e.isDirectory()) {
+        walk(abs, rel);
+      } else if (e.isFile() && e.name.endsWith(".json")) {
+        result.push(rel);
+      }
+    }
+  }
+
+  walk(BACKEND_MAP_DIR, "");
+  return result.sort();
 }
 
 function loadJson(relName) {

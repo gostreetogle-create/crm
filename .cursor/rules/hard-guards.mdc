@@ -1,0 +1,31 @@
+---
+description: Hard Guards — что нельзя трогать без плана/согласования
+alwaysApply: true
+---
+
+# Hard Guards — не нарушай без явного “ок”
+
+## Никогда не ломай автоматически
+- `docs/backend-map/OVERVIEW.generated.md` — **не редактировать вручную**. После любого изменения `docs/backend-map/**/*.json` запусти:
+  `node scripts/generate-backend-map-overview.cjs`
+
+## Чувствительные зоны (требуют плана/дифф и ожидания “ок”)
+Перед правкой или переносом логики в этих зонах сначала дай:
+1) короткий план (что меняем)
+2) ожидаемый дифф (какие файлы/участки)
+3) критерий “как понять, что всё ок”
+и только после моего “ок/давай” внедряй:
+- `docs/backend-map/*.json`
+- `docs/backend-map/OVERVIEW.generated.md`
+- `scripts/generate-backend-map-overview.cjs`
+
+## Процесс docs (канон репозитория)
+- Общие правила разработки/UX: `docs/frontend/development-workflow.md`, `docs/frontend/design-system.md`, `docs/frontend/interaction-system.md`.
+- Если правка меняет “канон” этих файлов — обязательно согласуй (план + ожидание “ок”).
+
+## inbox/analysis_hub
+- `analysis_hub/inbox/` — только входящие для разбора. Не оставляй там “полуразобранное” без пометки в отчёте.
+
+## Конфликт с другими правилами
+Эти hard-guards имеют приоритет над `ai-senior` (предложения можно делать, но внедрение в sensitive zones — только после “ок”).
+

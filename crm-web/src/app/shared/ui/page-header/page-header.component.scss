@@ -1,26 +1,26 @@
 .top {
   display: flex;
   justify-content: space-between;
-  gap: 16px;
+  gap: var(--ui-app-header-padding-x);
   align-items: flex-start;
-  margin-bottom: 18px;
+  margin-bottom: var(--ui-card-margin-top);
 }
 
 .titleBlock h1 {
   margin: 0;
-  font-size: 28px;
+  font-size: var(--font-size-page-title);
   letter-spacing: -0.02em;
 }
 
 .subtitle {
-  margin: 8px 0 0;
+  margin: var(--ui-input-padding-y) 0 0;
   color: var(--text-muted);
   line-height: 1.35;
 }
 
 .facts {
   display: grid;
-  gap: 10px;
+  gap: var(--ui-fact-padding-y);
   justify-items: end;
 }
 
@@ -28,18 +28,18 @@
   background: var(--surface-soft);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-card);
-  padding: 10px 12px;
-  backdrop-filter: blur(6px);
+  padding: var(--ui-fact-padding-y) var(--ui-fact-padding-x);
+  backdrop-filter: blur(var(--ui-backdrop-blur-sm));
 }
 
 .factLabel {
   color: var(--text-muted);
-  font-size: 12px;
+  font-size: var(--ui-fact-label-font-size);
 }
 
 .factValue {
   font-weight: 600;
-  margin-top: 4px;
+  margin-top: var(--ui-space-1);
 }
 
 @media (max-width: 820px) {

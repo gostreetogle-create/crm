@@ -1,30 +1,29 @@
-import { AsyncPipe, NgFor, NgIf } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { NgIf } from '@angular/common';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { map } from 'rxjs';
 import { ContentCardComponent } from '../../../../shared/ui/content-card/content-card.component';
-import { PageHeaderComponent, FactRow } from '../../../../shared/ui/page-header/page-header.component';
 import { PageShellComponent } from '../../../../shared/ui/page-shell/page-shell.component';
+import {
+  CrudLayoutComponent,
+  TableColumn,
+} from 'src/app/shared/ui/crud-layout/public-api';
+import { UiModal as UiModalComponent } from 'src/app/shared/ui/modal/public-api';
 import { UiButtonComponent } from '../../../../shared/ui/ui-button/ui-button.component';
 import { UiCheckboxFieldComponent } from '../../../../shared/ui/ui-checkbox-field/ui-checkbox-field.component';
 import { UiFormFieldComponent } from '../../../../shared/ui/ui-form-field/ui-form-field.component';
-import {
-  MATERIALS_REPOSITORY,
-  MaterialsRepository,
-} from '../../data/materials.repository';
-import { MaterialItem } from '../../model/material-item';
+import { confirmDeleteAction } from '../../../../shared/utils/confirm-delete';
+import { MaterialsStore } from '../../state/materials.store';
 
 @Component({
   selector: 'app-materials-crud-page',
   standalone: true,
   imports: [
     NgIf,
-    NgFor,
-    AsyncPipe,
     ReactiveFormsModule,
     PageShellComponent,
-    PageHeaderComponent,
+    CrudLayoutComponent,
     ContentCardComponent,
+    UiModalComponent,
     UiButtonComponent,
     UiCheckboxFieldComponent,
     UiFormFieldComponent,
@@ -33,22 +32,25 @@ import { MaterialItem } from '../../model/material-item';
   styleUrl: './materials-crud-page.scss',
 })
 export class MaterialsCrudPage {
-  private readonly repo = inject<MaterialsRepository>(MATERIALS_REPOSITORY);
   private readonly fb = inject(FormBuilder);
+  readonly store = inject(MaterialsStore);
+  readonly isEditDialogOpen = signal(false);
 
-  readonly items$ = this.repo.getItems();
-  readonly facts$ = this.items$.pipe(
-    map(
-      (items): FactRow[] => [
-        { label: 'Сущность', value: 'material' },
-        { label: 'Записей', value: String(items.length) },
-        { label: 'Режим', value: 'mock CRUD' },
-      ]
-    )
-  );
+  readonly materialColumns: TableColumn[] = [
+    { key: 'name', label: 'Название' },
+    { key: 'code', label: 'Код' },
+    { key: 'densityKgM3', label: 'Плотность' },
+    { key: 'color', label: 'Цвет' },
+    { key: 'isActiveLabel', label: 'Активен' },
+  ];
 
-  editId: string | null = null;
-  formSubmitAttempted = false;
+  readonly vm = computed(() => ({
+    materialsData: this.store['materialsData'](),
+    facts: this.store['facts'](),
+    isEditMode: this.store['isEditMode'](),
+    editId: this.store['editId'](),
+    formSubmitAttempted: this.store['formSubmitAttempted'](),
+  }));
 
   readonly form = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.minLength(2)]],
@@ -60,9 +62,13 @@ export class MaterialsCrudPage {
     isActive: [true],
   });
 
+  constructor() {
+    this.store['loadItems']();
+  }
+
   startCreate(): void {
-    this.editId = null;
-    this.formSubmitAttempted = false;
+    this.isEditDialogOpen.set(false);
+    this.store['startCreate']();
     this.form.reset({
       name: '',
       code: '',
@@ -74,9 +80,11 @@ export class MaterialsCrudPage {
     });
   }
 
-  startEdit(item: MaterialItem): void {
-    this.editId = item.id;
-    this.formSubmitAttempted = false;
+  startEdit(id: string): void {
+    const item = this.store['items']().find((x) => x.id === id);
+    if (!item) return;
+    this.isEditDialogOpen.set(true);
+    this.store['startEdit'](item.id);
     this.form.reset({
       name: item.name ?? '',
       code: item.code ?? '',
@@ -88,43 +96,42 @@ export class MaterialsCrudPage {
     });
   }
 
-  submit(): void {
-    this.formSubmitAttempted = true;
+  submitCreate(): void {
     if (this.form.invalid) {
+      this.store['submit']({ value: this.buildPayload(), isValid: false });
       this.form.markAllAsTouched();
       return;
     }
 
-    const value = this.form.getRawValue();
-    const payload = {
-      name: value.name.trim(),
-      code: value.code?.trim() || '',
-      densityKgM3: value.densityKgM3 ?? undefined,
-      colorName: value.colorName?.trim() || '',
-      colorHex: value.colorHex?.trim() || '',
-      notes: value.notes?.trim() || '',
-      isActive: value.isActive,
-    };
+    this.store['submit']({ value: this.buildPayload(), isValid: true });
+  }
 
-    if (this.editId) {
-      this.repo.update(this.editId, payload);
-    } else {
-      this.repo.create(payload);
+  submitEdit(): void {
+    if (this.form.invalid) {
+      this.store['submit']({ value: this.buildPayload(), isValid: false });
+      this.form.markAllAsTouched();
+      return;
     }
 
+    this.store['submit']({ value: this.buildPayload(), isValid: true });
+    this.closeEditDialog();
+  }
+
+  closeEditDialog(): void {
+    this.isEditDialogOpen.set(false);
     this.startCreate();
   }
 
   delete(id: string): void {
-    this.repo.remove(id);
-    if (this.editId === id) {
-      this.startCreate();
+    if (!confirmDeleteAction('материал')) {
+      return;
     }
+    this.store['delete'](id);
   }
 
   hasError(controlName: string): boolean {
     const c = this.form.get(controlName);
-    return !!c && c.invalid && (this.formSubmitAttempted || c.touched || c.dirty);
+    return !!c && c.invalid && (this.vm().formSubmitAttempted || c.touched || c.dirty);
   }
 
   isInvalid(controlName: string): boolean {
@@ -138,6 +145,19 @@ export class MaterialsCrudPage {
     if (c.hasError('required')) return '';
     if (c.hasError('minlength')) return 'Минимум 2 символа.';
     return 'Проверь значение поля.';
+  }
+
+  private buildPayload() {
+    const value = this.form.getRawValue();
+    return {
+      name: value.name.trim(),
+      code: value.code?.trim() || '',
+      densityKgM3: value.densityKgM3 ?? undefined,
+      colorName: value.colorName?.trim() || '',
+      colorHex: value.colorHex?.trim() || '',
+      notes: value.notes?.trim() || '',
+      isActive: value.isActive,
+    };
   }
 }
 

@@ -1,0 +1,122 @@
+<app-page-shell>
+  <app-content-card title="Demo">
+    <p class="intro">
+      Эталонная страница для проверки единых сценариев: create/edit/delete, quick-add и модалки.
+    </p>
+    <p class="meta">Последнее действие: {{ lastAction() }}</p>
+  </app-content-card>
+
+  <app-content-card title="Состояния интерфейса">
+    <section class="stateGrid">
+      <article class="stateCard stateCardInfo">
+        <h4>Loading</h4>
+        <p>Данные загружаются, действия временно ограничены.</p>
+      </article>
+      <article class="stateCard stateCardOk">
+        <h4>Success</h4>
+        <p>Операция выполнена успешно, изменения сохранены.</p>
+      </article>
+      <article class="stateCard stateCardWarn">
+        <h4>Empty</h4>
+        <p>Список пуст. Пользователю предлагается создать первую запись.</p>
+      </article>
+      <article class="stateCard stateCardErr">
+        <h4>Error</h4>
+        <p>Операция не выполнена. Показываем понятное сообщение и retry.</p>
+      </article>
+    </section>
+  </app-content-card>
+
+  <app-content-card title="Кнопки (единый стиль)">
+    <div class="buttonRow">
+      <app-ui-button>Primary</app-ui-button>
+      <app-ui-button variant="soft">Soft</app-ui-button>
+      <app-ui-button variant="danger">Danger</app-ui-button>
+      <app-ui-button [disabled]="true">Disabled</app-ui-button>
+    </div>
+  </app-content-card>
+
+  <app-content-card title="Фильтры (как в модели полей)">
+    <app-filters-bar
+      searchPlaceholder="Поиск..."
+      [sortOptions]="sortOptions"
+      [filterOptions]="filterOptions()"
+      selectedSort="name"
+      selectedFilter="all"
+      (searchChange)="onSearch($event)"
+      (sortChange)="onSortChange($any($event))"
+      (filterChange)="onFilterCategory($any($event))"
+    ></app-filters-bar>
+  </app-content-card>
+
+  <app-content-card title="CRUD layout + row actions">
+    <crud-layout
+      title="Таблица"
+      [columns]="columns"
+      [data]="demoData()"
+      (edit)="onEdit($event)"
+      (delete)="onDelete($event)"
+    ></crud-layout>
+  </app-content-card>
+
+  <app-content-card title="Форма + quick-add">
+    <form id="demo-main-form" class="formGrid" [formGroup]="form" (ngSubmit)="submitMainForm()">
+      <app-ui-form-field
+        label="Название"
+        [required]="true"
+        [invalid]="hasMainError('name')"
+        [errorText]="hasMainError('name') ? 'Минимум 2 символа' : ''"
+      >
+        <input type="text" formControlName="name" />
+      </app-ui-form-field>
+
+      <app-ui-form-field label="Категория" [required]="true">
+        <div class="inlineRow">
+          <select formControlName="category">
+            @for (option of categoryOptions(); track option) {
+              <option [value]="option">{{ option }}</option>
+            }
+          </select>
+          <app-ui-button type="button" variant="soft" (clicked)="openQuickAdd()">+ Категория</app-ui-button>
+        </div>
+      </app-ui-form-field>
+    </form>
+
+    <div class="actions">
+      <app-ui-button variant="soft" (clicked)="form.reset({ name: '', category: form.controls.category.value })">
+        Сбросить
+      </app-ui-button>
+      <app-ui-button [type]="'submit'" [form]="'demo-main-form'">Создать запись</app-ui-button>
+    </div>
+  </app-content-card>
+</app-page-shell>
+
+<ui-modal
+  *ngIf="quickAddOpen()"
+  title="Quick-add категории"
+  [content]="quickAddContent"
+  [actions]="quickAddActions"
+  size="sm"
+  (close)="closeQuickAdd()"
+></ui-modal>
+
+<ng-template #quickAddContent>
+  <form id="quick-add-form" [formGroup]="quickAddForm" (ngSubmit)="confirmQuickAdd()" class="formGrid">
+    <app-ui-form-field
+      label="Новая категория"
+      [required]="true"
+      [invalid]="quickAddForm.controls.name.invalid"
+      [errorText]="quickAddFormSubmitAttempted() && quickAddForm.controls.name.invalid ? 'Минимум 2 символа' : ''"
+    >
+      <input type="text" formControlName="name" />
+    </app-ui-form-field>
+  </form>
+</ng-template>
+
+<ng-template #quickAddActions>
+  <app-ui-button variant="soft" (clicked)="closeQuickAdd()">Отмена</app-ui-button>
+  <app-ui-button type="submit" [form]="'quick-add-form'">
+    Добавить и выбрать
+  </app-ui-button>
+</ng-template>
+

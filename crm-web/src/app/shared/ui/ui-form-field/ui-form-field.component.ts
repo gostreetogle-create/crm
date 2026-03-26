@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ViewEncapsulation } from '@angular/core';
 import { NgIf } from '@angular/common';
 
 @Component({
@@ -8,16 +8,18 @@ import { NgIf } from '@angular/common';
   template: `
     <label class="fieldLabel">
       <span class="fieldTitle">
-        {{ label }}<span *ngIf="required"> *</span>
+        {{ label }}<span class="requiredMark" *ngIf="required"> *</span>
       </span>
       <ng-content></ng-content>
       <span class="fieldError" *ngIf="errorText">{{ errorText }}</span>
     </label>
   `,
   styleUrl: './ui-form-field.component.scss',
+  encapsulation: ViewEncapsulation.None,
   host: {
     '[class.wide]': 'wide',
     '[class.invalid]': 'invalid',
+    class: 'ui-form-field',
   },
 })
 export class UiFormFieldComponent {

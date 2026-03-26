@@ -1,0 +1,73 @@
+.intro {
+  margin: 0 0 8px;
+  color: var(--text-primary);
+}
+
+.meta {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.stateGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.stateCard {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  padding: 10px 12px;
+}
+
+.stateCard h4 {
+  margin: 0 0 6px;
+}
+
+.stateCard p {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.stateCardInfo {
+  border-left: 3px solid var(--accent);
+}
+
+.stateCardOk {
+  border-left: 3px solid var(--success);
+}
+
+.stateCardWarn {
+  border-left: 3px solid var(--accent);
+}
+
+.stateCardErr {
+  border-left: 3px solid var(--danger);
+}
+
+.buttonRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.formGrid {
+  display: grid;
+  gap: 12px;
+}
+
+.inlineRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.actions {
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+

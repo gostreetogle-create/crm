@@ -3,7 +3,7 @@
   background: var(--surface);
   color: var(--text-primary);
   border-radius: var(--radius-card);
-  padding: 8px 10px;
+  padding: var(--ui-button-padding-y) var(--ui-button-padding-x);
   cursor: pointer;
 }
 

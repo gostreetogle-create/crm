@@ -1,0 +1,93 @@
+:host {
+  display: block;
+}
+
+.crudToolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--ui-card-title-margin-bottom);
+}
+
+.tableView {
+  display: block;
+}
+
+.crudTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.crudTable th,
+.crudTable td {
+  border-bottom: 1px solid var(--border-color);
+  padding: var(--ui-button-padding-y) var(--ui-button-padding-x);
+  text-align: left;
+}
+
+.actionsCol {
+  width: var(--ui-crud-actions-col-width);
+}
+
+.rowActionBtn {
+  border: 1px solid var(--border-color);
+  background: var(--surface);
+  color: var(--text-primary);
+  border-radius: var(--ui-row-action-btn-radius);
+  padding: var(--ui-space-1) var(--ui-nav-gap);
+  margin-right: var(--ui-nav-gap);
+  cursor: pointer;
+}
+
+.rowActionBtnDanger {
+  color: var(--danger);
+}
+
+.card-list {
+  display: none;
+}
+
+.card-item {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  padding: calc(var(--ui-button-padding-y) + var(--ui-space-1));
+  margin-bottom: var(--ui-space-10);
+}
+
+.card-row {
+  display: grid;
+  grid-template-columns: var(--ui-crud-card-label-width) 1fr;
+  gap: var(--ui-space-10);
+  padding: var(--ui-space-1) 0;
+}
+
+.card-label {
+  color: var(--text-muted);
+}
+
+.card-value {
+  color: var(--text-primary);
+}
+
+.card-actions {
+  display: flex;
+  gap: var(--ui-nav-gap);
+  margin-top: var(--ui-space-10);
+}
+
+.crudActions {
+  margin-top: var(--ui-card-title-margin-bottom);
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--ui-nav-gap);
+}
+
+@media (max-width: 768px) {
+  table {
+    display: none;
+  }
+
+  .card-list {
+    display: block;
+  }
+}

@@ -1,0 +1,95 @@
+<app-page-header [title]="title" [subtitle]="''" [facts]="[]"></app-page-header>
+
+<section class="crudToolbar">
+  @if (toolbarActions) {
+    <ng-container [ngTemplateOutlet]="toolbarActions"></ng-container>
+  }
+</section>
+
+<section class="tableView">
+  <table class="crudTable">
+    <thead>
+      <tr>
+        @for (column of columns; track column.key) {
+          <th>{{ column.label }}</th>
+        }
+        @if (showRowActions) {
+          <th class="actionsCol">Действия</th>
+        }
+      </tr>
+    </thead>
+    <tbody>
+      @for (row of data; track row?.id ?? $index) {
+        <tr>
+          @for (column of columns; track column.key) {
+            <td>{{ row?.[column.key] ?? '—' }}</td>
+          }
+          @if (showRowActions) {
+            <td class="actionsCol">
+              <button
+                type="button"
+                class="rowActionBtn"
+                (click)="onEdit(row)"
+                [attr.data-testid]="'edit-button-' + (row?.id ?? $index)"
+              >
+                Редактировать
+              </button>
+              <button
+                type="button"
+                class="rowActionBtn rowActionBtnDanger"
+                (click)="onDelete(row)"
+                [attr.data-testid]="'delete-button-' + (row?.id ?? $index)"
+              >
+                Удалить
+              </button>
+            </td>
+          }
+        </tr>
+      }
+      @if (!data.length) {
+        <tr>
+          <td [attr.colspan]="columns.length + (showRowActions ? 1 : 0)">Нет данных.</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</section>
+
+<section class="card-list">
+  @for (row of data; track $index) {
+    <article class="card-item">
+      @for (column of columns; track column.key) {
+        <div class="card-row">
+          <span class="card-label">{{ column.label }}</span>
+          <span class="card-value">{{ row?.[column.key] ?? '—' }}</span>
+        </div>
+      }
+      @if (showRowActions) {
+        <div class="card-actions">
+          <button
+            type="button"
+            class="rowActionBtn"
+            (click)="onEdit(row)"
+            [attr.data-testid]="'edit-button-' + (row?.id ?? $index)"
+          >
+            Редактировать
+          </button>
+          <button
+            type="button"
+            class="rowActionBtn rowActionBtnDanger"
+            (click)="onDelete(row)"
+            [attr.data-testid]="'delete-button-' + (row?.id ?? $index)"
+          >
+            Удалить
+          </button>
+        </div>
+      }
+    </article>
+  }
+</section>
+
+<section class="crudActions">
+  @if (formActions) {
+    <ng-container [ngTemplateOutlet]="formActions"></ng-container>
+  }
+</section>

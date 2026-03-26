@@ -1,0 +1,42 @@
+<div
+  class="modalBackdrop"
+  tabindex="0"
+  (click)="onBackdropClick($event)"
+  (keydown.enter)="onBackdropClick($event)"
+  (keydown.space)="onBackdropClick($event)"
+>
+  <section
+    cdkTrapFocus
+    [cdkTrapFocusAutoCapture]="autoCapture"
+    class="modalDialog"
+    [ngClass]="'modalDialog--' + size"
+    role="dialog"
+    [attr.aria-labelledby]="titleId"
+    aria-modal="true"
+  >
+    <header class="modalHeader">
+      <h2 #modalTitle [id]="titleId" tabindex="-1" class="modalTitle">
+        {{ title }}
+      </h2>
+      <button
+        #modalCloseButton
+        type="button"
+        class="modalCloseButton"
+        aria-label="Close dialog"
+        (click)="requestClose()"
+      >
+        ×
+      </button>
+    </header>
+
+    <div class="modalContent">
+      <ng-container [ngTemplateOutlet]="content"></ng-container>
+    </div>
+
+    @if (actions) {
+      <footer class="modalActions">
+        <ng-container [ngTemplateOutlet]="actions"></ng-container>
+      </footer>
+    }
+  </section>
+</div>

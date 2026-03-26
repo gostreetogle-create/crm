@@ -35,7 +35,8 @@
 
 Единый обязательный процесс разработки зафиксирован в `docs/frontend/development-workflow.md`.
 Все следующие изменения в проекте выполняем по этому стандарту.
+Отдельный стандарт поведения UI зафиксирован в `docs/frontend/interaction-system.md`.
 
 Если правило в документах конфликтует, приоритет такой:
-1) `development-workflow.md`, 2) `design-system.md`, 3) feature-доки.
+1) `development-workflow.md`, 2) `interaction-system.md`, 3) `design-system.md`, 4) feature-доки.
 

@@ -1,46 +1,20 @@
 <app-page-shell>
-  <app-page-header
-    title="Материалы (CRUD)"
-    subtitle="Простой рабочий экран: посмотреть, добавить, изменить, удалить."
-    [facts]="(facts$ | async) ?? []"
-  ></app-page-header>
-
   <app-content-card title="Список материалов">
-    <div class="toolbar">
-      <app-ui-button (clicked)="startCreate()">+ Новый материал</app-ui-button>
-    </div>
-
-    <div class="tableWrap" *ngIf="items$ | async as items">
-      <table class="itemsTable" *ngIf="items.length; else emptyState">
-        <thead>
-          <tr>
-            <th>Название</th>
-            <th>Код</th>
-            <th>Плотность</th>
-            <th>Цвет</th>
-            <th>Активен</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let item of items">
-            <td>{{ item.name }}</td>
-            <td>{{ item.code || '—' }}</td>
-            <td>{{ item.densityKgM3 ?? '—' }}</td>
-            <td>{{ item.colorName || item.colorHex || '—' }}</td>
-            <td>{{ item.isActive ? 'Да' : 'Нет' }}</td>
-            <td class="actions">
-              <app-ui-button variant="soft" (clicked)="startEdit(item)">Изменить</app-ui-button>
-              <app-ui-button variant="danger" (clicked)="delete(item.id)">Удалить</app-ui-button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <crud-layout
+      title="Материалы"
+      [columns]="materialColumns"
+      [data]="vm().materialsData"
+      [toolbarActions]="toolbarTpl"
+      [formActions]="formTpl"
+      (edit)="startEdit($event)"
+      (delete)="delete($event)"
+      data-testid="materials-table"
+    >
+    </crud-layout>
   </app-content-card>
 
-  <app-content-card [title]="editId ? 'Редактирование материала' : 'Добавление материала'">
-    <form [formGroup]="form" (ngSubmit)="submit()" class="formGrid">
+  <app-content-card title="Добавление материала" *ngIf="!isEditDialogOpen()">
+    <form id="materials-create-form" [formGroup]="form" (ngSubmit)="submitCreate()" class="formGrid">
       <app-ui-form-field
         label="Название"
         [required]="true"
@@ -73,17 +47,73 @@
       <app-ui-checkbox-field class="checkbox" label="Активен" formControlName="isActive">
       </app-ui-checkbox-field>
 
-      <div class="wide formActions">
-        <app-ui-button [type]="'submit'">
-          {{ editId ? 'Сохранить изменения' : 'Создать материал' }}
-        </app-ui-button>
-        <app-ui-button variant="soft" (clicked)="startCreate()">Сбросить</app-ui-button>
-      </div>
     </form>
   </app-content-card>
 </app-page-shell>
 
-<ng-template #emptyState>
-  <p class="emptyText">Пока материалов нет. Нажми "Новый материал".</p>
+<ng-template #toolbarTpl>
+  <app-ui-button data-testid="materials-create-new" (clicked)="startCreate()">
+    + Новый материал
+  </app-ui-button>
+</ng-template>
+
+<ng-template #formTpl>
+  <app-ui-button data-testid="materials-reset" variant="soft" (clicked)="startCreate()">
+    Сбросить
+  </app-ui-button>
+  <app-ui-button data-testid="materials-submit" [type]="'submit'" [form]="'materials-create-form'">
+    Создать материал
+  </app-ui-button>
+</ng-template>
+
+<ui-modal
+  *ngIf="isEditDialogOpen()"
+  title="Редактирование материала"
+  [content]="editContent"
+  [actions]="editActions"
+  (close)="closeEditDialog()"
+  size="md"
+>
+</ui-modal>
+
+<ng-template #editContent>
+  <form id="materials-edit-form" [formGroup]="form" (ngSubmit)="submitEdit()" class="formGrid">
+    <app-ui-form-field
+      label="Название"
+      [required]="true"
+      [invalid]="isInvalid('name')"
+      [errorText]="hasError('name') ? errorText('name') : ''"
+    >
+      <input type="text" formControlName="name" />
+    </app-ui-form-field>
+
+    <app-ui-form-field label="Код">
+      <input type="text" formControlName="code" />
+    </app-ui-form-field>
+
+    <app-ui-form-field label="Плотность (кг/м3)">
+      <input type="number" formControlName="densityKgM3" />
+    </app-ui-form-field>
+
+    <app-ui-form-field label="Цвет (название)">
+      <input type="text" formControlName="colorName" />
+    </app-ui-form-field>
+
+    <app-ui-form-field label="Цвет (HEX)">
+      <input type="text" formControlName="colorHex" placeholder="#AABBCC" />
+    </app-ui-form-field>
+
+    <app-ui-form-field label="Заметки" [wide]="true">
+      <textarea rows="3" formControlName="notes"></textarea>
+    </app-ui-form-field>
+
+    <app-ui-checkbox-field class="checkbox" label="Активен" formControlName="isActive">
+    </app-ui-checkbox-field>
+  </form>
+</ng-template>
+
+<ng-template #editActions>
+  <app-ui-button variant="soft" (clicked)="closeEditDialog()">Отмена</app-ui-button>
+  <app-ui-button type="submit" [form]="'materials-edit-form'">Сохранить изменения</app-ui-button>
 </ng-template>
 

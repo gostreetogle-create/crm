@@ -1,24 +1,24 @@
 :host {
   position: fixed;
-  top: 12px;
-  right: 14px;
+  top: var(--ui-table-head-padding-y);
+  right: var(--ui-space-14);
   z-index: 1200;
 }
 
 .themePicker {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
+  gap: var(--ui-nav-gap);
+  padding: var(--ui-button-padding-y) var(--ui-button-padding-x);
   border-radius: var(--radius-card);
   border: 1px solid var(--border-color);
   background: var(--surface-soft);
-  backdrop-filter: blur(8px);
-  box-shadow: 0 8px 24px var(--shadow-color);
+  backdrop-filter: blur(var(--ui-backdrop-blur-md));
+  box-shadow: 0 var(--ui-shadow-card-offset-y) var(--ui-shadow-card-blur) var(--shadow-color);
 }
 
 label {
-  font-size: 12px;
+  font-size: var(--font-size-small);
   color: var(--text-muted);
 }
 
@@ -28,7 +28,7 @@ select {
   border-radius: var(--radius-card);
   background: var(--surface);
   color: var(--text-primary);
-  padding: 6px 8px;
-  min-width: 130px;
+  padding: var(--ui-space-0p5) var(--ui-input-padding-y);
+  min-width: var(--ui-theme-picker-min-width);
 }
 

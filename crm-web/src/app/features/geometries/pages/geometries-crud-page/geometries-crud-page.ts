@@ -1,18 +1,19 @@
-import { AsyncPipe, NgFor, NgIf } from '@angular/common';
-import { Component, HostListener, OnDestroy, inject } from '@angular/core';
+import { NgFor, NgIf } from '@angular/common';
+import { Component, OnDestroy, computed, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Subscription, map } from 'rxjs';
+import { Subscription } from 'rxjs';
 import { ContentCardComponent } from '../../../../shared/ui/content-card/content-card.component';
-import { PageHeaderComponent, FactRow } from '../../../../shared/ui/page-header/page-header.component';
+import {
+  CrudLayoutComponent,
+  TableColumn,
+} from 'src/app/shared/ui/crud-layout/public-api';
+import { UiModal as UiModalComponent } from 'src/app/shared/ui/modal/public-api';
 import { PageShellComponent } from '../../../../shared/ui/page-shell/page-shell.component';
 import { UiButtonComponent } from '../../../../shared/ui/ui-button/ui-button.component';
 import { UiCheckboxFieldComponent } from '../../../../shared/ui/ui-checkbox-field/ui-checkbox-field.component';
 import { UiFormFieldComponent } from '../../../../shared/ui/ui-form-field/ui-form-field.component';
-import {
-  GEOMETRIES_REPOSITORY,
-  GeometriesRepository,
-} from '../../data/geometries.repository';
-import { GeometryItem } from '../../model/geometry-item';
+import { confirmDeleteAction } from '../../../../shared/utils/confirm-delete';
+import { GeometriesStore } from '../../state/geometries.store';
 
 @Component({
   selector: 'app-geometries-crud-page',
@@ -20,11 +21,11 @@ import { GeometryItem } from '../../model/geometry-item';
   imports: [
     NgIf,
     NgFor,
-    AsyncPipe,
     ReactiveFormsModule,
     PageShellComponent,
-    PageHeaderComponent,
+    CrudLayoutComponent,
     ContentCardComponent,
+    UiModalComponent,
     UiButtonComponent,
     UiCheckboxFieldComponent,
     UiFormFieldComponent,
@@ -33,20 +34,24 @@ import { GeometryItem } from '../../model/geometry-item';
   styleUrl: './geometries-crud-page.scss',
 })
 export class GeometriesCrudPage implements OnDestroy {
-  private readonly repo = inject<GeometriesRepository>(GEOMETRIES_REPOSITORY);
   private readonly fb = inject(FormBuilder);
   private readonly sub = new Subscription();
+  readonly store = inject(GeometriesStore);
 
-  readonly items$ = this.repo.getItems();
-  readonly facts$ = this.items$.pipe(
-    map(
-      (items): FactRow[] => [
-        { label: 'Сущность', value: 'geometry' },
-        { label: 'Записей', value: String(items.length) },
-        { label: 'Режим', value: 'mock CRUD' },
-      ]
-    )
-  );
+  readonly geometryColumns: TableColumn[] = [
+    { key: 'name', label: 'Название' },
+    { key: 'shape', label: 'Тип' },
+    { key: 'params', label: 'Параметры' },
+    { key: 'isActiveLabel', label: 'Активна' },
+  ];
+  readonly vm = computed(() => ({
+    geometriesData: this.store['geometriesData'](),
+    facts: this.store['facts'](),
+    isEditMode: this.store['isEditMode'](),
+    isEditDialogOpen: this.store['isEditDialogOpen'](),
+    editId: this.store['editId'](),
+    formSubmitAttempted: this.store['formSubmitAttempted'](),
+  }));
 
   readonly shapeOptions: ReadonlyArray<{ value: string; label: string }> = [
     { value: 'rectangular', label: 'Прямоугольная' },
@@ -55,10 +60,6 @@ export class GeometriesCrudPage implements OnDestroy {
     { value: 'plate', label: 'Лист' },
     { value: 'custom', label: 'Произвольная' },
   ];
-  editId: string | null = null;
-  isEditDialogOpen = false;
-  formSubmitAttempted = false;
-
   readonly form = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.minLength(2)]],
     shapeKey: ['rectangular', Validators.required],
@@ -72,6 +73,7 @@ export class GeometriesCrudPage implements OnDestroy {
   });
 
   constructor() {
+    this.store['loadItems']();
     this.applyShapeValidators(this.form.controls.shapeKey.value);
     this.sub.add(
       this.form.controls.shapeKey.valueChanges.subscribe((shape) => {
@@ -81,9 +83,7 @@ export class GeometriesCrudPage implements OnDestroy {
   }
 
   startCreate(): void {
-    this.editId = null;
-    this.isEditDialogOpen = false;
-    this.formSubmitAttempted = false;
+    this.store['startCreate']();
     this.form.reset({
       name: '',
       shapeKey: 'rectangular',
@@ -97,10 +97,10 @@ export class GeometriesCrudPage implements OnDestroy {
     });
   }
 
-  openEditDialog(item: GeometryItem): void {
-    this.editId = item.id;
-    this.isEditDialogOpen = true;
-    this.formSubmitAttempted = false;
+  openEditDialog(id: string): void {
+    const item = this.store['items']().find((x) => x.id === id);
+    if (!item) return;
+    this.store['openEdit'](item.id);
     this.form.reset({
       name: item.name ?? '',
       shapeKey: item.shapeKey ?? 'rectangular',
@@ -115,51 +115,38 @@ export class GeometriesCrudPage implements OnDestroy {
   }
 
   closeEditDialog(): void {
+    this.store['closeDialog']();
     this.startCreate();
-  }
-
-  @HostListener('document:keydown.escape')
-  onEscapeKey(): void {
-    if (this.isEditDialogOpen) {
-      this.closeEditDialog();
-    }
   }
 
   submitCreate(): void {
-    this.formSubmitAttempted = true;
     if (this.form.invalid) {
+      this.store['submit']({ value: this.buildPayload(), isValid: false });
       this.form.markAllAsTouched();
       return;
     }
-    this.repo.create(this.buildPayload());
-    this.startCreate();
+    this.store['submit']({ value: this.buildPayload(), isValid: true });
   }
 
   submitEdit(): void {
-    this.formSubmitAttempted = true;
     if (this.form.invalid) {
+      this.store['submit']({ value: this.buildPayload(), isValid: false });
       this.form.markAllAsTouched();
       return;
     }
-
-    if (!this.editId) {
-      return;
-    }
-
-    this.repo.update(this.editId, this.buildPayload());
-    this.closeEditDialog();
+    this.store['submit']({ value: this.buildPayload(), isValid: true });
   }
 
   delete(id: string): void {
-    this.repo.remove(id);
-    if (this.editId === id) {
-      this.startCreate();
+    if (!confirmDeleteAction('геометрию')) {
+      return;
     }
+    this.store['delete'](id);
   }
 
   hasError(controlName: string): boolean {
     const c = this.form.get(controlName);
-    return !!c && c.invalid && (this.formSubmitAttempted || c.touched || c.dirty);
+    return !!c && c.invalid && (this.vm().formSubmitAttempted || c.touched || c.dirty);
   }
 
   isInvalid(controlName: string): boolean {

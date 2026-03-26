@@ -2,16 +2,30 @@
   <app-page-header
     title="Новая модель справочников"
     subtitle="Показываем поля для единичных таблиц: material и geometry."
-    [facts]="(facts$ | async) ?? []"
+    [facts]="vm().facts"
   ></app-page-header>
 
-  <ng-container *ngIf="model$ | async as model; else loadingState">
-    <app-content-card title="material">
-      <app-fields-table [fields]="model.materialFields"></app-fields-table>
+  <app-content-card title="Фильтры">
+    <app-filters-bar
+      searchPlaceholder="Поиск по полям..."
+      [sortOptions]="sortOptions"
+      [filterOptions]="filterOptions"
+      selectedSort="name"
+      selectedFilter="all"
+      (searchChange)="onSearch($event)"
+      (sortChange)="onSortChange($any($event))"
+      (filterChange)="onFilterTypeChange($any($event))"
+    ></app-filters-bar>
+    <p>Материалы: {{ vm().stats.totalMaterials }} | Геометрии: {{ vm().stats.totalGeometries }}</p>
+  </app-content-card>
+
+  <ng-container *ngIf="vm().model.version; else loadingState">
+    <app-content-card title="material" *ngIf="vm().materialFields.length">
+      <app-fields-table [fields]="vm().materialFields"></app-fields-table>
     </app-content-card>
 
-    <app-content-card title="geometry">
-      <app-fields-table [fields]="model.geometryFields"></app-fields-table>
+    <app-content-card title="geometry" *ngIf="vm().geometryFields.length">
+      <app-fields-table [fields]="vm().geometryFields"></app-fields-table>
     </app-content-card>
   </ng-container>
 

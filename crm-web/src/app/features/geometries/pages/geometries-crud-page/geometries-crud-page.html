@@ -1,47 +1,20 @@
 <app-page-shell>
-  <app-page-header
-    title="Геометрии (CRUD)"
-    subtitle="Рабочий экран: посмотреть, добавить, изменить, удалить геометрию."
-    [facts]="(facts$ | async) ?? []"
-  ></app-page-header>
-
   <app-content-card title="Список геометрий">
-    <div class="toolbar">
-      <app-ui-button (clicked)="startCreate()">+ Новая геометрия</app-ui-button>
-    </div>
-
-    <div class="tableWrap" *ngIf="items$ | async as items">
-      <table class="itemsTable" *ngIf="items.length; else emptyState">
-        <thead>
-          <tr>
-            <th>Название</th>
-            <th>Тип</th>
-            <th>Параметры</th>
-            <th>Активна</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let item of items">
-            <td>{{ item.name }}</td>
-            <td>{{ shapeLabel(item.shapeKey) }}</td>
-            <td>
-              В {{ item.heightMm ?? '—' }}, Дл {{ item.lengthMm ?? '—' }}, Ш {{ item.widthMm ?? '—' }},
-              Диам {{ item.diameterMm ?? '—' }}, Толщ {{ item.thicknessMm ?? '—' }}
-            </td>
-            <td>{{ item.isActive ? 'Да' : 'Нет' }}</td>
-            <td class="actions">
-              <app-ui-button variant="soft" (clicked)="openEditDialog(item)">Изменить</app-ui-button>
-              <app-ui-button variant="danger" (clicked)="delete(item.id)">Удалить</app-ui-button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <crud-layout
+      title="Геометрии"
+      [columns]="geometryColumns"
+      [data]="vm().geometriesData"
+      [toolbarActions]="toolbarTpl"
+      [formActions]="formTpl"
+      (edit)="openEditDialog($event)"
+      (delete)="delete($event)"
+      data-testid="geometries-table"
+    >
+    </crud-layout>
   </app-content-card>
 
-  <app-content-card title="Добавление геометрии" *ngIf="!isEditDialogOpen">
-    <form [formGroup]="form" (ngSubmit)="submitCreate()" class="formGrid">
+  <app-content-card title="Добавление геометрии" *ngIf="!vm().isEditDialogOpen">
+    <form id="geometry-create-form" [formGroup]="form" (ngSubmit)="submitCreate()" class="formGrid">
       <app-ui-form-field
         label="Название"
         [required]="true"
@@ -109,95 +82,112 @@
       <app-ui-checkbox-field class="checkbox" label="Активна" formControlName="isActive">
       </app-ui-checkbox-field>
 
-      <div class="wide formActions">
-        <app-ui-button [type]="'submit'">Создать геометрию</app-ui-button>
-        <app-ui-button variant="soft" (clicked)="startCreate()">Сбросить</app-ui-button>
-      </div>
     </form>
   </app-content-card>
 </app-page-shell>
 
-<ng-template #emptyState>
-  <p class="emptyText">Пока геометрий нет. Нажми "Новая геометрия".</p>
+<ng-template #toolbarTpl>
+  <app-ui-button data-testid="geometries-create-new" (clicked)="startCreate()">
+    + Новая геометрия
+  </app-ui-button>
 </ng-template>
 
-<div class="dialogBackdrop" *ngIf="isEditDialogOpen" (click)="closeEditDialog()">
-  <div class="dialogCard" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
-    <h3>Редактирование геометрии</h3>
+<ng-template #formTpl>
+  <app-ui-button data-testid="geometries-reset" variant="soft" (clicked)="startCreate()">
+    Сбросить
+  </app-ui-button>
+  <app-ui-button data-testid="geometries-submit" [type]="'submit'" [form]="'geometry-create-form'">
+    Создать геометрию
+  </app-ui-button>
+</ng-template>
 
-    <form [formGroup]="form" (ngSubmit)="submitEdit()" class="formGrid">
-      <app-ui-form-field
-        label="Название"
-        [required]="true"
-        [invalid]="isInvalid('name')"
-        [errorText]="hasError('name') ? errorText('name') : ''"
-      >
-        <input type="text" formControlName="name" />
-      </app-ui-form-field>
+<ui-modal
+  *ngIf="vm().isEditDialogOpen"
+  title="Редактирование геометрии"
+  [content]="editContent"
+  [actions]="editActions"
+  (close)="closeEditDialog()"
+  size="md"
+>
+</ui-modal>
 
-      <app-ui-form-field
-        label="Тип геометрии"
-        [required]="true"
-        [invalid]="isInvalid('shapeKey')"
-        [errorText]="hasError('shapeKey') ? errorText('shapeKey') : ''"
-      >
-        <select formControlName="shapeKey">
-          <option *ngFor="let s of shapeOptions" [value]="s.value">{{ s.label }}</option>
-        </select>
-      </app-ui-form-field>
+<ng-template #editContent>
+  <form id="geometry-edit-form" [formGroup]="form" (ngSubmit)="submitEdit()" class="formGrid">
+    <app-ui-form-field
+      label="Название"
+      [required]="true"
+      [invalid]="isInvalid('name')"
+      [errorText]="hasError('name') ? errorText('name') : ''"
+    >
+      <input type="text" formControlName="name" />
+    </app-ui-form-field>
 
-      <app-ui-form-field
-        label="Высота (мм)"
-        [invalid]="isInvalid('heightMm')"
-        [errorText]="hasError('heightMm') ? errorText('heightMm') : ''"
-      >
-        <input type="number" formControlName="heightMm" />
-      </app-ui-form-field>
+    <app-ui-form-field
+      label="Тип геометрии"
+      [required]="true"
+      [invalid]="isInvalid('shapeKey')"
+      [errorText]="hasError('shapeKey') ? errorText('shapeKey') : ''"
+    >
+      <select formControlName="shapeKey">
+        <option *ngFor="let s of shapeOptions" [value]="s.value">{{ s.label }}</option>
+      </select>
+    </app-ui-form-field>
 
-      <app-ui-form-field
-        label="Длина (мм)"
-        [invalid]="isInvalid('lengthMm')"
-        [errorText]="hasError('lengthMm') ? errorText('lengthMm') : ''"
-      >
-        <input type="number" formControlName="lengthMm" />
-      </app-ui-form-field>
+    <app-ui-form-field
+      label="Высота (мм)"
+      [invalid]="isInvalid('heightMm')"
+      [errorText]="hasError('heightMm') ? errorText('heightMm') : ''"
+    >
+      <input type="number" formControlName="heightMm" />
+    </app-ui-form-field>
 
-      <app-ui-form-field
-        label="Ширина (мм)"
-        [invalid]="isInvalid('widthMm')"
-        [errorText]="hasError('widthMm') ? errorText('widthMm') : ''"
-      >
-        <input type="number" formControlName="widthMm" />
-      </app-ui-form-field>
+    <app-ui-form-field
+      label="Длина (мм)"
+      [invalid]="isInvalid('lengthMm')"
+      [errorText]="hasError('lengthMm') ? errorText('lengthMm') : ''"
+    >
+      <input type="number" formControlName="lengthMm" />
+    </app-ui-form-field>
 
-      <app-ui-form-field
-        label="Диаметр (мм)"
-        [invalid]="isInvalid('diameterMm')"
-        [errorText]="hasError('diameterMm') ? errorText('diameterMm') : ''"
-      >
-        <input type="number" formControlName="diameterMm" />
-      </app-ui-form-field>
+    <app-ui-form-field
+      label="Ширина (мм)"
+      [invalid]="isInvalid('widthMm')"
+      [errorText]="hasError('widthMm') ? errorText('widthMm') : ''"
+    >
+      <input type="number" formControlName="widthMm" />
+    </app-ui-form-field>
 
-      <app-ui-form-field
-        label="Толщина (мм)"
-        [invalid]="isInvalid('thicknessMm')"
-        [errorText]="hasError('thicknessMm') ? errorText('thicknessMm') : ''"
-      >
-        <input type="number" formControlName="thicknessMm" />
-      </app-ui-form-field>
+    <app-ui-form-field
+      label="Диаметр (мм)"
+      [invalid]="isInvalid('diameterMm')"
+      [errorText]="hasError('diameterMm') ? errorText('diameterMm') : ''"
+    >
+      <input type="number" formControlName="diameterMm" />
+    </app-ui-form-field>
 
-      <app-ui-form-field label="Заметки" [wide]="true">
-        <textarea rows="3" formControlName="notes"></textarea>
-      </app-ui-form-field>
+    <app-ui-form-field
+      label="Толщина (мм)"
+      [invalid]="isInvalid('thicknessMm')"
+      [errorText]="hasError('thicknessMm') ? errorText('thicknessMm') : ''"
+    >
+      <input type="number" formControlName="thicknessMm" />
+    </app-ui-form-field>
 
-      <app-ui-checkbox-field class="checkbox" label="Активна" formControlName="isActive">
-      </app-ui-checkbox-field>
+    <app-ui-form-field label="Заметки" [wide]="true">
+      <textarea rows="3" formControlName="notes"></textarea>
+    </app-ui-form-field>
 
-      <div class="wide formActions">
-        <app-ui-button [type]="'submit'">Сохранить изменения</app-ui-button>
-        <app-ui-button variant="soft" (clicked)="closeEditDialog()">Отмена</app-ui-button>
-      </div>
-    </form>
-  </div>
-</div>
+    <app-ui-checkbox-field class="checkbox" label="Активна" formControlName="isActive">
+    </app-ui-checkbox-field>
+  </form>
+</ng-template>
+
+<ng-template #editActions>
+  <app-ui-button data-testid="geometries-edit-cancel" variant="soft" (clicked)="closeEditDialog()">
+    Отмена
+  </app-ui-button>
+  <app-ui-button data-testid="geometries-edit-submit" type="submit" [form]="'geometry-edit-form'">
+    Сохранить изменения
+  </app-ui-button>
+</ng-template>
 

@@ -65,31 +65,6 @@
   color: var(--text-muted);
 }
 
-.dialogBackdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(15, 23, 42, 0.5);
-  display: grid;
-  place-items: center;
-  padding: 18px;
-  z-index: 1400;
-}
-
-.dialogCard {
-  width: min(980px, 100%);
-  max-height: calc(100vh - 36px);
-  overflow: auto;
-  background: var(--surface);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-card);
-  box-shadow: 0 18px 44px var(--shadow-color);
-  padding: 16px;
-}
-
-.dialogCard h3 {
-  margin: 0 0 14px;
-}
-
 @media (max-width: 860px) {
   .formGrid {
     grid-template-columns: 1fr;

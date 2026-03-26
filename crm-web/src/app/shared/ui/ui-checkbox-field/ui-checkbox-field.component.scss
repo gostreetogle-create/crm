@@ -1,8 +1,8 @@
 .checkboxField {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 14px;
+  gap: var(--ui-space-0p5);
+  font-size: var(--font-size-label);
   color: var(--text-primary);
 }
 

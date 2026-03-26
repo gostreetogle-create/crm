@@ -25,11 +25,15 @@
       },
       "configurations": {
         "production": {
+          "optimization": true,
+          "sourceMap": false,
+          "extractLicenses": true,
+          "namedChunks": false,
           "budgets": [
             {
               "type": "initial",
-              "maximumWarning": "500kb",
-              "maximumError": "1mb"
+              "maximumWarning": "400kb",
+              "maximumError": "500kb"
             },
             {
               "type": "anyComponentStyle",
@@ -64,6 +68,13 @@
       "executor": "@nx/eslint:lint",
       "options": {
         "lintFilePatterns": ["./src"]
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/crm-web"],
+      "options": {
+        "jestConfig": "jest.config.cts"
       }
     },
     "serve-static": {

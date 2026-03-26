@@ -1,6 +1,6 @@
 # Название файла: .md — Обзор backend-map (автогенерация)
 
-> **Сгенерировано:** `2026-03-26T09:28:34.842Z`  
+> **Сгенерировано:** `2026-03-26T15:35:07.505Z`  
 > **Не править вручную.** Источник правды — JSON в этой же папке. Обновление: `node scripts/generate-backend-map-overview.cjs`
 
 ---
@@ -16,6 +16,7 @@
 | Файл | Версия | Назначение (_meta.purpose) |
 |---|---|---|
 | entities_from_dictionaries.json | 1.2 | Сущности (логические таблицы/агрегаты): имя на русском, описание домена, список полей для проектирования БД и форм. |
+| material_geometry_new_model/material_geometry_entities.json | 0.1 | Новая модель: сущности для справочников material/geometry/detail. |
 | small_dictionaries.json | 1.2 | Малые справочники (кирпичики): перечисления со стабильным machine key и человекочитаемым названием. Их используют поля сущностей в entities_from_dictionaries.json (через ref в description или суффикс Key в имени поля). |
 
 ## Малые справочники
@@ -445,6 +446,44 @@
 | isActive | Активен | boolean | нет | — |
 | sortOrder | Порядок | int | нет | — |
 
+### Сущности (таблицы) — `material_geometry_new_model/material_geometry_entities.json`
+
+#### `geometry` — Геометрия
+
+*Справочник геометрических параметров детали. Форма определяет набор реально используемых полей.*
+
+| key | rus | type | required | description |
+| --- | --- | --- | --- | --- |
+| id | Идентификатор | uuid | да | PK |
+| organizationId | Организация | uuid | да | Tenant |
+| name | Наименование | string | да | — |
+| shapeKey | Тип геометрии | string | да | Ключ формулы/типа геометрии (значения: rectangular/cylindrical/tube/plate/custom). |
+| heightMm | Высота (мм) | float | нет | — |
+| lengthMm | Длина (мм) | float | нет | — |
+| widthMm | Ширина (мм) | float | нет | — |
+| diameterMm | Диаметр (мм) | float | нет | — |
+| thicknessMm | Толщина (мм) | float | нет | — |
+| extraParameters | Доп. параметры (универсально) | json | нет | Для кастомных формул/параметров, которые не укладываются в базовые поля. |
+| notes | Заметки | string | нет | — |
+| isActive | Активен | boolean | нет | Деактивация вместо удаления при ссылках. |
+
+#### `material` — Материал
+
+*Справочник материалов (сталь, алюминий и т.п.). Содержит параметры для будущих расчетов веса/обработки.*
+
+| key | rus | type | required | description |
+| --- | --- | --- | --- | --- |
+| id | Идентификатор | uuid | да | PK |
+| organizationId | Организация | uuid | да | Tenant |
+| name | Наименование | string | да | — |
+| code | Код | string | нет | — |
+| densityKgM3 | Плотность (кг/м3) | float | нет | База для расчетов веса в будущем. |
+| properties | Свойства материала | json | нет | Универсальное хранилище тех.параметров (марка стали, термообработка, доп. свойства). |
+| colorName | Цвет (название) | string | нет | Для визуального выбора в UI. |
+| colorHex | Цвет (HEX) | string | нет | Например: #2F6BFF. Если не нужен — можно не заполнять. |
+| notes | Заметки | string | нет | — |
+| isActive | Активен | boolean | нет | Деактивация вместо удаления при ссылках. |
+
 ## Открытые вопросы
 
 | Источник | Вопрос |
@@ -454,6 +493,10 @@
 | entities_from_dictionaries.json | Один КП → один или несколько заказов (BUSINESS_LOGIC §6). |
 | entities_from_dictionaries.json | Единицы измерения: отдельная сущность Unit или поле у Material/строки (BL_PAGES). |
 | entities_from_dictionaries.json | Точный перечень полей Client/User из контракта не дублировал здесь — при синхронизации с кодом дополнить из FRONTEND_CONTRACT. |
+| material_geometry_new_model/material_geometry_entities.json | Единицы измерения для geometry фиксируем в мм (height/length/width/diameter/thickness)? |
+| material_geometry_new_model/material_geometry_entities.json | Нужна ли отдельная величина/единица для толщины (толщина бывает в зависимости от shapeKey)? |
+| material_geometry_new_model/material_geometry_entities.json | Для будущего расчета веса достаточно densityKgM3 + набора geometry-параметров? (или добавится коэффициент/поправка). |
+| material_geometry_new_model/material_geometry_entities.json | Цвет материала: достаточно colorName/colorHex в material, или хотим отдельный справочник цветов? |
 
 ## Дополнительные JSON-файлы (произвольная структура)
 

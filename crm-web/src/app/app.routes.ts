@@ -1,12 +1,26 @@
 import { Route } from '@angular/router';
-import { MaterialGeometryPage } from './features/material-geometry/pages/material-geometry-page/material-geometry-page';
-import { MaterialsCrudPage } from './features/materials/pages/materials-crud-page/materials-crud-page';
-import { GeometriesCrudPage } from './features/geometries/pages/geometries-crud-page/geometries-crud-page';
 
 export const appRoutes: Route[] = [
   { path: '', redirectTo: '/materials', pathMatch: 'full' },
-  { path: 'materials', component: MaterialsCrudPage },
-  { path: 'geometries', component: GeometriesCrudPage },
-  { path: 'material-geometry', component: MaterialGeometryPage },
+  {
+    path: 'materials',
+    loadChildren: () => import('./features/materials/materials.routes').then((m) => m.routes),
+  },
+  {
+    path: 'geometries',
+    loadChildren: () => import('./features/geometries/geometries.routes').then((m) => m.routes),
+  },
+  {
+    path: 'material-geometry',
+    loadComponent: () =>
+      import('./features/material-geometry/pages/material-geometry-page/material-geometry-page').then(
+        (m) => m.MaterialGeometryPage
+      ),
+  },
+  {
+    path: 'demo',
+    loadComponent: () =>
+      import('./features/demo/pages/ui-demo-page/ui-demo-page').then((m) => m.UiDemoPage),
+  },
   { path: '**', redirectTo: '' },
 ];
