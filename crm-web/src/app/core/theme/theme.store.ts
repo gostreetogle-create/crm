@@ -40,6 +40,7 @@ function applyThemeToCssVars(theme: ThemeTokens): void {
   root.setProperty('--accent', theme.accent);
   root.setProperty('--success', theme.success);
   root.setProperty('--danger', theme.danger);
+  root.setProperty('--warning', theme.warning);
   root.setProperty('--ui-input-padding-y', theme.uiInputPaddingY);
   root.setProperty('--ui-input-padding-x', theme.uiInputPaddingX);
   root.setProperty('--ui-button-padding-y', theme.uiButtonPaddingY);

@@ -20,6 +20,7 @@ export type ThemeTokens = {
   accent: string;
   success: string;
   danger: string;
+  warning: string;
 
   uiInputPaddingY: string;
   uiInputPaddingX: string;

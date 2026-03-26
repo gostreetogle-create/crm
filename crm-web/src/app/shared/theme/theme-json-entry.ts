@@ -28,6 +28,7 @@ export const THEME_JSON_ENTRY_RAW = `{
   "accent": "#1f6feb",
   "success": "#0e9f6e",
   "danger": "#dc2626",
+  "warning": "#f59e0b",
   "uiInputPaddingY": "8px",
   "uiInputPaddingX": "10px",
   "uiButtonPaddingY": "8px",
