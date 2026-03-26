@@ -26,15 +26,15 @@
 ### C. Подтверждение удаления
 
 - Есть row-actions удаления, но единый confirm-pattern не закреплен как shared-поведение.
-- Статус: **открыто** (вынести в отдельный reusable pattern/утилиту).
+- Статус: **исправлено** (вынесено в `shared/utils/confirm-delete.ts` и используется в `materials`, `geometries` и `/demo`).
 - Приоритет: **P1**.
 
 ### D. Фильтр-компонент как reusable
 
 - Фильтр-панели сейчас повторяются вручную в шаблонах.
-- Статус: **открыто**.
+- Статус: **исправлено** (используется общий `shared/ui/filters-bar`).
 - Приоритет: **P1**.
-- Рекомендация: создать `shared/ui/filters-bar` (inputs: search/sort/filter configs, outputs: change events).
+- Рекомендация: использовать `shared/ui/filters-bar` (inputs: search/sort/filter configs, outputs: change events).
 
 ## Приоритетный план исправлений
 
