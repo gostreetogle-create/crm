@@ -1,8 +1,59 @@
-<app-page-header [title]="title" [subtitle]="''" [facts]="[]"></app-page-header>
+@if (showHeader) {
+  <app-page-header [title]="title" [subtitle]="subtitle" [facts]="facts"></app-page-header>
+}
 
 <section class="crudToolbar">
-  @if (toolbarActions) {
-    <ng-container [ngTemplateOutlet]="toolbarActions"></ng-container>
+  <div class="crudToolbarMain">
+    @if (showCardLabel) {
+      <span class="crudCardLabelText">{{ title }}</span>
+    }
+    @if (toolbarActions) {
+      <ng-container [ngTemplateOutlet]="toolbarActions"></ng-container>
+    }
+  </div>
+  @if (hasExcelActions) {
+    <div class="crudToolbarExcel">
+      <input
+        #crudImportInput
+        type="file"
+        [attr.accept]="importAccept"
+        class="hiddenFileInput"
+        (change)="onImportPicked($event)"
+      />
+      @if (canDownloadTemplate) {
+        <button
+          type="button"
+          class="rowActionBtn"
+          (click)="onDownloadTemplate()"
+          aria-label="Скачать шаблон Excel"
+          title="Скачать шаблон Excel"
+        >
+          <svg lucideFileSpreadsheet [size]="16"></svg>
+        </button>
+      }
+      @if (canImportExcel) {
+        <button
+          type="button"
+          class="rowActionBtn rowActionBtnWarning"
+          (click)="crudImportInput.click()"
+          aria-label="Импорт Excel"
+          title="Импорт Excel"
+        >
+          <svg lucideUpload [size]="16"></svg>
+        </button>
+      }
+      @if (canExportExcel) {
+        <button
+          type="button"
+          class="rowActionBtn rowActionBtnAffirm"
+          (click)="onExportExcel()"
+          aria-label="Экспорт Excel"
+          title="Экспорт Excel"
+        >
+          <svg lucideDownload [size]="16"></svg>
+        </button>
+      }
+    </div>
   }
 </section>
 
@@ -13,7 +64,7 @@
         @for (column of columns; track column.key) {
           <th>{{ column.label }}</th>
         }
-        @if (showRowActions) {
+        @if (hasRowActions) {
           <th class="actionsCol">Действия</th>
         }
       </tr>
@@ -24,31 +75,69 @@
           @for (column of columns; track column.key) {
             <td>{{ row?.[column.key] ?? '—' }}</td>
           }
-          @if (showRowActions) {
+          @if (hasRowActions) {
             <td class="actionsCol">
-              <button
-                type="button"
-                class="rowActionBtn"
-                (click)="onEdit(row)"
-                [attr.data-testid]="'edit-button-' + (row?.id ?? $index)"
-              >
-                Редактировать
-              </button>
-              <button
-                type="button"
-                class="rowActionBtn rowActionBtnDanger"
-                (click)="onDelete(row)"
-                [attr.data-testid]="'delete-button-' + (row?.id ?? $index)"
-              >
-                Удалить
-              </button>
+              @if (canView) {
+                <button
+                  type="button"
+                  class="rowActionBtn rowActionBtnWarning"
+                  (click)="onView(row)"
+                  [attr.data-testid]="'view-button-' + (row?.id ?? $index)"
+                  aria-label="Просмотр"
+                  title="Просмотр"
+                >
+                  <svg lucideEye [size]="16"></svg>
+                </button>
+              }
+              @if (canDuplicate) {
+                <button
+                  type="button"
+                  class="rowActionBtn rowActionBtnAffirm"
+                  (click)="onDuplicate(row)"
+                  [attr.data-testid]="'duplicate-button-' + (row?.id ?? $index)"
+                  aria-label="Дублировать"
+                  title="Дублировать"
+                >
+                  <svg lucideCopy [size]="16"></svg>
+                </button>
+              }
+              @if (canEdit) {
+                <button
+                  type="button"
+                  class="rowActionBtn"
+                  (click)="onEdit(row)"
+                  [attr.data-testid]="'edit-button-' + (row?.id ?? $index)"
+                  aria-label="Редактировать"
+                  title="Редактировать"
+                >
+                  <svg lucidePencil [size]="16"></svg>
+                </button>
+              }
+              @if (canDelete) {
+                <button
+                  type="button"
+                  class="rowActionBtn rowActionBtnDanger"
+                  (click)="onDelete(row)"
+                  [attr.data-testid]="'delete-button-' + (row?.id ?? $index)"
+                  aria-label="Удалить"
+                  title="Удалить"
+                >
+                  <svg lucideTrash2 [size]="16"></svg>
+                </button>
+              }
             </td>
           }
         </tr>
       }
       @if (!data.length) {
         <tr>
-          <td [attr.colspan]="columns.length + (showRowActions ? 1 : 0)">Нет данных.</td>
+          <td [attr.colspan]="columns.length + (hasRowActions ? 1 : 0)">
+            @if (loading) {
+              Загрузка…
+            } @else {
+              Нет данных.
+            }
+          </td>
         </tr>
       }
     </tbody>
@@ -56,6 +145,15 @@
 </section>
 
 <section class="card-list">
+  @if (!data.length) {
+    <article class="card-item card-itemEmpty">
+      @if (loading) {
+        Загрузка…
+      } @else {
+        Нет данных.
+      }
+    </article>
+  }
   @for (row of data; track $index) {
     <article class="card-item">
       @for (column of columns; track column.key) {
@@ -64,24 +162,56 @@
           <span class="card-value">{{ row?.[column.key] ?? '—' }}</span>
         </div>
       }
-      @if (showRowActions) {
+      @if (hasRowActions) {
         <div class="card-actions">
-          <button
-            type="button"
-            class="rowActionBtn"
-            (click)="onEdit(row)"
-            [attr.data-testid]="'edit-button-' + (row?.id ?? $index)"
-          >
-            Редактировать
-          </button>
-          <button
-            type="button"
-            class="rowActionBtn rowActionBtnDanger"
-            (click)="onDelete(row)"
-            [attr.data-testid]="'delete-button-' + (row?.id ?? $index)"
-          >
-            Удалить
-          </button>
+          @if (canView) {
+            <button
+              type="button"
+              class="rowActionBtn rowActionBtnWarning"
+              (click)="onView(row)"
+              [attr.data-testid]="'view-button-' + (row?.id ?? $index)"
+              aria-label="Просмотр"
+              title="Просмотр"
+            >
+              <svg lucideEye [size]="16"></svg>
+            </button>
+          }
+          @if (canDuplicate) {
+            <button
+              type="button"
+              class="rowActionBtn rowActionBtnAffirm"
+              (click)="onDuplicate(row)"
+              [attr.data-testid]="'duplicate-button-' + (row?.id ?? $index)"
+              aria-label="Дублировать"
+              title="Дублировать"
+            >
+              <svg lucideCopy [size]="16"></svg>
+            </button>
+          }
+          @if (canEdit) {
+            <button
+              type="button"
+              class="rowActionBtn"
+              (click)="onEdit(row)"
+              [attr.data-testid]="'edit-button-' + (row?.id ?? $index)"
+              aria-label="Редактировать"
+              title="Редактировать"
+            >
+              <svg lucidePencil [size]="16"></svg>
+            </button>
+          }
+          @if (canDelete) {
+            <button
+              type="button"
+              class="rowActionBtn rowActionBtnDanger"
+              (click)="onDelete(row)"
+              [attr.data-testid]="'delete-button-' + (row?.id ?? $index)"
+              aria-label="Удалить"
+              title="Удалить"
+            >
+              <svg lucideTrash2 [size]="16"></svg>
+            </button>
+          }
         </div>
       }
     </article>
@@ -93,3 +223,21 @@
     <ng-container [ngTemplateOutlet]="formActions"></ng-container>
   }
 </section>
+
+<ui-modal
+  *ngIf="isDeleteConfirmOpen"
+  [title]="deleteConfirmTitle"
+  [content]="deleteConfirmContentTpl"
+  [actions]="deleteConfirmActionsTpl"
+  size="sm"
+  (close)="cancelDelete()"
+></ui-modal>
+
+<ng-template #deleteConfirmContentTpl>
+  <p>{{ deleteConfirmMessage }}</p>
+</ng-template>
+
+<ng-template #deleteConfirmActionsTpl>
+  <app-ui-button variant="soft" (clicked)="cancelDelete()">Отмена</app-ui-button>
+  <app-ui-button variant="danger" (clicked)="confirmDelete()">Удалить</app-ui-button>
+</ng-template>

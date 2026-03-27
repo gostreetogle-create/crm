@@ -1,6 +1,21 @@
 import { NgIf } from '@angular/common';
-import { Component, TemplateRef, ViewChild, computed, signal } from '@angular/core';
+import { Component, TemplateRef, ViewChild, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  LucideCheck,
+  LucideCircleAlert,
+  LucideCircleCheck,
+  LucideDownload,
+  LucideInbox,
+  LucideLoader2,
+  LucidePlus,
+  LucideRotateCcw,
+  LucideSave,
+  LucideShoppingCart,
+  LucideStar,
+  LucideTrash2,
+  LucideX,
+} from '@lucide/angular';
 import { ContentCardComponent } from '../../../../shared/ui/content-card/content-card.component';
 import { CrudLayoutComponent, TableColumn } from '../../../../shared/ui/crud-layout/public-api';
 import {
@@ -11,9 +26,10 @@ import { UiModal } from '../../../../shared/ui/modal/public-api';
 import { PageShellComponent } from '../../../../shared/ui/page-shell/page-shell.component';
 import { UiButtonComponent } from '../../../../shared/ui/ui-button/ui-button.component';
 import { UiFormFieldComponent } from '../../../../shared/ui/ui-form-field/ui-form-field.component';
-import { confirmDeleteAction } from '../../../../shared/utils/confirm-delete';
 import { ProductCardComponent } from '../../../../shared/ui/product-card/public-api';
 import { UiPaginationComponent } from '../../../../shared/ui/ui-pagination/ui-pagination.component';
+import { HasPermissionDirective } from '../../../../shared/directives/public-api';
+import { PermissionsService, UserRole } from '../../../../core/auth/public-api';
 
 type DemoRow = {
   id: string;
@@ -37,12 +53,26 @@ type DemoProduct = {
   imports: [
     NgIf,
     ReactiveFormsModule,
+    LucideCheck,
+    LucideCircleAlert,
+    LucideCircleCheck,
+    LucideDownload,
+    LucideInbox,
+    LucideLoader2,
+    LucidePlus,
+    LucideRotateCcw,
+    LucideSave,
+    LucideShoppingCart,
+    LucideStar,
+    LucideTrash2,
+    LucideX,
     PageShellComponent,
     ContentCardComponent,
     CrudLayoutComponent,
     FiltersBarComponent,
     UiButtonComponent,
     UiFormFieldComponent,
+    HasPermissionDirective,
     UiModal,
     ProductCardComponent,
     UiPaginationComponent,
@@ -52,6 +82,7 @@ type DemoProduct = {
 })
 export class UiDemoPage {
   private readonly fb = new FormBuilder();
+  readonly permissions = inject(PermissionsService);
 
   @ViewChild('quickAddContent') quickAddContent?: TemplateRef<unknown>;
   @ViewChild('quickAddActions') quickAddActions?: TemplateRef<unknown>;
@@ -60,6 +91,7 @@ export class UiDemoPage {
   readonly quickAddOpen = signal(false);
   readonly quickAddFormSubmitAttempted = signal(false);
   readonly lastAction = signal('Нет действий');
+  readonly demoExcelStatus = signal('');
   readonly searchTerm = signal('');
   readonly sortBy = signal<'name' | 'category' | 'status'>('name');
   readonly filterCategory = signal<'all' | string>('all');
@@ -204,6 +236,9 @@ export class UiDemoPage {
     { id: 'demo-1', name: 'Эталонная запись 1', category: 'Металл', status: 'Черновик' },
     { id: 'demo-2', name: 'Эталонная запись 2', category: 'Полимер', status: 'Активно' },
   ]);
+  readonly universalCrudData = computed(() =>
+    [...this.rows()].sort((a, b) => String(a.name).localeCompare(String(b.name))),
+  );
 
   readonly demoData = computed(() => {
     const term = this.searchTerm().trim().toLowerCase();
@@ -250,6 +285,12 @@ export class UiDemoPage {
     name: ['', [Validators.required, Validators.minLength(2)]],
   });
 
+  readonly roleOptions: ReadonlyArray<{ value: UserRole; label: string }> = [
+    { value: 'admin', label: 'admin (create/edit/delete)' },
+    { value: 'editor', label: 'editor (create/edit)' },
+    { value: 'viewer', label: 'viewer (read only)' },
+  ];
+
   openQuickAdd(): void {
     this.quickAddOpen.set(true);
     this.quickAddFormSubmitAttempted.set(false);
@@ -294,16 +335,93 @@ export class UiDemoPage {
     this.form.reset({ name: '', category: this.form.controls.category.value });
   }
 
+  addUniversalDemoRow(): void {
+    if (!this.permissions.can('crud.create')) {
+      return;
+    }
+    const next: DemoRow = {
+      id: `demo-${Date.now()}`,
+      name: `Строка из демо ${this.rows().length + 1}`,
+      category: 'Металл',
+      status: 'Черновик',
+    };
+    this.rows.set([next, ...this.rows()]);
+    this.lastAction.set(`Добавлена строка: ${next.name}`);
+  }
+
   onEdit(id: string): void {
+    if (!this.permissions.can('crud.edit')) {
+      return;
+    }
     this.lastAction.set(`Edit: ${id}`);
   }
 
+  onView(id: string): void {
+    this.lastAction.set(`View: ${id}`);
+  }
+
+  onDuplicate(id: string): void {
+    if (!this.permissions.can('crud.duplicate')) {
+      return;
+    }
+    const item = this.rows().find((x) => x.id === id);
+    if (!item) return;
+    const next: DemoRow = {
+      id: `demo-${Date.now()}`,
+      name: `${item.name} (копия)`,
+      category: item.category,
+      status: 'Черновик',
+    };
+    this.rows.set([next, ...this.rows()]);
+    this.lastAction.set(`Duplicate: ${id}`);
+  }
+
   onDelete(id: string): void {
-    if (!confirmDeleteAction('эту запись')) {
+    if (!this.permissions.can('crud.delete')) {
       return;
     }
     this.rows.set(this.rows().filter((x) => x.id !== id));
     this.lastAction.set(`Delete: ${id}`);
+  }
+
+  async downloadDemoTemplateExcel(): Promise<void> {
+    await this.exportRowsToExcel(
+      'demo-crud-template.xlsx',
+      'DEMO_TEMPLATE',
+      [
+        { Название: 'Эталонная запись 1', Категория: 'Металл', Статус: 'Черновик' },
+        { Название: 'Эталонная запись 2', Категория: 'Полимер', Статус: 'Активно' },
+      ],
+      ['Название', 'Категория', 'Статус'],
+    );
+    this.demoExcelStatus.set('Шаблон Excel скачан.');
+  }
+
+  async exportDemoExcel(): Promise<void> {
+    const rows = this.rows().map((x) => ({
+      Название: x.name,
+      Категория: x.category,
+      Статус: x.status,
+    }));
+    await this.exportRowsToExcel('demo-crud.xlsx', 'DEMO', rows, ['Название', 'Категория', 'Статус']);
+    this.demoExcelStatus.set(`Экспортировано: ${rows.length} строк.`);
+  }
+
+  async onDemoExcelImported(file: File): Promise<void> {
+    try {
+      const rawRows = await this.excelRowsFromFile(file);
+      const parsed = this.validateAndMapDemoRows(rawRows);
+      if (!parsed.ok) {
+        this.demoExcelStatus.set(`Импорт отклонен: ${parsed.errors.join(' | ')}`);
+        return;
+      }
+      const importedRows = parsed.rows.map((row) => ({ ...row, id: `demo-${Date.now()}-${Math.random().toString(16).slice(2, 8)}` }));
+      this.rows.set([...importedRows, ...this.rows()]);
+      this.demoExcelStatus.set(`Импортировано: ${importedRows.length} строк.`);
+      this.lastAction.set(`Demo Excel import: ${importedRows.length}`);
+    } catch {
+      this.demoExcelStatus.set('Импорт отклонен: не удалось прочитать файл.');
+    }
   }
 
   onSearch(value: string): void {
@@ -341,9 +459,69 @@ export class UiDemoPage {
     this.productPage.set(page);
   }
 
+  onRoleChange(value: string): void {
+    if (value === 'admin' || value === 'editor' || value === 'viewer') {
+      this.permissions.setRole(value);
+      this.lastAction.set(`Роль: ${value}`);
+    }
+  }
+
   hasMainError(controlName: 'name' | 'category'): boolean {
     const control = this.form.controls[controlName];
     return control.invalid && (control.dirty || control.touched);
+  }
+
+  private async exportRowsToExcel(
+    filename: string,
+    sheetName: string,
+    rows: Array<Record<string, string | number>>,
+    headers: string[],
+  ): Promise<void> {
+    const XLSX = await import('xlsx');
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.json_to_sheet(rows, { header: headers });
+    XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+    XLSX.writeFile(workbook, filename);
+  }
+
+  private async excelRowsFromFile(file: File): Promise<Array<Record<string, unknown>>> {
+    const XLSX = await import('xlsx');
+    const buffer = await file.arrayBuffer();
+    const workbook = XLSX.read(buffer, { type: 'array' });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    return XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: '' });
+  }
+
+  private validateAndMapDemoRows(rows: ReadonlyArray<Record<string, unknown>>): {
+    ok: boolean;
+    rows: Array<Omit<DemoRow, 'id'>>;
+    errors: string[];
+  } {
+    const errors: string[] = [];
+    const mapped: Array<Omit<DemoRow, 'id'>> = [];
+    if (!rows.length) return { ok: false, rows: mapped, errors: ['Пустой файл.'] };
+
+    const requiredHeaders = ['Название', 'Категория', 'Статус'];
+    const firstKeys = Object.keys(rows[0] ?? {});
+    const missingHeaders = requiredHeaders.filter((h) => !firstKeys.includes(h));
+    if (missingHeaders.length) {
+      return { ok: false, rows: mapped, errors: [`Нет колонок: ${missingHeaders.join(', ')}`] };
+    }
+
+    rows.forEach((row, idx) => {
+      const rowNo = idx + 2;
+      const name = String(row['Название'] ?? '').trim();
+      const category = String(row['Категория'] ?? '').trim();
+      const status = String(row['Статус'] ?? '').trim();
+      if (!name || !category || !status) {
+        errors.push(`Строка ${rowNo}: заполните Название/Категория/Статус.`);
+        return;
+      }
+      mapped.push({ name, category, status });
+    });
+
+    if (errors.length) return { ok: false, rows: mapped, errors: errors.slice(0, 6) };
+    return { ok: true, rows: mapped, errors: [] };
   }
 }
 

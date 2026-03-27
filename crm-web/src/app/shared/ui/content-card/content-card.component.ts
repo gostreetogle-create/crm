@@ -5,7 +5,9 @@ import { Component, Input } from '@angular/core';
   standalone: true,
   template: `
     <section class="card">
-      <h2 class="cardTitle">{{ title }}</h2>
+      @if (!hideTitle) {
+        <h2 class="cardTitle">{{ title }}</h2>
+      }
       <ng-content></ng-content>
     </section>
   `,
@@ -13,5 +15,6 @@ import { Component, Input } from '@angular/core';
 })
 export class ContentCardComponent {
   @Input({ required: true }) title!: string;
+  @Input() hideTitle = false;
 }
 

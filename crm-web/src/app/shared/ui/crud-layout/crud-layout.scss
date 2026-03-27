@@ -4,8 +4,21 @@
 
 .crudToolbar {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--ui-space-2);
   margin-bottom: var(--ui-card-title-margin-bottom);
+}
+
+.crudToolbarMain,
+.crudToolbarExcel {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-1);
+}
+
+.hiddenFileInput {
+  display: none;
 }
 
 .tableView {
@@ -24,8 +37,15 @@
   text-align: left;
 }
 
-.actionsCol {
+.crudTable th.actionsCol,
+.crudTable td.actionsCol {
   width: var(--ui-crud-actions-col-width);
+  white-space: nowrap;
+  text-align: right;
+}
+
+.crudTable td.actionsCol {
+  padding-right: var(--ui-space-2);
 }
 
 .rowActionBtn {
@@ -33,13 +53,39 @@
   background: var(--surface);
   color: var(--text-primary);
   border-radius: var(--ui-row-action-btn-radius);
-  padding: var(--ui-space-1) var(--ui-nav-gap);
-  margin-right: var(--ui-nav-gap);
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin-right: var(--ui-space-1);
   cursor: pointer;
+}
+
+.actionsCol .rowActionBtn:last-child {
+  margin-right: 0;
 }
 
 .rowActionBtnDanger {
   color: var(--danger);
+}
+
+.rowActionBtn svg {
+  flex-shrink: 0;
+  color: var(--accent);
+}
+
+.rowActionBtnDanger svg {
+  color: var(--danger);
+}
+
+.rowActionBtnAffirm svg {
+  color: var(--icon-affirm);
+}
+
+.rowActionBtnWarning svg {
+  color: var(--warning);
 }
 
 .card-list {
@@ -52,6 +98,10 @@
   background: var(--surface);
   padding: calc(var(--ui-button-padding-y) + var(--ui-space-1));
   margin-bottom: var(--ui-space-10);
+}
+
+.card-itemEmpty {
+  color: var(--text-muted);
 }
 
 .card-row {
@@ -80,6 +130,20 @@
   display: flex;
   justify-content: flex-end;
   gap: var(--ui-nav-gap);
+}
+
+.crudCardLabelText {
+  font-size: calc(var(--font-size-label) + 2px);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  padding: 0;
+}
+
+.crudTable th {
+  font-size: var(--font-size-small);
 }
 
 @media (max-width: 768px) {

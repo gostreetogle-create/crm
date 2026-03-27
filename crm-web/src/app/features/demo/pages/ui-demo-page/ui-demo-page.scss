@@ -3,8 +3,62 @@
   color: var(--text-primary);
 }
 
+.demoLead {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 0 8px;
+  color: var(--text-primary);
+  line-height: 1.45;
+}
+
+.leadIcon {
+  display: inline-flex;
+  flex-shrink: 0;
+  margin-top: 2px;
+  line-height: 0;
+}
+
+.leadIcon--accent svg {
+  color: var(--accent);
+}
+
+.demoHint {
+  margin: 0 0 10px;
+  font-size: var(--font-size-small);
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
 .meta {
   margin: 0;
+  color: var(--text-muted);
+}
+
+.roleRow {
+  display: grid;
+  grid-template-columns: 160px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.roleLabel {
+  font-size: var(--font-size-small);
+  color: var(--text-muted);
+}
+
+.roleSelect {
+  min-height: 34px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  color: var(--text-primary);
+  padding: 6px 10px;
+}
+
+.roleHint {
+  margin: 10px 0 0;
+  font-size: var(--font-size-small);
   color: var(--text-muted);
 }
 
@@ -21,8 +75,39 @@
   padding: 10px 12px;
 }
 
-.stateCard h4 {
+.stateCard h4,
+.stateCardTitle {
   margin: 0 0 6px;
+}
+
+.stateCardTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--font-size-label);
+  font-weight: 600;
+}
+
+.stateCardIcon {
+  display: inline-flex;
+  flex-shrink: 0;
+  line-height: 0;
+}
+
+.stateCardIcon--accent svg {
+  color: var(--accent);
+}
+
+.stateCardIcon--affirm svg {
+  color: var(--icon-affirm);
+}
+
+.stateCardIcon--warn svg {
+  color: var(--warning);
+}
+
+.stateCardIcon--danger svg {
+  color: var(--danger);
 }
 
 .stateCard p {
@@ -44,6 +129,74 @@
 
 .stateCardErr {
   border-left: 3px solid var(--danger);
+}
+
+.stateCardInfo .stateCardIcon--accent svg {
+  animation: demoSpin 1.1s linear infinite;
+}
+
+@keyframes demoSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.iconCaption {
+  margin: 14px 0 8px;
+  font-size: var(--font-size-small);
+  color: var(--text-muted);
+}
+
+.importStatus {
+  margin: 0 0 var(--ui-space-2);
+  color: var(--text-muted);
+  font-size: var(--font-size-small);
+}
+
+.btnWithIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.btnWithIcon svg {
+  flex-shrink: 0;
+}
+
+.btnWithIcon--affirm svg {
+  color: var(--icon-affirm);
+}
+
+.btnWithIcon--accent svg {
+  color: var(--accent);
+}
+
+.btnWithIcon--danger svg {
+  color: var(--danger);
+}
+
+.btnWithIcon--muted svg {
+  color: var(--text-muted);
+}
+
+.squareIconTone {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+
+.squareIconTone--affirm svg {
+  color: var(--icon-affirm);
+}
+
+.squareIconTone--accent svg {
+  color: var(--accent);
+}
+
+.squareIconTone--warn svg {
+  color: var(--warning);
 }
 
 .buttonRow {
@@ -98,4 +251,3 @@
 .productShowcaseTop {
   margin-bottom: 12px;
 }
-

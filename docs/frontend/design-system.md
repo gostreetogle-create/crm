@@ -7,12 +7,18 @@
 1. Глобальные токены (`CSS variables`) — `crm-web/src/styles.scss`.
 2. Runtime-применение темы из JSON — `crm-web/src/app/core/theme/theme.service.ts`.
 3. Шаблоны тем — `crm-web/src/app/shared/theme/theme-presets.ts`.
-4. Глобальный выбор темы (выпадающий список, правый верхний угол) — `ThemePickerComponent` (`src/app/shared/ui/theme-picker/`).
+4. Глобальный выбор темы (компактный icon-toggle light/dark в хедере) — `ThemePickerComponent` (`src/app/shared/ui/theme-picker/`).
 5. JSON entry point редактирования темы (вставляешь JSON и пересобираешь) — `crm-web/src/app/shared/theme/theme-json-entry.ts`.
 6. Синхронизация и хранение:
    - единый поток темы `theme$` в `ThemeService`;
    - выбранная тема сохраняется в `localStorage` (`crm-web.theme.tokens.v1`) и восстанавливается при перезагрузке.
 7. Текущий базовый визуальный вектор: более контрастные цвета + острые углы (`radiusCard/radiusPill` минимальные).
+8. Иконки: `@lucide/angular`, базовая геометрия 24px, семантические цвета от токенов темы:
+   - `--icon-affirm` (позитивные действия: create/save/confirm),
+   - `--accent` (навигация/ссылки/нейтральные действия),
+   - `--warning` (внимание/сроки),
+   - `--danger` (опасные действия),
+   - `--text-muted` (вспомогательные иконки).
 
 ## Обязательные правила для новых фич
 

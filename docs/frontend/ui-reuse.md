@@ -20,6 +20,7 @@
 
 - После рефакторинга запускать `nx build crm-web`.
 - Затем руками проверять визуализацию в дев-сервере.
+- Для справочников в `/dictionaries` придерживаться `docs/frontend/dictionaries-crud-playbook.md`.
 
 ## Текущий UI-kit (пример)
 
@@ -31,6 +32,15 @@
   - Базовый shell страницы (фон, внешние отступы, контейнер ширины).
 - `PageHeaderComponent` (`src/app/shared/ui/page-header/`)
   - Единый заголовок страницы + блок фактов справа.
+- `CrudLayoutComponent` (`src/app/shared/ui/crud-layout/`)
+  - Таблица/карточки CRUD: колонки, данные, тулбар и действия формы через `ng-template`, флаг `loading` (пустой список при загрузке), row-actions с Lucide-иконками.
+  - Встроенный toolbar-стандарт Excel: `downloadTemplate` / `importExcel` / `exportExcel` с иконками и единым UX.
+  - Видимость Excel-кнопок также управляется правами через `PermissionsService`.
+  - `subtitle` и `facts` доступны, но по умолчанию для справочников НЕ используем; включаем только по явному согласованию UX.
+- `FiltersBarComponent` (`src/app/shared/ui/filters-bar/`)
+  - Единый блок фильтров (поиск + сортировка + фильтр) с Lucide-иконками у полей.
+- `UiPaginationComponent` (`src/app/shared/ui/ui-pagination/`)
+  - Единая пагинация с кнопками навигации (стрелки на Lucide-иконках).
 - `ThemeStudioComponent` (`src/app/shared/ui/theme-studio/`)
   - Вспомогательный internal-инструмент. По умолчанию не используем на рабочих страницах.
 - Основной JSON entry point для дизайнеров — `crm-web/src/app/shared/theme/theme-json-entry.ts`.
@@ -42,11 +52,21 @@
   - Единая обёртка поля формы (`label`, `required`, `errorText`) для одинакового UX на всех страницах.
 - `UiCheckboxFieldComponent` (`src/app/shared/ui/ui-checkbox-field/`)
   - Единый checkbox-паттерн для форм (`formControlName` через ControlValueAccessor).
+- `HexRgbFieldComponent` (`src/app/shared/ui/hex-rgb-field/`)
+  - Переиспользуемое поле цвета: ручной `HEX`, color-picker и авто-подстановка `RGB`.
+- `SectionLabelComponent` (`src/app/shared/ui/section-label/`)
+  - Малый "приклеенный" label для угла карточек/секций (`text`, `corner=true` по умолчанию).
+- `PermissionsService` + auth types (`src/app/core/auth/`)
+  - Единый источник ролей/прав для UI (`UserRole`, `PermissionKey`, `ROLE_PERMISSIONS`, методы `can()`/`hasAny()`).
+- `HasPermissionDirective` (`src/app/shared/directives/has-permission.directive.ts`)
+  - Структурная директива для шаблонов: `*appHasPermission="'crud.delete'"` или массив прав + режим `appHasPermissionMode="any"`.
 
 ## Что запрещено в feature-страницах
 
 - Не использовать “сырые” `<button>` для типовых действий CRUD; использовать `UiButtonComponent`.
 - Не дублировать шаблон `label + input/select/textarea + error`; использовать `UiFormFieldComponent`.
 - Не вводить локальные цвета/радиусы в feature-`scss`; только theme tokens и shared-ui.
+- Не использовать emoji/произвольные SVG для типовых действий CRUD/filters/pagination; использовать `@lucide/angular` и семантические токены темы (`--icon-affirm`, `--accent`, `--warning`, `--danger`, `--text-muted`).
+- Не допускать расхождения между Demo и справочниками по базовому каркасу `CrudLayout` (Demo — источник визуального эталона).
 - Если временно пришлось нарушить правило — обязательно добавить запись в `docs/frontend/temporary-deviations-log.md`.
 

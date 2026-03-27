@@ -1,11 +1,12 @@
 import { NgFor, NgIf } from '@angular/common';
 import { Component, EventEmitter, Input, Output, computed } from '@angular/core';
+import { LucideChevronLeft, LucideChevronRight } from '@lucide/angular';
 import { UiButtonComponent } from '../ui-button/ui-button.component';
 
 @Component({
   selector: 'app-ui-pagination',
   standalone: true,
-  imports: [NgIf, NgFor, UiButtonComponent],
+  imports: [NgIf, NgFor, UiButtonComponent, LucideChevronLeft, LucideChevronRight],
   templateUrl: './ui-pagination.component.html',
   styleUrl: './ui-pagination.component.scss',
 })

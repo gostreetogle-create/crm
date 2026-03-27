@@ -1,34 +1,27 @@
 :host {
-  position: fixed;
-  top: var(--ui-table-head-padding-y);
-  right: var(--ui-space-14);
-  z-index: 1200;
+  display: inline-flex;
 }
 
-.themePicker {
-  display: flex;
-  align-items: center;
-  gap: var(--ui-nav-gap);
-  padding: var(--ui-button-padding-y) var(--ui-button-padding-x);
-  border-radius: var(--radius-card);
+.themeToggleBtn {
   border: 1px solid var(--border-color);
+  border-radius: var(--radius-card);
   background: var(--surface-soft);
-  backdrop-filter: blur(var(--ui-backdrop-blur-md));
-  box-shadow: 0 var(--ui-shadow-card-offset-y) var(--ui-shadow-card-blur) var(--shadow-color);
+  color: var(--accent);
+  width: var(--ui-control-min-height);
+  height: var(--ui-control-min-height);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
 }
 
-label {
-  font-size: var(--font-size-small);
-  color: var(--text-muted);
-}
-
-select {
-  font: inherit;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-card);
+.themeToggleBtn:hover {
   background: var(--surface);
-  color: var(--text-primary);
-  padding: var(--ui-space-0p5) var(--ui-input-padding-y);
-  min-width: var(--ui-theme-picker-min-width);
+}
+
+.themeToggleBtn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }
 

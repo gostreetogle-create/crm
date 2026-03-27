@@ -1,4 +1,5 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { LucideFunnel, LucideListFilter, LucideSearch } from '@lucide/angular';
 
 export type FilterOption = {
   value: string;
@@ -8,6 +9,7 @@ export type FilterOption = {
 @Component({
   selector: 'app-filters-bar',
   standalone: true,
+  imports: [LucideSearch, LucideListFilter, LucideFunnel],
   templateUrl: './filters-bar.component.html',
   styleUrl: './filters-bar.component.scss',
 })

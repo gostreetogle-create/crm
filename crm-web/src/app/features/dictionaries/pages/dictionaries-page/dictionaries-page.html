@@ -1,0 +1,658 @@
+<app-page-shell>
+  <div class="dictionaryGrid">
+    <section class="dictionaryTile dictionaryTileWide">
+      <app-content-card title="" [hideTitle]="true">
+        <crud-layout
+          title="Материалы"
+          [showHeader]="false"
+          [showCardLabel]="true"
+          [columns]="materialsColumns"
+          [data]="materialsStore.materialsData()"
+          [loading]="materialsStore.loading()"
+          [showExcelActions]="true"
+          [canDownloadTemplate]="permissions.can('excel.template')"
+          [canImportExcel]="permissions.can('excel.import')"
+          [canExportExcel]="permissions.can('excel.export')"
+          [canView]="true"
+          [canDuplicate]="permissions.crud().canDuplicate"
+          [canEdit]="permissions.crud().canEdit"
+          [canDelete]="permissions.crud().canDelete"
+          [toolbarActions]="materialsToolbarTpl"
+          (downloadTemplate)="downloadMaterialsTemplateExcel()"
+          (importExcel)="onMaterialsExcelImported($event)"
+          (exportExcel)="exportMaterialsExcel()"
+          (view)="openMaterialsView($event)"
+          (duplicate)="duplicateMaterial($event)"
+          (edit)="openMaterialsEdit($event)"
+          (delete)="deleteMaterial($event)"
+        ></crud-layout>
+      </app-content-card>
+    </section>
+
+    <section class="dictionaryTile dictionaryTileWide">
+      <app-content-card title="" [hideTitle]="true">
+        <crud-layout
+          title="Геометрии"
+          [showHeader]="false"
+          [showCardLabel]="true"
+          [columns]="geometriesColumns"
+          [data]="geometriesStore.geometriesData()"
+          [loading]="geometriesStore.loading()"
+          [showExcelActions]="true"
+          [canDownloadTemplate]="permissions.can('excel.template')"
+          [canImportExcel]="permissions.can('excel.import')"
+          [canExportExcel]="permissions.can('excel.export')"
+          [canView]="true"
+          [canDuplicate]="permissions.crud().canDuplicate"
+          [canEdit]="permissions.crud().canEdit"
+          [canDelete]="permissions.crud().canDelete"
+          [toolbarActions]="geometriesToolbarTpl"
+          (downloadTemplate)="downloadGeometriesTemplateExcel()"
+          (importExcel)="onGeometriesExcelImported($event)"
+          (exportExcel)="exportGeometriesExcel()"
+          (view)="openGeometriesView($event)"
+          (duplicate)="duplicateGeometry($event)"
+          (edit)="openGeometriesEdit($event)"
+          (delete)="deleteGeometry($event)"
+        ></crud-layout>
+      </app-content-card>
+    </section>
+
+    <section class="dictionaryTile">
+      <app-content-card title="" [hideTitle]="true">
+        <crud-layout
+          title="Покрытие"
+          [showHeader]="false"
+          [showCardLabel]="true"
+          [columns]="coatingsColumns"
+          [data]="coatingsStore.coatingsData()"
+          [loading]="coatingsStore.loading()"
+          [showExcelActions]="true"
+          [canDownloadTemplate]="permissions.can('excel.template')"
+          [canImportExcel]="permissions.can('excel.import')"
+          [canExportExcel]="permissions.can('excel.export')"
+          [canView]="true"
+          [canDuplicate]="permissions.crud().canDuplicate"
+          [canEdit]="permissions.crud().canEdit"
+          [canDelete]="permissions.crud().canDelete"
+          [toolbarActions]="coatingsToolbarTpl"
+          (downloadTemplate)="downloadCoatingsTemplateExcel()"
+          (importExcel)="onCoatingsExcelImported($event)"
+          (exportExcel)="exportCoatingsExcel()"
+          (view)="openCoatingsView($event)"
+          (duplicate)="duplicateCoating($event)"
+          (edit)="openCoatingsEdit($event)"
+          (delete)="deleteCoating($event)"
+        ></crud-layout>
+      </app-content-card>
+    </section>
+
+    <section class="dictionaryTile">
+      <app-content-card title="" [hideTitle]="true">
+        <crud-layout
+          title="Финиш/шероховатость"
+          [showHeader]="false"
+          [showCardLabel]="true"
+          [columns]="surfaceFinishesColumns"
+          [data]="surfaceFinishesStore.surfaceFinishesData()"
+          [loading]="surfaceFinishesStore.loading()"
+          [showExcelActions]="true"
+          [canDownloadTemplate]="permissions.can('excel.template')"
+          [canImportExcel]="permissions.can('excel.import')"
+          [canExportExcel]="permissions.can('excel.export')"
+          [canView]="true"
+          [canDuplicate]="permissions.crud().canDuplicate"
+          [canEdit]="permissions.crud().canEdit"
+          [canDelete]="permissions.crud().canDelete"
+          [toolbarActions]="surfaceFinishesToolbarTpl"
+          (downloadTemplate)="downloadSurfaceFinishesTemplateExcel()"
+          (importExcel)="onSurfaceFinishesExcelImported($event)"
+          (exportExcel)="exportSurfaceFinishesExcel()"
+          (view)="openSurfaceFinishesView($event)"
+          (duplicate)="duplicateSurfaceFinish($event)"
+          (edit)="openSurfaceFinishesEdit($event)"
+          (delete)="deleteSurfaceFinish($event)"
+        ></crud-layout>
+      </app-content-card>
+    </section>
+
+    <section class="dictionaryTile">
+      <app-content-card title="" [hideTitle]="true">
+        <crud-layout
+          title="Цвета (RAL)"
+          [showHeader]="false"
+          [showCardLabel]="true"
+          [columns]="colorsColumns"
+          [data]="colorsStore.colorsData()"
+          [loading]="colorsStore.loading()"
+          [showExcelActions]="true"
+          [canDownloadTemplate]="permissions.can('excel.template')"
+          [canImportExcel]="permissions.can('excel.import')"
+          [canExportExcel]="permissions.can('excel.export')"
+          [canView]="true"
+          [canDuplicate]="permissions.crud().canDuplicate"
+          [canEdit]="permissions.crud().canEdit"
+          [canDelete]="permissions.crud().canDelete"
+          [toolbarActions]="colorsToolbarTpl"
+          (downloadTemplate)="downloadColorsTemplateExcel()"
+          (importExcel)="onColorsExcelImported($event)"
+          (exportExcel)="exportColorsExcel()"
+          (view)="openColorsView($event)"
+          (duplicate)="duplicateColor($event)"
+          (edit)="openColorsEdit($event)"
+          (delete)="deleteColor($event)"
+        ></crud-layout>
+      </app-content-card>
+    </section>
+
+    <section class="dictionaryTile">
+      <app-content-card title="" [hideTitle]="true">
+        <crud-layout
+          title="Единицы измерения"
+          [showHeader]="false"
+          [showCardLabel]="true"
+          [columns]="unitsColumns"
+          [data]="unitsStore.unitsData()"
+          [loading]="unitsStore.loading()"
+          [showExcelActions]="true"
+          [canDownloadTemplate]="permissions.can('excel.template')"
+          [canImportExcel]="permissions.can('excel.import')"
+          [canExportExcel]="permissions.can('excel.export')"
+          [canView]="true"
+          [canDuplicate]="permissions.crud().canDuplicate"
+          [canEdit]="permissions.crud().canEdit"
+          [canDelete]="permissions.crud().canDelete"
+          [toolbarActions]="unitsToolbarTpl"
+          (downloadTemplate)="downloadUnitsTemplateExcel()"
+          (importExcel)="onUnitsExcelImported($event)"
+          (exportExcel)="exportUnitsExcel()"
+          (view)="openUnitsView($event)"
+          (duplicate)="duplicateUnit($event)"
+          (edit)="openUnitsEdit($event)"
+          (delete)="deleteUnit($event)"
+        ></crud-layout>
+      </app-content-card>
+    </section>
+  </div>
+</app-page-shell>
+
+<ng-template #materialsToolbarTpl>
+  @if (permissions.crud().canCreate) {
+    <app-ui-button [square]="true" ariaLabel="Добавить материал" title="Добавить материал" (clicked)="openMaterialsCreate()">+</app-ui-button>
+  }
+</ng-template>
+
+<ng-template #geometriesToolbarTpl>
+  @if (permissions.crud().canCreate) {
+    <app-ui-button [square]="true" ariaLabel="Добавить геометрию" title="Добавить геометрию" (clicked)="openGeometriesCreate()">+</app-ui-button>
+  }
+</ng-template>
+
+<ng-template #unitsToolbarTpl>
+  @if (permissions.crud().canCreate) {
+    <app-ui-button [square]="true" ariaLabel="Добавить единицу" title="Добавить единицу" (clicked)="openUnitsCreate()">+</app-ui-button>
+  }
+</ng-template>
+
+<ng-template #colorsToolbarTpl>
+  @if (permissions.crud().canCreate) {
+    <app-ui-button [square]="true" ariaLabel="Добавить цвет RAL" title="Добавить цвет RAL" (clicked)="openColorsCreate()">+</app-ui-button>
+  }
+</ng-template>
+
+<ng-template #surfaceFinishesToolbarTpl>
+  @if (permissions.crud().canCreate) {
+    <app-ui-button [square]="true" ariaLabel="Добавить финиш" title="Добавить финиш" (clicked)="openSurfaceFinishesCreate()">+</app-ui-button>
+  }
+</ng-template>
+
+<ng-template #coatingsToolbarTpl>
+  @if (permissions.crud().canCreate) {
+    <app-ui-button [square]="true" ariaLabel="Добавить покрытие" title="Добавить покрытие" (clicked)="openCoatingsCreate()">+</app-ui-button>
+  }
+</ng-template>
+
+@if (excelImportStatus()) {
+  <p class="importStatus">{{ excelImportStatus() }}</p>
+}
+
+<ui-modal
+  *ngIf="isMaterialsModalOpen()"
+  [title]="
+    isMaterialsViewMode()
+      ? 'Просмотр материала'
+      : materialsStore.isEditMode()
+        ? 'Редактирование материала'
+        : 'Новый материал'
+  "
+  [content]="materialsContentTpl"
+  [actions]="materialsActionsTpl"
+  (close)="closeMaterialsModal()"
+  size="lg"
+></ui-modal>
+
+<ng-template #materialsContentTpl>
+  <form id="materials-form" [formGroup]="materialsForm" (ngSubmit)="submitMaterials()" class="formGrid formGridWide">
+    <app-ui-form-field
+      label="Название"
+      [required]="true"
+      [invalid]="isMaterialsInvalid('name')"
+      [errorText]="isMaterialsInvalid('name') ? 'Минимум 2 символа' : ''"
+    >
+      <input type="text" formControlName="name" />
+    </app-ui-form-field>
+
+    <app-ui-form-field label="Код">
+      <input type="text" formControlName="code" />
+    </app-ui-form-field>
+
+    <app-ui-form-field label="Плотность (кг/м3)">
+      <input type="number" formControlName="densityKgM3" />
+    </app-ui-form-field>
+
+    <app-ui-form-field label="Цвет (RAL)">
+      <div class="colorRefRow">
+        <select formControlName="colorId">
+          <option value="">— Не выбран —</option>
+          @for (option of colorsStore.options(); track option.id) {
+            <option [value]="option.id">{{ option.label }}</option>
+          }
+        </select>
+        <app-ui-button
+          type="button"
+          variant="soft"
+          [square]="true"
+          ariaLabel="Добавить цвет RAL"
+          title="Добавить цвет RAL"
+          (clicked)="openColorsCreate(true)"
+        >
+          +
+        </app-ui-button>
+      </div>
+    </app-ui-form-field>
+
+    <app-ui-form-field label="Финиш/шероховатость">
+      <div class="colorRefRow">
+        <select formControlName="surfaceFinishId">
+          <option value="">— Не выбран —</option>
+          @for (option of surfaceFinishesStore.options(); track option.id) {
+            <option [value]="option.id">{{ option.label }}</option>
+          }
+        </select>
+        <app-ui-button
+          type="button"
+          variant="soft"
+          [square]="true"
+          ariaLabel="Добавить финиш"
+          title="Добавить финиш"
+          (clicked)="openSurfaceFinishesCreate(true)"
+        >
+          +
+        </app-ui-button>
+      </div>
+    </app-ui-form-field>
+
+    <app-ui-form-field label="Тип финиша">
+      <input type="text" formControlName="finishType" readonly />
+    </app-ui-form-field>
+
+    <app-ui-form-field label="Покрытие">
+      <div class="colorRefRow">
+        <select formControlName="coatingId">
+          <option value="">— Не выбран —</option>
+          @for (option of coatingsStore.options(); track option.id) {
+            <option [value]="option.id">{{ option.label }}</option>
+          }
+        </select>
+        <app-ui-button
+          type="button"
+          variant="soft"
+          [square]="true"
+          ariaLabel="Добавить покрытие"
+          title="Добавить покрытие"
+          (clicked)="openCoatingsCreate(true)"
+        >
+          +
+        </app-ui-button>
+      </div>
+    </app-ui-form-field>
+
+    <app-ui-form-field label="Тип покрытия">
+      <input type="text" formControlName="coatingType" readonly />
+    </app-ui-form-field>
+
+    <app-ui-form-field label="Спецификация покрытия">
+      <input type="text" formControlName="coatingSpec" readonly />
+    </app-ui-form-field>
+
+    <app-ui-form-field label="Толщина покрытия, мкм">
+      <input type="number" formControlName="coatingThicknessMicron" readonly />
+    </app-ui-form-field>
+
+    <app-ui-form-field label="Шероховатость">
+      <input type="text" formControlName="roughnessClass" readonly />
+    </app-ui-form-field>
+
+    <app-ui-form-field label="Ra, мкм">
+      <input type="number" formControlName="raMicron" readonly />
+    </app-ui-form-field>
+
+    <app-ui-form-field label="Цвет (название)">
+      <input type="text" formControlName="colorName" readonly />
+    </app-ui-form-field>
+
+    <app-ui-form-field label="Цвет (HEX)">
+      <div class="colorHexPreviewRow">
+        <input type="text" formControlName="colorHex" readonly />
+        <span class="colorSwatch" [style.background]="selectedMaterialColorHex() || '#000000'"></span>
+      </div>
+    </app-ui-form-field>
+
+    <app-ui-form-field class="formWide" label="Заметки" [wide]="true">
+      <textarea rows="3" formControlName="notes"></textarea>
+    </app-ui-form-field>
+
+    <app-ui-checkbox-field class="checkbox formWide" label="Активен" formControlName="isActive"></app-ui-checkbox-field>
+  </form>
+</ng-template>
+
+<ui-modal
+  *ngIf="isCoatingsModalOpen()"
+  [title]="
+    isCoatingsViewMode()
+      ? 'Просмотр покрытия'
+      : coatingsStore.isEditMode()
+        ? 'Редактирование покрытия'
+        : 'Новое покрытие'
+  "
+  [content]="coatingsContentTpl"
+  [actions]="coatingsActionsTpl"
+  (close)="closeCoatingsModal()"
+  size="md"
+></ui-modal>
+
+<ng-template #coatingsContentTpl>
+  <form id="coatings-form" [formGroup]="coatingsForm" (ngSubmit)="submitCoatings()" class="formGrid">
+    <app-ui-form-field
+      label="Тип покрытия"
+      [required]="true"
+      [invalid]="isCoatingsInvalid('coatingType')"
+      [errorText]="isCoatingsInvalid('coatingType') ? 'Минимум 2 символа' : ''"
+    >
+      <input type="text" formControlName="coatingType" placeholder="Anodizing / Powder / Galvanized..." />
+    </app-ui-form-field>
+
+    <app-ui-form-field
+      label="Спецификация"
+      [required]="true"
+      [invalid]="isCoatingsInvalid('coatingSpec')"
+      [errorText]="isCoatingsInvalid('coatingSpec') ? 'Минимум 2 символа' : ''"
+    >
+      <input type="text" formControlName="coatingSpec" placeholder="Clear anodized / Zn hot-dip..." />
+    </app-ui-form-field>
+
+    <app-ui-form-field label="Толщина, мкм" [invalid]="isCoatingsInvalid('thicknessMicron')" [errorText]="isCoatingsInvalid('thicknessMicron') ? 'Проверьте значение' : ''">
+      <input type="number" formControlName="thicknessMicron" />
+    </app-ui-form-field>
+  </form>
+</ng-template>
+
+<ng-template #coatingsActionsTpl>
+  <app-ui-button variant="soft" (clicked)="closeCoatingsModal()">
+    {{ isCoatingsViewMode() ? 'Закрыть' : 'Отмена' }}
+  </app-ui-button>
+  @if (!isCoatingsViewMode()) {
+    <app-ui-button type="submit" [form]="'coatings-form'">
+      {{ coatingsStore.isEditMode() ? 'Сохранить изменения' : 'Создать покрытие' }}
+    </app-ui-button>
+  }
+</ng-template>
+
+<ui-modal
+  *ngIf="isSurfaceFinishesModalOpen()"
+  [title]="
+    isSurfaceFinishesViewMode()
+      ? 'Просмотр финиша'
+      : surfaceFinishesStore.isEditMode()
+        ? 'Редактирование финиша'
+        : 'Новый финиш'
+  "
+  [content]="surfaceFinishesContentTpl"
+  [actions]="surfaceFinishesActionsTpl"
+  (close)="closeSurfaceFinishesModal()"
+  size="md"
+></ui-modal>
+
+<ng-template #surfaceFinishesContentTpl>
+  <form id="surface-finishes-form" [formGroup]="surfaceFinishesForm" (ngSubmit)="submitSurfaceFinishes()" class="formGrid">
+    <app-ui-form-field
+      label="Тип финиша"
+      [required]="true"
+      [invalid]="isSurfaceFinishesInvalid('finishType')"
+      [errorText]="isSurfaceFinishesInvalid('finishType') ? 'Минимум 2 символа' : ''"
+    >
+      <input type="text" formControlName="finishType" placeholder="Glossy / Matte / Satin..." />
+    </app-ui-form-field>
+
+    <app-ui-form-field
+      label="Шероховатость"
+      [required]="true"
+      [invalid]="isSurfaceFinishesInvalid('roughnessClass')"
+      [errorText]="isSurfaceFinishesInvalid('roughnessClass') ? 'Минимум 2 символа' : ''"
+    >
+      <input type="text" formControlName="roughnessClass" placeholder="Ra 0.8 / N7 / Полированная..." />
+    </app-ui-form-field>
+
+    <app-ui-form-field label="Ra, мкм" [invalid]="isSurfaceFinishesInvalid('raMicron')" [errorText]="isSurfaceFinishesInvalid('raMicron') ? 'Проверьте значение' : ''">
+      <input type="number" formControlName="raMicron" />
+    </app-ui-form-field>
+  </form>
+</ng-template>
+
+<ng-template #surfaceFinishesActionsTpl>
+  <app-ui-button variant="soft" (clicked)="closeSurfaceFinishesModal()">
+    {{ isSurfaceFinishesViewMode() ? 'Закрыть' : 'Отмена' }}
+  </app-ui-button>
+  @if (!isSurfaceFinishesViewMode()) {
+    <app-ui-button type="submit" [form]="'surface-finishes-form'">
+      {{ surfaceFinishesStore.isEditMode() ? 'Сохранить изменения' : 'Создать финиш' }}
+    </app-ui-button>
+  }
+</ng-template>
+
+<ui-modal
+  *ngIf="isColorsModalOpen()"
+  [title]="
+    isColorsViewMode()
+      ? 'Просмотр цвета RAL'
+      : colorsStore.isEditMode()
+        ? 'Редактирование цвета RAL'
+        : 'Новый цвет RAL'
+  "
+  [content]="colorsContentTpl"
+  [actions]="colorsActionsTpl"
+  (close)="closeColorsModal()"
+  size="md"
+></ui-modal>
+
+<ng-template #colorsContentTpl>
+  <form id="colors-form" [formGroup]="colorsForm" (ngSubmit)="submitColors()" class="formGrid">
+    <app-ui-form-field
+      label="Код RAL"
+      [required]="true"
+      [invalid]="isColorsInvalid('ralCode')"
+      [errorText]="isColorsInvalid('ralCode') ? 'Укажите код, например RAL 7035' : ''"
+    >
+      <input type="text" formControlName="ralCode" placeholder="RAL 7035" />
+    </app-ui-form-field>
+
+    <app-ui-form-field
+      label="Название"
+      [required]="true"
+      [invalid]="isColorsInvalid('name')"
+      [errorText]="isColorsInvalid('name') ? 'Минимум 2 символа' : ''"
+    >
+      <input type="text" formControlName="name" />
+    </app-ui-form-field>
+
+    <app-hex-rgb-field
+      [control]="colorsForm.controls.hex"
+      [required]="true"
+      [invalid]="isColorsInvalid('hex')"
+      [errorText]="isColorsInvalid('hex') ? 'HEX в формате #RRGGBB' : ''"
+    ></app-hex-rgb-field>
+  </form>
+</ng-template>
+
+<ng-template #colorsActionsTpl>
+  <app-ui-button variant="soft" (clicked)="closeColorsModal()">
+    {{ isColorsViewMode() ? 'Закрыть' : 'Отмена' }}
+  </app-ui-button>
+  @if (!isColorsViewMode()) {
+    <app-ui-button type="submit" [form]="'colors-form'">
+      {{ colorsStore.isEditMode() ? 'Сохранить изменения' : 'Создать цвет' }}
+    </app-ui-button>
+  }
+</ng-template>
+
+<ng-template #materialsActionsTpl>
+  <app-ui-button variant="soft" (clicked)="closeMaterialsModal()">
+    {{ isMaterialsViewMode() ? 'Закрыть' : 'Отмена' }}
+  </app-ui-button>
+  @if (!isMaterialsViewMode()) {
+    <app-ui-button type="submit" [form]="'materials-form'">
+      {{ materialsStore.isEditMode() ? 'Сохранить изменения' : 'Создать материал' }}
+    </app-ui-button>
+  }
+</ng-template>
+
+<ui-modal
+  *ngIf="isGeometriesModalOpen()"
+  [title]="
+    isGeometriesViewMode()
+      ? 'Просмотр геометрии'
+      : geometriesStore.isEditMode()
+        ? 'Редактирование геометрии'
+        : 'Новая геометрия'
+  "
+  [content]="geometriesContentTpl"
+  [actions]="geometriesActionsTpl"
+  (close)="closeGeometriesModal()"
+  size="lg"
+></ui-modal>
+
+<ng-template #geometriesContentTpl>
+  <form id="geometries-form" [formGroup]="geometriesForm" (ngSubmit)="submitGeometries()" class="formGrid formGridWide">
+    <app-ui-form-field
+      label="Название"
+      [required]="true"
+      [invalid]="isGeometriesInvalid('name')"
+      [errorText]="isGeometriesInvalid('name') ? 'Минимум 2 символа' : ''"
+    >
+      <input type="text" formControlName="name" />
+    </app-ui-form-field>
+
+    <app-ui-form-field
+      label="Тип геометрии"
+      [required]="true"
+      [invalid]="isGeometriesInvalid('shapeKey')"
+      [errorText]="isGeometriesInvalid('shapeKey') ? 'Укажите тип' : ''"
+    >
+      <select formControlName="shapeKey">
+        <option *ngFor="let s of shapeOptions" [value]="s.value">{{ s.label }}</option>
+      </select>
+    </app-ui-form-field>
+
+    <app-ui-form-field label="Высота (мм)" [invalid]="isGeometriesInvalid('heightMm')" [errorText]="isGeometriesInvalid('heightMm') ? 'Проверьте значение' : ''">
+      <input type="number" formControlName="heightMm" />
+    </app-ui-form-field>
+
+    <app-ui-form-field label="Длина (мм)" [invalid]="isGeometriesInvalid('lengthMm')" [errorText]="isGeometriesInvalid('lengthMm') ? 'Проверьте значение' : ''">
+      <input type="number" formControlName="lengthMm" />
+    </app-ui-form-field>
+
+    <app-ui-form-field label="Ширина (мм)" [invalid]="isGeometriesInvalid('widthMm')" [errorText]="isGeometriesInvalid('widthMm') ? 'Проверьте значение' : ''">
+      <input type="number" formControlName="widthMm" />
+    </app-ui-form-field>
+
+    <app-ui-form-field label="Диаметр (мм)" [invalid]="isGeometriesInvalid('diameterMm')" [errorText]="isGeometriesInvalid('diameterMm') ? 'Проверьте значение' : ''">
+      <input type="number" formControlName="diameterMm" />
+    </app-ui-form-field>
+
+    <app-ui-form-field label="Толщина (мм)" [invalid]="isGeometriesInvalid('thicknessMm')" [errorText]="isGeometriesInvalid('thicknessMm') ? 'Проверьте значение' : ''">
+      <input type="number" formControlName="thicknessMm" />
+    </app-ui-form-field>
+
+    <app-ui-form-field class="formWide" label="Заметки" [wide]="true">
+      <textarea rows="3" formControlName="notes"></textarea>
+    </app-ui-form-field>
+
+    <app-ui-checkbox-field class="checkbox formWide" label="Активна" formControlName="isActive"></app-ui-checkbox-field>
+  </form>
+</ng-template>
+
+<ng-template #geometriesActionsTpl>
+  <app-ui-button variant="soft" (clicked)="closeGeometriesModal()">
+    {{ isGeometriesViewMode() ? 'Закрыть' : 'Отмена' }}
+  </app-ui-button>
+  @if (!isGeometriesViewMode()) {
+    <app-ui-button type="submit" [form]="'geometries-form'">
+      {{ geometriesStore.isEditMode() ? 'Сохранить изменения' : 'Создать геометрию' }}
+    </app-ui-button>
+  }
+</ng-template>
+
+<ui-modal
+  *ngIf="isUnitsModalOpen()"
+  [title]="
+    isUnitsViewMode()
+      ? 'Просмотр единицы'
+      : unitsStore.isEditMode()
+        ? 'Редактирование единицы'
+        : 'Новая единица'
+  "
+  [content]="unitsContentTpl"
+  [actions]="unitsActionsTpl"
+  (close)="closeUnitsModal()"
+  size="sm"
+></ui-modal>
+
+<ng-template #unitsContentTpl>
+  <form id="units-form" [formGroup]="unitsForm" (ngSubmit)="submitUnits()" class="formGrid">
+    <app-ui-form-field
+      label="Название"
+      [required]="true"
+      [invalid]="isUnitsInvalid('name')"
+      [errorText]="isUnitsInvalid('name') ? 'Введите название' : ''"
+    >
+      <input type="text" formControlName="name" />
+    </app-ui-form-field>
+
+    <app-ui-form-field
+      label="Код"
+      [required]="true"
+      [invalid]="isUnitsInvalid('code')"
+      [errorText]="isUnitsInvalid('code') ? 'Минимум 2 символа' : ''"
+    >
+      <input type="text" formControlName="code" />
+    </app-ui-form-field>
+
+    <app-ui-form-field label="Комментарий" [wide]="true">
+      <textarea rows="3" formControlName="notes"></textarea>
+    </app-ui-form-field>
+
+    <app-ui-checkbox-field class="checkbox" label="Активна" formControlName="isActive"></app-ui-checkbox-field>
+  </form>
+</ng-template>
+
+<ng-template #unitsActionsTpl>
+  <app-ui-button variant="soft" (clicked)="closeUnitsModal()">
+    {{ isUnitsViewMode() ? 'Закрыть' : 'Отмена' }}
+  </app-ui-button>
+  @if (!isUnitsViewMode()) {
+    <app-ui-button type="submit" [form]="'units-form'">
+      {{ unitsStore.isEditMode() ? 'Сохранить изменения' : 'Создать единицу' }}
+    </app-ui-button>
+  }
+</ng-template>
+

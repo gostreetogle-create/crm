@@ -1,20 +1,34 @@
 <div class="filtersBar">
-  <input
-    type="text"
-    [placeholder]="searchPlaceholder"
-    (input)="onSearch($any($event.target).value)"
-  />
+  <label class="filterField">
+    <span class="filterIcon filterIcon--muted" aria-hidden="true">
+      <svg lucideSearch [size]="18"></svg>
+    </span>
+    <input
+      type="text"
+      [placeholder]="searchPlaceholder"
+      (input)="onSearch($any($event.target).value)"
+    />
+  </label>
 
-  <select [value]="selectedSort" (change)="onSort($any($event.target).value)">
-    @for (option of sortOptions; track option.value) {
-      <option [value]="option.value">{{ option.label }}</option>
-    }
-  </select>
+  <label class="filterField">
+    <span class="filterIcon filterIcon--accent" aria-hidden="true">
+      <svg lucideListFilter [size]="18"></svg>
+    </span>
+    <select [value]="selectedSort" (change)="onSort($any($event.target).value)">
+      @for (option of sortOptions; track option.value) {
+        <option [value]="option.value">{{ option.label }}</option>
+      }
+    </select>
+  </label>
 
-  <select [value]="selectedFilter" (change)="onFilter($any($event.target).value)">
-    @for (option of filterOptions; track option.value) {
-      <option [value]="option.value">{{ option.label }}</option>
-    }
-  </select>
+  <label class="filterField">
+    <span class="filterIcon filterIcon--muted" aria-hidden="true">
+      <svg lucideFunnel [size]="18"></svg>
+    </span>
+    <select [value]="selectedFilter" (change)="onFilter($any($event.target).value)">
+      @for (option of filterOptions; track option.value) {
+        <option [value]="option.value">{{ option.label }}</option>
+      }
+    </select>
+  </label>
 </div>
-

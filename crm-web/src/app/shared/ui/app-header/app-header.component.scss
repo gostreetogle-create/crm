@@ -3,16 +3,20 @@
 }
 
 .appHeader {
-  position: sticky;
+  position: fixed;
   top: 0;
-  z-index: 10;
+  left: 0;
+  right: 0;
+  z-index: 1100;
   display: grid;
   grid-template-columns: auto 1fr auto;
   gap: var(--ui-nav-gap);
   align-items: center;
   padding: var(--ui-app-header-padding-y) var(--ui-app-header-padding-x);
   border-bottom: 1px solid var(--border-color);
-  background: var(--surface);
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  backdrop-filter: blur(var(--ui-backdrop-blur-sm));
+  box-shadow: 0 var(--ui-shadow-card-thin-offset-y) 0 color-mix(in srgb, var(--border-color) 80%, transparent);
 }
 
 .brand {

@@ -1,11 +1,11 @@
 # Geometries CRUD (`посмотреть / добавить / изменить / удалить`)
 
-Страница `geometries` реализует полный CRUD для справочника геометрий на mock-репозитории.
+Страница `/dictionaries` (блок «Геометрии») реализует полный CRUD для справочника геометрий на mock-репозитории.
 
 ## Что уже работает
 
 - Посмотреть список геометрий.
-- Добавить новую геометрию (inline-форма на странице).
+- Добавить новую геометрию (через модальное окно).
 - Изменить существующую запись через UI-диалог (модальное окно).
   - Открытие: кнопка `Изменить` в строке таблицы.
   - Закрытие: кнопка `Отмена`, клик по backdrop, клавиша `Esc`.
@@ -26,7 +26,7 @@
 - Контракт репозитория: `src/app/features/geometries/data/geometries.repository.ts`
 - Mock-реализация: `src/app/features/geometries/data/geometries.mock-repository.ts`
 - Страница CRUD: `src/app/features/geometries/pages/geometries-crud-page/`
-- Роут: `src/app/app.routes.ts` (`/geometries`)
+- Роут: `src/app/app.routes.ts` (`/dictionaries`, `/geometries` -> redirect)
 - Кнопки: `UiButtonComponent` (`src/app/shared/ui/ui-button/`)
 
 ## Важно

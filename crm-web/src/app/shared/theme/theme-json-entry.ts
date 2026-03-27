@@ -10,6 +10,7 @@
  */
 export const THEME_JSON_ENTRY_RAW = `{
   "name": "light",
-  "fontFamilyBase": "'Segoe UI', Inter, ui-sans-serif, system-ui, Arial, sans-serif"
+  "fontFamilyBase": "'Segoe UI', Inter, ui-sans-serif, system-ui, Arial, sans-serif",
+  "iconAffirm": "#319432"
 }`;
 

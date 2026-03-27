@@ -6,7 +6,7 @@
     (clicked)="go(page - 1)"
     aria-label="Предыдущая страница"
   >
-    ‹
+    <span class="paginationIcon"><svg lucideChevronLeft [size]="18"></svg></span>
   </app-ui-button>
 
   <div class="pages" role="list">
@@ -29,7 +29,7 @@
     (clicked)="go(page + 1)"
     aria-label="Следующая страница"
   >
-    ›
+    <span class="paginationIcon"><svg lucideChevronRight [size]="18"></svg></span>
   </app-ui-button>
 </nav>
 

@@ -60,6 +60,11 @@ function applyThemeToCssVars(theme: ThemeTokens): void {
   root.setProperty('--shadow-color', theme.shadowColor);
   root.setProperty('--accent', theme.accent);
   root.setProperty('--success', theme.success);
+  root.setProperty('--icon-affirm', theme.iconAffirm);
+  root.setProperty('--icon-accent', theme.iconAccent);
+  root.setProperty('--icon-muted', theme.iconMuted);
+  root.setProperty('--icon-warning', theme.iconWarning);
+  root.setProperty('--icon-danger', theme.iconDanger);
   root.setProperty('--danger', theme.danger);
   root.setProperty('--warning', theme.warning);
   root.setProperty('--ui-input-padding-y', theme.uiInputPaddingY);

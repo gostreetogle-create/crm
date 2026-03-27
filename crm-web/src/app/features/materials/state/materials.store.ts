@@ -22,8 +22,8 @@ export type MaterialsState = {
   formSubmitAttempted: boolean;
 };
 
+/** Экземпляр только через `providers` маршрута `/materials` (изолированное состояние справочника). */
 export const MaterialsStore = signalStore(
-  { providedIn: 'root' },
   withState<MaterialsState>({
     items: [],
     loading: false,
@@ -40,6 +40,8 @@ export const MaterialsStore = signalStore(
           code: item.code || '—',
           densityKgM3: item.densityKgM3 ?? '—',
           color: item.colorName || item.colorHex || '—',
+          finish: item.finishType || item.roughnessClass || '—',
+          coating: item.coatingType || item.coatingSpec || '—',
           isActiveLabel: item.isActive ? 'Да' : 'Нет',
         }))
         .sort((a, b) => String(a.name).localeCompare(String(b.name)))
@@ -99,6 +101,16 @@ export const MaterialsStore = signalStore(
           if (store.editId() === id) {
             patchState(store, { editId: null, formSubmitAttempted: false });
           }
+        }),
+        switchMap(() => repo.getItems()),
+        tap((items) => patchState(store, { items }))
+      )
+    ),
+    createMany: rxMethod<MaterialItemInput[]>(
+      pipe(
+        tap((rows) => {
+          rows.forEach((row) => repo.create(row));
+          patchState(store, { editId: null, formSubmitAttempted: false });
         }),
         switchMap(() => repo.getItems()),
         tap((items) => patchState(store, { items }))

@@ -4,6 +4,8 @@
       title="Геометрии"
       [columns]="geometryColumns"
       [data]="vm().geometriesData"
+      [canEdit]="permissions.crud().canEdit"
+      [canDelete]="permissions.crud().canDelete"
       [toolbarActions]="toolbarTpl"
       [formActions]="formTpl"
       (edit)="openEditDialog($event)"
@@ -13,16 +15,17 @@
     </crud-layout>
   </app-content-card>
 
-  <app-content-card title="Добавление геометрии" *ngIf="!vm().isEditDialogOpen">
-    <form id="geometry-create-form" [formGroup]="form" (ngSubmit)="submitCreate()" class="formGrid">
-      <app-ui-form-field
-        label="Название"
-        [required]="true"
-        [invalid]="isInvalid('name')"
-        [errorText]="hasError('name') ? errorText('name') : ''"
-      >
-        <input type="text" formControlName="name" />
-      </app-ui-form-field>
+  @if (!vm().isEditDialogOpen) {
+    <app-content-card *appHasPermission="'crud.create'" title="Добавление геометрии">
+      <form id="geometry-create-form" [formGroup]="form" (ngSubmit)="submitCreate()" class="formGrid">
+        <app-ui-form-field
+          label="Название"
+          [required]="true"
+          [invalid]="isInvalid('name')"
+          [errorText]="hasError('name') ? errorText('name') : ''"
+        >
+          <input type="text" formControlName="name" />
+        </app-ui-form-field>
 
       <app-ui-form-field
         label="Тип геометрии"
@@ -79,24 +82,25 @@
         <textarea rows="3" formControlName="notes"></textarea>
       </app-ui-form-field>
 
-      <app-ui-checkbox-field class="checkbox" label="Активна" formControlName="isActive">
-      </app-ui-checkbox-field>
+        <app-ui-checkbox-field class="checkbox" label="Активна" formControlName="isActive">
+        </app-ui-checkbox-field>
 
-    </form>
-  </app-content-card>
+      </form>
+    </app-content-card>
+  }
 </app-page-shell>
 
 <ng-template #toolbarTpl>
-  <app-ui-button data-testid="geometries-create-new" (clicked)="startCreate()">
+  <app-ui-button *appHasPermission="'crud.create'" data-testid="geometries-create-new" (clicked)="startCreate()">
     + Новая геометрия
   </app-ui-button>
 </ng-template>
 
 <ng-template #formTpl>
-  <app-ui-button data-testid="geometries-reset" variant="soft" (clicked)="startCreate()">
+  <app-ui-button *appHasPermission="'crud.create'" data-testid="geometries-reset" variant="soft" (clicked)="startCreate()">
     Сбросить
   </app-ui-button>
-  <app-ui-button data-testid="geometries-submit" [type]="'submit'" [form]="'geometry-create-form'">
+  <app-ui-button *appHasPermission="'crud.create'" data-testid="geometries-submit" [type]="'submit'" [form]="'geometry-create-form'">
     Создать геометрию
   </app-ui-button>
 </ng-template>

@@ -1,0 +1,24 @@
+.hexRgbRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--ui-space-1);
+  align-items: center;
+}
+
+.colorPicker {
+  inline-size: 44px;
+  block-size: var(--ui-control-min-height);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-card);
+  background: var(--surface-soft);
+  padding: 2px;
+  cursor: pointer;
+}
+
+.rgbValue {
+  display: block;
+  margin-top: var(--ui-space-0p5);
+  color: var(--text-muted);
+  font-size: var(--font-size-small);
+  line-height: 1.2;
+}

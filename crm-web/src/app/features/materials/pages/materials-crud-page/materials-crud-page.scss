@@ -2,6 +2,15 @@
   display: block;
 }
 
+.loadError {
+  margin: 0 0 var(--ui-card-title-margin-bottom);
+  padding: var(--ui-space-10) var(--ui-button-padding-x);
+  border-radius: var(--radius-card);
+  border: 1px solid var(--danger);
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+}
+
 .toolbar {
   display: flex;
   justify-content: flex-end;

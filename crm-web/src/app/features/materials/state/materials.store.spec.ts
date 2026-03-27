@@ -27,7 +27,7 @@ describe('MaterialsStore', () => {
     repo.getItems.mockReturnValue(of(mockItems));
 
     TestBed.configureTestingModule({
-      providers: [{ provide: MATERIALS_REPOSITORY, useValue: repo }],
+      providers: [{ provide: MATERIALS_REPOSITORY, useValue: repo }, MaterialsStore],
     });
 
     store = TestBed.inject(MaterialsStore);

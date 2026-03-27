@@ -7,6 +7,8 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
     <button
       [attr.type]="type"
       [attr.form]="form"
+      [attr.aria-label]="ariaLabel || null"
+      [attr.title]="title || null"
       class="uiButton"
       [class.uiButtonSquare]="square"
       [class.uiButtonSoft]="variant === 'soft'"
@@ -25,6 +27,8 @@ export class UiButtonComponent {
   @Input() variant: 'primary' | 'soft' | 'danger' = 'primary';
   @Input() square = false;
   @Input() disabled = false;
+  @Input() ariaLabel: string | null = null;
+  @Input() title: string | null = null;
 
   @Output() readonly clicked = new EventEmitter<void>();
 }

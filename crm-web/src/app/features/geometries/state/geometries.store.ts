@@ -129,6 +129,20 @@ export const GeometriesStore = signalStore(
         tap((items) => patchState(store, { items }))
       )
     ),
+    createMany: rxMethod<GeometryItemInput[]>(
+      pipe(
+        tap((rows) => {
+          rows.forEach((row) => repo.create(row));
+          patchState(store, {
+            editId: null,
+            formSubmitAttempted: false,
+            isEditDialogOpen: false,
+          });
+        }),
+        switchMap(() => repo.getItems().pipe(take(1))),
+        tap((items) => patchState(store, { items }))
+      )
+    ),
     reset: () => {
       patchState(store, {
         editId: null,

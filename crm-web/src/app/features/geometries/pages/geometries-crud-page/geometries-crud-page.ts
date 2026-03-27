@@ -12,7 +12,8 @@ import { PageShellComponent } from '../../../../shared/ui/page-shell/page-shell.
 import { UiButtonComponent } from '../../../../shared/ui/ui-button/ui-button.component';
 import { UiCheckboxFieldComponent } from '../../../../shared/ui/ui-checkbox-field/ui-checkbox-field.component';
 import { UiFormFieldComponent } from '../../../../shared/ui/ui-form-field/ui-form-field.component';
-import { confirmDeleteAction } from '../../../../shared/utils/confirm-delete';
+import { HasPermissionDirective } from '../../../../shared/directives/public-api';
+import { PermissionsService } from '../../../../core/auth/public-api';
 import { GeometriesStore } from '../../state/geometries.store';
 
 @Component({
@@ -29,6 +30,7 @@ import { GeometriesStore } from '../../state/geometries.store';
     UiButtonComponent,
     UiCheckboxFieldComponent,
     UiFormFieldComponent,
+    HasPermissionDirective,
   ],
   templateUrl: './geometries-crud-page.html',
   styleUrl: './geometries-crud-page.scss',
@@ -37,6 +39,7 @@ export class GeometriesCrudPage implements OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly sub = new Subscription();
   readonly store = inject(GeometriesStore);
+  readonly permissions = inject(PermissionsService);
 
   readonly geometryColumns: TableColumn[] = [
     { key: 'name', label: 'Название' },
@@ -83,6 +86,9 @@ export class GeometriesCrudPage implements OnDestroy {
   }
 
   startCreate(): void {
+    if (!this.permissions.can('crud.create')) {
+      return;
+    }
     this.store['startCreate']();
     this.form.reset({
       name: '',
@@ -98,6 +104,9 @@ export class GeometriesCrudPage implements OnDestroy {
   }
 
   openEditDialog(id: string): void {
+    if (!this.permissions.can('crud.edit')) {
+      return;
+    }
     const item = this.store['items']().find((x) => x.id === id);
     if (!item) return;
     this.store['openEdit'](item.id);
@@ -138,7 +147,7 @@ export class GeometriesCrudPage implements OnDestroy {
   }
 
   delete(id: string): void {
-    if (!confirmDeleteAction('геометрию')) {
+    if (!this.permissions.can('crud.delete')) {
       return;
     }
     this.store['delete'](id);

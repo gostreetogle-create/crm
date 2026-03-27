@@ -13,3 +13,15 @@
   justify-content: center;
 }
 
+.paginationIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+  color: var(--text-primary);
+}
+
+.paginationIcon svg {
+  color: inherit;
+}
+

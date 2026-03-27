@@ -19,6 +19,11 @@ export type ThemeTokens = {
 
   accent: string;
   success: string;
+  iconAffirm: string;
+  iconAccent: string;
+  iconMuted: string;
+  iconWarning: string;
+  iconDanger: string;
   danger: string;
   warning: string;
 

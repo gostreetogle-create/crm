@@ -1,28 +1,49 @@
 <app-page-shell>
   <app-content-card title="Demo">
-    <p class="intro">
-      Эталонная страница для проверки единых сценариев: create/edit/delete, quick-add и модалки.
-    </p>
     <p class="meta">Последнее действие: {{ lastAction() }}</p>
+  </app-content-card>
+
+  <app-content-card title="Роль пользователя (demo)">
+    <div class="roleRow">
+      <label class="roleLabel" for="demo-role">Текущая роль</label>
+      <select
+        id="demo-role"
+        class="roleSelect"
+        [value]="permissions.role()"
+        (change)="onRoleChange($any($event.target).value)"
+      >
+        @for (option of roleOptions; track option.value) {
+          <option [value]="option.value">{{ option.label }}</option>
+        }
+      </select>
+    </div>
   </app-content-card>
 
   <app-content-card title="Состояния интерфейса">
     <section class="stateGrid">
       <article class="stateCard stateCardInfo">
-        <h4>Loading</h4>
-        <p>Данные загружаются, действия временно ограничены.</p>
+        <h4 class="stateCardTitle">
+          <span class="stateCardIcon stateCardIcon--accent" aria-hidden="true"><svg lucideLoader2 [size]="18"></svg></span>
+          Loading
+        </h4>
       </article>
       <article class="stateCard stateCardOk">
-        <h4>Success</h4>
-        <p>Операция выполнена успешно, изменения сохранены.</p>
+        <h4 class="stateCardTitle">
+          <span class="stateCardIcon stateCardIcon--affirm" aria-hidden="true"><svg lucideCircleCheck [size]="18"></svg></span>
+          Success
+        </h4>
       </article>
       <article class="stateCard stateCardWarn">
-        <h4>Empty</h4>
-        <p>Список пуст. Пользователю предлагается создать первую запись.</p>
+        <h4 class="stateCardTitle">
+          <span class="stateCardIcon stateCardIcon--warn" aria-hidden="true"><svg lucideInbox [size]="18"></svg></span>
+          Empty
+        </h4>
       </article>
       <article class="stateCard stateCardErr">
-        <h4>Error</h4>
-        <p>Операция не выполнена. Показываем понятное сообщение и retry.</p>
+        <h4 class="stateCardTitle">
+          <span class="stateCardIcon stateCardIcon--danger" aria-hidden="true"><svg lucideCircleAlert [size]="18"></svg></span>
+          Error
+        </h4>
       </article>
     </section>
   </app-content-card>
@@ -33,6 +54,20 @@
       <app-ui-button variant="soft">Soft</app-ui-button>
       <app-ui-button variant="danger">Danger</app-ui-button>
       <app-ui-button [disabled]="true">Disabled</app-ui-button>
+    </div>
+    <div class="buttonRow">
+      <app-ui-button>
+        <span class="btnWithIcon btnWithIcon--affirm"><svg lucidePlus [size]="18"></svg>Создать</span>
+      </app-ui-button>
+      <app-ui-button variant="soft">
+        <span class="btnWithIcon btnWithIcon--affirm"><svg lucideSave [size]="18"></svg>Сохранить</span>
+      </app-ui-button>
+      <app-ui-button variant="danger">
+        <span class="btnWithIcon btnWithIcon--danger"><svg lucideTrash2 [size]="18"></svg>Удалить</span>
+      </app-ui-button>
+      <app-ui-button variant="soft">
+        <span class="btnWithIcon btnWithIcon--accent"><svg lucideDownload [size]="18"></svg>Экспорт CSV</span>
+      </app-ui-button>
     </div>
   </app-content-card>
 
@@ -49,15 +84,47 @@
     ></app-filters-bar>
   </app-content-card>
 
-  <app-content-card title="CRUD layout + row actions">
+  <app-content-card title="" [hideTitle]="true">
     <crud-layout
-      title="Таблица"
+      title="Универсальный CRUD"
+      [showHeader]="false"
+      [showCardLabel]="true"
       [columns]="columns"
-      [data]="demoData()"
+      [data]="universalCrudData()"
+      [showExcelActions]="true"
+      [canDownloadTemplate]="permissions.can('excel.template')"
+      [canImportExcel]="permissions.can('excel.import')"
+      [canExportExcel]="permissions.can('excel.export')"
+      [canView]="true"
+      [canDuplicate]="permissions.crud().canDuplicate"
+      [canEdit]="permissions.crud().canEdit"
+      [canDelete]="permissions.crud().canDelete"
+      [toolbarActions]="universalToolbarTpl"
+      (downloadTemplate)="downloadDemoTemplateExcel()"
+      (importExcel)="onDemoExcelImported($event)"
+      (exportExcel)="exportDemoExcel()"
+      (view)="onView($event)"
+      (duplicate)="onDuplicate($event)"
       (edit)="onEdit($event)"
       (delete)="onDelete($event)"
     ></crud-layout>
+    @if (demoExcelStatus()) {
+      <p class="importStatus">{{ demoExcelStatus() }}</p>
+    }
   </app-content-card>
+
+  <ng-template #universalToolbarTpl>
+    <app-ui-button
+      *appHasPermission="'crud.create'"
+      [square]="true"
+      type="button"
+      ariaLabel="Добавить строку"
+      title="Добавить строку"
+      (clicked)="addUniversalDemoRow()"
+    >
+      +
+    </app-ui-button>
+  </ng-template>
 
   <app-content-card title="Форма + quick-add">
     <form id="demo-main-form" class="formGrid" [formGroup]="form" (ngSubmit)="submitMainForm()">
@@ -77,16 +144,20 @@
               <option [value]="option">{{ option }}</option>
             }
           </select>
-          <app-ui-button type="button" variant="primary" [square]="true" (clicked)="openQuickAdd()">+</app-ui-button>
+          <app-ui-button type="button" variant="primary" [square]="true" (clicked)="openQuickAdd()" aria-label="Добавить категорию">
+            <span class="squareIconTone squareIconTone--affirm"><svg lucidePlus [size]="18"></svg></span>
+          </app-ui-button>
         </div>
       </app-ui-form-field>
     </form>
 
     <div class="actions">
       <app-ui-button variant="soft" (clicked)="form.reset({ name: '', category: form.controls.category.value })">
-        Сбросить
+        <span class="btnWithIcon btnWithIcon--muted"><svg lucideRotateCcw [size]="18"></svg>Сбросить</span>
       </app-ui-button>
-      <app-ui-button [type]="'submit'" [form]="'demo-main-form'">Создать запись</app-ui-button>
+      <app-ui-button [type]="'submit'" [form]="'demo-main-form'">
+        <span class="btnWithIcon btnWithIcon--affirm"><svg lucidePlus [size]="18"></svg>Создать запись</span>
+      </app-ui-button>
     </div>
   </app-content-card>
 
@@ -115,8 +186,12 @@
           [imageSrc]="'https://picsum.photos/seed/' + p.imageSeed + '/640/640'"
         >
           <div product-actions>
-            <app-ui-button variant="soft" [square]="true">☆</app-ui-button>
-            <app-ui-button variant="soft" [square]="true">🛒</app-ui-button>
+            <app-ui-button variant="soft" [square]="true" aria-label="В избранное">
+              <span class="squareIconTone squareIconTone--warn"><svg lucideStar [size]="18"></svg></span>
+            </app-ui-button>
+            <app-ui-button variant="soft" [square]="true" aria-label="В корзину">
+              <span class="squareIconTone squareIconTone--accent"><svg lucideShoppingCart [size]="18"></svg></span>
+            </app-ui-button>
           </div>
         </app-product-card>
       }
@@ -153,9 +228,10 @@
 </ng-template>
 
 <ng-template #quickAddActions>
-  <app-ui-button variant="soft" (clicked)="closeQuickAdd()">Отмена</app-ui-button>
+  <app-ui-button variant="soft" (clicked)="closeQuickAdd()">
+    <span class="btnWithIcon btnWithIcon--muted"><svg lucideX [size]="18"></svg>Отмена</span>
+  </app-ui-button>
   <app-ui-button type="submit" [form]="'quick-add-form'">
-    Добавить и выбрать
+    <span class="btnWithIcon btnWithIcon--affirm"><svg lucideCheck [size]="18"></svg>Добавить и выбрать</span>
   </app-ui-button>
 </ng-template>
-

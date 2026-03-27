@@ -8,9 +8,33 @@
   gap: var(--ui-nav-gap);
 }
 
+.filterField {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.filterIcon {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+
+.filterIcon--muted svg {
+  color: var(--text-muted);
+}
+
+.filterIcon--accent svg {
+  color: var(--accent);
+}
+
 .filtersBar input,
 .filtersBar select {
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   min-height: var(--ui-control-min-height);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-pill);

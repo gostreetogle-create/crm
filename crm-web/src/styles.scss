@@ -19,6 +19,12 @@
 
   --accent: #1f6feb;
   --success: #0e9f6e;
+  /* Affirmative / «как в 1С» для иконок: создать, сохранить, подтвердить */
+  --icon-affirm: #319432;
+  --icon-accent: #1f6feb;
+  --icon-muted: rgba(16, 24, 40, 0.72);
+  --icon-warning: #f59e0b;
+  --icon-danger: #dc2626;
   --danger: #dc2626;
   --warning: #f59e0b;
   --field-invalid-border: var(--danger);
@@ -79,6 +85,9 @@
   --ui-crud-card-label-width: 140px;
   --ui-modal-shadow-offset-y: 20px;
   --ui-modal-shadow-blur: 40px;
+
+  /* Used by SectionLabel */
+  --bg: var(--surface-soft);
 
   /* Modal backdrop must follow theme tokens (bg-base/danger/shadow) */
   --modal-backdrop-bg: color-mix(in srgb, var(--bg-base) 45%, #000 55%);

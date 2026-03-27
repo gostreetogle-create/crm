@@ -1,11 +1,14 @@
-<div class="themePicker">
-  <label for="themePickerSelect">Theme</label>
-  <select
-    id="themePickerSelect"
-    [value]="selectedName()"
-    (change)="onPresetChange($any($event.target).value)"
-  >
-    <option *ngFor="let p of presets" [value]="p.name">{{ p.name }}</option>
-  </select>
-</div>
+<button
+  type="button"
+  class="themeToggleBtn"
+  (click)="toggleTheme()"
+  [attr.aria-label]="isDark() ? 'Переключить на светлую тему' : 'Переключить на темную тему'"
+  [attr.title]="isDark() ? 'Светлая тема' : 'Темная тема'"
+>
+  @if (isDark()) {
+    <svg lucideSun [size]="18"></svg>
+  } @else {
+    <svg lucideMoon [size]="18"></svg>
+  }
+</button>
 
