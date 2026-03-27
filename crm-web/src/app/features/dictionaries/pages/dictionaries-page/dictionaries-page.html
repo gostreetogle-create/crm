@@ -37,6 +37,143 @@
     <section class="dictionaryTile dictionaryTileWide">
       <app-content-card title="" [hideTitle]="true">
         <crud-layout
+          title="Вид работ"
+          [showHeader]="false"
+          [showCardLabel]="true"
+          [showNameSearch]="true"
+          [showCreateAction]="true"
+          [canCreate]="permissions.crud().canCreate"
+          createAriaLabel="Добавить вид работ"
+          createTitle="Добавить вид работ"
+          [columns]="workTypesColumns"
+          [data]="productionWorkTypesStore.workTypesData()"
+          [loading]="productionWorkTypesStore.loading()"
+          [showExcelActions]="true"
+          [canDownloadTemplate]="permissions.can('excel.template')"
+          [canImportExcel]="permissions.can('excel.import')"
+          [canExportExcel]="permissions.can('excel.export')"
+          [canView]="true"
+          [canDuplicate]="permissions.crud().canDuplicate"
+          [canEdit]="permissions.crud().canEdit"
+          [canDelete]="permissions.crud().canDelete"
+          deleteConfirmMessage="Удалить вид работ?"
+          (create)="openWorkTypesCreate()"
+          (downloadTemplate)="downloadWorkTypesTemplateExcel()"
+          (importExcel)="onWorkTypesExcelImported($event)"
+          (exportExcel)="exportWorkTypesExcel()"
+          (view)="openWorkTypesView($event)"
+          (duplicate)="duplicateWorkType($event)"
+          (edit)="openWorkTypesEdit($event)"
+          (delete)="deleteWorkType($event)"
+        ></crud-layout>
+      </app-content-card>
+    </section>
+
+    <section class="dictionaryTile">
+      <app-content-card title="" [hideTitle]="true">
+        <crud-layout
+          title="Единицы измерения"
+          [showHeader]="false"
+          [showCardLabel]="true"
+          [showNameSearch]="true"
+          [showCreateAction]="true"
+          [canCreate]="permissions.crud().canCreate"
+          createAriaLabel="Добавить единицу измерения"
+          createTitle="Добавить единицу измерения"
+          [columns]="unitsColumns"
+          [data]="unitsStore.unitsData()"
+          [loading]="unitsStore.loading()"
+          [showExcelActions]="true"
+          [canDownloadTemplate]="permissions.can('excel.template')"
+          [canImportExcel]="permissions.can('excel.import')"
+          [canExportExcel]="permissions.can('excel.export')"
+          [canView]="true"
+          [canDuplicate]="permissions.crud().canDuplicate"
+          [canEdit]="permissions.crud().canEdit"
+          [canDelete]="permissions.crud().canDelete"
+          (create)="openUnitsCreate()"
+          (downloadTemplate)="downloadUnitsTemplateExcel()"
+          (importExcel)="onUnitsExcelImported($event)"
+          (exportExcel)="exportUnitsExcel()"
+          (view)="openUnitsView($event)"
+          (duplicate)="duplicateUnit($event)"
+          (edit)="openUnitsEdit($event)"
+          (delete)="deleteUnit($event)"
+        ></crud-layout>
+      </app-content-card>
+    </section>
+
+    <section class="dictionaryTile">
+      <app-content-card title="" [hideTitle]="true">
+        <crud-layout
+          title="Цвета (RAL)"
+          [showHeader]="false"
+          [showCardLabel]="true"
+          [showNameSearch]="true"
+          [showCreateAction]="true"
+          [canCreate]="permissions.crud().canCreate"
+          createAriaLabel="Добавить цвет RAL"
+          createTitle="Добавить цвет RAL"
+          [columns]="colorsColumns"
+          [data]="colorsStore.colorsData()"
+          [loading]="colorsStore.loading()"
+          [showExcelActions]="true"
+          [canDownloadTemplate]="permissions.can('excel.template')"
+          [canImportExcel]="permissions.can('excel.import')"
+          [canExportExcel]="permissions.can('excel.export')"
+          [canView]="true"
+          [canDuplicate]="permissions.crud().canDuplicate"
+          [canEdit]="permissions.crud().canEdit"
+          [canDelete]="permissions.crud().canDelete"
+          (create)="openColorsCreate()"
+          (downloadTemplate)="downloadColorsTemplateExcel()"
+          (importExcel)="onColorsExcelImported($event)"
+          (exportExcel)="exportColorsExcel()"
+          (view)="openColorsView($event)"
+          (duplicate)="duplicateColor($event)"
+          (edit)="openColorsEdit($event)"
+          (delete)="deleteColor($event)"
+        ></crud-layout>
+      </app-content-card>
+    </section>
+
+    <section class="dictionaryTile">
+      <app-content-card title="" [hideTitle]="true">
+        <crud-layout
+          title="Тип отделки / шероховатость"
+          [showHeader]="false"
+          [showCardLabel]="true"
+          [showNameSearch]="true"
+          [showCreateAction]="true"
+          [canCreate]="permissions.crud().canCreate"
+          createAriaLabel="Добавить финиш"
+          createTitle="Добавить финиш"
+          [columns]="surfaceFinishesColumns"
+          [data]="surfaceFinishesStore.surfaceFinishesData()"
+          [loading]="surfaceFinishesStore.loading()"
+          [showExcelActions]="true"
+          [canDownloadTemplate]="permissions.can('excel.template')"
+          [canImportExcel]="permissions.can('excel.import')"
+          [canExportExcel]="permissions.can('excel.export')"
+          [canView]="true"
+          [canDuplicate]="permissions.crud().canDuplicate"
+          [canEdit]="permissions.crud().canEdit"
+          [canDelete]="permissions.crud().canDelete"
+          (create)="openSurfaceFinishesCreate()"
+          (downloadTemplate)="downloadSurfaceFinishesTemplateExcel()"
+          (importExcel)="onSurfaceFinishesExcelImported($event)"
+          (exportExcel)="exportSurfaceFinishesExcel()"
+          (view)="openSurfaceFinishesView($event)"
+          (duplicate)="duplicateSurfaceFinish($event)"
+          (edit)="openSurfaceFinishesEdit($event)"
+          (delete)="deleteSurfaceFinish($event)"
+        ></crud-layout>
+      </app-content-card>
+    </section>
+
+    <section class="dictionaryTile dictionaryTileWide">
+      <app-content-card title="" [hideTitle]="true">
+        <crud-layout
           title="Форма и габаритные размеры"
           [showHeader]="false"
           [showCardLabel]="true"
@@ -101,114 +238,72 @@
         ></crud-layout>
       </app-content-card>
     </section>
-
-    <section class="dictionaryTile">
-      <app-content-card title="" [hideTitle]="true">
-        <crud-layout
-          title="Тип отделки / шероховатость"
-          [showHeader]="false"
-          [showCardLabel]="true"
-          [showNameSearch]="true"
-          [showCreateAction]="true"
-          [canCreate]="permissions.crud().canCreate"
-          createAriaLabel="Добавить финиш"
-          createTitle="Добавить финиш"
-          [columns]="surfaceFinishesColumns"
-          [data]="surfaceFinishesStore.surfaceFinishesData()"
-          [loading]="surfaceFinishesStore.loading()"
-          [showExcelActions]="true"
-          [canDownloadTemplate]="permissions.can('excel.template')"
-          [canImportExcel]="permissions.can('excel.import')"
-          [canExportExcel]="permissions.can('excel.export')"
-          [canView]="true"
-          [canDuplicate]="permissions.crud().canDuplicate"
-          [canEdit]="permissions.crud().canEdit"
-          [canDelete]="permissions.crud().canDelete"
-          (create)="openSurfaceFinishesCreate()"
-          (downloadTemplate)="downloadSurfaceFinishesTemplateExcel()"
-          (importExcel)="onSurfaceFinishesExcelImported($event)"
-          (exportExcel)="exportSurfaceFinishesExcel()"
-          (view)="openSurfaceFinishesView($event)"
-          (duplicate)="duplicateSurfaceFinish($event)"
-          (edit)="openSurfaceFinishesEdit($event)"
-          (delete)="deleteSurfaceFinish($event)"
-        ></crud-layout>
-      </app-content-card>
-    </section>
-
-    <section class="dictionaryTile">
-      <app-content-card title="" [hideTitle]="true">
-        <crud-layout
-          title="Цвета (RAL)"
-          [showHeader]="false"
-          [showCardLabel]="true"
-          [showNameSearch]="true"
-          [showCreateAction]="true"
-          [canCreate]="permissions.crud().canCreate"
-          createAriaLabel="Добавить цвет RAL"
-          createTitle="Добавить цвет RAL"
-          [columns]="colorsColumns"
-          [data]="colorsStore.colorsData()"
-          [loading]="colorsStore.loading()"
-          [showExcelActions]="true"
-          [canDownloadTemplate]="permissions.can('excel.template')"
-          [canImportExcel]="permissions.can('excel.import')"
-          [canExportExcel]="permissions.can('excel.export')"
-          [canView]="true"
-          [canDuplicate]="permissions.crud().canDuplicate"
-          [canEdit]="permissions.crud().canEdit"
-          [canDelete]="permissions.crud().canDelete"
-          (create)="openColorsCreate()"
-          (downloadTemplate)="downloadColorsTemplateExcel()"
-          (importExcel)="onColorsExcelImported($event)"
-          (exportExcel)="exportColorsExcel()"
-          (view)="openColorsView($event)"
-          (duplicate)="duplicateColor($event)"
-          (edit)="openColorsEdit($event)"
-          (delete)="deleteColor($event)"
-        ></crud-layout>
-      </app-content-card>
-    </section>
-
-    <section class="dictionaryTile">
-      <app-content-card title="" [hideTitle]="true">
-        <crud-layout
-          title="Единицы измерения"
-          [showHeader]="false"
-          [showCardLabel]="true"
-          [showNameSearch]="true"
-          [showCreateAction]="true"
-          [canCreate]="permissions.crud().canCreate"
-          createAriaLabel="Добавить единицу измерения"
-          createTitle="Добавить единицу измерения"
-          [columns]="unitsColumns"
-          [data]="unitsStore.unitsData()"
-          [loading]="unitsStore.loading()"
-          [showExcelActions]="true"
-          [canDownloadTemplate]="permissions.can('excel.template')"
-          [canImportExcel]="permissions.can('excel.import')"
-          [canExportExcel]="permissions.can('excel.export')"
-          [canView]="true"
-          [canDuplicate]="permissions.crud().canDuplicate"
-          [canEdit]="permissions.crud().canEdit"
-          [canDelete]="permissions.crud().canDelete"
-          (create)="openUnitsCreate()"
-          (downloadTemplate)="downloadUnitsTemplateExcel()"
-          (importExcel)="onUnitsExcelImported($event)"
-          (exportExcel)="exportUnitsExcel()"
-          (view)="openUnitsView($event)"
-          (duplicate)="duplicateUnit($event)"
-          (edit)="openUnitsEdit($event)"
-          (delete)="deleteUnit($event)"
-        ></crud-layout>
-      </app-content-card>
-    </section>
   </div>
 </app-page-shell>
 
 @if (excelImportStatus()) {
   <p class="importStatus">{{ excelImportStatus() }}</p>
 }
+
+<ui-modal
+  *ngIf="isWorkTypesModalOpen()"
+  [title]="
+    isWorkTypesViewMode()
+      ? 'Просмотр вида работ — Вид раб.'
+      : productionWorkTypesStore.isEditMode()
+        ? 'Редактирование вида работ — Вид раб.'
+        : 'Новый вид работ — Вид раб.'
+  "
+  [content]="workTypesContentTpl"
+  [actions]="workTypesActionsTpl"
+  (close)="closeWorkTypesModal()"
+  [closeOnBackdrop]="isWorkTypesViewMode()"
+  size="md"
+></ui-modal>
+
+<ng-template #workTypesContentTpl>
+  <form id="work-types-form" [formGroup]="workTypesForm" (ngSubmit)="submitWorkTypes()" class="formGrid">
+    <app-ui-form-field
+      label="Наименование"
+      [required]="true"
+      [invalid]="isWorkTypesInvalid('name')"
+      [errorText]="workTypesNameErrorText()"
+    >
+      <input type="text" formControlName="name" placeholder="Сварка" />
+    </app-ui-form-field>
+
+    <app-ui-form-field
+      label="Короткое обозначение"
+      [required]="true"
+      [invalid]="isWorkTypesInvalid('shortLabel')"
+      [errorText]="isWorkTypesInvalid('shortLabel') ? 'Укажите обозначение' : ''"
+    >
+      <input type="text" formControlName="shortLabel" placeholder="Напр. Св." />
+    </app-ui-form-field>
+
+    <app-ui-form-field
+      label="Ставка, ₽/ч"
+      [required]="true"
+      [invalid]="isWorkTypesInvalid('hourlyRateRub')"
+      [errorText]="workTypesHourlyRateErrorText()"
+    >
+      <input type="number" formControlName="hourlyRateRub" min="1" step="1" placeholder="600" />
+    </app-ui-form-field>
+
+    <app-ui-checkbox-field class="checkbox" label="Активна" formControlName="isActive"></app-ui-checkbox-field>
+  </form>
+</ng-template>
+
+<ng-template #workTypesActionsTpl>
+  <app-ui-button variant="soft" (clicked)="closeWorkTypesModal()">
+    {{ isWorkTypesViewMode() ? 'Закрыть' : 'Отмена' }}
+  </app-ui-button>
+  @if (!isWorkTypesViewMode()) {
+    <app-ui-button type="submit" [form]="'work-types-form'">
+      {{ productionWorkTypesStore.isEditMode() ? 'Сохранить изменения' : 'Создать вид работ' }}
+    </app-ui-button>
+  }
+</ng-template>
 
 <ui-modal
   *ngIf="isMaterialsModalOpen()"
@@ -239,6 +334,41 @@
 
     <app-ui-form-field label="Код">
       <input type="text" formControlName="code" />
+    </app-ui-form-field>
+
+    <app-ui-form-field
+      label="Единица измерения"
+      [required]="true"
+      [invalid]="isMaterialsInvalid('unitId')"
+      [errorText]="isMaterialsInvalid('unitId') ? 'Выберите единицу из справочника' : ''"
+    >
+      <div class="colorRefRow">
+        <select formControlName="unitId">
+          <option value="">— Не выбрана —</option>
+          @for (option of unitsStore.options(); track option.id) {
+            <option [value]="option.id">{{ option.label }}</option>
+          }
+        </select>
+        <app-ui-button
+          type="button"
+          variant="soft"
+          [square]="true"
+          ariaLabel="Добавить единицу измерения"
+          title="Добавить единицу измерения"
+          (clicked)="openUnitsCreate(true)"
+        >
+          +
+        </app-ui-button>
+      </div>
+    </app-ui-form-field>
+
+    <app-ui-form-field
+      label="Цена, ₽ за 1 ед."
+      [required]="true"
+      [invalid]="isMaterialsInvalid('purchasePriceRub')"
+      [errorText]="materialsPurchasePriceErrorText()"
+    >
+      <input type="number" formControlName="purchasePriceRub" min="1" step="1" />
     </app-ui-form-field>
 
     <app-ui-form-field label="Плотность (кг/м3)">
@@ -546,11 +676,11 @@
   [actions]="geometriesActionsTpl"
   (close)="closeGeometriesModal()"
   [closeOnBackdrop]="isGeometriesViewMode()"
-  size="lg"
+  size="md"
 ></ui-modal>
 
 <ng-template #geometriesContentTpl>
-  <form id="geometries-form" [formGroup]="geometriesForm" (ngSubmit)="submitGeometries()" class="formGrid formGridWide">
+  <form id="geometries-form" [formGroup]="geometriesForm" (ngSubmit)="submitGeometries()" class="formGrid geometriesFormPanel">
     <app-ui-form-field
       label="Название"
       [required]="true"
@@ -571,25 +701,55 @@
       </select>
     </app-ui-form-field>
 
-    <app-ui-form-field label="Высота (мм)" [invalid]="isGeometriesInvalid('heightMm')" [errorText]="isGeometriesInvalid('heightMm') ? 'Проверьте значение' : ''">
-      <input type="number" formControlName="heightMm" />
-    </app-ui-form-field>
+    <fieldset class="geometryParams">
+      <legend>Параметры, мм</legend>
+      <div class="geometryDimsGrid">
+        <app-ui-form-field
+          *ngIf="geometriesDimensionVisible('diameterMm')"
+          [label]="geometryDiameterFieldLabel"
+          [invalid]="isGeometriesInvalid('diameterMm')"
+          [errorText]="isGeometriesInvalid('diameterMm') ? 'Проверьте значение' : ''"
+        >
+          <input type="number" formControlName="diameterMm" />
+        </app-ui-form-field>
 
-    <app-ui-form-field label="Длина (мм)" [invalid]="isGeometriesInvalid('lengthMm')" [errorText]="isGeometriesInvalid('lengthMm') ? 'Проверьте значение' : ''">
-      <input type="number" formControlName="lengthMm" />
-    </app-ui-form-field>
+        <app-ui-form-field
+          *ngIf="geometriesDimensionVisible('thicknessMm')"
+          label="Толщина (мм)"
+          [invalid]="isGeometriesInvalid('thicknessMm')"
+          [errorText]="isGeometriesInvalid('thicknessMm') ? 'Проверьте значение' : ''"
+        >
+          <input type="number" formControlName="thicknessMm" />
+        </app-ui-form-field>
 
-    <app-ui-form-field label="Ширина (мм)" [invalid]="isGeometriesInvalid('widthMm')" [errorText]="isGeometriesInvalid('widthMm') ? 'Проверьте значение' : ''">
-      <input type="number" formControlName="widthMm" />
-    </app-ui-form-field>
+        <app-ui-form-field
+          *ngIf="geometriesDimensionVisible('heightMm')"
+          label="Высота (мм)"
+          [invalid]="isGeometriesInvalid('heightMm')"
+          [errorText]="isGeometriesInvalid('heightMm') ? 'Проверьте значение' : ''"
+        >
+          <input type="number" formControlName="heightMm" />
+        </app-ui-form-field>
 
-    <app-ui-form-field label="Диаметр (мм)" [invalid]="isGeometriesInvalid('diameterMm')" [errorText]="isGeometriesInvalid('diameterMm') ? 'Проверьте значение' : ''">
-      <input type="number" formControlName="diameterMm" />
-    </app-ui-form-field>
+        <app-ui-form-field
+          *ngIf="geometriesDimensionVisible('widthMm')"
+          label="Ширина (мм)"
+          [invalid]="isGeometriesInvalid('widthMm')"
+          [errorText]="isGeometriesInvalid('widthMm') ? 'Проверьте значение' : ''"
+        >
+          <input type="number" formControlName="widthMm" />
+        </app-ui-form-field>
 
-    <app-ui-form-field label="Толщина (мм)" [invalid]="isGeometriesInvalid('thicknessMm')" [errorText]="isGeometriesInvalid('thicknessMm') ? 'Проверьте значение' : ''">
-      <input type="number" formControlName="thicknessMm" />
-    </app-ui-form-field>
+        <app-ui-form-field
+          *ngIf="geometriesDimensionVisible('lengthMm')"
+          label="Длина (мм)"
+          [invalid]="isGeometriesInvalid('lengthMm')"
+          [errorText]="isGeometriesInvalid('lengthMm') ? 'Проверьте значение' : ''"
+        >
+          <input type="number" formControlName="lengthMm" />
+        </app-ui-form-field>
+      </div>
+    </fieldset>
 
     <app-ui-form-field class="formWide" label="Заметки" [wide]="true">
       <textarea rows="3" formControlName="notes"></textarea>

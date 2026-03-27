@@ -13,6 +13,7 @@ import {
   GeometriesRepository,
 } from '../data/geometries.repository';
 import { GeometryItem, GeometryItemInput } from '../model/geometry-item';
+import { formatGeometryParamsDisplay } from '../utils/format-geometry-params-display';
 
 export type GeometriesState = {
   items: GeometryItem[];
@@ -40,7 +41,7 @@ export const GeometriesStore = signalStore(
           id: g.id,
           name: g.name,
           shape: g.shapeKey,
-          params: `В ${g.heightMm ?? '—'}, Дл ${g.lengthMm ?? '—'}, Ш ${g.widthMm ?? '—'}, Диам ${g.diameterMm ?? '—'}, Толщ ${g.thicknessMm ?? '—'}`,
+          params: formatGeometryParamsDisplay(g),
           isActiveLabel: g.isActive ? 'Да' : 'Нет',
         }))
         .sort((a, b) => String(a.name).localeCompare(String(b.name)))

@@ -11,8 +11,22 @@ describe('MaterialsStore', () => {
   let store: InstanceType<typeof MaterialsStore>;
 
   const mockItems: MaterialItem[] = [
-    { id: '2', name: 'Wood', isActive: false },
-    { id: '1', name: 'Steel', isActive: true },
+    {
+      id: '2',
+      name: 'Wood',
+      unitId: 'u-1',
+      unitName: 'кг (kg)',
+      purchasePriceRub: 10,
+      isActive: false,
+    },
+    {
+      id: '1',
+      name: 'Steel',
+      unitId: 'u-1',
+      unitName: 'кг (kg)',
+      purchasePriceRub: 20,
+      isActive: true,
+    },
   ];
 
   const repo: jest.Mocked<MaterialsRepository> = {
@@ -62,11 +76,23 @@ describe('MaterialsStore', () => {
     expect(store.editId()).toBe('1');
 
     store.submit({
-      value: { name: 'Updated', isActive: true },
+      value: {
+        name: 'Updated',
+        unitId: 'u-1',
+        unitName: 'кг (kg)',
+        purchasePriceRub: 20,
+        isActive: true,
+      },
       isValid: true,
     });
 
-    expect(repo.update).toHaveBeenCalledWith('1', { name: 'Updated', isActive: true });
+    expect(repo.update).toHaveBeenCalledWith('1', {
+      name: 'Updated',
+      unitId: 'u-1',
+      unitName: 'кг (kg)',
+      purchasePriceRub: 20,
+      isActive: true,
+    });
     expect(store.editId()).toBeNull();
     expect(store.formSubmitAttempted()).toBe(false);
   });

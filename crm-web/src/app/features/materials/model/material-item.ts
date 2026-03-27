@@ -2,6 +2,12 @@ export type MaterialItem = {
   id: string;
   name: string;
   code?: string;
+  /** Ссылка на справочник единиц; цена ниже — за одну эту единицу (кг, шт, …). */
+  unitId?: string;
+  /** Подпись для таблицы/Excel без join (напр. «кг (kg)»). */
+  unitName?: string;
+  /** Учётная/закупочная цена, ₽ за `unitId`. */
+  purchasePriceRub?: number;
   densityKgM3?: number;
   colorId?: string;
   colorName?: string;

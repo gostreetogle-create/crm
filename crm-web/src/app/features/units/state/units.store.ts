@@ -34,6 +34,15 @@ export const UnitsStore = signalStore(
         .sort((a, b) => String(a.name).localeCompare(String(b.name)))
     ),
     isEditMode: computed(() => editId() !== null),
+    options: computed(() =>
+      items()
+        .filter((x) => x.isActive)
+        .map((item) => ({
+          id: item.id,
+          label: `${item.name} (${item.code ?? '—'})`,
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label, 'ru'))
+    ),
     facts: computed(() => ({
       total: items().length,
       active: items().filter((x) => x.isActive).length,

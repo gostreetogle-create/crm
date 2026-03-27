@@ -15,6 +15,12 @@ import { UiFormFieldComponent } from '../../../../shared/ui/ui-form-field/ui-for
 import { HasPermissionDirective } from '../../../../shared/directives/public-api';
 import { PermissionsService } from '../../../../core/auth/public-api';
 import { GeometriesStore } from '../../state/geometries.store';
+import {
+  GEOMETRY_DIAMETER_LABEL,
+  GeometryDimKey,
+  isGeometryDimensionRequired,
+  isGeometryDimensionVisible,
+} from '../../utils/geometry-shape-config';
 
 @Component({
   selector: 'app-geometries-crud-page',
@@ -56,6 +62,8 @@ export class GeometriesCrudPage implements OnDestroy {
     formSubmitAttempted: this.store['formSubmitAttempted'](),
   }));
 
+  /** Подпись поля диаметра со знаком ⌀ */
+  readonly geometryDiameterLabel = GEOMETRY_DIAMETER_LABEL;
   readonly shapeOptions: ReadonlyArray<{ value: string; label: string }> = [
     { value: 'rectangular', label: 'Прямоугольная' },
     { value: 'cylindrical', label: 'Цилиндрическая' },
@@ -176,38 +184,33 @@ export class GeometriesCrudPage implements OnDestroy {
     return this.shapeOptions.find((x) => x.value === shapeKey)?.label ?? shapeKey;
   }
 
+  dimensionVisible(field: GeometryDimKey): boolean {
+    return isGeometryDimensionVisible(this.form.controls.shapeKey.value, field);
+  }
+
   ngOnDestroy(): void {
     this.sub.unsubscribe();
   }
 
   private applyShapeValidators(shapeKey: string): void {
-    this.setDimensionValidators('heightMm', this.isRequiredForShape(shapeKey, 'heightMm'));
-    this.setDimensionValidators('lengthMm', this.isRequiredForShape(shapeKey, 'lengthMm'));
-    this.setDimensionValidators('widthMm', this.isRequiredForShape(shapeKey, 'widthMm'));
-    this.setDimensionValidators('diameterMm', this.isRequiredForShape(shapeKey, 'diameterMm'));
-    this.setDimensionValidators('thicknessMm', this.isRequiredForShape(shapeKey, 'thicknessMm'));
-  }
-
-  private setDimensionValidators(
-    controlName: 'heightMm' | 'lengthMm' | 'widthMm' | 'diameterMm' | 'thicknessMm',
-    required: boolean
-  ): void {
-    const control = this.form.controls[controlName];
-    const validators = required ? [Validators.required, Validators.min(0)] : [Validators.min(0)];
-    control.setValidators(validators);
-    control.updateValueAndValidity({ emitEvent: false });
-  }
-
-  private isRequiredForShape(
-    shapeKey: string,
-    field: 'heightMm' | 'lengthMm' | 'widthMm' | 'diameterMm' | 'thicknessMm'
-  ): boolean {
-    if (shapeKey === 'rectangular') return field === 'heightMm' || field === 'widthMm';
-    if (shapeKey === 'tube') return field === 'diameterMm' || field === 'thicknessMm';
-    if (shapeKey === 'plate')
-      return field === 'lengthMm' || field === 'widthMm' || field === 'thicknessMm';
-    if (shapeKey === 'cylindrical') return field === 'diameterMm' || field === 'lengthMm';
-    return false;
+    const optionalNonNegative = [Validators.min(0)];
+    const requiredNonNeg = [Validators.required, ...optionalNonNegative];
+    const keys: GeometryDimKey[] = ['heightMm', 'lengthMm', 'widthMm', 'diameterMm', 'thicknessMm'];
+    for (const key of keys) {
+      const control = this.form.controls[key];
+      control.clearValidators();
+      if (!isGeometryDimensionVisible(shapeKey, key)) {
+        control.setValidators(optionalNonNegative);
+        control.updateValueAndValidity({ emitEvent: false });
+        continue;
+      }
+      if (isGeometryDimensionRequired(shapeKey, key)) {
+        control.setValidators(requiredNonNeg);
+      } else {
+        control.setValidators(optionalNonNegative);
+      }
+      control.updateValueAndValidity({ emitEvent: false });
+    }
   }
 
   private buildPayload() {

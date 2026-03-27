@@ -183,12 +183,14 @@
   }
   @for (row of visibleData; track $index) {
     <article class="card-item">
-      @for (column of columns; track column.key) {
-        <div class="card-row">
-          <span class="card-label">{{ column.label }}</span>
-          <span class="card-value">{{ row?.[column.key] ?? '—' }}</span>
-        </div>
-      }
+      <div class="cardFieldsGrid" [class.cardFieldsGridDouble]="cardFieldsAreDoubleColumn">
+        @for (column of columns; track column.key) {
+          <div class="card-row">
+            <span class="card-label">{{ column.label }}</span>
+            <span class="card-value">{{ row?.[column.key] ?? '—' }}</span>
+          </div>
+        }
+      </div>
       @if (hasRowActions) {
         <div class="card-actions">
           @if (canView) {

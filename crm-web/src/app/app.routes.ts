@@ -15,6 +15,9 @@ import { MaterialsStore } from './features/materials/state/materials.store';
 import { SURFACE_FINISHES_REPOSITORY } from './features/surface-finishes/data/surface-finishes.repository';
 import { SurfaceFinishesMockRepository } from './features/surface-finishes/data/surface-finishes.mock-repository';
 import { SurfaceFinishesStore } from './features/surface-finishes/state/surface-finishes.store';
+import { PRODUCTION_WORK_TYPES_REPOSITORY } from './features/production-work-types/data/production-work-types.repository';
+import { ProductionWorkTypesMockRepository } from './features/production-work-types/data/production-work-types.mock-repository';
+import { ProductionWorkTypesStore } from './features/production-work-types/state/production-work-types.store';
 import { UNITS_REPOSITORY } from './features/units/data/units.repository';
 import { UnitsHttpRepository } from './features/units/data/units.http-repository';
 import { UnitsMockRepository } from './features/units/data/units.mock-repository';
@@ -67,6 +70,12 @@ export const appRoutes: Route[] = [
       {
         provide: SURFACE_FINISHES_REPOSITORY,
         useExisting: SurfaceFinishesMockRepository,
+      },
+      ProductionWorkTypesMockRepository,
+      ProductionWorkTypesStore,
+      {
+        provide: PRODUCTION_WORK_TYPES_REPOSITORY,
+        useExisting: ProductionWorkTypesMockRepository,
       },
     ],
   },

@@ -9,6 +9,11 @@
   margin-top: var(--ui-card-margin-top);
 }
 
+.cardConstrainedWidth {
+  box-sizing: border-box;
+  width: 100%;
+}
+
 .cardTitle {
   margin: 0 0 var(--ui-card-title-margin-bottom);
   font-size: var(--font-size-card-title);

@@ -2,6 +2,7 @@
 
 ## Основные разделы
 
+- `docs/business-logic-canon.md` — **рабочая книга бизнес-логики** (решения, шаблон для новых тем, задел по реестрам, **слияние с архивом** [crmgenerator_nx](https://github.com/gostreetogle-create/crmgenerator_nx)); точка входа для ИИ и команды.
 - `docs/01-idea.md` — текущая идея/направление проекта.
 - `docs/backend-map/README.md` — правила ведения backend-map.
 - `docs/backend-map/OVERVIEW.generated.md` — автогенерируемый табличный обзор JSON-модели.

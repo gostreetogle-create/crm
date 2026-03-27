@@ -4,11 +4,18 @@ import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Va
 import { Subscription } from 'rxjs';
 import { PermissionsService } from '../../../../core/auth/public-api';
 import { GeometriesStore } from '../../../geometries/state/geometries.store';
+import {
+  GEOMETRY_DIAMETER_LABEL,
+  GeometryDimKey,
+  isGeometryDimensionRequired,
+  isGeometryDimensionVisible,
+} from '../../../geometries/utils/geometry-shape-config';
 import { MaterialsStore } from '../../../materials/state/materials.store';
 import { UnitsStore } from '../../../units/state/units.store';
 import { ColorsStore } from '../../../colors/state/colors.store';
 import { CoatingsStore } from '../../../coatings/state/coatings.store';
 import { SurfaceFinishesStore } from '../../../surface-finishes/state/surface-finishes.store';
+import { ProductionWorkTypesStore } from '../../../production-work-types/state/production-work-types.store';
 import { ContentCardComponent } from '../../../../shared/ui/content-card/content-card.component';
 import { CrudLayoutComponent, TableColumn } from '../../../../shared/ui/crud-layout/public-api';
 import { UiModal as UiModalComponent } from '../../../../shared/ui/modal/public-api';
@@ -48,7 +55,9 @@ export class DictionariesPage implements OnDestroy {
   readonly colorsStore = inject(ColorsStore);
   readonly coatingsStore = inject(CoatingsStore);
   readonly surfaceFinishesStore = inject(SurfaceFinishesStore);
+  readonly productionWorkTypesStore = inject(ProductionWorkTypesStore);
 
+  readonly isWorkTypesModalOpen = signal(false);
   readonly isMaterialsModalOpen = signal(false);
   readonly isGeometriesModalOpen = signal(false);
   readonly isUnitsModalOpen = signal(false);
@@ -61,14 +70,25 @@ export class DictionariesPage implements OnDestroy {
   readonly isColorsViewMode = signal(false);
   readonly isCoatingsViewMode = signal(false);
   readonly isSurfaceFinishesViewMode = signal(false);
+  readonly isWorkTypesViewMode = signal(false);
   readonly colorQuickAddForMaterials = signal(false);
+  readonly unitQuickAddForMaterials = signal(false);
   readonly coatingQuickAddForMaterials = signal(false);
   readonly surfaceQuickAddForMaterials = signal(false);
   readonly excelImportStatus = signal('');
 
+  readonly workTypesColumns: TableColumn[] = [
+    { key: 'name', label: 'Наименование' },
+    { key: 'shortLabel', label: 'Коротк. обозн.' },
+    { key: 'hourlyRateLabel', label: '₽/ч' },
+    { key: 'isActiveLabel', label: 'Активна' },
+  ];
+
   readonly materialsColumns: TableColumn[] = [
     { key: 'name', label: 'Название' },
     { key: 'code', label: 'Код' },
+    { key: 'unit', label: 'Ед. изм.' },
+    { key: 'priceLabel', label: '₽/ед.' },
     { key: 'densityKgM3', label: 'Плотность' },
     { key: 'color', label: 'Цвет' },
     { key: 'finish', label: 'Финиш/шерох.' },
@@ -109,9 +129,18 @@ export class DictionariesPage implements OnDestroy {
     { key: 'thicknessMicron', label: 'Толщина, мкм' },
   ];
 
+  readonly workTypesForm = this.fb.nonNullable.group({
+    name: ['', [Validators.required, Validators.minLength(2)]],
+    shortLabel: ['', [Validators.required, Validators.minLength(1)]],
+    hourlyRateRub: [0, [Validators.required, Validators.min(1)]],
+    isActive: [true],
+  });
+
   readonly materialsForm = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.minLength(2)]],
     code: [''],
+    unitId: ['', Validators.required],
+    purchasePriceRub: [0, [Validators.required, Validators.min(1)]],
     densityKgM3: [null as number | null],
     colorId: [''],
     colorName: [''],
@@ -135,6 +164,8 @@ export class DictionariesPage implements OnDestroy {
     { value: 'plate', label: 'Лист' },
     { value: 'custom', label: 'Произвольная' },
   ];
+
+  readonly geometryDiameterFieldLabel = GEOMETRY_DIAMETER_LABEL;
 
   readonly geometriesForm = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.minLength(2)]],
@@ -180,6 +211,18 @@ export class DictionariesPage implements OnDestroy {
     this.colorsStore.loadItems();
     this.coatingsStore.loadItems();
     this.surfaceFinishesStore.loadItems();
+    this.productionWorkTypesStore.loadItems();
+
+    this.sub.add(
+      this.workTypesForm.controls.name.valueChanges.subscribe(() => {
+        const c = this.workTypesForm.controls.name;
+        const err = c.errors;
+        if (err?.['duplicate']) {
+          const { duplicate: _d, ...rest } = err;
+          c.setErrors(Object.keys(rest).length ? rest : null);
+        }
+      })
+    );
 
     this.applyGeometryShapeValidators(this.geometriesForm.controls.shapeKey.value);
     this.sub.add(
@@ -208,6 +251,152 @@ export class DictionariesPage implements OnDestroy {
     this.sub.unsubscribe();
   }
 
+  openWorkTypesCreate(): void {
+    if (!this.permissions.crud().canCreate) return;
+    this.isWorkTypesViewMode.set(false);
+    this.workTypesForm.enable({ emitEvent: false });
+    this.productionWorkTypesStore.startCreate();
+    this.workTypesForm.reset({
+      name: '',
+      shortLabel: '',
+      hourlyRateRub: 0,
+      isActive: true,
+    });
+    this.isWorkTypesModalOpen.set(true);
+  }
+
+  openWorkTypesEdit(id: string): void {
+    if (!this.permissions.crud().canEdit) return;
+    this.isWorkTypesViewMode.set(false);
+    this.workTypesForm.enable({ emitEvent: false });
+    const item = this.productionWorkTypesStore.items().find((x) => x.id === id);
+    if (!item) return;
+    this.productionWorkTypesStore.startEdit(item.id);
+    this.workTypesForm.reset({
+      name: item.name ?? '',
+      shortLabel: item.shortLabel ?? '',
+      hourlyRateRub: item.hourlyRateRub,
+      isActive: item.isActive,
+    });
+    this.isWorkTypesModalOpen.set(true);
+  }
+
+  closeWorkTypesModal(): void {
+    this.productionWorkTypesStore.resetForm();
+    this.isWorkTypesViewMode.set(false);
+    this.isWorkTypesModalOpen.set(false);
+  }
+
+  submitWorkTypes(): void {
+    const payload = this.buildWorkTypesPayload();
+    const nameCtrl = this.workTypesForm.controls.name;
+    if (this.workTypesForm.invalid) {
+      this.productionWorkTypesStore.submit({ value: payload, isValid: false });
+      this.workTypesForm.markAllAsTouched();
+      return;
+    }
+    const nameKey = this.normalizeWorkTypeName(payload.name);
+    const editId = this.productionWorkTypesStore.editId();
+    const hasDup = this.productionWorkTypesStore
+      .items()
+      .some((x) => x.id !== editId && this.normalizeWorkTypeName(x.name) === nameKey);
+    if (hasDup) {
+      nameCtrl.setErrors({ ...(nameCtrl.errors ?? {}), duplicate: true });
+      this.productionWorkTypesStore.submit({ value: payload, isValid: false });
+      this.workTypesForm.markAllAsTouched();
+      return;
+    }
+    this.productionWorkTypesStore.submit({ value: payload, isValid: true });
+    this.closeWorkTypesModal();
+  }
+
+  workTypesNameErrorText(): string {
+    const c = this.workTypesForm.controls.name;
+    if (
+      !c.invalid ||
+      !(c.touched || c.dirty || this.productionWorkTypesStore.formSubmitAttempted())
+    ) {
+      return '';
+    }
+    if (c.hasError('duplicate')) return 'Такое наименование уже есть';
+    if (c.hasError('required')) return 'Укажите наименование';
+    if (c.hasError('minlength')) return 'Минимум 2 символа';
+    return 'Проверьте наименование';
+  }
+
+  /** Сравнение наименований без учёта регистра (для дубликатов в форме и Excel). */
+  private normalizeWorkTypeName(raw: string): string {
+    return raw.trim().toLocaleLowerCase('ru-RU');
+  }
+
+  deleteWorkType(id: string): void {
+    if (!this.permissions.crud().canDelete) return;
+    this.productionWorkTypesStore.delete(id);
+  }
+
+  duplicateWorkType(id: string): void {
+    if (!this.permissions.can('crud.duplicate')) return;
+    const item = this.productionWorkTypesStore.items().find((x) => x.id === id);
+    if (!item) return;
+    this.isWorkTypesViewMode.set(false);
+    this.workTypesForm.enable({ emitEvent: false });
+    this.productionWorkTypesStore.startCreate();
+    this.workTypesForm.reset({
+      name: `${item.name} (копия)`,
+      shortLabel: item.shortLabel,
+      hourlyRateRub: item.hourlyRateRub,
+      isActive: item.isActive,
+    });
+    this.isWorkTypesModalOpen.set(true);
+  }
+
+  openWorkTypesView(id: string): void {
+    const item = this.productionWorkTypesStore.items().find((x) => x.id === id);
+    if (!item) return;
+    this.productionWorkTypesStore.resetForm();
+    this.workTypesForm.reset({
+      name: item.name ?? '',
+      shortLabel: item.shortLabel ?? '',
+      hourlyRateRub: item.hourlyRateRub,
+      isActive: item.isActive,
+    });
+    this.workTypesForm.disable({ emitEvent: false });
+    this.isWorkTypesViewMode.set(true);
+    this.isWorkTypesModalOpen.set(true);
+  }
+
+  isWorkTypesInvalid(controlName: keyof typeof this.workTypesForm.controls): boolean {
+    const control = this.workTypesForm.controls[controlName];
+    return (
+      control.invalid &&
+      (control.touched || control.dirty || this.productionWorkTypesStore.formSubmitAttempted())
+    );
+  }
+
+  private buildWorkTypesPayload() {
+    const rawRate = this.workTypesForm.controls.hourlyRateRub.value;
+    const hourlyRateRub = typeof rawRate === 'number' ? rawRate : Number(rawRate);
+    return {
+      name: this.workTypesForm.controls.name.value.trim(),
+      shortLabel: this.workTypesForm.controls.shortLabel.value.trim(),
+      hourlyRateRub: Number.isFinite(hourlyRateRub) ? Math.round(hourlyRateRub) : 0,
+      isActive: this.workTypesForm.controls.isActive.value,
+    };
+  }
+
+  workTypesHourlyRateErrorText(): string {
+    const c = this.workTypesForm.controls.hourlyRateRub;
+    if (
+      !c.invalid ||
+      !(c.touched || c.dirty || this.productionWorkTypesStore.formSubmitAttempted())
+    ) {
+      return '';
+    }
+    if (c.hasError('required')) return 'Укажите ставку';
+    if (c.hasError('min')) return 'Минимум 1 ₽/ч';
+    return 'Проверьте ставку';
+  }
+
   openMaterialsCreate(): void {
     if (!this.permissions.crud().canCreate) return;
     this.isMaterialsViewMode.set(false);
@@ -216,6 +405,8 @@ export class DictionariesPage implements OnDestroy {
     this.materialsForm.reset({
       name: '',
       code: '',
+      unitId: '',
+      purchasePriceRub: 0,
       densityKgM3: null,
       colorId: '',
       colorName: '',
@@ -244,6 +435,8 @@ export class DictionariesPage implements OnDestroy {
     this.materialsForm.reset({
       name: item.name ?? '',
       code: item.code ?? '',
+      unitId: item.unitId ?? '',
+      purchasePriceRub: item.purchasePriceRub ?? 0,
       densityKgM3: item.densityKgM3 ?? null,
       colorId: item.colorId ?? '',
       colorName: item.colorName ?? '',
@@ -297,6 +490,8 @@ export class DictionariesPage implements OnDestroy {
     this.materialsForm.reset({
       name: item.name ? `${item.name} (копия)` : '',
       code: item.code ?? '',
+      unitId: item.unitId ?? '',
+      purchasePriceRub: item.purchasePriceRub ?? 0,
       densityKgM3: item.densityKgM3 ?? null,
       colorId: item.colorId ?? '',
       colorName: item.colorName ?? '',
@@ -325,6 +520,8 @@ export class DictionariesPage implements OnDestroy {
     this.materialsForm.reset({
       name: item.name ?? '',
       code: item.code ?? '',
+      unitId: item.unitId ?? '',
+      purchasePriceRub: item.purchasePriceRub ?? 0,
       densityKgM3: item.densityKgM3 ?? null,
       colorId: item.colorId ?? '',
       colorName: item.colorName ?? '',
@@ -451,7 +648,7 @@ export class DictionariesPage implements OnDestroy {
     this.isGeometriesModalOpen.set(true);
   }
 
-  openUnitsCreate(): void {
+  openUnitsCreate(fromMaterials = false): void {
     if (!this.permissions.crud().canCreate) return;
     this.isUnitsViewMode.set(false);
     this.unitsForm.enable({ emitEvent: false });
@@ -462,6 +659,7 @@ export class DictionariesPage implements OnDestroy {
       notes: '',
       isActive: true,
     });
+    this.unitQuickAddForMaterials.set(fromMaterials);
     this.isUnitsModalOpen.set(true);
   }
 
@@ -484,6 +682,7 @@ export class DictionariesPage implements OnDestroy {
   closeUnitsModal(): void {
     this.unitsStore.resetForm();
     this.isUnitsViewMode.set(false);
+    this.unitQuickAddForMaterials.set(false);
     this.isUnitsModalOpen.set(false);
   }
 
@@ -494,13 +693,29 @@ export class DictionariesPage implements OnDestroy {
       this.unitsForm.markAllAsTouched();
       return;
     }
+    const quickAdd = this.unitQuickAddForMaterials();
+    const snapshotKey = `${payload.code.trim().toLowerCase()}|${payload.name.trim()}`;
     this.unitsStore.submit({ value: payload, isValid: true });
+    if (quickAdd) {
+      queueMicrotask(() => {
+        const created = this.unitsStore.items().find(
+          (x) =>
+            `${(x.code ?? '').trim().toLowerCase()}|${x.name.trim()}` === snapshotKey
+        );
+        if (created) {
+          this.materialsForm.controls.unitId.setValue(created.id);
+        }
+      });
+    }
     this.closeUnitsModal();
   }
 
   deleteUnit(id: string): void {
     if (!this.permissions.crud().canDelete) return;
     this.unitsStore.delete(id);
+    if (this.materialsForm.controls.unitId.value === id) {
+      this.materialsForm.controls.unitId.setValue('');
+    }
   }
 
   duplicateUnit(id: string): void {
@@ -983,6 +1198,21 @@ export class DictionariesPage implements OnDestroy {
     }
   }
 
+  async onWorkTypesExcelImported(file: File): Promise<void> {
+    try {
+      const rows = await this.excelRowsFromFile(file);
+      const parsed = this.validateAndMapWorkTypesRows(rows);
+      if (!parsed.ok) {
+        this.excelImportStatus.set(`Импорт отклонен: ${parsed.errors.join(' | ')}`);
+        return;
+      }
+      this.productionWorkTypesStore.createMany(parsed.rows);
+      this.excelImportStatus.set(`Импортировано: ${parsed.rows.length} строк.`);
+    } catch {
+      this.excelImportStatus.set('Импорт отклонен: не удалось прочитать файл.');
+    }
+  }
+
   async onSurfaceFinishesExcelImported(file: File): Promise<void> {
     try {
       const rows = await this.excelRowsFromFile(file);
@@ -1014,19 +1244,24 @@ export class DictionariesPage implements OnDestroy {
   }
 
   async exportMaterialsExcel(): Promise<void> {
-    const rows = this.materialsStore.items().map((item) => ({
-      Название: item.name,
-      Код: item.code ?? '',
-      Плотность: item.densityKgM3 ?? '',
-      Цвет: item.colorName ?? item.colorHex ?? '',
-      Финиш: item.finishType ?? '',
-      Покрытие: item.coatingType ?? '',
-    }));
+    const rows = this.materialsStore.items().map((item) => {
+      const unit = this.unitsStore.items().find((x) => x.id === item.unitId);
+      return {
+        Название: item.name,
+        Код: item.code ?? '',
+        'Код ЕИ': unit?.code ?? '',
+        'Цена ₽': item.purchasePriceRub ?? '',
+        Плотность: item.densityKgM3 ?? '',
+        Цвет: item.colorName ?? item.colorHex ?? '',
+        Финиш: item.finishType ?? '',
+        Покрытие: item.coatingType ?? '',
+      };
+    });
     await this.exportRowsToExcel(
       'materials.xlsx',
       'Materials',
       rows,
-      ['Название', 'Код', 'Плотность', 'Цвет', 'Финиш', 'Покрытие']
+      ['Название', 'Код', 'Код ЕИ', 'Цена ₽', 'Плотность', 'Цвет', 'Финиш', 'Покрытие']
     );
   }
 
@@ -1034,8 +1269,19 @@ export class DictionariesPage implements OnDestroy {
     await this.exportRowsToExcel(
       'materials-template.xlsx',
       'Materials_TEMPLATE',
-      [{ Название: 'Сталь 09Г2С', Код: 'ST-09G2S', Плотность: 7850, Цвет: 'RAL 7035', Финиш: 'Matte', Покрытие: 'Powder coating' }],
-      ['Название', 'Код', 'Плотность', 'Цвет', 'Финиш', 'Покрытие']
+      [
+        {
+          Название: 'Сталь 09Г2С',
+          Код: 'ST-09G2S',
+          'Код ЕИ': 'kg',
+          'Цена ₽': 95,
+          Плотность: 7850,
+          Цвет: 'RAL 7035',
+          Финиш: 'Matte',
+          Покрытие: 'Powder coating',
+        },
+      ],
+      ['Название', 'Код', 'Код ЕИ', 'Цена ₽', 'Плотность', 'Цвет', 'Финиш', 'Покрытие']
     );
   }
 
@@ -1056,7 +1302,7 @@ export class DictionariesPage implements OnDestroy {
     await this.exportRowsToExcel(
       'geometries-template.xlsx',
       'Geometries_TEMPLATE',
-      [{ Название: 'Круглая труба 32x2', Тип: 'tube', Параметры: 'Дн 32, Толщ 2' }],
+      [{ Название: 'Круглая труба 32×2', Тип: 'tube', Параметры: '⌀32×2×6000 мм' }],
       ['Название', 'Тип', 'Параметры']
     );
   }
@@ -1081,6 +1327,38 @@ export class DictionariesPage implements OnDestroy {
       [{ Название: 'шт', Код: 'pcs', Комментарий: 'Штуки' }],
       ['Название', 'Код', 'Комментарий']
     );
+  }
+
+  async exportWorkTypesExcel(): Promise<void> {
+    await this.exportRowsToExcel(
+      'production-work-types.xlsx',
+      'WorkTypes',
+      this.productionWorkTypesStore.items().map((x) => ({
+        Наименование: x.name,
+        'Короткое обозначение': x.shortLabel,
+        'Ставка руб/ч': x.hourlyRateRub,
+        Активна: x.isActive ? 'Да' : 'Нет',
+      })),
+      ['Наименование', 'Короткое обозначение', 'Ставка руб/ч', 'Активна']
+    );
+    this.excelImportStatus.set(`Экспортировано: ${this.productionWorkTypesStore.workTypesData().length} строк.`);
+  }
+
+  async downloadWorkTypesTemplateExcel(): Promise<void> {
+    await this.exportRowsToExcel(
+      'production-work-types-template.xlsx',
+      'WorkTypes_TEMPLATE',
+      [
+        {
+          Наименование: 'Сварка',
+          'Короткое обозначение': 'Св.',
+          'Ставка руб/ч': 600,
+          Активна: 'Да',
+        },
+      ],
+      ['Наименование', 'Короткое обозначение', 'Ставка руб/ч', 'Активна']
+    );
+    this.excelImportStatus.set('Шаблон Excel скачан.');
   }
 
   async exportSurfaceFinishesExcel(): Promise<void> {
@@ -1202,6 +1480,10 @@ export class DictionariesPage implements OnDestroy {
     );
   }
 
+  geometriesDimensionVisible(field: GeometryDimKey): boolean {
+    return isGeometryDimensionVisible(this.geometriesForm.controls.shapeKey.value, field);
+  }
+
   isUnitsInvalid(controlName: keyof typeof this.unitsForm.controls): boolean {
     const control = this.unitsForm.controls[controlName];
     return (
@@ -1241,10 +1523,30 @@ export class DictionariesPage implements OnDestroy {
     );
   }
 
+  materialsPurchasePriceErrorText(): string {
+    const c = this.materialsForm.controls.purchasePriceRub;
+    if (
+      !c.invalid ||
+      !(c.touched || c.dirty || this.materialsStore.formSubmitAttempted())
+    ) {
+      return '';
+    }
+    if (c.hasError('required')) return 'Укажите цену';
+    if (c.hasError('min')) return 'Минимум 1 ₽ за единицу';
+    return 'Проверьте цену';
+  }
+
   private buildMaterialsPayload() {
+    const uid = this.materialsForm.controls.unitId.value;
+    const u = this.unitsStore.items().find((x) => x.id === uid);
+    const rawP = this.materialsForm.controls.purchasePriceRub.value;
+    const purchasePriceRub = typeof rawP === 'number' ? rawP : Number(rawP);
     return {
       name: this.materialsForm.controls.name.value.trim(),
       code: this.materialsForm.controls.code.value.trim() || undefined,
+      unitId: uid || undefined,
+      unitName: u ? `${u.name} (${u.code ?? '—'})` : undefined,
+      purchasePriceRub: Number.isFinite(purchasePriceRub) ? Math.round(purchasePriceRub) : 0,
       densityKgM3: this.materialsForm.controls.densityKgM3.value ?? undefined,
       colorId: this.materialsForm.controls.colorId.value || undefined,
       colorName: this.materialsForm.controls.colorName.value.trim() || undefined,
@@ -1430,11 +1732,21 @@ export class DictionariesPage implements OnDestroy {
     return classicOk || designOk ? null : { ralCodeFormat: true };
   }
 
+  private resolveMaterialUnitIdByCode(raw: string): { id: string; label: string } | null {
+    const key = raw.trim().toLowerCase();
+    if (!key) return null;
+    const u = this.unitsStore.items().find((x) => (x.code ?? '').trim().toLowerCase() === key);
+    return u ? { id: u.id, label: `${u.name} (${u.code})` } : null;
+  }
+
   private validateAndMapMaterialsRows(rows: ReadonlyArray<Record<string, unknown>>): {
     ok: boolean;
     rows: Array<{
       name: string;
       code?: string;
+      unitId?: string;
+      unitName?: string;
+      purchasePriceRub?: number;
       densityKgM3?: number;
       colorName?: string;
       colorHex?: string;
@@ -1449,6 +1761,9 @@ export class DictionariesPage implements OnDestroy {
     const mapped: Array<{
       name: string;
       code?: string;
+      unitId?: string;
+      unitName?: string;
+      purchasePriceRub?: number;
       densityKgM3?: number;
       colorName?: string;
       colorHex?: string;
@@ -1460,7 +1775,16 @@ export class DictionariesPage implements OnDestroy {
 
     if (!rows.length) return { ok: false, rows: mapped, errors: ['Пустой файл.'] };
 
-    const requiredHeaders = ['Название', 'Код', 'Плотность', 'Цвет', 'Финиш', 'Покрытие'];
+    const requiredHeaders = [
+      'Название',
+      'Код',
+      'Код ЕИ',
+      'Цена ₽',
+      'Плотность',
+      'Цвет',
+      'Финиш',
+      'Покрытие',
+    ];
     const firstKeys = Object.keys(rows[0] ?? {});
     const missingHeaders = requiredHeaders.filter((h) => !firstKeys.includes(h));
     if (missingHeaders.length) {
@@ -1475,6 +1799,8 @@ export class DictionariesPage implements OnDestroy {
       const rowNo = idx + 2;
       const name = String(row['Название'] ?? '').trim();
       const code = String(row['Код'] ?? '').trim();
+      const unitCode = String(row['Код ЕИ'] ?? '').trim();
+      const priceRaw = this.parseNumberOrNull(row['Цена ₽']);
       const density = this.parseNumberOrNull(row['Плотность']);
       const colorRaw = String(row['Цвет'] ?? '').trim();
       const finishType = String(row['Финиш'] ?? '').trim();
@@ -1482,6 +1808,17 @@ export class DictionariesPage implements OnDestroy {
 
       if (!name || !colorRaw || !finishType || !coatingType) {
         errors.push(`Строка ${rowNo}: заполните Название/Цвет/Финиш/Покрытие.`);
+        return;
+      }
+      const unitRef = this.resolveMaterialUnitIdByCode(unitCode);
+      if (!unitRef) {
+        errors.push(
+          `Строка ${rowNo}: неизвестный «Код ЕИ» «${unitCode}» — заведите единицу в справочнике или проверьте код.`
+        );
+        return;
+      }
+      if (priceRaw === null || Math.round(priceRaw) < 1) {
+        errors.push(`Строка ${rowNo}: «Цена ₽» — целое число не меньше 1.`);
         return;
       }
       if (density === null || density < 0) {
@@ -1496,6 +1833,9 @@ export class DictionariesPage implements OnDestroy {
       mapped.push({
         name,
         code: code || undefined,
+        unitId: unitRef.id,
+        unitName: unitRef.label,
+        purchasePriceRub: Math.round(priceRaw),
         densityKgM3: density,
         colorHex,
         colorName,
@@ -1508,6 +1848,103 @@ export class DictionariesPage implements OnDestroy {
 
     if (errors.length) return { ok: false, rows: mapped, errors: errors.slice(0, 6) };
     return { ok: true, rows: mapped, errors: [] };
+  }
+
+  /**
+   * Компактный формат (как в UI/экспорте): 20×20×3×6000 мм, ⌀32×2×6000 мм, разделители × x X х.
+   */
+  private tryParseCompactGeometryParams(
+    raw: string,
+    shapeKey: string
+  ): {
+    heightMm: number | null;
+    lengthMm: number | null;
+    widthMm: number | null;
+    diameterMm: number | null;
+    thicknessMm: number | null;
+  } | null {
+    let s = raw.trim();
+    s = s.replace(/\s*мм\s*$/i, '').replace(/\s*mm\s*$/i, '').trim();
+    if (!s) return null;
+
+    const parts = s.split(/[×xXх\u00D7]/u).map((p) => p.trim()).filter(Boolean);
+    if (!parts.length) return null;
+
+    const nums: number[] = [];
+    for (const p of parts) {
+      const cleaned = p
+        .replace(/^[⌀Ø]\s*/u, '')
+        .replace(/^диам\.?\s*/i, '');
+      const v = this.parseNumberOrNull(cleaned);
+      if (v === null) return null;
+      nums.push(v);
+    }
+
+    const n = nums;
+    switch (shapeKey) {
+      case 'rectangular':
+        if (n.length === 4) {
+          return {
+            heightMm: n[0],
+            widthMm: n[1],
+            thicknessMm: n[2],
+            lengthMm: n[3],
+            diameterMm: null,
+          };
+        }
+        if (n.length === 3) {
+          return {
+            heightMm: n[0],
+            widthMm: n[1],
+            thicknessMm: null,
+            lengthMm: n[2],
+            diameterMm: null,
+          };
+        }
+        return null;
+      case 'tube':
+        if (n.length === 3) {
+          return {
+            diameterMm: n[0],
+            thicknessMm: n[1],
+            lengthMm: n[2],
+            heightMm: null,
+            widthMm: null,
+          };
+        }
+        return null;
+      case 'cylindrical':
+        if (n.length === 2) {
+          return {
+            diameterMm: n[0],
+            lengthMm: n[1],
+            heightMm: null,
+            widthMm: null,
+            thicknessMm: null,
+          };
+        }
+        return null;
+      case 'plate':
+        if (n.length === 3) {
+          return {
+            lengthMm: n[0],
+            widthMm: n[1],
+            thicknessMm: n[2],
+            heightMm: null,
+            diameterMm: null,
+          };
+        }
+        return null;
+      default:
+        if (n.length === 0 || n.length > 5) return null;
+        return {
+          heightMm: n[0] ?? null,
+          widthMm: n[1] ?? null,
+          lengthMm: n[2] ?? null,
+          diameterMm: n[3] ?? null,
+          thicknessMm: n[4] ?? null,
+        };
+    }
   }
 
   private validateAndMapGeometriesRows(rows: ReadonlyArray<Record<string, unknown>>): {
@@ -1571,15 +2008,35 @@ export class DictionariesPage implements OnDestroy {
       }
 
       const params = paramsRaw;
-      const heightMm = extractNumber(params, /В\s*([0-9.,-]+)/i);
-      const lengthMm = extractNumber(params, /Дл\s*([0-9.,-]+)/i);
-      const widthMm = extractNumber(params, /Ш\s*([0-9.,-]+)/i);
-      const diameterMm = extractNumber(params, /Диам\s*([0-9.,-]+)/i);
-      const thicknessMm = extractNumber(params, /Толщ\s*([0-9.,-]+)/i);
+      let heightMm = extractNumber(params, /В\s*([0-9.,-]+)/i);
+      let lengthMm = extractNumber(params, /Дл\s*([0-9.,-]+)/i);
+      let widthMm = extractNumber(params, /Ш\s*([0-9.,-]+)/i);
+      let diameterMm = extractNumber(params, /Диам\s*([0-9.,-]+)/i);
+      let thicknessMm = extractNumber(params, /Толщ\s*([0-9.,-]+)/i);
+
+      const legacyAny =
+        heightMm !== null ||
+        lengthMm !== null ||
+        widthMm !== null ||
+        diameterMm !== null ||
+        thicknessMm !== null;
+
+      if (!legacyAny) {
+        const c = this.tryParseCompactGeometryParams(params, shapeKey);
+        if (c) {
+          heightMm = c.heightMm;
+          lengthMm = c.lengthMm;
+          widthMm = c.widthMm;
+          diameterMm = c.diameterMm;
+          thicknessMm = c.thicknessMm;
+        }
+      }
 
       const extractedAny = [heightMm, lengthMm, widthMm, diameterMm, thicknessMm].some((v) => v !== null);
       if (!extractedAny) {
-        errors.push(`Строка ${rowNo}: Параметры не распознаны (ожидаются числа после «В/Дл/Ш/Диам/Толщ»).`);
+        errors.push(
+          `Строка ${rowNo}: Параметры не распознаны (старый формат: «В/Дл/Ш/Диам/Толщ …» или компактно: 20×20×3×6000 мм, ⌀32×2×6000 мм и т.п.).`
+        );
         return;
       }
 
@@ -1627,6 +2084,90 @@ export class DictionariesPage implements OnDestroy {
         notes: '',
         isActive: true,
       });
+    });
+
+    if (errors.length) return { ok: false, rows: mapped, errors: errors.slice(0, 6) };
+    return { ok: true, rows: mapped, errors: [] };
+  }
+
+  private parseExcelBool(raw: unknown, defaultTrue: boolean): boolean {
+    if (raw === null || raw === undefined || raw === '') return defaultTrue;
+    const s = String(raw).trim().toLowerCase();
+    if (!s) return defaultTrue;
+    if (['да', 'д', 'yes', 'y', '1', 'true'].includes(s)) return true;
+    if (['нет', 'н', 'no', 'n', '0', 'false'].includes(s)) return false;
+    return defaultTrue;
+  }
+
+  private validateAndMapWorkTypesRows(rows: ReadonlyArray<Record<string, unknown>>): {
+    ok: boolean;
+    rows: Array<{
+      name: string;
+      shortLabel: string;
+      hourlyRateRub: number;
+      isActive: boolean;
+    }>;
+    errors: string[];
+  } {
+    const errors: string[] = [];
+    const mapped: Array<{
+      name: string;
+      shortLabel: string;
+      hourlyRateRub: number;
+      isActive: boolean;
+    }> = [];
+
+    if (!rows.length) return { ok: false, rows: mapped, errors: ['Пустой файл.'] };
+
+    const requiredHeaders = ['Наименование', 'Короткое обозначение', 'Ставка руб/ч', 'Активна'];
+    const firstKeys = Object.keys(rows[0] ?? {});
+    const missingHeaders = requiredHeaders.filter((h) => !firstKeys.includes(h));
+    if (missingHeaders.length) {
+      return { ok: false, rows: mapped, errors: [`Нет колонок: ${missingHeaders.join(', ')}`] };
+    }
+
+    const seenInFile = new Set<string>();
+    const existingNames = new Set(
+      this.productionWorkTypesStore.items().map((x) => this.normalizeWorkTypeName(x.name))
+    );
+
+    rows.forEach((row, idx) => {
+      const rowNo = idx + 2;
+      const name = String(row['Наименование'] ?? '').trim();
+      const shortLabel = String(row['Короткое обозначение'] ?? '').trim();
+      const rateRaw = this.parseNumberOrNull(row['Ставка руб/ч']);
+      const isActive = this.parseExcelBool(row['Активна'], true);
+      const nameKey = this.normalizeWorkTypeName(name);
+
+      if (!name || !shortLabel) {
+        errors.push(`Строка ${rowNo}: заполните Наименование и Короткое обозначение.`);
+        return;
+      }
+      if (rateRaw === null) {
+        errors.push(`Строка ${rowNo}: укажите числовую «Ставка руб/ч».`);
+        return;
+      }
+      const hourlyRateRub = Math.round(rateRaw);
+      if (hourlyRateRub < 1) {
+        errors.push(`Строка ${rowNo}: «Ставка руб/ч» — целое число не меньше 1.`);
+        return;
+      }
+      if (name.length < 2) {
+        errors.push(`Строка ${rowNo}: Наименование — минимум 2 символа.`);
+        return;
+      }
+      if (seenInFile.has(nameKey)) {
+        errors.push(`Строка ${rowNo}: наименование «${name}» повторяется в файле.`);
+        return;
+      }
+      seenInFile.add(nameKey);
+      if (existingNames.has(nameKey)) {
+        errors.push(`Строка ${rowNo}: наименование «${name}» уже есть в справочнике.`);
+        return;
+      }
+      existingNames.add(nameKey);
+
+      mapped.push({ name, shortLabel, hourlyRateRub, isActive });
     });
 
     if (errors.length) return { ok: false, rows: mapped, errors: errors.slice(0, 6) };
@@ -1752,43 +2293,25 @@ export class DictionariesPage implements OnDestroy {
 
   private applyGeometryShapeValidators(shape: string): void {
     const c = this.geometriesForm.controls;
-    c.heightMm.clearValidators();
-    c.lengthMm.clearValidators();
-    c.widthMm.clearValidators();
-    c.diameterMm.clearValidators();
-    c.thicknessMm.clearValidators();
-
     const optionalNonNegative = [Validators.min(0)];
+    const requiredNonNeg = [Validators.required, ...optionalNonNegative];
+    const keys: GeometryDimKey[] = ['heightMm', 'lengthMm', 'widthMm', 'diameterMm', 'thicknessMm'];
 
-    if (shape === 'rectangular') {
-      c.heightMm.setValidators([Validators.required, ...optionalNonNegative]);
-      c.lengthMm.setValidators([Validators.required, ...optionalNonNegative]);
-      c.widthMm.setValidators([Validators.required, ...optionalNonNegative]);
-      c.thicknessMm.setValidators(optionalNonNegative);
-    } else if (shape === 'cylindrical') {
-      c.diameterMm.setValidators([Validators.required, ...optionalNonNegative]);
-      c.lengthMm.setValidators([Validators.required, ...optionalNonNegative]);
-    } else if (shape === 'tube') {
-      c.diameterMm.setValidators([Validators.required, ...optionalNonNegative]);
-      c.thicknessMm.setValidators([Validators.required, ...optionalNonNegative]);
-      c.lengthMm.setValidators([Validators.required, ...optionalNonNegative]);
-    } else if (shape === 'plate') {
-      c.lengthMm.setValidators([Validators.required, ...optionalNonNegative]);
-      c.widthMm.setValidators([Validators.required, ...optionalNonNegative]);
-      c.thicknessMm.setValidators([Validators.required, ...optionalNonNegative]);
-    } else {
-      c.lengthMm.setValidators(optionalNonNegative);
-      c.widthMm.setValidators(optionalNonNegative);
-      c.heightMm.setValidators(optionalNonNegative);
-      c.diameterMm.setValidators(optionalNonNegative);
-      c.thicknessMm.setValidators(optionalNonNegative);
+    for (const key of keys) {
+      const control = c[key];
+      control.clearValidators();
+      if (!isGeometryDimensionVisible(shape, key)) {
+        control.setValidators(optionalNonNegative);
+        control.updateValueAndValidity({ emitEvent: false });
+        continue;
+      }
+      if (isGeometryDimensionRequired(shape, key)) {
+        control.setValidators(requiredNonNeg);
+      } else {
+        control.setValidators(optionalNonNegative);
+      }
+      control.updateValueAndValidity({ emitEvent: false });
     }
-
-    c.heightMm.updateValueAndValidity({ emitEvent: false });
-    c.lengthMm.updateValueAndValidity({ emitEvent: false });
-    c.widthMm.updateValueAndValidity({ emitEvent: false });
-    c.diameterMm.updateValueAndValidity({ emitEvent: false });
-    c.thicknessMm.updateValueAndValidity({ emitEvent: false });
   }
 }
 

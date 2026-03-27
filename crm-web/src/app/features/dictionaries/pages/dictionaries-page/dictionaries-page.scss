@@ -14,9 +14,11 @@
   grid-column: 1 / -1;
 }
 
+/* Короткие формы (≤6 основных полей): одна колонка. Длинные (>6): добавить класс formGridWide — две колонки. См. docs/frontend/dictionary-field-behavior-guide.md */
 .formGrid {
   display: grid;
   gap: 12px;
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .formGridWide {
@@ -58,6 +60,37 @@
   color: var(--text-muted);
   font-size: var(--font-size-small);
   line-height: 1.2;
+}
+
+.geometriesFormPanel {
+  max-width: min(100%, 28rem);
+}
+
+.geometryParams {
+  margin: 0;
+  padding: var(--ui-space-2);
+  border: 1px solid color-mix(in srgb, var(--border-color) 65%, transparent);
+  border-radius: var(--radius-card);
+  grid-column: 1 / -1;
+}
+
+.geometryParams legend {
+  padding: 0 6px;
+  font-size: var(--font-size-small);
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.geometryDimsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+@media (max-width: 860px) {
+  .geometryDimsGrid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 1100px) {

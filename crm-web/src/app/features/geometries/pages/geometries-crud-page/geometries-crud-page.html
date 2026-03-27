@@ -17,7 +17,12 @@
 
   @if (!vm().isEditDialogOpen) {
     <app-content-card *appHasPermission="'crud.create'" title="Добавление формы и габаритных размеров">
-      <form id="geometry-create-form" [formGroup]="form" (ngSubmit)="submitCreate()" class="formGrid">
+      <form
+        id="geometry-create-form"
+        [formGroup]="form"
+        (ngSubmit)="submitCreate()"
+        class="formGrid geometriesFormPanel"
+      >
         <app-ui-form-field
           label="Название"
           [required]="true"
@@ -38,45 +43,55 @@
         </select>
       </app-ui-form-field>
 
-      <app-ui-form-field
-        label="Высота (мм)"
-        [invalid]="isInvalid('heightMm')"
-        [errorText]="hasError('heightMm') ? errorText('heightMm') : ''"
-      >
-        <input type="number" formControlName="heightMm" />
-      </app-ui-form-field>
+      <fieldset class="geometryParams">
+        <legend>Параметры, мм</legend>
+        <div class="geometryDimsGrid">
+          <app-ui-form-field
+            *ngIf="dimensionVisible('diameterMm')"
+            [label]="geometryDiameterLabel"
+            [invalid]="isInvalid('diameterMm')"
+            [errorText]="hasError('diameterMm') ? errorText('diameterMm') : ''"
+          >
+            <input type="number" formControlName="diameterMm" />
+          </app-ui-form-field>
 
-      <app-ui-form-field
-        label="Длина (мм)"
-        [invalid]="isInvalid('lengthMm')"
-        [errorText]="hasError('lengthMm') ? errorText('lengthMm') : ''"
-      >
-        <input type="number" formControlName="lengthMm" />
-      </app-ui-form-field>
+          <app-ui-form-field
+            *ngIf="dimensionVisible('thicknessMm')"
+            label="Толщина (мм)"
+            [invalid]="isInvalid('thicknessMm')"
+            [errorText]="hasError('thicknessMm') ? errorText('thicknessMm') : ''"
+          >
+            <input type="number" formControlName="thicknessMm" />
+          </app-ui-form-field>
 
-      <app-ui-form-field
-        label="Ширина (мм)"
-        [invalid]="isInvalid('widthMm')"
-        [errorText]="hasError('widthMm') ? errorText('widthMm') : ''"
-      >
-        <input type="number" formControlName="widthMm" />
-      </app-ui-form-field>
+          <app-ui-form-field
+            *ngIf="dimensionVisible('heightMm')"
+            label="Высота (мм)"
+            [invalid]="isInvalid('heightMm')"
+            [errorText]="hasError('heightMm') ? errorText('heightMm') : ''"
+          >
+            <input type="number" formControlName="heightMm" />
+          </app-ui-form-field>
 
-      <app-ui-form-field
-        label="Диаметр (мм)"
-        [invalid]="isInvalid('diameterMm')"
-        [errorText]="hasError('diameterMm') ? errorText('diameterMm') : ''"
-      >
-        <input type="number" formControlName="diameterMm" />
-      </app-ui-form-field>
+          <app-ui-form-field
+            *ngIf="dimensionVisible('widthMm')"
+            label="Ширина (мм)"
+            [invalid]="isInvalid('widthMm')"
+            [errorText]="hasError('widthMm') ? errorText('widthMm') : ''"
+          >
+            <input type="number" formControlName="widthMm" />
+          </app-ui-form-field>
 
-      <app-ui-form-field
-        label="Толщина (мм)"
-        [invalid]="isInvalid('thicknessMm')"
-        [errorText]="hasError('thicknessMm') ? errorText('thicknessMm') : ''"
-      >
-        <input type="number" formControlName="thicknessMm" />
-      </app-ui-form-field>
+          <app-ui-form-field
+            *ngIf="dimensionVisible('lengthMm')"
+            label="Длина (мм)"
+            [invalid]="isInvalid('lengthMm')"
+            [errorText]="hasError('lengthMm') ? errorText('lengthMm') : ''"
+          >
+            <input type="number" formControlName="lengthMm" />
+          </app-ui-form-field>
+        </div>
+      </fieldset>
 
       <app-ui-form-field label="Заметки" [wide]="true">
         <textarea rows="3" formControlName="notes"></textarea>
@@ -117,7 +132,7 @@
 </ui-modal>
 
 <ng-template #editContent>
-  <form id="geometry-edit-form" [formGroup]="form" (ngSubmit)="submitEdit()" class="formGrid">
+  <form id="geometry-edit-form" [formGroup]="form" (ngSubmit)="submitEdit()" class="formGrid geometriesFormPanel">
     <app-ui-form-field
       label="Название"
       [required]="true"
@@ -138,45 +153,55 @@
       </select>
     </app-ui-form-field>
 
-    <app-ui-form-field
-      label="Высота (мм)"
-      [invalid]="isInvalid('heightMm')"
-      [errorText]="hasError('heightMm') ? errorText('heightMm') : ''"
-    >
-      <input type="number" formControlName="heightMm" />
-    </app-ui-form-field>
+    <fieldset class="geometryParams">
+      <legend>Параметры, мм</legend>
+      <div class="geometryDimsGrid">
+        <app-ui-form-field
+          *ngIf="dimensionVisible('diameterMm')"
+          [label]="geometryDiameterLabel"
+          [invalid]="isInvalid('diameterMm')"
+          [errorText]="hasError('diameterMm') ? errorText('diameterMm') : ''"
+        >
+          <input type="number" formControlName="diameterMm" />
+        </app-ui-form-field>
 
-    <app-ui-form-field
-      label="Длина (мм)"
-      [invalid]="isInvalid('lengthMm')"
-      [errorText]="hasError('lengthMm') ? errorText('lengthMm') : ''"
-    >
-      <input type="number" formControlName="lengthMm" />
-    </app-ui-form-field>
+        <app-ui-form-field
+          *ngIf="dimensionVisible('thicknessMm')"
+          label="Толщина (мм)"
+          [invalid]="isInvalid('thicknessMm')"
+          [errorText]="hasError('thicknessMm') ? errorText('thicknessMm') : ''"
+        >
+          <input type="number" formControlName="thicknessMm" />
+        </app-ui-form-field>
 
-    <app-ui-form-field
-      label="Ширина (мм)"
-      [invalid]="isInvalid('widthMm')"
-      [errorText]="hasError('widthMm') ? errorText('widthMm') : ''"
-    >
-      <input type="number" formControlName="widthMm" />
-    </app-ui-form-field>
+        <app-ui-form-field
+          *ngIf="dimensionVisible('heightMm')"
+          label="Высота (мм)"
+          [invalid]="isInvalid('heightMm')"
+          [errorText]="hasError('heightMm') ? errorText('heightMm') : ''"
+        >
+          <input type="number" formControlName="heightMm" />
+        </app-ui-form-field>
 
-    <app-ui-form-field
-      label="Диаметр (мм)"
-      [invalid]="isInvalid('diameterMm')"
-      [errorText]="hasError('diameterMm') ? errorText('diameterMm') : ''"
-    >
-      <input type="number" formControlName="diameterMm" />
-    </app-ui-form-field>
+        <app-ui-form-field
+          *ngIf="dimensionVisible('widthMm')"
+          label="Ширина (мм)"
+          [invalid]="isInvalid('widthMm')"
+          [errorText]="hasError('widthMm') ? errorText('widthMm') : ''"
+        >
+          <input type="number" formControlName="widthMm" />
+        </app-ui-form-field>
 
-    <app-ui-form-field
-      label="Толщина (мм)"
-      [invalid]="isInvalid('thicknessMm')"
-      [errorText]="hasError('thicknessMm') ? errorText('thicknessMm') : ''"
-    >
-      <input type="number" formControlName="thicknessMm" />
-    </app-ui-form-field>
+        <app-ui-form-field
+          *ngIf="dimensionVisible('lengthMm')"
+          label="Длина (мм)"
+          [invalid]="isInvalid('lengthMm')"
+          [errorText]="hasError('lengthMm') ? errorText('lengthMm') : ''"
+        >
+          <input type="number" formControlName="lengthMm" />
+        </app-ui-form-field>
+      </div>
+    </fieldset>
 
     <app-ui-form-field label="Заметки" [wide]="true">
       <textarea rows="3" formControlName="notes"></textarea>

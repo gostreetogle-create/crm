@@ -2,6 +2,31 @@
   display: block;
 }
 
+.geometriesFormPanel {
+  max-width: min(100%, 28rem);
+}
+
+.geometryParams {
+  margin: 0;
+  padding: var(--ui-space-2);
+  border: 1px solid color-mix(in srgb, var(--border-color) 65%, transparent);
+  border-radius: var(--radius-card);
+  grid-column: 1 / -1;
+}
+
+.geometryParams legend {
+  padding: 0 6px;
+  font-size: var(--font-size-small);
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.geometryDimsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
 .toolbar {
   display: flex;
   justify-content: flex-end;
@@ -67,6 +92,10 @@
 
 @media (max-width: 860px) {
   .formGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .geometryDimsGrid {
     grid-template-columns: 1fr;
   }
 }

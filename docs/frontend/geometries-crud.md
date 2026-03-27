@@ -1,35 +1,42 @@
-# Geometries CRUD (`посмотреть / добавить / изменить / удалить`)
+# Форма и габаритные размеры — CRUD в `/dictionaries`
 
-Страница `/dictionaries` (блок «Форма и габаритные размеры») реализует полный CRUD для справочника геометрий на mock-репозитории.
+Типовые пресеты геометрии заготовки/профиля (мм). Используются в справочниках и далее в расчётах (масса/площадь — по мере появления бэка). См. `crm-manufacturing-dictionaries.json` и `docs/business-logic-canon.md` при согласовании.
 
-## Что уже работает
+Единый паттерн полей и режимов UI: [`dictionary-field-behavior-guide.md`](./dictionary-field-behavior-guide.md).
 
-- Посмотреть список геометрий.
-- Добавить новую геометрию (через модальное окно).
-- Изменить существующую запись через UI-диалог (модальное окно).
-  - Открытие: кнопка `Изменить` в строке таблицы.
-  - Закрытие: кнопка `Отмена`, клик по backdrop, клавиша `Esc`.
-- Удалить запись.
-- Поля формы: `name`, `shapeKey`, `heightMm`, `lengthMm`, `widthMm`, `diameterMm`, `thicknessMm`, `notes`, `isActive`.
-- Базовая валидация:
-  - `name` обязательно, минимум 2 символа.
-  - Для размеров запрещены отрицательные значения.
-  - Условные обязательные поля по типу `shapeKey`:
-    - `rectangular` -> `heightMm`, `widthMm`
-    - `tube` -> `diameterMm`, `thicknessMm`
-    - `plate` -> `lengthMm`, `widthMm`, `thicknessMm`
-    - `cylindrical` -> `diameterMm`, `lengthMm`
+## Где в коде
 
-## Где лежит код
+- Модель: `crm-web/src/app/features/geometries/model/geometry-item.ts`
+- Правила «тип формы → какие мм поля видны и обязательны»: `crm-web/src/app/features/geometries/utils/geometry-shape-config.ts`
+- Формат строки «Параметры» (таблица, экспорт): `crm-web/src/app/features/geometries/utils/format-geometry-params-display.ts`
+- Mock + репозиторий: `geometries/data/`
+- Store (в т.ч. `params` для таблицы): `geometries/state/geometries.store.ts`
+- Отдельная страница CRUD: `geometries/pages/geometries-crud-page/`
+- UI-блок, модалка и Excel: `dictionaries/pages/dictionaries-page/`
+- Провайдеры: `app.routes.ts` (route `dictionaries`)
 
-- Модель: `src/app/features/geometries/model/geometry-item.ts`
-- Контракт репозитория: `src/app/features/geometries/data/geometries.repository.ts`
-- Mock-реализация: `src/app/features/geometries/data/geometries.mock-repository.ts`
-- Страница CRUD: `src/app/features/geometries/pages/geometries-crud-page/`
-- Роут: `src/app/app.routes.ts` (`/dictionaries`, `/geometries` -> redirect)
-- Кнопки: `UiButtonComponent` (`src/app/shared/ui/ui-button/`)
+## Поля (домен ↔ UI)
 
-## Важно
+| Домен (JSON)   | TS           | Примечание |
+|----------------|--------------|------------|
+| Тип_геометрии  | `shapeKey`   | `rectangular` / `tube` / `plate` / `cylindrical` / `custom` |
+| размеры мм     | `*Mm`        | Набор полей зависит от `shapeKey`; прямоугольная труба/брус — `rectangular`, опционально толщина |
+| Заметки        | `notes`      | |
+| Активна        | `isActive`   | |
 
-Сейчас используется mock-источник (in-memory), без backend. Подключение реального API делаем по той же схеме адаптера, что и для других справочников.
+Подпись поля диаметра в форме: знак **⌀** в label (`GEOMETRY_DIAMETER_LABEL`). В таблице колонка **«Параметры»** — компактная строка, не пять отдельных колонок.
 
+## Excel
+
+Экспорт: колонки `Название`, `Тип`, `Параметры` (компактный формат как в UI).
+
+Импорт: обязательны `Название`, `Тип`, `Параметры`. Поддерживаются:
+
+1. Легендный формат с метками **В / Дл / Ш / Диам / Толщ** (как раньше).
+2. Компактная строка с разделителями **×** (и совместимые `x`, `х`), опциональный хвост `мм`/`mm`, префикс ⌀/Ø у диаметра — разбор по `Тип` (см. `tryParseCompactGeometryParams` в `dictionaries-page.ts`).
+
+Шаблон скачивания: пример строки в компактном виде для `tube`.
+
+## Backend (позже)
+
+HTTP-репозиторий и переключение `GEOMETRIES_REPOSITORY` с mock; контракт DTO совпадает с `GeometryItem` / `GeometryItemInput`.

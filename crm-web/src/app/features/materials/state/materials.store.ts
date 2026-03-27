@@ -38,6 +38,9 @@ export const MaterialsStore = signalStore(
           id: item.id,
           name: item.name,
           code: item.code || '—',
+          unit: item.unitName || '—',
+          priceLabel:
+            item.purchasePriceRub != null ? `${item.purchasePriceRub} ₽` : '—',
           densityKgM3: item.densityKgM3 ?? '—',
           color: item.colorName || item.colorHex || '—',
           finish: item.finishType || item.roughnessClass || '—',

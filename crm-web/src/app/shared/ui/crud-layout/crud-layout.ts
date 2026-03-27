@@ -65,6 +65,8 @@ export class CrudLayoutComponent {
   @Input() canDelete = true;
   @Input() showNameSearch = false;
   @Input() nameSearchPlaceholder = 'Поиск по названию...';
+  /** Карточки (узкая ширина): в `auto` при более чем 5 колонках — две колонки полей. */
+  @Input() cardFieldsLayout: 'auto' | 'single' | 'double' = 'auto';
   @Input() deleteConfirmTitle = 'Подтвердите удаление';
   @Input() deleteConfirmMessage = 'Удалить запись?';
   @Output() view = new EventEmitter<string>();
@@ -88,6 +90,12 @@ export class CrudLayoutComponent {
 
   get hasRowActions(): boolean {
     return this.showRowActions && (this.canView || this.canDuplicate || this.canEdit || this.canDelete);
+  }
+
+  get cardFieldsAreDoubleColumn(): boolean {
+    if (this.cardFieldsLayout === 'double') return true;
+    if (this.cardFieldsLayout === 'single') return false;
+    return this.columns.length > 5;
   }
 
   get visibleData(): any[] {

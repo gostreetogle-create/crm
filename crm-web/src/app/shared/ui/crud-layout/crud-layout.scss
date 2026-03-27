@@ -140,6 +140,17 @@
   margin-bottom: var(--ui-space-10);
 }
 
+.cardFieldsGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+
+.cardFieldsGridDouble {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: var(--ui-space-3);
+}
+
 .card-itemEmpty {
   color: var(--text-muted);
 }
