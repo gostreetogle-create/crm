@@ -76,13 +76,6 @@ export const appRoutes: Route[] = [
     pathMatch: 'full',
   },
   {
-    path: 'material-geometry',
-    loadComponent: () =>
-      import('./features/material-geometry/pages/material-geometry-page/material-geometry-page').then(
-        (m) => m.MaterialGeometryPage
-      ),
-  },
-  {
     path: 'demo',
     loadComponent: () =>
       import('./features/demo/pages/ui-demo-page/ui-demo-page').then((m) => m.UiDemoPage),

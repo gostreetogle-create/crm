@@ -6,7 +6,7 @@
 
 1. `src/app/features/<feature-name>/pages/<page-name>/...`
    - Page = контейнер с данными (массивы, конфиги) и компоновка shared-компонентов.
-   - Например: `material-geometry/pages/material-geometry-page/`.
+   - Например: `dictionaries/pages/dictionaries-page/`.
 
 2. `src/app/features/<feature-name>/components/...` (по мере роста)
    - Локальные компоненты, которые не хочется переиспользовать в других фичах.

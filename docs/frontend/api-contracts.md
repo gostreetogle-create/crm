@@ -1,39 +1,9 @@
 # API contracts (frontend side)
 
-## Material-geometry
+## Dictionaries CRUD endpoints
 
-### Endpoint
-
-- `GET /material-geometry/model`
-
-### Response shape
-
-```json
-{
-  "version": "0.1",
-  "materialFields": [
-    {
-      "key": "id",
-      "label": "Идентификатор",
-      "type": "uuid",
-      "required": true,
-      "comment": "PK"
-    }
-  ],
-  "geometryFields": [
-    {
-      "key": "shapeKey",
-      "label": "Тип геометрии",
-      "type": "string",
-      "required": true,
-      "comment": "rectangular/cylindrical/tube/plate/custom"
-    }
-  ]
-}
-```
-
-TypeScript contract:
-- `crm-web/src/app/features/material-geometry/model/material-geometry-model.ts`
+Frontend now works from the unified `/dictionaries` page and uses feature repositories/stores per dictionary.
+For backend integration, keep contracts in feature modules (`materials`, `geometries`, `units`, `colors`, `surface-finishes`, `coatings`).
 
 ## Switching mock -> http
 
