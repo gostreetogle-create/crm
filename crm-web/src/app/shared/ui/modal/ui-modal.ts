@@ -33,6 +33,7 @@ export class UiModal implements AfterViewInit {
   @Input({ required: true }) content!: TemplateRef<unknown>;
   @Input() actions: TemplateRef<unknown> | null = null;
   @Input() size: 'sm' | 'md' | 'lg' = 'md';
+  @Input() closeOnBackdrop = true;
 
   @Output('close') readonly closed = new EventEmitter<void>();
 
@@ -57,6 +58,9 @@ export class UiModal implements AfterViewInit {
   }
 
   onBackdropClick(event?: Event): void {
+    if (!this.closeOnBackdrop) {
+      return;
+    }
     if (event && event.target !== event.currentTarget) {
       return;
     }

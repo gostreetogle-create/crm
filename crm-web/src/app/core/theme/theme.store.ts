@@ -106,6 +106,9 @@ function applyThemeToCssVars(theme: ThemeTokens): void {
   root.setProperty('--ui-page-shell-padding-x', theme.uiPageShellPaddingX);
   root.setProperty('--ui-page-shell-padding-bottom', theme.uiPageShellPaddingBottom);
   root.setProperty('--ui-space-1', theme.uiSpace1);
+  root.setProperty('--ui-space-2', theme.uiSpace2);
+  root.setProperty('--ui-space-3', theme.uiSpace3);
+  root.setProperty('--ui-space-4', theme.uiSpace4);
   root.setProperty('--ui-row-action-btn-radius', theme.uiRowActionBtnRadius);
   root.setProperty('--ui-shadow-card-offset-y', theme.uiShadowCardOffsetY);
   root.setProperty('--ui-shadow-card-blur', theme.uiShadowCardBlur);

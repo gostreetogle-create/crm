@@ -19,21 +19,21 @@
 
 .ui-form-field input,
 .ui-form-field select {
-  border: 1px solid var(--border-color);
+  border: 1px solid color-mix(in srgb, var(--border-color) 55%, white);
   border-radius: var(--radius-card);
   background: var(--surface-soft);
   color: var(--text-primary);
-  padding: var(--ui-input-padding-y) var(--ui-input-padding-x);
+  padding: 4px var(--ui-input-padding-x);
   font: inherit;
-  min-height: var(--ui-control-min-height);
+  min-height: 30px;
 }
 
 .ui-form-field textarea {
-  border: 1px solid var(--border-color);
+  border: 1px solid color-mix(in srgb, var(--border-color) 55%, white);
   border-radius: var(--radius-card);
   background: var(--surface-soft);
   color: var(--text-primary);
-  padding: var(--ui-input-padding-y) var(--ui-input-padding-x);
+  padding: 6px var(--ui-input-padding-x);
   font: inherit;
 }
 

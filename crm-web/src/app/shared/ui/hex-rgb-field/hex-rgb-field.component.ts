@@ -46,7 +46,7 @@ export class HexRgbFieldComponent {
 
   get pickerHex(): string {
     const parsed = this.parseHex(this.control.value);
-    return parsed ?? '#000000';
+    return parsed ? `#${parsed}` : '#000000';
   }
 
   get rgbValue(): string {

@@ -6,6 +6,11 @@
           title="Материалы"
           [showHeader]="false"
           [showCardLabel]="true"
+          [showNameSearch]="true"
+          [showCreateAction]="true"
+          [canCreate]="permissions.crud().canCreate"
+          createAriaLabel="Добавить материал"
+          createTitle="Добавить материал"
           [columns]="materialsColumns"
           [data]="materialsStore.materialsData()"
           [loading]="materialsStore.loading()"
@@ -17,7 +22,7 @@
           [canDuplicate]="permissions.crud().canDuplicate"
           [canEdit]="permissions.crud().canEdit"
           [canDelete]="permissions.crud().canDelete"
-          [toolbarActions]="materialsToolbarTpl"
+          (create)="openMaterialsCreate()"
           (downloadTemplate)="downloadMaterialsTemplateExcel()"
           (importExcel)="onMaterialsExcelImported($event)"
           (exportExcel)="exportMaterialsExcel()"
@@ -32,9 +37,14 @@
     <section class="dictionaryTile dictionaryTileWide">
       <app-content-card title="" [hideTitle]="true">
         <crud-layout
-          title="Геометрии"
+          title="Форма и габаритные размеры"
           [showHeader]="false"
           [showCardLabel]="true"
+          [showNameSearch]="true"
+          [showCreateAction]="true"
+          [canCreate]="permissions.crud().canCreate"
+          createAriaLabel="Добавить форму и габаритные размеры"
+          createTitle="Добавить форму и габаритные размеры"
           [columns]="geometriesColumns"
           [data]="geometriesStore.geometriesData()"
           [loading]="geometriesStore.loading()"
@@ -46,7 +56,7 @@
           [canDuplicate]="permissions.crud().canDuplicate"
           [canEdit]="permissions.crud().canEdit"
           [canDelete]="permissions.crud().canDelete"
-          [toolbarActions]="geometriesToolbarTpl"
+          (create)="openGeometriesCreate()"
           (downloadTemplate)="downloadGeometriesTemplateExcel()"
           (importExcel)="onGeometriesExcelImported($event)"
           (exportExcel)="exportGeometriesExcel()"
@@ -64,6 +74,11 @@
           title="Покрытие"
           [showHeader]="false"
           [showCardLabel]="true"
+          [showNameSearch]="true"
+          [showCreateAction]="true"
+          [canCreate]="permissions.crud().canCreate"
+          createAriaLabel="Добавить покрытие"
+          createTitle="Добавить покрытие"
           [columns]="coatingsColumns"
           [data]="coatingsStore.coatingsData()"
           [loading]="coatingsStore.loading()"
@@ -75,7 +90,7 @@
           [canDuplicate]="permissions.crud().canDuplicate"
           [canEdit]="permissions.crud().canEdit"
           [canDelete]="permissions.crud().canDelete"
-          [toolbarActions]="coatingsToolbarTpl"
+          (create)="openCoatingsCreate()"
           (downloadTemplate)="downloadCoatingsTemplateExcel()"
           (importExcel)="onCoatingsExcelImported($event)"
           (exportExcel)="exportCoatingsExcel()"
@@ -90,9 +105,14 @@
     <section class="dictionaryTile">
       <app-content-card title="" [hideTitle]="true">
         <crud-layout
-          title="Финиш/шероховатость"
+          title="Тип отделки / шероховатость"
           [showHeader]="false"
           [showCardLabel]="true"
+          [showNameSearch]="true"
+          [showCreateAction]="true"
+          [canCreate]="permissions.crud().canCreate"
+          createAriaLabel="Добавить финиш"
+          createTitle="Добавить финиш"
           [columns]="surfaceFinishesColumns"
           [data]="surfaceFinishesStore.surfaceFinishesData()"
           [loading]="surfaceFinishesStore.loading()"
@@ -104,7 +124,7 @@
           [canDuplicate]="permissions.crud().canDuplicate"
           [canEdit]="permissions.crud().canEdit"
           [canDelete]="permissions.crud().canDelete"
-          [toolbarActions]="surfaceFinishesToolbarTpl"
+          (create)="openSurfaceFinishesCreate()"
           (downloadTemplate)="downloadSurfaceFinishesTemplateExcel()"
           (importExcel)="onSurfaceFinishesExcelImported($event)"
           (exportExcel)="exportSurfaceFinishesExcel()"
@@ -122,6 +142,11 @@
           title="Цвета (RAL)"
           [showHeader]="false"
           [showCardLabel]="true"
+          [showNameSearch]="true"
+          [showCreateAction]="true"
+          [canCreate]="permissions.crud().canCreate"
+          createAriaLabel="Добавить цвет RAL"
+          createTitle="Добавить цвет RAL"
           [columns]="colorsColumns"
           [data]="colorsStore.colorsData()"
           [loading]="colorsStore.loading()"
@@ -133,7 +158,7 @@
           [canDuplicate]="permissions.crud().canDuplicate"
           [canEdit]="permissions.crud().canEdit"
           [canDelete]="permissions.crud().canDelete"
-          [toolbarActions]="colorsToolbarTpl"
+          (create)="openColorsCreate()"
           (downloadTemplate)="downloadColorsTemplateExcel()"
           (importExcel)="onColorsExcelImported($event)"
           (exportExcel)="exportColorsExcel()"
@@ -151,6 +176,11 @@
           title="Единицы измерения"
           [showHeader]="false"
           [showCardLabel]="true"
+          [showNameSearch]="true"
+          [showCreateAction]="true"
+          [canCreate]="permissions.crud().canCreate"
+          createAriaLabel="Добавить единицу измерения"
+          createTitle="Добавить единицу измерения"
           [columns]="unitsColumns"
           [data]="unitsStore.unitsData()"
           [loading]="unitsStore.loading()"
@@ -162,7 +192,7 @@
           [canDuplicate]="permissions.crud().canDuplicate"
           [canEdit]="permissions.crud().canEdit"
           [canDelete]="permissions.crud().canDelete"
-          [toolbarActions]="unitsToolbarTpl"
+          (create)="openUnitsCreate()"
           (downloadTemplate)="downloadUnitsTemplateExcel()"
           (importExcel)="onUnitsExcelImported($event)"
           (exportExcel)="exportUnitsExcel()"
@@ -176,42 +206,6 @@
   </div>
 </app-page-shell>
 
-<ng-template #materialsToolbarTpl>
-  @if (permissions.crud().canCreate) {
-    <app-ui-button [square]="true" ariaLabel="Добавить материал" title="Добавить материал" (clicked)="openMaterialsCreate()">+</app-ui-button>
-  }
-</ng-template>
-
-<ng-template #geometriesToolbarTpl>
-  @if (permissions.crud().canCreate) {
-    <app-ui-button [square]="true" ariaLabel="Добавить геометрию" title="Добавить геометрию" (clicked)="openGeometriesCreate()">+</app-ui-button>
-  }
-</ng-template>
-
-<ng-template #unitsToolbarTpl>
-  @if (permissions.crud().canCreate) {
-    <app-ui-button [square]="true" ariaLabel="Добавить единицу" title="Добавить единицу" (clicked)="openUnitsCreate()">+</app-ui-button>
-  }
-</ng-template>
-
-<ng-template #colorsToolbarTpl>
-  @if (permissions.crud().canCreate) {
-    <app-ui-button [square]="true" ariaLabel="Добавить цвет RAL" title="Добавить цвет RAL" (clicked)="openColorsCreate()">+</app-ui-button>
-  }
-</ng-template>
-
-<ng-template #surfaceFinishesToolbarTpl>
-  @if (permissions.crud().canCreate) {
-    <app-ui-button [square]="true" ariaLabel="Добавить финиш" title="Добавить финиш" (clicked)="openSurfaceFinishesCreate()">+</app-ui-button>
-  }
-</ng-template>
-
-<ng-template #coatingsToolbarTpl>
-  @if (permissions.crud().canCreate) {
-    <app-ui-button [square]="true" ariaLabel="Добавить покрытие" title="Добавить покрытие" (clicked)="openCoatingsCreate()">+</app-ui-button>
-  }
-</ng-template>
-
 @if (excelImportStatus()) {
   <p class="importStatus">{{ excelImportStatus() }}</p>
 }
@@ -220,7 +214,7 @@
   *ngIf="isMaterialsModalOpen()"
   [title]="
     isMaterialsViewMode()
-      ? 'Просмотр материала'
+      ? 'Просмотр материала — Мат.'
       : materialsStore.isEditMode()
         ? 'Редактирование материала'
         : 'Новый материал'
@@ -228,6 +222,7 @@
   [content]="materialsContentTpl"
   [actions]="materialsActionsTpl"
   (close)="closeMaterialsModal()"
+  [closeOnBackdrop]="isMaterialsViewMode()"
   size="lg"
 ></ui-modal>
 
@@ -271,7 +266,7 @@
       </div>
     </app-ui-form-field>
 
-    <app-ui-form-field label="Финиш/шероховатость">
+    <app-ui-form-field label="Тип отд. / шерох.">
       <div class="colorRefRow">
         <select formControlName="surfaceFinishId">
           <option value="">— Не выбран —</option>
@@ -292,7 +287,7 @@
       </div>
     </app-ui-form-field>
 
-    <app-ui-form-field label="Тип финиша">
+    <app-ui-form-field label="Тип отд.">
       <input type="text" formControlName="finishType" readonly />
     </app-ui-form-field>
 
@@ -329,7 +324,7 @@
       <input type="number" formControlName="coatingThicknessMicron" readonly />
     </app-ui-form-field>
 
-    <app-ui-form-field label="Шероховатость">
+    <app-ui-form-field label="Шерох.">
       <input type="text" formControlName="roughnessClass" readonly />
     </app-ui-form-field>
 
@@ -360,7 +355,7 @@
   *ngIf="isCoatingsModalOpen()"
   [title]="
     isCoatingsViewMode()
-      ? 'Просмотр покрытия'
+      ? 'Просмотр покрытия — Покр.'
       : coatingsStore.isEditMode()
         ? 'Редактирование покрытия'
         : 'Новое покрытие'
@@ -368,6 +363,7 @@
   [content]="coatingsContentTpl"
   [actions]="coatingsActionsTpl"
   (close)="closeCoatingsModal()"
+  [closeOnBackdrop]="isCoatingsViewMode()"
   size="md"
 ></ui-modal>
 
@@ -412,7 +408,7 @@
   *ngIf="isSurfaceFinishesModalOpen()"
   [title]="
     isSurfaceFinishesViewMode()
-      ? 'Просмотр финиша'
+      ? 'Просмотр типа отделки / шероховатости — Тип отд. / шерох.'
       : surfaceFinishesStore.isEditMode()
         ? 'Редактирование финиша'
         : 'Новый финиш'
@@ -420,13 +416,14 @@
   [content]="surfaceFinishesContentTpl"
   [actions]="surfaceFinishesActionsTpl"
   (close)="closeSurfaceFinishesModal()"
+  [closeOnBackdrop]="isSurfaceFinishesViewMode()"
   size="md"
 ></ui-modal>
 
 <ng-template #surfaceFinishesContentTpl>
   <form id="surface-finishes-form" [formGroup]="surfaceFinishesForm" (ngSubmit)="submitSurfaceFinishes()" class="formGrid">
     <app-ui-form-field
-      label="Тип финиша"
+      label="Тип отд."
       [required]="true"
       [invalid]="isSurfaceFinishesInvalid('finishType')"
       [errorText]="isSurfaceFinishesInvalid('finishType') ? 'Минимум 2 символа' : ''"
@@ -435,7 +432,7 @@
     </app-ui-form-field>
 
     <app-ui-form-field
-      label="Шероховатость"
+      label="Шерох."
       [required]="true"
       [invalid]="isSurfaceFinishesInvalid('roughnessClass')"
       [errorText]="isSurfaceFinishesInvalid('roughnessClass') ? 'Минимум 2 символа' : ''"
@@ -464,26 +461,36 @@
   *ngIf="isColorsModalOpen()"
   [title]="
     isColorsViewMode()
-      ? 'Просмотр цвета RAL'
+      ? 'Просмотр цвета RAL — Цвет'
       : colorsStore.isEditMode()
-        ? 'Редактирование цвета RAL'
-        : 'Новый цвет RAL'
+        ? 'Редактирование цвета RAL — Цвет'
+        : 'Новый цвет RAL — Цвет'
   "
   [content]="colorsContentTpl"
   [actions]="colorsActionsTpl"
   (close)="closeColorsModal()"
+  [closeOnBackdrop]="isColorsViewMode()"
   size="md"
 ></ui-modal>
 
 <ng-template #colorsContentTpl>
   <form id="colors-form" [formGroup]="colorsForm" (ngSubmit)="submitColors()" class="formGrid">
+    <app-ui-form-field label="Полное наименование">
+      <input type="text" [value]="colorNameWithRal()" readonly />
+    </app-ui-form-field>
+
     <app-ui-form-field
       label="Код RAL"
-      [required]="true"
-      [invalid]="isColorsInvalid('ralCode')"
-      [errorText]="isColorsInvalid('ralCode') ? 'Укажите код, например RAL 7035' : ''"
+      [invalid]="isColorsInvalidOnBlur('ralCode')"
+      [errorText]="isColorsInvalidOnBlur('ralCode') ? 'Формат: RAL 0000 или 0000; RAL DESIGN 000 00 00' : ''"
     >
-      <input type="text" formControlName="ralCode" placeholder="RAL 7035" />
+      <input
+        type="text"
+        formControlName="ralCode"
+        placeholder="RAL 7035 / RAL DESIGN 270 30 35"
+        (focus)="onRalCodeFocus()"
+        (blur)="onRalCodeBlur()"
+      />
     </app-ui-form-field>
 
     <app-ui-form-field
@@ -530,7 +537,7 @@
   *ngIf="isGeometriesModalOpen()"
   [title]="
     isGeometriesViewMode()
-      ? 'Просмотр геометрии'
+      ? 'Просмотр формы и габаритных размеров — Форма / габ. разм.'
       : geometriesStore.isEditMode()
         ? 'Редактирование геометрии'
         : 'Новая геометрия'
@@ -538,6 +545,7 @@
   [content]="geometriesContentTpl"
   [actions]="geometriesActionsTpl"
   (close)="closeGeometriesModal()"
+  [closeOnBackdrop]="isGeometriesViewMode()"
   size="lg"
 ></ui-modal>
 
@@ -606,7 +614,7 @@
   *ngIf="isUnitsModalOpen()"
   [title]="
     isUnitsViewMode()
-      ? 'Просмотр единицы'
+      ? 'Просмотр единицы измерения — Ед. изм.'
       : unitsStore.isEditMode()
         ? 'Редактирование единицы'
         : 'Новая единица'
@@ -614,7 +622,8 @@
   [content]="unitsContentTpl"
   [actions]="unitsActionsTpl"
   (close)="closeUnitsModal()"
-  size="sm"
+  [closeOnBackdrop]="isUnitsViewMode()"
+  size="md"
 ></ui-modal>
 
 <ng-template #unitsContentTpl>

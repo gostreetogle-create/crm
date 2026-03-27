@@ -1,6 +1,6 @@
 import { NgFor, NgIf } from '@angular/common';
 import { Component, OnDestroy, computed, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { PermissionsService } from '../../../../core/auth/public-api';
 import { GeometriesStore } from '../../../geometries/state/geometries.store';
@@ -84,7 +84,7 @@ export class DictionariesPage implements OnDestroy {
   ];
 
   readonly unitsColumns: TableColumn[] = [
-    { key: 'name', label: 'Название' },
+    { key: 'name', label: 'Ед. изм.' },
     { key: 'code', label: 'Код' },
     { key: 'notes', label: 'Комментарий' },
     { key: 'isActiveLabel', label: 'Активна' },
@@ -98,8 +98,8 @@ export class DictionariesPage implements OnDestroy {
   ];
 
   readonly surfaceFinishesColumns: TableColumn[] = [
-    { key: 'finishType', label: 'Тип финиша' },
-    { key: 'roughnessClass', label: 'Шероховатость' },
+    { key: 'finishType', label: 'Тип отд.' },
+    { key: 'roughnessClass', label: 'Шерох.' },
     { key: 'raMicron', label: 'Ra, мкм' },
   ];
 
@@ -156,7 +156,7 @@ export class DictionariesPage implements OnDestroy {
   });
 
   readonly colorsForm = this.fb.nonNullable.group({
-    ralCode: ['', [Validators.required, Validators.minLength(4)]],
+    ralCode: ['RAL ', [this.ralCodeValidator]],
     name: ['', [Validators.required, Validators.minLength(2)]],
     hex: ['#000000', [Validators.required, Validators.pattern(/^#([A-Fa-f0-9]{6})$/)]],
   });
@@ -540,7 +540,7 @@ export class DictionariesPage implements OnDestroy {
     this.colorsForm.enable({ emitEvent: false });
     this.colorsStore.startCreate();
     this.colorsForm.reset({
-      ralCode: '',
+      ralCode: 'RAL ',
       name: '',
       hex: '#000000',
     });
@@ -578,11 +578,13 @@ export class DictionariesPage implements OnDestroy {
       return;
     }
     const quickAdd = this.colorQuickAddForMaterials();
-    const createdCode = payload.ralCode;
+    const snapshotKey = `${payload.name}|${payload.hex}|${payload.ralCode ?? ''}`;
     this.colorsStore.submit({ value: payload, isValid: true });
     if (quickAdd) {
       queueMicrotask(() => {
-        const created = this.colorsStore.items().find((x) => x.ralCode === createdCode);
+        const created = this.colorsStore
+          .items()
+          .find((x) => `${x.name}|${x.hex}|${x.ralCode ?? ''}` === snapshotKey);
         if (created) {
           this.materialsForm.controls.colorId.setValue(created.id);
         }
@@ -607,7 +609,7 @@ export class DictionariesPage implements OnDestroy {
     this.colorsForm.enable({ emitEvent: false });
     this.colorsStore.startCreate();
     this.colorsForm.reset({
-      ralCode: item.ralCode,
+      ralCode: item.ralCode ?? 'RAL ',
       name: `${item.name} (копия)`,
       hex: item.hex,
     });
@@ -832,6 +834,42 @@ export class DictionariesPage implements OnDestroy {
     return selected?.hex ?? this.materialsForm.controls.colorHex.value ?? '';
   }
 
+  colorNameWithRal(): string {
+    const name = this.colorsForm.controls.name.value.trim();
+    const ralCode = this.normalizeRalCode(this.colorsForm.controls.ralCode.value) ?? '';
+    return `${name}${name && ralCode ? ' ' : ''}${ralCode}`.trim();
+  }
+
+  onRalCodeFocus(): void {
+    const current = this.colorsForm.controls.ralCode.value.trim().toUpperCase();
+    if (!current || current === 'RAL') {
+      this.colorsForm.controls.ralCode.setValue('RAL ');
+    }
+  }
+
+  onRalCodeBlur(): void {
+    const raw = this.colorsForm.controls.ralCode.value;
+    const upper = raw.trim().toUpperCase();
+    const normalized = this.normalizeRalCode(raw);
+
+    if (normalized) {
+      this.colorsForm.controls.ralCode.setValue(normalized);
+      return;
+    }
+
+    if (!upper || upper === 'RAL' || upper === 'RAL DESIGN' || upper === 'RAL DESIGN:') {
+      this.colorsForm.controls.ralCode.setValue('RAL ');
+      return;
+    }
+
+    if (!upper.startsWith('RAL')) {
+      this.colorsForm.controls.ralCode.setValue(`RAL ${upper}`);
+      return;
+    }
+
+    this.colorsForm.controls.ralCode.setValue(upper.replace(/\s+/g, ' ').trim());
+  }
+
   private async exportRowsToExcel(
     filename: string,
     sheetName: string,
@@ -855,7 +893,7 @@ export class DictionariesPage implements OnDestroy {
 
   async exportColorsExcel(): Promise<void> {
     const rows = this.colorsStore.items().map((item) => ({
-      RAL: item.ralCode,
+      RAL: item.ralCode ?? '',
       Название: item.name,
       HEX: item.hex,
       RGB: `${item.rgb.r},${item.rgb.g},${item.rgb.b}`,
@@ -1180,6 +1218,11 @@ export class DictionariesPage implements OnDestroy {
     );
   }
 
+  isColorsInvalidOnBlur(controlName: keyof typeof this.colorsForm.controls): boolean {
+    const control = this.colorsForm.controls[controlName];
+    return control.invalid && (control.touched || this.colorsStore.formSubmitAttempted());
+  }
+
   isSurfaceFinishesInvalid(
     controlName: keyof typeof this.surfaceFinishesForm.controls
   ): boolean {
@@ -1247,8 +1290,9 @@ export class DictionariesPage implements OnDestroy {
     const normalizedHex = /^#([A-Fa-f0-9]{6})$/.test(value.hex)
       ? value.hex.toUpperCase()
       : '#000000';
+    const normalizedRalCode = this.normalizeRalCode(value.ralCode);
     return {
-      ralCode: value.ralCode.trim().toUpperCase(),
+      ralCode: normalizedRalCode,
       name: value.name.trim(),
       hex: normalizedHex,
       rgb: {
@@ -1277,11 +1321,11 @@ export class DictionariesPage implements OnDestroy {
 
   private validateAndMapColorRows(rows: ReadonlyArray<Record<string, unknown>>): {
     ok: boolean;
-    rows: Array<{ ralCode: string; name: string; hex: string; rgb: { r: number; g: number; b: number } }>;
+    rows: Array<{ ralCode?: string; name: string; hex: string; rgb: { r: number; g: number; b: number } }>;
     errors: string[];
   } {
     const errors: string[] = [];
-    const mapped: Array<{ ralCode: string; name: string; hex: string; rgb: { r: number; g: number; b: number } }> =
+    const mapped: Array<{ ralCode?: string; name: string; hex: string; rgb: { r: number; g: number; b: number } }> =
       [];
     if (!rows.length) return { ok: false, rows: mapped, errors: ['Пустой файл.'] };
 
@@ -1298,12 +1342,17 @@ export class DictionariesPage implements OnDestroy {
 
     rows.forEach((row, idx) => {
       const rowNo = idx + 2;
-      const ralCode = String(row['RAL'] ?? '').trim().toUpperCase();
+      const ralRaw = String(row['RAL'] ?? '');
+      const ralCode = this.normalizeRalCode(ralRaw);
       const name = String(row['Название'] ?? '').trim();
       const hex = String(row['HEX'] ?? '').trim().toUpperCase();
       const rgbRaw = String(row['RGB'] ?? '').trim();
-      if (!ralCode || !name || !hex || !rgbRaw) {
-        errors.push(`Строка ${rowNo}: заполните RAL/Название/HEX/RGB.`);
+      if (!name || !hex || !rgbRaw) {
+        errors.push(`Строка ${rowNo}: заполните Название/HEX/RGB.`);
+        return;
+      }
+      if (ralRaw.trim() && !ralCode) {
+        errors.push(`Строка ${rowNo}: RAL должен быть в формате RAL 0000 или 0000.`);
         return;
       }
       if (!/^#([A-F0-9]{6})$/.test(hex)) {
@@ -1347,6 +1396,38 @@ export class DictionariesPage implements OnDestroy {
     const normalized = s.replace(/\s+/g, '').replace(',', '.');
     const n = Number.parseFloat(normalized);
     return Number.isFinite(n) ? n : null;
+  }
+
+  private normalizeRalCode(raw: string): string | undefined {
+    const value = raw.trim().toUpperCase();
+    if (!value) return undefined;
+
+    if (value === 'RAL' || value === 'RAL DESIGN' || value === 'RAL DESIGN:') {
+      return undefined;
+    }
+
+    const classic = /^(?:RAL\s*)?(\d{4})$/.exec(value);
+    if (classic) {
+      return `RAL ${classic[1]}`;
+    }
+
+    const design = /^(?:RAL\s*DESIGN[:\s]*)?(\d{3})\s*(\d{2})\s*(\d{2})$/.exec(value);
+    if (design) {
+      return `RAL DESIGN ${design[1]} ${design[2]} ${design[3]}`;
+    }
+
+    return undefined;
+  }
+
+  private ralCodeValidator(control: AbstractControl<string>): ValidationErrors | null {
+    const value = (control.value ?? '').trim().toUpperCase();
+    if (!value || value === 'RAL' || value === 'RAL DESIGN' || value === 'RAL DESIGN:') {
+      return null;
+    }
+
+    const classicOk = /^(?:RAL\s*)?\d{4}$/.test(value);
+    const designOk = /^(?:RAL\s*DESIGN[:\s]*)?\d{3}\s*\d{2}\s*\d{2}$/.test(value);
+    return classicOk || designOk ? null : { ralCodeFormat: true };
   }
 
   private validateAndMapMaterialsRows(rows: ReadonlyArray<Record<string, unknown>>): {

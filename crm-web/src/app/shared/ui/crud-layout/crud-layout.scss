@@ -4,7 +4,7 @@
 
 .crudToolbar {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
   gap: var(--ui-space-2);
   margin-bottom: var(--ui-card-title-margin-bottom);
@@ -15,6 +15,46 @@
   display: flex;
   align-items: center;
   gap: var(--ui-space-1);
+}
+
+.crudToolbarMain {
+  flex: 0 1 auto;
+  gap: var(--ui-space-3);
+}
+
+.crudToolbarActions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ui-space-1);
+}
+
+.crudToolbarRight {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-1);
+}
+
+.crudToolbarSearch {
+  flex: 0 1 auto;
+  min-width: 95px;
+  max-width: 190px;
+  margin: 0;
+}
+
+.crudNameSearchInput {
+  width: 100%;
+  border: 1px solid color-mix(in srgb, var(--border-color) 55%, white);
+  border-radius: var(--radius-card);
+  background: var(--surface-soft);
+  color: var(--text-primary);
+  padding: 4px var(--ui-input-padding-x);
+  min-height: 30px;
+  font: inherit;
+}
+
+.crudToolbarExcel {
+  margin-left: 0;
 }
 
 .hiddenFileInput {

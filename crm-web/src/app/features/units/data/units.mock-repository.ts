@@ -15,16 +15,22 @@ export class UnitsMockRepository implements UnitsRepository {
     return of(this.items);
   }
 
-  create(input: UnitItemInput): void {
-    this.items = [{ id: `u-${Date.now()}`, ...input }, ...this.items];
+  create(input: UnitItemInput): Observable<UnitItem> {
+    const created: UnitItem = { id: `u-${Date.now()}`, ...input };
+    this.items = [created, ...this.items];
+    return of(created);
   }
 
-  update(id: string, input: UnitItemInput): void {
-    this.items = this.items.map((x) => (x.id === id ? { ...x, ...input } : x));
+  update(id: string, input: UnitItemInput): Observable<UnitItem> {
+    const current = this.items.find((x) => x.id === id);
+    const updated: UnitItem = { ...(current ?? { id }), ...input } as UnitItem;
+    this.items = this.items.map((x) => (x.id === id ? updated : x));
+    return of(updated);
   }
 
-  remove(id: string): void {
+  remove(id: string): Observable<void> {
     this.items = this.items.filter((x) => x.id !== id);
+    return of(void 0);
   }
 }
 

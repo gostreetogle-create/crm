@@ -1,7 +1,7 @@
 <app-page-shell>
-  <app-content-card title="Список геометрий">
+  <app-content-card title="Справочник: форма и габаритные размеры">
     <crud-layout
-      title="Геометрии"
+      title="Форма и габаритные размеры"
       [columns]="geometryColumns"
       [data]="vm().geometriesData"
       [canEdit]="permissions.crud().canEdit"
@@ -16,7 +16,7 @@
   </app-content-card>
 
   @if (!vm().isEditDialogOpen) {
-    <app-content-card *appHasPermission="'crud.create'" title="Добавление геометрии">
+    <app-content-card *appHasPermission="'crud.create'" title="Добавление формы и габаритных размеров">
       <form id="geometry-create-form" [formGroup]="form" (ngSubmit)="submitCreate()" class="formGrid">
         <app-ui-form-field
           label="Название"
@@ -92,7 +92,7 @@
 
 <ng-template #toolbarTpl>
   <app-ui-button *appHasPermission="'crud.create'" data-testid="geometries-create-new" (clicked)="startCreate()">
-    + Новая геометрия
+    + Новая запись
   </app-ui-button>
 </ng-template>
 
@@ -101,15 +101,16 @@
     Сбросить
   </app-ui-button>
   <app-ui-button *appHasPermission="'crud.create'" data-testid="geometries-submit" [type]="'submit'" [form]="'geometry-create-form'">
-    Создать геометрию
+    Создать запись
   </app-ui-button>
 </ng-template>
 
 <ui-modal
   *ngIf="vm().isEditDialogOpen"
-  title="Редактирование геометрии"
+  title="Редактирование формы и габаритных размеров"
   [content]="editContent"
   [actions]="editActions"
+  [closeOnBackdrop]="false"
   (close)="closeEditDialog()"
   size="md"
 >

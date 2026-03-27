@@ -76,6 +76,9 @@ export type ThemeTokens = {
   uiPageShellPaddingBottom: string;
 
   uiSpace1: string;
+  uiSpace2: string;
+  uiSpace3: string;
+  uiSpace4: string;
 
   uiRowActionBtnRadius: string;
 

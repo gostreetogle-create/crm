@@ -89,6 +89,11 @@
       title="Универсальный CRUD"
       [showHeader]="false"
       [showCardLabel]="true"
+      [showNameSearch]="true"
+      [showCreateAction]="permissions.crud().canCreate"
+      [canCreate]="permissions.crud().canCreate"
+      createAriaLabel="Добавить строку"
+      createTitle="Добавить строку"
       [columns]="columns"
       [data]="universalCrudData()"
       [showExcelActions]="true"
@@ -99,7 +104,7 @@
       [canDuplicate]="permissions.crud().canDuplicate"
       [canEdit]="permissions.crud().canEdit"
       [canDelete]="permissions.crud().canDelete"
-      [toolbarActions]="universalToolbarTpl"
+      (create)="addUniversalDemoRow()"
       (downloadTemplate)="downloadDemoTemplateExcel()"
       (importExcel)="onDemoExcelImported($event)"
       (exportExcel)="exportDemoExcel()"
@@ -112,19 +117,6 @@
       <p class="importStatus">{{ demoExcelStatus() }}</p>
     }
   </app-content-card>
-
-  <ng-template #universalToolbarTpl>
-    <app-ui-button
-      *appHasPermission="'crud.create'"
-      [square]="true"
-      type="button"
-      ariaLabel="Добавить строку"
-      title="Добавить строку"
-      (clicked)="addUniversalDemoRow()"
-    >
-      +
-    </app-ui-button>
-  </ng-template>
 
   <app-content-card title="Форма + quick-add">
     <form id="demo-main-form" class="formGrid" [formGroup]="form" (ngSubmit)="submitMainForm()">
@@ -211,6 +203,7 @@
   [content]="quickAddContent"
   [actions]="quickAddActions"
   size="sm"
+  [closeOnBackdrop]="false"
   (close)="closeQuickAdd()"
 ></ui-modal>
 

@@ -1,6 +1,6 @@
 export type ColorItem = {
   id: string;
-  ralCode: string;
+  ralCode?: string;
   name: string;
   hex: string;
   rgb: {

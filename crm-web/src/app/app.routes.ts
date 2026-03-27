@@ -1,4 +1,5 @@
 import { Route } from '@angular/router';
+import { API_CONFIG, ApiConfig } from './core/api/api-config';
 import { COLORS_REPOSITORY } from './features/colors/data/colors.repository';
 import { ColorsMockRepository } from './features/colors/data/colors.mock-repository';
 import { ColorsStore } from './features/colors/state/colors.store';
@@ -15,6 +16,7 @@ import { SURFACE_FINISHES_REPOSITORY } from './features/surface-finishes/data/su
 import { SurfaceFinishesMockRepository } from './features/surface-finishes/data/surface-finishes.mock-repository';
 import { SurfaceFinishesStore } from './features/surface-finishes/state/surface-finishes.store';
 import { UNITS_REPOSITORY } from './features/units/data/units.repository';
+import { UnitsHttpRepository } from './features/units/data/units.http-repository';
 import { UnitsMockRepository } from './features/units/data/units.mock-repository';
 import { UnitsStore } from './features/units/state/units.store';
 
@@ -40,10 +42,13 @@ export const appRoutes: Route[] = [
         useExisting: GeometriesMockRepository,
       },
       UnitsMockRepository,
+      UnitsHttpRepository,
       UnitsStore,
       {
         provide: UNITS_REPOSITORY,
-        useExisting: UnitsMockRepository,
+        useFactory: (apiConfig: ApiConfig, mockRepo: UnitsMockRepository, httpRepo: UnitsHttpRepository) =>
+          apiConfig.useMockRepositories ? mockRepo : httpRepo,
+        deps: [API_CONFIG, UnitsMockRepository, UnitsHttpRepository],
       },
       ColorsMockRepository,
       ColorsStore,

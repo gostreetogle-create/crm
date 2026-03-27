@@ -28,7 +28,6 @@ import { UiButtonComponent } from '../../../../shared/ui/ui-button/ui-button.com
 import { UiFormFieldComponent } from '../../../../shared/ui/ui-form-field/ui-form-field.component';
 import { ProductCardComponent } from '../../../../shared/ui/product-card/public-api';
 import { UiPaginationComponent } from '../../../../shared/ui/ui-pagination/ui-pagination.component';
-import { HasPermissionDirective } from '../../../../shared/directives/public-api';
 import { PermissionsService, UserRole } from '../../../../core/auth/public-api';
 
 type DemoRow = {
@@ -72,7 +71,6 @@ type DemoProduct = {
     FiltersBarComponent,
     UiButtonComponent,
     UiFormFieldComponent,
-    HasPermissionDirective,
     UiModal,
     ProductCardComponent,
     UiPaginationComponent,

@@ -26,18 +26,18 @@ export const ColorsStore = signalStore(
       items()
         .map((item) => ({
           id: item.id,
-          ralCode: item.ralCode,
+          ralCode: item.ralCode || '—',
           name: item.name,
           hex: item.hex,
           rgb: `${item.rgb.r}, ${item.rgb.g}, ${item.rgb.b}`,
         }))
-        .sort((a, b) => String(a.ralCode).localeCompare(String(b.ralCode)))
+        .sort((a, b) => String(a.name).localeCompare(String(b.name)))
     ),
     options: computed(() =>
       items()
         .map((item) => ({
           id: item.id,
-          label: `${item.ralCode} ${item.name}`.trim(),
+          label: `${item.name} ${item.ralCode}`.trim(),
           hex: item.hex,
           name: item.name,
           ralCode: item.ralCode,

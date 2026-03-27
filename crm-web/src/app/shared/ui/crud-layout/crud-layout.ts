@@ -50,6 +50,10 @@ export class CrudLayoutComponent {
   /** Пока true и строк нет — в таблице показывается «Загрузка…», а не пустой список. */
   @Input() loading = false;
   @Input() showRowActions = true;
+  @Input() showCreateAction = false;
+  @Input() canCreate = true;
+  @Input() createAriaLabel = 'Добавить запись';
+  @Input() createTitle = 'Добавить запись';
   @Input() showExcelActions = false;
   @Input() canDownloadTemplate = true;
   @Input() canImportExcel = true;
@@ -59,9 +63,12 @@ export class CrudLayoutComponent {
   @Input() canDuplicate = true;
   @Input() canEdit = true;
   @Input() canDelete = true;
+  @Input() showNameSearch = false;
+  @Input() nameSearchPlaceholder = 'Поиск по названию...';
   @Input() deleteConfirmTitle = 'Подтвердите удаление';
   @Input() deleteConfirmMessage = 'Удалить запись?';
   @Output() view = new EventEmitter<string>();
+  @Output() create = new EventEmitter<void>();
   @Output() duplicate = new EventEmitter<string>();
   @Output() edit = new EventEmitter<string>();
   @Output() delete = new EventEmitter<string>();
@@ -70,6 +77,7 @@ export class CrudLayoutComponent {
   @Output() exportExcel = new EventEmitter<void>();
   isDeleteConfirmOpen = false;
   private pendingDeleteId: string | null = null;
+  nameSearchTerm = '';
 
   get hasExcelActions(): boolean {
     return (
@@ -82,9 +90,31 @@ export class CrudLayoutComponent {
     return this.showRowActions && (this.canView || this.canDuplicate || this.canEdit || this.canDelete);
   }
 
+  get visibleData(): any[] {
+    if (!this.showNameSearch) {
+      return this.data;
+    }
+
+    const term = this.nameSearchTerm.trim().toLowerCase();
+    if (!term) {
+      return this.data;
+    }
+
+    return this.data.filter((row) => this.rowMatchesName(row, term));
+  }
+
+  onNameSearchInput(event: Event): void {
+    const value = (event.target as HTMLInputElement | null)?.value ?? '';
+    this.nameSearchTerm = value;
+  }
+
   onView(row: any): void {
     if (!row?.id) return;
     this.view.emit(String(row.id));
+  }
+
+  onCreate(): void {
+    this.create.emit();
   }
 
   onDuplicate(row: any): void {
@@ -130,5 +160,19 @@ export class CrudLayoutComponent {
 
   onExportExcel(): void {
     this.exportExcel.emit();
+  }
+
+  private rowMatchesName(row: any, term: string): boolean {
+    if (!row) return false;
+
+    const preferred = [row?.name, row?.title, row?.label];
+    const firstColumnValue =
+      this.columns.length > 0 ? row?.[this.columns[0].key] : undefined;
+
+    const candidates = [...preferred, firstColumnValue]
+      .filter((v) => v !== null && v !== undefined)
+      .map((v) => String(v).toLowerCase());
+
+    return candidates.some((v) => v.includes(term));
   }
 }

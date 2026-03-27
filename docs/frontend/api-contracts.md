@@ -5,6 +5,28 @@
 Frontend now works from the unified `/dictionaries` page and uses feature repositories/stores per dictionary.
 For backend integration, keep contracts in feature modules (`materials`, `geometries`, `units`, `colors`, `surface-finishes`, `coatings`).
 
+## FE/BE naming convention (`units`)
+
+Чтобы не было расхождений терминов между UI и API:
+
+- UI-обозначение units:
+  - карточка (длинное): `Единицы измерения`,
+  - поля/колонки (сокращение): `Ед. изм.`.
+- API-ресурс: `/units`.
+- Поля API (канон): `id`, `name`, `code`, `notes`, `isActive`.
+- В backend и интеграционных сообщениях использовать термин `units` / `единицы измерения`.
+- Сокращение `Ед. изм.` использовать только в UI-текстах, не в JSON-ключах и не в именах endpoint.
+
+Mapping:
+
+- `Ед. изм.` (UI, поле/колонка) -> `name` (API field)
+- `Код` (UI) -> `code` (API field)
+- `Комментарий` (UI) -> `notes` (API field)
+- `Активна` (UI) -> `isActive` (API field)
+
+Общий источник нейминга для справочников (длинные/короткие формы, ГОСТ-style сокращения):
+- `docs/frontend/dictionaries-naming-convention.md`
+
 ## Switching mock -> http
 
 File:

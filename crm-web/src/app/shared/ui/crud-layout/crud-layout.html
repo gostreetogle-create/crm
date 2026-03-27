@@ -8,53 +8,80 @@
       <span class="crudCardLabelText">{{ title }}</span>
     }
     @if (toolbarActions) {
-      <ng-container [ngTemplateOutlet]="toolbarActions"></ng-container>
+      <div class="crudToolbarActions">
+        <ng-container [ngTemplateOutlet]="toolbarActions"></ng-container>
+      </div>
     }
   </div>
-  @if (hasExcelActions) {
-    <div class="crudToolbarExcel">
-      <input
-        #crudImportInput
-        type="file"
-        [attr.accept]="importAccept"
-        class="hiddenFileInput"
-        (change)="onImportPicked($event)"
-      />
-      @if (canDownloadTemplate) {
-        <button
-          type="button"
-          class="rowActionBtn"
-          (click)="onDownloadTemplate()"
-          aria-label="Скачать шаблон Excel"
-          title="Скачать шаблон Excel"
-        >
-          <svg lucideFileSpreadsheet [size]="16"></svg>
-        </button>
-      }
-      @if (canImportExcel) {
-        <button
-          type="button"
-          class="rowActionBtn rowActionBtnWarning"
-          (click)="crudImportInput.click()"
-          aria-label="Импорт Excel"
-          title="Импорт Excel"
-        >
-          <svg lucideUpload [size]="16"></svg>
-        </button>
-      }
-      @if (canExportExcel) {
-        <button
-          type="button"
-          class="rowActionBtn rowActionBtnAffirm"
-          (click)="onExportExcel()"
-          aria-label="Экспорт Excel"
-          title="Экспорт Excel"
-        >
-          <svg lucideDownload [size]="16"></svg>
-        </button>
-      }
-    </div>
-  }
+  <div class="crudToolbarRight">
+    @if (showCreateAction && canCreate) {
+      <app-ui-button
+        [square]="true"
+        type="button"
+        [ariaLabel]="createAriaLabel"
+        [title]="createTitle"
+        (clicked)="onCreate()"
+      >
+        +
+      </app-ui-button>
+    }
+    @if (showNameSearch) {
+      <div class="crudToolbarSearch">
+        <input
+          type="search"
+          class="crudNameSearchInput"
+          [value]="nameSearchTerm"
+          [placeholder]="nameSearchPlaceholder"
+          aria-label="Поиск по названию"
+          (input)="onNameSearchInput($event)"
+        />
+      </div>
+    }
+    @if (hasExcelActions) {
+      <div class="crudToolbarExcel">
+        <input
+          #crudImportInput
+          type="file"
+          [attr.accept]="importAccept"
+          class="hiddenFileInput"
+          (change)="onImportPicked($event)"
+        />
+        @if (canDownloadTemplate) {
+          <button
+            type="button"
+            class="rowActionBtn"
+            (click)="onDownloadTemplate()"
+            aria-label="Скачать шаблон Excel"
+            title="Скачать шаблон Excel"
+          >
+            <svg lucideFileSpreadsheet [size]="16"></svg>
+          </button>
+        }
+        @if (canImportExcel) {
+          <button
+            type="button"
+            class="rowActionBtn rowActionBtnWarning"
+            (click)="crudImportInput.click()"
+            aria-label="Импорт Excel"
+            title="Импорт Excel"
+          >
+            <svg lucideUpload [size]="16"></svg>
+          </button>
+        }
+        @if (canExportExcel) {
+          <button
+            type="button"
+            class="rowActionBtn rowActionBtnAffirm"
+            (click)="onExportExcel()"
+            aria-label="Экспорт Excel"
+            title="Экспорт Excel"
+          >
+            <svg lucideDownload [size]="16"></svg>
+          </button>
+        }
+      </div>
+    }
+  </div>
 </section>
 
 <section class="tableView">
@@ -70,7 +97,7 @@
       </tr>
     </thead>
     <tbody>
-      @for (row of data; track row?.id ?? $index) {
+      @for (row of visibleData; track row?.id ?? $index) {
         <tr>
           @for (column of columns; track column.key) {
             <td>{{ row?.[column.key] ?? '—' }}</td>
@@ -129,7 +156,7 @@
           }
         </tr>
       }
-      @if (!data.length) {
+      @if (!visibleData.length) {
         <tr>
           <td [attr.colspan]="columns.length + (hasRowActions ? 1 : 0)">
             @if (loading) {
@@ -145,7 +172,7 @@
 </section>
 
 <section class="card-list">
-  @if (!data.length) {
+  @if (!visibleData.length) {
     <article class="card-item card-itemEmpty">
       @if (loading) {
         Загрузка…
@@ -154,7 +181,7 @@
       }
     </article>
   }
-  @for (row of data; track $index) {
+  @for (row of visibleData; track $index) {
     <article class="card-item">
       @for (column of columns; track column.key) {
         <div class="card-row">
