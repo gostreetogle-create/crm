@@ -119,6 +119,38 @@
       ></crud-layout>
     </ng-template>
 
+    <ng-template #dictionaryStandardFullCrud>
+      <crud-layout
+        title="Демо — полный список (эталон)"
+        [showHeader]="false"
+        [showCardLabel]="true"
+        [showNameSearch]="true"
+        [showCreateAction]="true"
+        [canCreate]="permissions.crud().canCreate"
+        createAriaLabel="Добавить демо-запись"
+        createTitle="Добавить демо-запись"
+        [columns]="standardDictionaryColumns"
+        [data]="standardCrudTableData()"
+        [loading]="false"
+        [showExcelActions]="true"
+        [canDownloadTemplate]="permissions.can('excel.template')"
+        [canImportExcel]="permissions.can('excel.import')"
+        [canExportExcel]="permissions.can('excel.export')"
+        [canView]="true"
+        [canDuplicate]="permissions.crud().canDuplicate"
+        [canEdit]="permissions.crud().canEdit"
+        [canDelete]="permissions.crud().canDelete"
+        (create)="addUniversalDemoRow()"
+        (downloadTemplate)="downloadDemoTemplateExcel()"
+        (importExcel)="onDemoExcelImported($event)"
+        (exportExcel)="exportDemoExcel()"
+        (view)="onView($event)"
+        (duplicate)="onDuplicate($event)"
+        (edit)="onEdit($event)"
+        (delete)="onDelete($event)"
+      ></crud-layout>
+    </ng-template>
+
     <p class="demoHint">
       Общая цепочка: <code>dictionaryGrid</code> → <code>dictionaryTile</code> → при необходимости
       <code>app-hub-crud-expandable-shell</code> → <code>app-content-card</code> →
@@ -179,18 +211,20 @@
       </article>
 
       <article class="dictionaryVariant">
-        <h3 class="dictionaryVariantTitle">2. «Большая» без кнопки — полный список в карточке</h3>
+        <h3 class="dictionaryVariantTitle">2. Эталон: полная карточка без кнопки раскрытия</h3>
         <p class="dictionaryVariantBody">
-          Без оболочки: только <code>app-content-card</code> и <code>crud-layout</code>. Не задавайте
-          <code>maxTableBodyRows</code> и <code>tableBodyMaxHeight</code> (или явно <code>null</code>) — таблица
-          показывает все строки, скролл идёт у страницы.
+          Канон для «большой» карточки: <code>app-content-card</code> + <code>crud-layout</code> без
+          <code>app-hub-crud-expandable-shell</code>, без <code>maxTableBodyRows</code> /
+          <code>tableBodyMaxHeight</code>. В таблице — <strong>все поля модели строки</strong> (здесь:
+          ID, название, категория, статус); на хабе в узкой плитке те же данные обычно сводят в одну колонку.
+          Ширина — как у «широкой» плитки на хабе: <code>dictionaryTileWide</code> на всю сетку внутри той же
+          контентной колонки, что и остальной текст (<code>app-page-shell</code> → <code>.page</code>), не на
+          весь монитор.
         </p>
         <div class="dictionaryGrid">
-          <section class="dictionaryTile">
+          <section class="dictionaryTile dictionaryTileWide">
             <app-content-card title="" [hideTitle]="true">
-              <ng-container
-                *ngTemplateOutlet="dictionaryCrudDemo; context: dictionaryCrudDemoContexts.full"
-              ></ng-container>
+              <ng-container *ngTemplateOutlet="dictionaryStandardFullCrud"></ng-container>
             </app-content-card>
           </section>
         </div>

@@ -240,6 +240,16 @@ export class UiDemoPage {
   /** Как на хабе `/dictionaries`: одна колонка «Запись» (hubLine); детали — в модалке. */
   readonly columns: TableColumn[] = [{ key: 'hubLine', label: 'Строка' }];
 
+  /**
+   * Эталон «полной» карточки (вариант 2 на demo): все поля модели строки в таблице, не сжатая плитка хаба.
+   */
+  readonly standardDictionaryColumns: TableColumn[] = [
+    { key: 'id', label: 'ID' },
+    { key: 'name', label: 'Название' },
+    { key: 'category', label: 'Категория' },
+    { key: 'status', label: 'Статус' },
+  ];
+
   readonly rows = signal<DemoRow[]>([
     { id: 'demo-1', name: 'Эталонная запись 1', category: 'Металл', status: 'Черновик' },
     { id: 'demo-2', name: 'Эталонная запись 2', category: 'Полимер', status: 'Активно' },
@@ -254,6 +264,18 @@ export class UiDemoPage {
         hubLine: `${r.name} · ${r.category} · ${r.status}`,
       }))
       .sort((a, b) => String(a.name).localeCompare(String(b.name))),
+  );
+
+  /** Данные для эталонной полной таблицы: те же строки, все ключи модели в колонках. */
+  readonly standardCrudTableData = computed(() =>
+    [...this.rows()]
+      .sort((a, b) => a.name.localeCompare(b.name, 'ru'))
+      .map((r) => ({
+        id: r.id,
+        name: r.name,
+        category: r.category,
+        status: r.status,
+      })),
   );
 
   readonly demoData = computed(() => {

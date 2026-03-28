@@ -20,9 +20,41 @@
 }
 
 .brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
   font-weight: 700;
   letter-spacing: 0.04em;
   color: var(--text-primary);
+  text-decoration: none;
+}
+
+.brand:hover {
+  color: var(--text-primary);
+}
+
+.brand:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  outline-offset: 3px;
+  border-radius: var(--radius-pill);
+}
+
+.brandLogo {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  display: block;
+  object-fit: contain;
+}
+
+.brandWord {
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.brandWordAccent {
+  color: color-mix(in srgb, var(--accent) 78%, var(--text-primary));
 }
 
 .mainNav {
