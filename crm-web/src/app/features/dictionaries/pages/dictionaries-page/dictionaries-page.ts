@@ -24,6 +24,10 @@ import { UiButtonComponent } from '../../../../shared/ui/ui-button/ui-button.com
 import { UiCheckboxFieldComponent } from '../../../../shared/ui/ui-checkbox-field/ui-checkbox-field.component';
 import { UiFormFieldComponent } from '../../../../shared/ui/ui-form-field/ui-form-field.component';
 import { HexRgbFieldComponent } from '../../../../shared/ui/hex-rgb-field/public-api';
+import {
+  HubCrudExpandStateService,
+  HubCrudExpandableShellComponent,
+} from '../../../../shared/ui/hub-crud-expandable/public-api';
 
 @Component({
   selector: 'app-dictionaries-page',
@@ -40,6 +44,7 @@ import { HexRgbFieldComponent } from '../../../../shared/ui/hex-rgb-field/public
     UiCheckboxFieldComponent,
     UiFormFieldComponent,
     HexRgbFieldComponent,
+    HubCrudExpandableShellComponent,
   ],
   templateUrl: './dictionaries-page.html',
   styleUrl: './dictionaries-page.scss',
@@ -49,6 +54,7 @@ export class DictionariesPage implements OnDestroy {
   private readonly sub = new Subscription();
 
   readonly permissions = inject(PermissionsService);
+  readonly hubExpand = inject(HubCrudExpandStateService);
   readonly materialsStore = inject(MaterialsStore);
   readonly geometriesStore = inject(GeometriesStore);
   readonly unitsStore = inject(UnitsStore);

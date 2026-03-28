@@ -32,6 +32,45 @@
   line-height: 1.45;
 }
 
+.dictionaryVariantsStack {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.dictionaryVariant {
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.dictionaryVariant:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.dictionaryVariantTitle {
+  margin: 0 0 6px;
+  font-size: var(--font-size-label);
+  font-weight: 650;
+  color: var(--text-primary);
+}
+
+.dictionaryVariantBody {
+  margin: 0 0 12px;
+  font-size: var(--font-size-small);
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+/* Плитки витрины — тот же dictionaryGrid, что на /dictionaries (колонка ≈ 1/4 ширины .page). */
+.dictionaryVariantsStack .dictionaryGrid {
+  margin-top: 2px;
+}
+
+.importStatus--dictionaryDemo {
+  margin: 0 0 var(--ui-space-2);
+}
+
 .meta {
   margin: 0;
   color: var(--text-muted);

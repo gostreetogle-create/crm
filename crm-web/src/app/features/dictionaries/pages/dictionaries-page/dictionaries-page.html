@@ -1,19 +1,22 @@
 <app-page-shell>
   <div class="dictionaryGrid">
     <section class="dictionaryTile">
-      <app-content-card title="" [hideTitle]="true">
-        <crud-layout
-          title="Материалы"
-          [showHeader]="false"
-          [showCardLabel]="true"
-          [showNameSearch]="true"
-          [showCreateAction]="true"
-          [canCreate]="permissions.crud().canCreate"
-          createAriaLabel="Добавить материал"
-          createTitle="Добавить материал"
-          [columns]="materialsColumns"
-          [data]="materialsStore.materialsData()"
-          [loading]="materialsStore.loading()"
+      <app-hub-crud-expandable-shell tileKey="materials">
+        <app-content-card title="" [hideTitle]="true">
+          <crud-layout
+            title="Материалы"
+            [showHeader]="false"
+            [showCardLabel]="true"
+            [showNameSearch]="true"
+            [showCreateAction]="true"
+            [canCreate]="permissions.crud().canCreate"
+            createAriaLabel="Добавить материал"
+            createTitle="Добавить материал"
+            [columns]="materialsColumns"
+            [data]="materialsStore.materialsData()"
+            [loading]="materialsStore.loading()"
+            [maxTableBodyRows]="hubExpand.isOpen('materials') ? null : 1"
+            [tableBodyMaxHeight]="hubExpand.isOpen('materials') ? 'min(72vh, 34rem)' : null"
           [showExcelActions]="true"
           [canDownloadTemplate]="permissions.can('excel.template')"
           [canImportExcel]="permissions.can('excel.import')"
@@ -31,12 +34,14 @@
           (edit)="openMaterialsEdit($event)"
           (delete)="deleteMaterial($event)"
         ></crud-layout>
-      </app-content-card>
+        </app-content-card>
+      </app-hub-crud-expandable-shell>
     </section>
 
     <section class="dictionaryTile">
-      <app-content-card title="" [hideTitle]="true">
-        <crud-layout
+      <app-hub-crud-expandable-shell tileKey="workTypes">
+        <app-content-card title="" [hideTitle]="true">
+          <crud-layout
           title="Вид работ"
           [showHeader]="false"
           [showCardLabel]="true"
@@ -48,6 +53,8 @@
           [columns]="workTypesColumns"
           [data]="productionWorkTypesStore.workTypesData()"
           [loading]="productionWorkTypesStore.loading()"
+            [maxTableBodyRows]="hubExpand.isOpen('workTypes') ? null : 1"
+            [tableBodyMaxHeight]="hubExpand.isOpen('workTypes') ? 'min(72vh, 34rem)' : null"
           [showExcelActions]="true"
           [canDownloadTemplate]="permissions.can('excel.template')"
           [canImportExcel]="permissions.can('excel.import')"
@@ -66,12 +73,14 @@
           (edit)="openWorkTypesEdit($event)"
           (delete)="deleteWorkType($event)"
         ></crud-layout>
-      </app-content-card>
+        </app-content-card>
+      </app-hub-crud-expandable-shell>
     </section>
 
     <section class="dictionaryTile">
-      <app-content-card title="" [hideTitle]="true">
-        <crud-layout
+      <app-hub-crud-expandable-shell tileKey="units">
+        <app-content-card title="" [hideTitle]="true">
+          <crud-layout
           title="Единицы измерения"
           [showHeader]="false"
           [showCardLabel]="true"
@@ -83,6 +92,8 @@
           [columns]="unitsColumns"
           [data]="unitsStore.unitsData()"
           [loading]="unitsStore.loading()"
+            [maxTableBodyRows]="hubExpand.isOpen('units') ? null : 1"
+            [tableBodyMaxHeight]="hubExpand.isOpen('units') ? 'min(72vh, 34rem)' : null"
           [showExcelActions]="true"
           [canDownloadTemplate]="permissions.can('excel.template')"
           [canImportExcel]="permissions.can('excel.import')"
@@ -100,12 +111,14 @@
           (edit)="openUnitsEdit($event)"
           (delete)="deleteUnit($event)"
         ></crud-layout>
-      </app-content-card>
+        </app-content-card>
+      </app-hub-crud-expandable-shell>
     </section>
 
     <section class="dictionaryTile">
-      <app-content-card title="" [hideTitle]="true">
-        <crud-layout
+      <app-hub-crud-expandable-shell tileKey="colors">
+        <app-content-card title="" [hideTitle]="true">
+          <crud-layout
           title="Цвета (RAL)"
           [showHeader]="false"
           [showCardLabel]="true"
@@ -117,6 +130,8 @@
           [columns]="colorsColumns"
           [data]="colorsStore.colorsData()"
           [loading]="colorsStore.loading()"
+            [maxTableBodyRows]="hubExpand.isOpen('colors') ? null : 1"
+            [tableBodyMaxHeight]="hubExpand.isOpen('colors') ? 'min(72vh, 34rem)' : null"
           [showExcelActions]="true"
           [canDownloadTemplate]="permissions.can('excel.template')"
           [canImportExcel]="permissions.can('excel.import')"
@@ -134,12 +149,14 @@
           (edit)="openColorsEdit($event)"
           (delete)="deleteColor($event)"
         ></crud-layout>
-      </app-content-card>
+        </app-content-card>
+      </app-hub-crud-expandable-shell>
     </section>
 
     <section class="dictionaryTile">
-      <app-content-card title="" [hideTitle]="true">
-        <crud-layout
+      <app-hub-crud-expandable-shell tileKey="surfaceFinishes">
+        <app-content-card title="" [hideTitle]="true">
+          <crud-layout
           title="Тип отделки / шероховатость"
           [showHeader]="false"
           [showCardLabel]="true"
@@ -151,6 +168,8 @@
           [columns]="surfaceFinishesColumns"
           [data]="surfaceFinishesStore.surfaceFinishesData()"
           [loading]="surfaceFinishesStore.loading()"
+            [maxTableBodyRows]="hubExpand.isOpen('surfaceFinishes') ? null : 1"
+            [tableBodyMaxHeight]="hubExpand.isOpen('surfaceFinishes') ? 'min(72vh, 34rem)' : null"
           [showExcelActions]="true"
           [canDownloadTemplate]="permissions.can('excel.template')"
           [canImportExcel]="permissions.can('excel.import')"
@@ -168,12 +187,14 @@
           (edit)="openSurfaceFinishesEdit($event)"
           (delete)="deleteSurfaceFinish($event)"
         ></crud-layout>
-      </app-content-card>
+        </app-content-card>
+      </app-hub-crud-expandable-shell>
     </section>
 
     <section class="dictionaryTile">
-      <app-content-card title="" [hideTitle]="true">
-        <crud-layout
+      <app-hub-crud-expandable-shell tileKey="geometries">
+        <app-content-card title="" [hideTitle]="true">
+          <crud-layout
           title="Форма и габаритные размеры"
           [showHeader]="false"
           [showCardLabel]="true"
@@ -185,6 +206,8 @@
           [columns]="geometriesColumns"
           [data]="geometriesStore.geometriesData()"
           [loading]="geometriesStore.loading()"
+            [maxTableBodyRows]="hubExpand.isOpen('geometries') ? null : 1"
+            [tableBodyMaxHeight]="hubExpand.isOpen('geometries') ? 'min(72vh, 34rem)' : null"
           [showExcelActions]="true"
           [canDownloadTemplate]="permissions.can('excel.template')"
           [canImportExcel]="permissions.can('excel.import')"
@@ -202,12 +225,14 @@
           (edit)="openGeometriesEdit($event)"
           (delete)="deleteGeometry($event)"
         ></crud-layout>
-      </app-content-card>
+        </app-content-card>
+      </app-hub-crud-expandable-shell>
     </section>
 
     <section class="dictionaryTile">
-      <app-content-card title="" [hideTitle]="true">
-        <crud-layout
+      <app-hub-crud-expandable-shell tileKey="coatings">
+        <app-content-card title="" [hideTitle]="true">
+          <crud-layout
           title="Покрытие"
           [showHeader]="false"
           [showCardLabel]="true"
@@ -219,6 +244,8 @@
           [columns]="coatingsColumns"
           [data]="coatingsStore.coatingsData()"
           [loading]="coatingsStore.loading()"
+            [maxTableBodyRows]="hubExpand.isOpen('coatings') ? null : 1"
+            [tableBodyMaxHeight]="hubExpand.isOpen('coatings') ? 'min(72vh, 34rem)' : null"
           [showExcelActions]="true"
           [canDownloadTemplate]="permissions.can('excel.template')"
           [canImportExcel]="permissions.can('excel.import')"
@@ -236,7 +263,8 @@
           (edit)="openCoatingsEdit($event)"
           (delete)="deleteCoating($event)"
         ></crud-layout>
-      </app-content-card>
+        </app-content-card>
+      </app-hub-crud-expandable-shell>
     </section>
   </div>
 </app-page-shell>

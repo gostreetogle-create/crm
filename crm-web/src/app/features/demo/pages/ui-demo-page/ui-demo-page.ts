@@ -1,4 +1,4 @@
-import { NgIf } from '@angular/common';
+import { NgIf, NgTemplateOutlet } from '@angular/common';
 import { Component, TemplateRef, ViewChild, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
@@ -29,6 +29,10 @@ import { UiFormFieldComponent } from '../../../../shared/ui/ui-form-field/ui-for
 import { ProductCardComponent } from '../../../../shared/ui/product-card/public-api';
 import { UiPaginationComponent } from '../../../../shared/ui/ui-pagination/ui-pagination.component';
 import { PermissionsService, UserRole } from '../../../../core/auth/public-api';
+import {
+  HubCrudExpandStateService,
+  HubCrudExpandableShellComponent,
+} from '../../../../shared/ui/hub-crud-expandable/public-api';
 
 type DemoRow = {
   id: string;
@@ -51,6 +55,7 @@ type DemoProduct = {
   standalone: true,
   imports: [
     NgIf,
+    NgTemplateOutlet,
     ReactiveFormsModule,
     LucideCheck,
     LucideCircleAlert,
@@ -74,6 +79,7 @@ type DemoProduct = {
     UiModal,
     ProductCardComponent,
     UiPaginationComponent,
+    HubCrudExpandableShellComponent,
   ],
   templateUrl: './ui-demo-page.html',
   styleUrl: './ui-demo-page.scss',
@@ -81,6 +87,13 @@ type DemoProduct = {
 export class UiDemoPage {
   private readonly fb = new FormBuilder();
   readonly permissions = inject(PermissionsService);
+  readonly hubExpand = inject(HubCrudExpandStateService);
+
+  /** Контексты для ng-template демо-таблицы (полный список / превью одной строки). */
+  readonly dictionaryCrudDemoContexts = {
+    full: { maxRows: null as number | null, maxHeight: null as string | null },
+    previewOneRow: { maxRows: 1 as number | null, maxHeight: null as string | null },
+  };
 
   @ViewChild('quickAddContent') quickAddContent?: TemplateRef<unknown>;
   @ViewChild('quickAddActions') quickAddActions?: TemplateRef<unknown>;
@@ -230,6 +243,8 @@ export class UiDemoPage {
   readonly rows = signal<DemoRow[]>([
     { id: 'demo-1', name: 'Эталонная запись 1', category: 'Металл', status: 'Черновик' },
     { id: 'demo-2', name: 'Эталонная запись 2', category: 'Полимер', status: 'Активно' },
+    { id: 'demo-3', name: 'Эталонная запись 3', category: 'Композит', status: 'Активно' },
+    { id: 'demo-4', name: 'Эталонная запись 4', category: 'Металл', status: 'Архив' },
   ]);
   readonly universalCrudData = computed(() =>
     [...this.rows()]

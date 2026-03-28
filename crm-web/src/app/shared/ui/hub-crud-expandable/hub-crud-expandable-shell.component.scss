@@ -1,0 +1,43 @@
+.hubCrudExpandable {
+  position: relative;
+  z-index: 1;
+}
+
+.hubCrudExpandable--open {
+  z-index: 40;
+  filter: drop-shadow(0 20px 36px var(--shadow-color));
+}
+
+.hubCrudExpandable__toggle {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  margin-top: var(--ui-space-2);
+  padding: var(--ui-space-2) var(--ui-space-3);
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border-color));
+  border-radius: var(--radius-card);
+  background: color-mix(in srgb, var(--accent) 11%, var(--surface-soft));
+  color: color-mix(in srgb, var(--accent) 82%, var(--text-primary));
+  cursor: pointer;
+  font: inherit;
+  line-height: 0;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.hubCrudExpandable__toggle:hover {
+  background: color-mix(in srgb, var(--accent) 18%, var(--surface-soft));
+  border-color: color-mix(in srgb, var(--accent) 38%, var(--border-color));
+}
+
+.hubCrudExpandable__toggle:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  outline-offset: 2px;
+}
+
+.hubCrudExpandable--open .hubCrudExpandable__toggle {
+  background: color-mix(in srgb, var(--accent) 20%, var(--surface-soft));
+}

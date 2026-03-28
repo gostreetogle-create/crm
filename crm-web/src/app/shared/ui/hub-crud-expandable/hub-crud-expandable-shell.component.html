@@ -1,0 +1,15 @@
+<div
+  class="hubCrudExpandable"
+  [class.hubCrudExpandable--open]="expand.isOpen(tileKey)"
+>
+  <ng-content />
+  <button
+    type="button"
+    class="hubCrudExpandable__toggle"
+    [attr.aria-expanded]="expand.isOpen(tileKey)"
+    [attr.aria-label]="ariaLabel"
+    (click)="expand.toggle(tileKey)"
+  >
+    <svg lucideMenu [size]="20" aria-hidden="true"></svg>
+  </button>
+</div>

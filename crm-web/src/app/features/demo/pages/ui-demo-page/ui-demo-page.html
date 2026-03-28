@@ -84,52 +84,157 @@
     ></app-filters-bar>
   </app-content-card>
 
-  <app-content-card title="Эталон плитки справочника (как на /dictionaries)">
+  <app-content-card title="Плитка справочника: варианты (визуальный эталон)">
+    <ng-template #dictionaryCrudDemo let-maxRows="maxRows" let-maxHeight="maxHeight">
+      <crud-layout
+        title="Демо-запись"
+        [showHeader]="false"
+        [showCardLabel]="true"
+        [showNameSearch]="true"
+        [showCreateAction]="true"
+        [canCreate]="permissions.crud().canCreate"
+        createAriaLabel="Добавить демо-запись"
+        createTitle="Добавить демо-запись"
+        [columns]="columns"
+        [data]="universalCrudData()"
+        [loading]="false"
+        [maxTableBodyRows]="maxRows"
+        [tableBodyMaxHeight]="maxHeight"
+        [showExcelActions]="true"
+        [canDownloadTemplate]="permissions.can('excel.template')"
+        [canImportExcel]="permissions.can('excel.import')"
+        [canExportExcel]="permissions.can('excel.export')"
+        [canView]="true"
+        [canDuplicate]="permissions.crud().canDuplicate"
+        [canEdit]="permissions.crud().canEdit"
+        [canDelete]="permissions.crud().canDelete"
+        (create)="addUniversalDemoRow()"
+        (downloadTemplate)="downloadDemoTemplateExcel()"
+        (importExcel)="onDemoExcelImported($event)"
+        (exportExcel)="exportDemoExcel()"
+        (view)="onView($event)"
+        (duplicate)="onDuplicate($event)"
+        (edit)="onEdit($event)"
+        (delete)="onDelete($event)"
+      ></crud-layout>
+    </ng-template>
+
     <p class="demoHint">
-      Та же цепочка, что на хабе: <code>dictionaryGrid</code> → <code>dictionaryTile</code> →
-      <code>app-content-card</code> → <code>crud-layout</code>. Источник правок внешнего вида строки и
-      тулбара — <code>shared/ui/crud-layout</code>; сетка плиток —
-      <code>shared/styles/dictionary-hub-shell.scss</code>.
+      Общая цепочка: <code>dictionaryGrid</code> → <code>dictionaryTile</code> → при необходимости
+      <code>app-hub-crud-expandable-shell</code> → <code>app-content-card</code> →
+      <code>crud-layout</code>. Ниже четыре варианта: что подключать решаете вы; отдельной «второй карточки»
+      нет — это композиция тех же компонентов. Блоки с плитками вынесены из этой карточки, чтобы ширина колонки
+      совпадала с <code>/dictionaries</code> (тот же <code>dictionaryGrid</code> внутри <code>app-page-shell</code>).
     </p>
-    <div class="dictionaryGrid">
-      <section class="dictionaryTile">
-        <app-content-card title="" [hideTitle]="true">
-          <crud-layout
-            title="Демо-запись"
-            [showHeader]="false"
-            [showCardLabel]="true"
-            [showNameSearch]="true"
-            [showCreateAction]="true"
-            [canCreate]="permissions.crud().canCreate"
-            createAriaLabel="Добавить демо-запись"
-            createTitle="Добавить демо-запись"
-            [columns]="columns"
-            [data]="universalCrudData()"
-            [loading]="false"
-            [showExcelActions]="true"
-            [canDownloadTemplate]="permissions.can('excel.template')"
-            [canImportExcel]="permissions.can('excel.import')"
-            [canExportExcel]="permissions.can('excel.export')"
-            [canView]="true"
-            [canDuplicate]="permissions.crud().canDuplicate"
-            [canEdit]="permissions.crud().canEdit"
-            [canDelete]="permissions.crud().canDelete"
-            (create)="addUniversalDemoRow()"
-            (downloadTemplate)="downloadDemoTemplateExcel()"
-            (importExcel)="onDemoExcelImported($event)"
-            (exportExcel)="exportDemoExcel()"
-            (view)="onView($event)"
-            (duplicate)="onDuplicate($event)"
-            (edit)="onEdit($event)"
-            (delete)="onDelete($event)"
-          ></crud-layout>
-        </app-content-card>
-      </section>
-    </div>
-    @if (demoExcelStatus()) {
-      <p class="importStatus">{{ demoExcelStatus() }}</p>
-    }
   </app-content-card>
+
+  <div class="dictionaryVariantsStack">
+      <article class="dictionaryVariant">
+        <h3 class="dictionaryVariantTitle">1. «Маленькая» плитка хаба — превью и раскрытие</h3>
+        <p class="dictionaryVariantBody">
+          <code>app-hub-crud-expandable-shell</code> + <code>HubCrudExpandStateService</code> (ключ плитки, здесь
+          <code>demo-etalon</code>). В свёрнутом виде одна строка; после кнопки с тремя линиями —
+          <code>maxTableBodyRows</code> снимается, <code>tableBodyMaxHeight</code> включает скролл. Так же на
+          <code>/dictionaries</code>.
+        </p>
+        <div class="dictionaryGrid">
+          <section class="dictionaryTile">
+            <app-hub-crud-expandable-shell tileKey="demo-etalon">
+              <app-content-card title="" [hideTitle]="true">
+                <crud-layout
+                  title="Демо-запись"
+                  [showHeader]="false"
+                  [showCardLabel]="true"
+                  [showNameSearch]="true"
+                  [showCreateAction]="true"
+                  [canCreate]="permissions.crud().canCreate"
+                  createAriaLabel="Добавить демо-запись"
+                  createTitle="Добавить демо-запись"
+                  [columns]="columns"
+                  [data]="universalCrudData()"
+                  [loading]="false"
+                  [maxTableBodyRows]="hubExpand.isOpen('demo-etalon') ? null : 1"
+                  [tableBodyMaxHeight]="hubExpand.isOpen('demo-etalon') ? 'min(72vh, 34rem)' : null"
+                  [showExcelActions]="true"
+                  [canDownloadTemplate]="permissions.can('excel.template')"
+                  [canImportExcel]="permissions.can('excel.import')"
+                  [canExportExcel]="permissions.can('excel.export')"
+                  [canView]="true"
+                  [canDuplicate]="permissions.crud().canDuplicate"
+                  [canEdit]="permissions.crud().canEdit"
+                  [canDelete]="permissions.crud().canDelete"
+                  (create)="addUniversalDemoRow()"
+                  (downloadTemplate)="downloadDemoTemplateExcel()"
+                  (importExcel)="onDemoExcelImported($event)"
+                  (exportExcel)="exportDemoExcel()"
+                  (view)="onView($event)"
+                  (duplicate)="onDuplicate($event)"
+                  (edit)="onEdit($event)"
+                  (delete)="onDelete($event)"
+                ></crud-layout>
+              </app-content-card>
+            </app-hub-crud-expandable-shell>
+          </section>
+        </div>
+      </article>
+
+      <article class="dictionaryVariant">
+        <h3 class="dictionaryVariantTitle">2. «Большая» без кнопки — полный список в карточке</h3>
+        <p class="dictionaryVariantBody">
+          Без оболочки: только <code>app-content-card</code> и <code>crud-layout</code>. Не задавайте
+          <code>maxTableBodyRows</code> и <code>tableBodyMaxHeight</code> (или явно <code>null</code>) — таблица
+          показывает все строки, скролл идёт у страницы.
+        </p>
+        <div class="dictionaryGrid">
+          <section class="dictionaryTile">
+            <app-content-card title="" [hideTitle]="true">
+              <ng-container
+                *ngTemplateOutlet="dictionaryCrudDemo; context: dictionaryCrudDemoContexts.full"
+              ></ng-container>
+            </app-content-card>
+          </section>
+        </div>
+      </article>
+
+      <article class="dictionaryVariant">
+        <h3 class="dictionaryVariantTitle">3. Превью одной строки без раскрытия (редко)</h3>
+        <p class="dictionaryVariantBody">
+          Только входы <code>CrudLayout</code>: <code>maxTableBodyRows="1"</code>, без
+          <code>app-hub-crud-expandable-shell</code>. Лишние строки не видны и раскрыть нельзя — имеет смысл
+          только для особых сценариев.
+        </p>
+        <div class="dictionaryGrid">
+          <section class="dictionaryTile">
+            <app-content-card title="" [hideTitle]="true">
+              <ng-container
+                *ngTemplateOutlet="dictionaryCrudDemo; context: dictionaryCrudDemoContexts.previewOneRow"
+              ></ng-container>
+            </app-content-card>
+          </section>
+        </div>
+      </article>
+
+      <article class="dictionaryVariant">
+        <h3 class="dictionaryVariantTitle">4. Полный список в узкой карточке</h3>
+        <p class="dictionaryVariantBody">
+          Как вариант 2, плюс <code>maxInlineSize</code> на <code>app-content-card</code> — карточка и тулбар не
+          тянутся на всю ширину колонки грида (см. <code>content-card.component.ts</code>).
+        </p>
+        <div class="dictionaryGrid">
+          <section class="dictionaryTile">
+            <app-content-card title="" [hideTitle]="true" maxInlineSize="min(100%, 22rem)">
+              <ng-container
+                *ngTemplateOutlet="dictionaryCrudDemo; context: dictionaryCrudDemoContexts.full"
+              ></ng-container>
+            </app-content-card>
+          </section>
+        </div>
+      </article>
+  </div>
+
+  @if (demoExcelStatus()) {
+    <p class="importStatus importStatus--dictionaryDemo">{{ demoExcelStatus() }}</p>
+  }
 
   <app-content-card title="Форма + quick-add">
     <form id="demo-main-form" class="formGrid" [formGroup]="form" (ngSubmit)="submitMainForm()">

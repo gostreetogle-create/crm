@@ -71,6 +71,13 @@ export class CrudLayoutComponent {
   @Input() cardFieldsLayout: 'auto' | 'single' | 'double' = 'auto';
   @Input() deleteConfirmTitle = 'Подтвердите удаление';
   @Input() deleteConfirmMessage = 'Удалить запись?';
+  /**
+   * Ограничить число строк в таблице (после поиска). `null` — все строки.
+   * Для компактного превью на demo / узких витрин.
+   */
+  @Input() maxTableBodyRows: number | null = null;
+  /** CSS max-height для блока таблицы (например `min(72vh, 34rem)`), с вертикальным скроллом. */
+  @Input() tableBodyMaxHeight: string | null = null;
   @Output() view = new EventEmitter<string>();
   @Output() create = new EventEmitter<void>();
   @Output() duplicate = new EventEmitter<string>();
@@ -124,6 +131,16 @@ export class CrudLayoutComponent {
     }
 
     return this.data.filter((row) => this.rowMatchesName(row, term));
+  }
+
+  /** Строки тела таблицы и мобильных карточек (с учётом maxTableBodyRows). */
+  get crudTableBodyRows(): any[] {
+    const rows = this.visibleData;
+    const max = this.maxTableBodyRows;
+    if (max != null && Number.isFinite(max) && max >= 0) {
+      return rows.slice(0, Math.floor(max));
+    }
+    return rows;
   }
 
   onNameSearchInput(event: Event): void {

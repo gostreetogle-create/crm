@@ -177,6 +177,8 @@
   [class.tableViewHubClip]="
     columns.length > 0 && columns.length <= 2 && !(columns.length === 2 && hasRowActions)
   "
+  [class.tableViewBodyMaxHeight]="!!tableBodyMaxHeight"
+  [style.max-height]="tableBodyMaxHeight || null"
 >
   <table class="crudTable" [class.crudTableHub]="columns.length > 0 && columns.length <= 2">
     <thead>
@@ -199,7 +201,7 @@
       </tr>
     </thead>
     <tbody>
-      @for (row of visibleData; track row?.id ?? $index) {
+      @for (row of crudTableBodyRows; track row?.id ?? $index) {
         <tr>
           @if (columns.length === 1 && hasRowActions) {
             <td class="crudHubMergedCell" [attr.colspan]="2">
@@ -281,7 +283,7 @@
       }
     </article>
   }
-  @for (row of visibleData; track $index) {
+  @for (row of crudTableBodyRows; track $index) {
     <article class="card-item">
       <div class="cardFieldsGrid" [class.cardFieldsGridDouble]="cardFieldsAreDoubleColumn">
         @for (column of columns; track column.key) {

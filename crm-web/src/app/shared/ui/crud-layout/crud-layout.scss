@@ -134,6 +134,11 @@
   overflow-x: auto;
 }
 
+.tableView.tableViewBodyMaxHeight {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
 /* Хаб (1–2 колонки): таблица укладывается в плитку — без горизонтального скролла (см. crudTableHub). */
 .tableView.tableViewHubClip {
   overflow-x: clip;
