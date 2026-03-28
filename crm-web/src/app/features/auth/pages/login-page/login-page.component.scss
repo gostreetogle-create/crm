@@ -23,6 +23,7 @@
   position: absolute;
   inset: 0;
   z-index: 0;
+  overflow: hidden;
   background: linear-gradient(
     165deg,
     var(--bg-base) 0%,
@@ -31,14 +32,16 @@
   pointer-events: none;
 }
 
-/* Современный уличный воркаут: слева компактные станции, справа — турники / кольца на стропах; парк на заднем плане. */
+/* Фон чуть «дальше от камеры»: scale < 1 + центр чуть выше — больше воздуха вокруг площадки. */
 .loginBackdrop::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: url('/branding/login-street-workout-bg.png') no-repeat 50% 44% / cover;
+  background: url('/branding/login-street-workout-bg.png') no-repeat 50% 42% / cover;
   opacity: 0.37;
   filter: saturate(1.08) contrast(1.04) brightness(1.03);
+  transform: scale(0.82);
+  transform-origin: 50% 44%;
 }
 
 .loginBackdrop::after {
