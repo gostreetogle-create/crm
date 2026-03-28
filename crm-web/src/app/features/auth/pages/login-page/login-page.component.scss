@@ -32,19 +32,14 @@
   pointer-events: none;
 }
 
-/*
- * Hero: спокойный центр под стеклянную карточку, оборудование по краям (низ слева / справа).
- * Масштаб и вуаль согласованы с макетом: не «в лоб» в симулятор, читаемость формы входа.
- */
+/* Весь кадр иллюстрации в пределах экрана (contain), без transform scale — поля даёт градиент .loginBackdrop. */
 .loginBackdrop::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: url('/branding/login-street-workout-bg.png') no-repeat 50% 46% / cover;
-  opacity: 0.39;
+  background: url('/branding/login-street-workout-bg.png') no-repeat center center / contain;
+  opacity: 0.42;
   filter: saturate(1.06) contrast(1.03) brightness(1.02);
-  transform: scale(0.9);
-  transform-origin: 50% 46%;
 }
 
 .loginBackdrop::after {
