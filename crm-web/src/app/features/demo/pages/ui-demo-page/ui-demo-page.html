@@ -84,35 +84,48 @@
     ></app-filters-bar>
   </app-content-card>
 
-  <app-content-card title="" [hideTitle]="true">
-    <crud-layout
-      title="Универсальный CRUD"
-      [showHeader]="false"
-      [showCardLabel]="true"
-      [showNameSearch]="true"
-      [showCreateAction]="permissions.crud().canCreate"
-      [canCreate]="permissions.crud().canCreate"
-      createAriaLabel="Добавить строку"
-      createTitle="Добавить строку"
-      [columns]="columns"
-      [data]="universalCrudData()"
-      [showExcelActions]="true"
-      [canDownloadTemplate]="permissions.can('excel.template')"
-      [canImportExcel]="permissions.can('excel.import')"
-      [canExportExcel]="permissions.can('excel.export')"
-      [canView]="true"
-      [canDuplicate]="permissions.crud().canDuplicate"
-      [canEdit]="permissions.crud().canEdit"
-      [canDelete]="permissions.crud().canDelete"
-      (create)="addUniversalDemoRow()"
-      (downloadTemplate)="downloadDemoTemplateExcel()"
-      (importExcel)="onDemoExcelImported($event)"
-      (exportExcel)="exportDemoExcel()"
-      (view)="onView($event)"
-      (duplicate)="onDuplicate($event)"
-      (edit)="onEdit($event)"
-      (delete)="onDelete($event)"
-    ></crud-layout>
+  <app-content-card title="Эталон плитки справочника (как на /dictionaries)">
+    <p class="demoHint">
+      Та же цепочка, что на хабе: <code>dictionaryGrid</code> → <code>dictionaryTile</code> →
+      <code>app-content-card</code> → <code>crud-layout</code>. Источник правок внешнего вида строки и
+      тулбара — <code>shared/ui/crud-layout</code>; сетка плиток —
+      <code>shared/styles/dictionary-hub-shell.scss</code>.
+    </p>
+    <div class="dictionaryGrid">
+      <section class="dictionaryTile">
+        <app-content-card title="" [hideTitle]="true">
+          <crud-layout
+            title="Демо-запись"
+            [showHeader]="false"
+            [showCardLabel]="true"
+            [showNameSearch]="true"
+            [showCreateAction]="true"
+            [canCreate]="permissions.crud().canCreate"
+            createAriaLabel="Добавить демо-запись"
+            createTitle="Добавить демо-запись"
+            [columns]="columns"
+            [data]="universalCrudData()"
+            [loading]="false"
+            [showExcelActions]="true"
+            [canDownloadTemplate]="permissions.can('excel.template')"
+            [canImportExcel]="permissions.can('excel.import')"
+            [canExportExcel]="permissions.can('excel.export')"
+            [canView]="true"
+            [canDuplicate]="permissions.crud().canDuplicate"
+            [canEdit]="permissions.crud().canEdit"
+            [canDelete]="permissions.crud().canDelete"
+            (create)="addUniversalDemoRow()"
+            (downloadTemplate)="downloadDemoTemplateExcel()"
+            (importExcel)="onDemoExcelImported($event)"
+            (exportExcel)="exportDemoExcel()"
+            (view)="onView($event)"
+            (duplicate)="onDuplicate($event)"
+            (edit)="onEdit($event)"
+            (delete)="onDelete($event)"
+          ></crud-layout>
+        </app-content-card>
+      </section>
+    </div>
     @if (demoExcelStatus()) {
       <p class="importStatus">{{ demoExcelStatus() }}</p>
     }

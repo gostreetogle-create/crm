@@ -1,5 +1,66 @@
 :host {
   display: block;
+  min-width: 0;
+}
+
+/* Заголовок карточки над рядом кнопок (хаб справочников, /demo с showCardLabel). */
+.crudHeaderStack {
+  margin-bottom: var(--ui-card-title-margin-bottom);
+}
+
+.crudCardHeading {
+  margin: 0 0 var(--ui-space-3);
+  text-align: center;
+  font-size: var(--font-size-card-title);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.25;
+  color: color-mix(in srgb, var(--accent) 28%, var(--text-primary));
+  text-transform: none;
+}
+
+.crudToolbarStacked {
+  justify-content: stretch;
+  margin-bottom: 0;
+  width: 100%;
+  min-width: 0;
+}
+
+.crudToolbarStackedRow {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--ui-space-3);
+  width: 100%;
+  min-width: 0;
+}
+
+.crudToolbarLeading {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--ui-space-2);
+}
+
+.crudToolbarTrailing {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  margin-left: auto;
+}
+
+.crudToolbarSearchSlot {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+
+.crudToolbarSearchSlot .crudToolbarSearch {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: none;
+  width: 100%;
 }
 
 .crudToolbar {
@@ -8,6 +69,8 @@
   align-items: center;
   gap: var(--ui-space-2);
   margin-bottom: var(--ui-card-title-margin-bottom);
+  min-width: 0;
+  width: 100%;
 }
 
 .crudToolbarMain,
@@ -18,7 +81,9 @@
 }
 
 .crudToolbarMain {
-  flex: 0 1 auto;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
   gap: var(--ui-space-3);
 }
 
@@ -29,6 +94,7 @@
 }
 
 .crudToolbarRight {
+  flex: 0 0 auto;
   margin-left: auto;
   display: flex;
   align-items: center;
@@ -37,7 +103,7 @@
 
 .crudToolbarSearch {
   flex: 0 1 auto;
-  min-width: 95px;
+  min-width: 72px;
   max-width: 190px;
   margin: 0;
 }
@@ -63,11 +129,122 @@
 
 .tableView {
   display: block;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/* Хаб (1–2 колонки): таблица укладывается в плитку — без горизонтального скролла (см. crudTableHub). */
+.tableView.tableViewHubClip {
+  overflow-x: clip;
 }
 
 .crudTable {
   width: 100%;
+  max-width: 100%;
   border-collapse: collapse;
+}
+
+/*
+ * Хаб справочников и эталонный CRUD на /demo: 1–2 колонки данных + действия.
+ * Единое поведение: одна строка текста + ellipsis, колонка действий не «вылетает» с плитки.
+ */
+.crudTable.crudTableHub {
+  table-layout: fixed;
+  min-width: 0;
+}
+
+.crudTable.crudTableHub th:not(.actionsCol):not(.crudHubHeadMerged),
+.crudTable.crudTableHub td:not(.actionsCol):not(.crudHubMergedCell) {
+  min-width: 0;
+  overflow: hidden;
+  vertical-align: middle;
+}
+
+/* Шапка как тело: одна ячейка colspan + flex — подпись «Действия» не уезжает за clip. */
+.crudTable.crudTableHub th.crudHubHeadMerged {
+  overflow: visible;
+  vertical-align: middle;
+  font-size: var(--font-size-small);
+  font-weight: 600;
+  text-align: left;
+  padding: var(--ui-button-padding-y) var(--ui-button-padding-x);
+}
+
+.crudHubHeadRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-3);
+  min-width: 0;
+}
+
+.crudHubHeadLabel {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.crudHubHeadActions {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  text-align: right;
+  color: var(--text-primary);
+}
+
+.crudTable.crudTableHub th.actionsCol,
+.crudTable.crudTableHub td.actionsCol {
+  width: 1%;
+  min-width: calc(4 * 30px + 3 * var(--ui-space-1) + 2 * var(--ui-button-padding-x));
+  max-width: none;
+  white-space: nowrap;
+  text-align: right;
+  box-sizing: border-box;
+}
+
+.crudTable.crudTableHub td:not(.actionsCol) .crudCellLine {
+  width: 100%;
+  min-width: 0;
+}
+
+/*
+ * Одна колонка данных + действия (хаб): одна ячейка colspan — flex внутри.
+ * Текст с ellipsis; блок действий справа с фоном и лёгким перекрытием конца строки (не уезжает за плитку).
+ */
+.crudTable.crudTableHub td.crudHubMergedCell {
+  overflow: visible;
+  vertical-align: middle;
+}
+
+.crudHubRow {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 0;
+}
+
+.crudHubRowText {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.crudHubRowText .crudCellLine {
+  width: 100%;
+  min-width: 0;
+}
+
+.crudHubRowActions {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  margin-left: -8px;
+  padding-left: 12px;
+  background: var(--surface);
+  box-shadow: -14px 0 18px -6px var(--surface);
 }
 
 .crudTable th,
@@ -117,7 +294,18 @@
   white-space: nowrap;
 }
 
+/* Та же логика подписи, что у .crudCellText, но без flex-ряда (обычные колонки без swatch). */
+.crudCellPlain {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .rowActionBtn {
+  box-sizing: border-box;
   border: 1px solid var(--border-color);
   background: var(--surface);
   color: var(--text-primary);
@@ -197,6 +385,7 @@
 
 .card-value {
   color: var(--text-primary);
+  min-width: 0;
 }
 
 .card-actions {
@@ -210,16 +399,6 @@
   display: flex;
   justify-content: flex-end;
   gap: var(--ui-nav-gap);
-}
-
-.crudCardLabelText {
-  font-size: calc(var(--font-size-label) + 2px);
-  font-weight: 700;
-  line-height: 1;
-  color: var(--text-muted);
-  display: inline-flex;
-  align-items: center;
-  padding: 0;
 }
 
 .crudTable th {
