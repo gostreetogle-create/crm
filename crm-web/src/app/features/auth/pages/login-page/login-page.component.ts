@@ -54,8 +54,4 @@ export class LoginPage {
       password: DEV_BOOTSTRAP_PASSWORD,
     });
   }
-
-  goDictionaries(): void {
-    void this.router.navigateByUrl('/dictionaries');
-  }
 }

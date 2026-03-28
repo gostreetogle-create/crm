@@ -1,69 +1,72 @@
 :host {
   display: block;
+  height: 100vh;
+  max-height: 100dvh;
+  overflow: hidden;
 }
 
 .loginStage {
   position: relative;
-  min-height: 100vh;
+  height: 100%;
+  max-height: 100dvh;
+  overflow: hidden;
   isolation: isolate;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: max(12px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+    max(12px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  box-sizing: border-box;
 }
 
 .loginBackdrop {
   position: absolute;
   inset: 0;
   z-index: 0;
-  background:
-    url('/branding/landing-hero.svg') no-repeat 85% 45% / min(92%, 720px) auto,
-    radial-gradient(ellipse 120% 80% at 0% 0%, color-mix(in srgb, var(--accent) 22%, transparent) 0%, transparent 55%),
-    radial-gradient(ellipse 90% 70% at 100% 20%, color-mix(in srgb, var(--success) 18%, transparent) 0%, transparent 50%),
-    linear-gradient(165deg, var(--bg-base) 0%, color-mix(in srgb, var(--surface-soft) 88%, var(--bg-base)) 100%);
+  background: linear-gradient(
+    165deg,
+    var(--bg-base) 0%,
+    color-mix(in srgb, var(--surface-soft) 88%, var(--bg-base)) 100%
+  );
   pointer-events: none;
 }
 
-/* Опционально: положите hero.jpg / hero.webp в public/branding/ и раскомментируйте слой выше градиентов. */
+.loginBackdrop::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url('/branding/login-sport-platform-bg.png') no-repeat center center / cover;
+  opacity: 0.2;
+  filter: saturate(1.05);
+}
 
 .loginBackdrop::after {
   content: '';
   position: absolute;
   inset: 0;
-  background-image: repeating-linear-gradient(
-    -12deg,
-    transparent,
-    transparent 11px,
-    color-mix(in srgb, var(--border-color) 12%, transparent) 11px,
-    color-mix(in srgb, var(--border-color) 12%, transparent) 12px
-  );
-  opacity: 0.35;
-  mask-image: radial-gradient(ellipse 85% 75% at 15% 25%, black 15%, transparent 70%);
+  background:
+    radial-gradient(ellipse 100% 90% at 50% 40%, transparent 0%, color-mix(in srgb, var(--bg-base) 35%, transparent) 72%),
+    radial-gradient(ellipse 120% 80% at 0% 0%, color-mix(in srgb, var(--accent) 18%, transparent) 0%, transparent 55%),
+    radial-gradient(ellipse 90% 70% at 100% 20%, color-mix(in srgb, var(--success) 14%, transparent) 0%, transparent 50%);
+  pointer-events: none;
 }
 
-.loginGrid {
+.loginCenter {
   position: relative;
   z-index: 1;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
-  gap: clamp(24px, 4vw, 48px);
-  align-items: start;
-  padding: clamp(20px, 4vh, 40px) clamp(16px, 3vw, 32px) 48px;
-  max-width: min(1200px, 100%);
-}
-
-@media (max-width: 900px) {
-  .loginGrid {
-    grid-template-columns: 1fr;
-  }
-
-  .loginAside {
-    display: none;
-  }
+  width: 100%;
+  max-width: 420px;
+  /* чуть выше геометрического центра */
+  margin-top: -7vh;
+  flex-shrink: 0;
 }
 
 .loginPanel {
-  max-width: 420px;
+  width: 100%;
   padding: clamp(22px, 3vw, 32px);
   border-radius: calc(var(--radius-card) + 6px);
   border: 1px solid color-mix(in srgb, var(--border-color) 85%, transparent);
-  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
   backdrop-filter: blur(var(--ui-backdrop-blur-md));
   box-shadow:
     0 1px 0 color-mix(in srgb, #fff 55%, transparent) inset,
@@ -129,6 +132,28 @@
   color: color-mix(in srgb, var(--text-primary) 88%, var(--text-muted));
 }
 
+.loginPostAuth {
+  margin: 0 0 18px;
+}
+
+.loginInlineLink {
+  font-size: var(--font-size-label);
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.loginInlineLink:hover {
+  border-bottom-color: var(--accent);
+}
+
+.loginInlineLink:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
 .loginForm {
   display: flex;
   flex-direction: column;
@@ -145,68 +170,9 @@
   margin-top: var(--ui-space-2);
 }
 
-.loginActions--row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--ui-space-2);
-  align-items: center;
-}
-
-.loginHint code {
-  font-size: 10px;
-  word-break: break-all;
-}
-
 .loginHint {
   margin: 22px 0 0;
   font-size: 11px;
   line-height: 1.4;
-  color: var(--text-muted);
-}
-
-.loginAside {
-  position: relative;
-  align-self: stretch;
-  min-height: min(420px, 52vh);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 32px 24px;
-  border-radius: calc(var(--radius-card) + 10px);
-  border: 1px solid color-mix(in srgb, var(--border-color) 55%, transparent);
-  background: color-mix(in srgb, var(--surface-soft) 62%, transparent);
-  overflow: hidden;
-}
-
-.loginAsideVisual {
-  position: absolute;
-  inset: -8%;
-  background: url('/branding/landing-hero.svg') no-repeat center / cover;
-  opacity: 0.2;
-  filter: saturate(1.1);
-  pointer-events: none;
-}
-
-.loginAsideInner {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  text-align: center;
-  max-width: 22rem;
-}
-
-.loginAsideLine {
-  font-family: 'Outfit', var(--font-family-base);
-  font-size: clamp(1rem, 2.2vw, 1.25rem);
-  font-weight: 600;
-  color: color-mix(in srgb, var(--text-primary) 92%, var(--accent));
-  letter-spacing: 0.02em;
-}
-
-.loginAsideLine.muted {
-  font-size: var(--font-size-small);
-  font-weight: 500;
   color: var(--text-muted);
 }

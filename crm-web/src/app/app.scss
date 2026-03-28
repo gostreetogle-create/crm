@@ -9,4 +9,10 @@
 .appMain--guest {
   padding-top: max(12px, env(safe-area-inset-top));
   min-height: 100vh;
+  max-height: 100vh;
+  max-height: 100dvh;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  box-sizing: border-box;
 }

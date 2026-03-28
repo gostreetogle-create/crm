@@ -1,6 +1,6 @@
 <div class="loginStage" aria-label="Главный экран входа">
   <div class="loginBackdrop" aria-hidden="true"></div>
-  <div class="loginGrid">
+  <div class="loginCenter">
     <section class="loginPanel">
       <a routerLink="/" class="loginBrand loginBrand--link" aria-label="Sporting Yoga — CRM, главная">
         <img
@@ -18,14 +18,12 @@
       </a>
 
       @if (session.isAuthenticated()) {
-        <p class="loginLead">Вы вошли в систему. Главная — здесь; рабочие экраны — в справочниках.</p>
-        <div class="loginActions loginActions--row">
-          <app-ui-button variant="primary" type="button" (clicked)="goDictionaries()">К справочникам</app-ui-button>
-          <app-ui-button variant="soft" type="button" (clicked)="logout()">Выйти</app-ui-button>
-        </div>
+        <p class="loginLead">Вы вошли в систему. Справочники — в шапке или по ссылке ниже.</p>
+        <p class="loginPostAuth">
+          <a routerLink="/dictionaries" class="loginInlineLink">Открыть справочники</a>
+        </p>
         <p class="loginHint">
-          Регистрация новых пользователей появится после подключения бэкенда. Сейчас доступна только учётная запись
-          разработчика.
+          Регистрация новых пользователей — после подключения бэкенда. Выйти можно кнопкой в шапке.
         </p>
       } @else {
         <p class="loginLead">Войдите, чтобы открыть справочники и рабочие экраны.</p>
@@ -59,20 +57,9 @@
         </form>
 
         <p class="loginHint">
-          Пока нет сервера входа: логин <strong>{{ devUser }}</strong>, пароль <strong>{{ devPass }}</strong>. Свой фон
-          (jpg/webp) можно добавить в <code>public/branding/</code> и вынести слоем в стилях страницы входа рядом с
-          <code>landing-hero.svg</code>.
+          До сервера входа: логин <strong>{{ devUser }}</strong>, пароль <strong>{{ devPass }}</strong>.
         </p>
       }
     </section>
-
-    <aside class="loginAside" aria-hidden="true">
-      <div class="loginAsideVisual"></div>
-      <div class="loginAsideInner">
-        <span class="loginAsideLine">Производственная CRM</span>
-        <span class="loginAsideLine">Справочники · материалы · клиенты</span>
-        <span class="loginAsideLine muted">Единый интерфейс приложения</span>
-      </div>
-    </aside>
   </div>
 </div>
