@@ -13,6 +13,9 @@ import { GeometriesStore } from './features/geometries/state/geometries.store';
 import { MATERIALS_REPOSITORY } from './features/materials/data/materials.repository';
 import { MaterialsMockRepository } from './features/materials/data/materials.mock-repository';
 import { MaterialsStore } from './features/materials/state/materials.store';
+import { MATERIAL_CHARACTERISTICS_REPOSITORY } from './features/material-characteristics/data/material-characteristics.repository';
+import { MaterialCharacteristicsMockRepository } from './features/material-characteristics/data/material-characteristics.mock-repository';
+import { MaterialCharacteristicsStore } from './features/material-characteristics/state/material-characteristics.store';
 import { SURFACE_FINISHES_REPOSITORY } from './features/surface-finishes/data/surface-finishes.repository';
 import { SurfaceFinishesMockRepository } from './features/surface-finishes/data/surface-finishes.mock-repository';
 import { SurfaceFinishesStore } from './features/surface-finishes/state/surface-finishes.store';
@@ -46,6 +49,12 @@ export const appRoutes: Route[] = [
       {
         provide: MATERIALS_REPOSITORY,
         useExisting: MaterialsMockRepository,
+      },
+      MaterialCharacteristicsMockRepository,
+      MaterialCharacteristicsStore,
+      {
+        provide: MATERIAL_CHARACTERISTICS_REPOSITORY,
+        useExisting: MaterialCharacteristicsMockRepository,
       },
       GeometriesMockRepository,
       GeometriesStore,

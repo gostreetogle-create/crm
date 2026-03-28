@@ -34,22 +34,35 @@ export const MaterialsStore = signalStore(
   withComputed(({ items, editId }) => ({
     materialsData: computed(() =>
       items()
-        .map((item) => ({
-          id: item.id,
-          name: item.name,
-          hubLine: item.code?.trim()
-            ? `${item.name} (${item.code.trim()})`
-            : item.name,
-          code: item.code || '—',
-          unit: item.unitName || '—',
-          priceLabel:
-            item.purchasePriceRub != null ? `${item.purchasePriceRub} ₽` : '—',
-          densityKgM3: item.densityKgM3 ?? '—',
-          color: item.colorName || item.colorHex || '—',
-          finish: item.finishType || item.roughnessClass || '—',
-          coating: item.coatingType || item.coatingSpec || '—',
-          isActiveLabel: item.isActive ? 'Да' : 'Нет',
-        }))
+        .map((item) => {
+          const notes = item.notes?.trim();
+          return {
+            id: item.id,
+            name: item.name,
+            hubLine: item.code?.trim()
+              ? `${item.name} (${item.code.trim()})`
+              : item.name,
+            code: item.code?.trim() || '—',
+            unit: item.unitName || '—',
+            priceLabel:
+              item.purchasePriceRub != null ? `${item.purchasePriceRub} ₽` : '—',
+            densityKgM3: item.densityKgM3 != null ? String(item.densityKgM3) : '—',
+            color: item.colorName?.trim() || item.colorHex?.trim() || '—',
+            colorHex: item.colorHex?.trim() || '',
+            finishType: item.finishType?.trim() || '—',
+            roughnessClass: item.roughnessClass?.trim() || '—',
+            raMicron: item.raMicron != null ? String(item.raMicron) : '—',
+            coatingType: item.coatingType?.trim() || '—',
+            coatingSpec: item.coatingSpec?.trim() || '—',
+            coatingThicknessMicron:
+              item.coatingThicknessMicron != null
+                ? String(item.coatingThicknessMicron)
+                : '—',
+            notes:
+              notes && notes.length > 48 ? `${notes.slice(0, 45)}…` : notes || '—',
+            isActiveLabel: item.isActive ? 'Да' : 'Нет',
+          };
+        })
         .sort((a, b) => String(a.name).localeCompare(String(b.name)))
     ),
     isEditMode: computed(() => editId() !== null),

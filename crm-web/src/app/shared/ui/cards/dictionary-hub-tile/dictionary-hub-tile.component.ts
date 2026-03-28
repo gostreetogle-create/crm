@@ -3,8 +3,9 @@ import { ContentCardComponent } from '../content-card/content-card.component';
 import { HubCrudExpandableShellComponent } from '../../hub-crud-expandable/public-api';
 
 /**
- * Узкая плитка справочника на хабе: `dictionaryGrid` → плитка → раскрытие → content-card → crud-layout.
- * Эталон: Demo п.1, `/dictionaries` (обычные справочники).
+ * Плитка справочника на хабе: `dictionaryGrid` → плитка → раскрытие → content-card → crud-layout.
+ * По умолчанию — одна ячейка сетки; `[fullWidth]="true"` — на всю ширину `dictionaryGrid` (материалы, крупные обзоры).
+ * Эталон: Demo п.1 / п.1.1; `/dictionaries`.
  */
 @Component({
   selector: 'app-dictionary-hub-tile',
@@ -13,7 +14,12 @@ import { HubCrudExpandableShellComponent } from '../../hub-crud-expandable/publi
   templateUrl: './dictionary-hub-tile.component.html',
   styleUrl: './dictionary-hub-tile.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '[class.dictionaryHubTile--fullWidth]': 'fullWidth()',
+  },
 })
 export class DictionaryHubTileComponent {
   readonly tileKey = input.required<string>();
+  /** На всю ширину сетки в колонке страницы (`grid-column: 1 / -1`). Те же раскрытие и высоты, что у узкой плитки. */
+  readonly fullWidth = input(false);
 }

@@ -21,7 +21,22 @@
       "Плотность_кг_м3",
       "Группа"
     ],
-    "domainVsUi": "Целевой контур — марка/ГОСТ/группа. В UI: name, code, unitId+unitName (ед. изм. из Справочник_Единицы), purchasePriceRub (₽ за эту единицу), плотность, ссылки на цвет/финиш/покрытие; Марка/ГОСТ/Группа отдельно не заведены. См. material-item.ts и docs/frontend/costing-and-dictionary-prices.md."
+    "domainVsUi": "Целевой контур — марка/ГОСТ/группа. В UI: name, code, unitId+unitName (ед. изм. из Справочник_Единицы), purchasePriceRub (₽ за эту единицу), плотность, ссылки на цвет/финиш/покрытие; Марка/ГОСТ/Группа отдельно не заведены. Повторяемый профиль «цвет+финиш+покрытие+плотность» вынесен в Справочник_Характеристики_материала (связь материал→характеристика — отдельный этап). См. material-item.ts и docs/frontend/costing-and-dictionary-prices.md."
+  },
+  "Справочник_Характеристики_материала": {
+    "status": "exists",
+    "description": "Типовой профиль материала по плотности и отделке: цвет RAL, шероховатость/финиш, покрытие; без учётной цены и единицы измерения (они у сущности «Материал»).",
+    "fields": [
+      "Наименование",
+      "Код",
+      "Плотность_кг_м3",
+      "Цвет_id",
+      "Тип_отделки_id",
+      "Покрытие_id",
+      "Заметки",
+      "Активен"
+    ],
+    "domainVsUi": "В UI/API (mock): name, code, densityKgM3, ссылки и денорм на цвет/финиш/покрытие, notes, isActive. См. crm-web/src/app/features/material-characteristics/model/material-characteristic-item.ts; карточка на /dictionaries, плитка materialCharacteristics."
   },
   "Справочник_Форма_и_габаритные_размеры": {
     "status": "exists",

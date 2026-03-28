@@ -1,6 +1,6 @@
 <app-page-shell>
   <div class="dictionaryGrid">
-    <app-dictionary-hub-wide-tile tileKey="materials">
+    <app-dictionary-hub-tile tileKey="materials" [fullWidth]="true">
       <crud-layout
         title="Материалы"
         [showHeader]="false"
@@ -32,7 +32,41 @@
         (edit)="openMaterialsEdit($event)"
         (delete)="deleteMaterial($event)"
       ></crud-layout>
-    </app-dictionary-hub-wide-tile>
+    </app-dictionary-hub-tile>
+
+    <app-dictionary-hub-tile tileKey="materialCharacteristics" [fullWidth]="true">
+      <crud-layout
+        title="Характеристики материала"
+        [showHeader]="false"
+        [showCardLabel]="true"
+        [showNameSearch]="true"
+        [showCreateAction]="true"
+        [canCreate]="permissions.crud().canCreate"
+        createAriaLabel="Добавить характеристику материала"
+        createTitle="Добавить характеристику материала"
+        [columns]="materialCharacteristicsColumns"
+        [data]="materialCharacteristicsStore.materialCharacteristicsData()"
+        [loading]="materialCharacteristicsStore.loading()"
+        [maxTableBodyRows]="hubExpand.previewMaxTableBodyRows('materialCharacteristics')"
+        [tableBodyMaxHeight]="hubExpand.previewTableBodyMaxHeight('materialCharacteristics')"
+        [showExcelActions]="true"
+        [canDownloadTemplate]="permissions.can('excel.template')"
+        [canImportExcel]="permissions.can('excel.import')"
+        [canExportExcel]="permissions.can('excel.export')"
+        [canView]="true"
+        [canDuplicate]="permissions.crud().canDuplicate"
+        [canEdit]="permissions.crud().canEdit"
+        [canDelete]="permissions.crud().canDelete"
+        (create)="openMaterialCharacteristicsCreate()"
+        (downloadTemplate)="downloadMaterialCharacteristicsTemplateExcel()"
+        (importExcel)="onMaterialCharacteristicsExcelImported($event)"
+        (exportExcel)="exportMaterialCharacteristicsExcel()"
+        (view)="openMaterialCharacteristicsView($event)"
+        (duplicate)="duplicateMaterialCharacteristic($event)"
+        (edit)="openMaterialCharacteristicsEdit($event)"
+        (delete)="deleteMaterialCharacteristic($event)"
+      ></crud-layout>
+    </app-dictionary-hub-tile>
 
     <app-dictionary-hub-tile tileKey="workTypes">
       <crud-layout
@@ -898,6 +932,186 @@
     [formId]="'materials-form'"
     [submitLabel]="materialsStore.isEditMode() ? 'Сохранить изменения' : 'Создать материал'"
     (dismiss)="closeMaterialsModal()"
+  />
+</ng-template>
+
+<ui-modal
+  *ngIf="isMaterialCharacteristicsModalOpen()"
+  [title]="
+    isMaterialCharacteristicsViewMode()
+      ? 'Просмотр характеристики материала'
+      : materialCharacteristicsStore.isEditMode()
+        ? 'Редактирование характеристики материала'
+        : 'Новая характеристика материала'
+  "
+  [content]="materialCharacteristicsContentTpl"
+  [actions]="materialCharacteristicsActionsTpl"
+  (close)="closeMaterialCharacteristicsModal()"
+  [closeOnBackdrop]="isMaterialCharacteristicsViewMode()"
+  size="xl"
+></ui-modal>
+
+<ng-template #materialCharacteristicsContentTpl>
+  <form
+    id="material-characteristics-form"
+    [formGroup]="materialCharacteristicsForm"
+    (ngSubmit)="submitMaterialCharacteristics()"
+    class="formGrid"
+  >
+    <fieldset class="dictionaryFormSection">
+      <legend>Профиль</legend>
+      <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
+        <app-ui-form-field
+          label="Название"
+          [required]="true"
+          [invalid]="isMaterialCharacteristicsInvalid('name')"
+          [errorText]="isMaterialCharacteristicsInvalid('name') ? 'Минимум 2 символа' : ''"
+        >
+          <input type="text" formControlName="name" />
+        </app-ui-form-field>
+
+        <app-ui-form-field label="Код">
+          <input type="text" formControlName="code" />
+        </app-ui-form-field>
+
+        <app-ui-form-field label="Плотность (кг/м³)">
+          <input type="number" formControlName="densityKgM3" />
+        </app-ui-form-field>
+      </div>
+    </fieldset>
+
+    <fieldset class="dictionaryFormSection">
+      <legend>Справочники — выбор записей</legend>
+      <div class="dictionaryFormSectionBody">
+        <app-ui-form-field label="Цвет (RAL)">
+          <div class="colorRefRow">
+            <select formControlName="colorId">
+              <option value="">— Не выбран —</option>
+              @for (option of colorsStore.options(); track option.id) {
+                <option [value]="option.id">{{ option.label }}</option>
+              }
+            </select>
+            <app-ui-button
+              type="button"
+              [square]="true"
+              ariaLabel="Добавить цвет RAL"
+              title="Добавить цвет RAL"
+              (clicked)="openColorsCreate(false, true)"
+            >
+              <span class="squareIconTone squareIconTone--affirm"><svg lucidePlus [size]="18"></svg></span>
+            </app-ui-button>
+          </div>
+        </app-ui-form-field>
+
+        <app-ui-form-field label="Тип отделки / шероховатость">
+          <div class="colorRefRow">
+            <select formControlName="surfaceFinishId">
+              <option value="">— Не выбран —</option>
+              @for (option of surfaceFinishesStore.options(); track option.id) {
+                <option [value]="option.id">{{ option.label }}</option>
+              }
+            </select>
+            <app-ui-button
+              type="button"
+              [square]="true"
+              ariaLabel="Добавить финиш"
+              title="Добавить финиш"
+              (clicked)="openSurfaceFinishesCreate(false, true)"
+            >
+              <span class="squareIconTone squareIconTone--affirm"><svg lucidePlus [size]="18"></svg></span>
+            </app-ui-button>
+          </div>
+        </app-ui-form-field>
+
+        <app-ui-form-field label="Покрытие">
+          <div class="colorRefRow">
+            <select formControlName="coatingId">
+              <option value="">— Не выбран —</option>
+              @for (option of coatingsStore.options(); track option.id) {
+                <option [value]="option.id">{{ option.label }}</option>
+              }
+            </select>
+            <app-ui-button
+              type="button"
+              [square]="true"
+              ariaLabel="Добавить покрытие"
+              title="Добавить покрытие"
+              (clicked)="openCoatingsCreate(false, true)"
+            >
+              <span class="squareIconTone squareIconTone--affirm"><svg lucidePlus [size]="18"></svg></span>
+            </app-ui-button>
+          </div>
+        </app-ui-form-field>
+      </div>
+    </fieldset>
+
+    <fieldset class="dictionaryFormSection dictionaryFormSection--autoFields">
+      <legend>Из справочников</legend>
+      <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
+        <app-ui-form-field label="Цвет — название">
+          <input type="text" formControlName="colorName" readonly />
+        </app-ui-form-field>
+
+        <app-ui-form-field label="Цвет — HEX">
+          <div class="colorHexPreviewRow colorHexPreviewRowLeadSwatch colorHexPreviewRow--tight">
+            <span
+              class="colorSwatch"
+              aria-hidden="true"
+              [style.background]="selectedMaterialCharacteristicColorHex() || '#000000'"
+            ></span>
+            <input type="text" formControlName="colorHex" readonly />
+          </div>
+        </app-ui-form-field>
+
+        <app-ui-form-field label="Отделка — тип">
+          <input type="text" formControlName="finishType" readonly />
+        </app-ui-form-field>
+
+        <app-ui-form-field label="Отделка — шероховатость (класс)">
+          <input type="text" formControlName="roughnessClass" readonly />
+        </app-ui-form-field>
+
+        <app-ui-form-field label="Отделка — Ra, мкм">
+          <input type="number" formControlName="raMicron" readonly />
+        </app-ui-form-field>
+
+        <app-ui-form-field label="Покрытие — тип">
+          <input type="text" formControlName="coatingType" readonly />
+        </app-ui-form-field>
+
+        <app-ui-form-field label="Покрытие — спецификация">
+          <input type="text" formControlName="coatingSpec" readonly />
+        </app-ui-form-field>
+
+        <app-ui-form-field label="Покрытие — толщина, мкм">
+          <input type="number" formControlName="coatingThicknessMicron" readonly />
+        </app-ui-form-field>
+      </div>
+    </fieldset>
+
+    <fieldset class="dictionaryFormSection">
+      <legend>Дополнительно</legend>
+      <div class="dictionaryFormSectionBody">
+        <app-ui-form-field label="Заметки" [wide]="true">
+          <textarea rows="2" formControlName="notes"></textarea>
+        </app-ui-form-field>
+
+        <app-ui-checkbox-field class="checkbox" label="Активен" formControlName="isActive"></app-ui-checkbox-field>
+      </div>
+    </fieldset>
+  </form>
+</ng-template>
+
+<ng-template #materialCharacteristicsActionsTpl>
+  <app-ui-modal-form-actions
+    [viewMode]="isMaterialCharacteristicsViewMode()"
+    [formId]="'material-characteristics-form'"
+    [submitLabel]="
+      materialCharacteristicsStore.isEditMode()
+        ? 'Сохранить изменения'
+        : 'Создать характеристику'
+    "
+    (dismiss)="closeMaterialCharacteristicsModal()"
   />
 </ng-template>
 

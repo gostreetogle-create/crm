@@ -8,3 +8,7 @@
   display: block;
   min-width: 0;
 }
+
+:host.dictionaryHubTile--fullWidth {
+  grid-column: 1 / -1;
+}

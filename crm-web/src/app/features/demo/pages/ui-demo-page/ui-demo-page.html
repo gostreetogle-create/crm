@@ -143,8 +143,9 @@
     </ng-template>
 
     <p class="demoHint">
-      Общая цепочка: <code>dictionaryGrid</code> → <code>app-dictionary-hub-tile</code> /
-      <code>app-dictionary-hub-wide-tile</code> (<code>shared/ui/cards</code>) → внутри те же
+      Общая цепочка: <code>dictionaryGrid</code> → <code>app-dictionary-hub-tile</code>
+      (при необходимости <code>[fullWidth]=&quot;true&quot;</code> — на всю ширину сетки;
+      <code>shared/ui/cards/dictionary-hub-tile</code>) → внутри те же
       <code>app-hub-crud-expandable-shell</code> → <code>app-content-card</code> →
       <code>crud-layout</code>. Ниже блоки-эталоны (в т.ч. 1.1 — широкая плитка с тем же раскрытием, что п.&nbsp;1):
       что подключать решаете вы; отдельной «второй карточки»
@@ -207,13 +208,13 @@
     <app-pattern-variant-section title="1.1. Как п.1, на всю ширину сетки (как п.2)">
       <div class="pattern-variant-intro">
         <p>
-          Компонент <code>app-dictionary-hub-wide-tile</code> (<code>shared/ui/cards/dictionary-hub-wide-tile</code>):
-          та же композиция, что п.&nbsp;1, но хост задаёт <code>grid-column: 1 / -1</code> в
+          Тот же <code>app-dictionary-hub-tile</code>, что п.&nbsp;1, с <code>[fullWidth]=&quot;true&quot;</code>:
+          на хосте класс <code>dictionaryHubTile--fullWidth</code> → <code>grid-column: 1 / -1</code> в
           <code>dictionaryGrid</code> (ширина как у п.&nbsp;2). Ключ плитки <code>demo-etalon-wide</code>, чтобы
-          раскрытие не смешивалось с п.&nbsp;1. Для материалов и составных гидов на <code>/dictionaries</code>.
+          раскрытие не смешивалось с п.&nbsp;1. Для материалов и крупных обзоров на <code>/dictionaries</code>.
         </p>
       </div>
-      <app-dictionary-hub-wide-tile tileKey="demo-etalon-wide">
+      <app-dictionary-hub-tile tileKey="demo-etalon-wide" [fullWidth]="true">
         <crud-layout
           title="Демо-запись"
           [showHeader]="false"
@@ -245,7 +246,7 @@
           (edit)="onEdit($event)"
           (delete)="onDelete($event)"
         ></crud-layout>
-      </app-dictionary-hub-wide-tile>
+      </app-dictionary-hub-tile>
     </app-pattern-variant-section>
 
     <app-pattern-variant-section title="2. Эталон: полная карточка без кнопки раскрытия">

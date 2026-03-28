@@ -26,8 +26,8 @@
 
 - `ContentCardComponent` (`src/app/shared/ui/cards/content-card/`)
   - Обёртка “карточка/секция” с заголовком, используется как контейнер для блоков на страницах.
-- `DictionaryHubTileComponent` / `DictionaryHubWideTileComponent` (`src/app/shared/ui/cards/dictionary-hub-tile/`, `.../dictionary-hub-wide-tile/`)
-  - Плитка хаба справочников: раскрытие + `content-card` + проекция `crud-layout`; wide — на всю ширину `dictionaryGrid` (`grid-column: 1 / -1`).
+- `DictionaryHubTileComponent` (`src/app/shared/ui/cards/dictionary-hub-tile/`)
+  - Плитка хаба справочников: раскрытие + `content-card` + проекция `crud-layout`. Вход `fullWidth` (по умолчанию `false`): при `true` — на всю ширину `dictionaryGrid` (`grid-column: 1 / -1`), без отдельного компонента и без иной логики раскрытия/высоты.
 - `UiStateCardComponent` (`src/app/shared/ui/state-card/`)
   - Компактная плитка состояния (`info` / `success` / `warning` / `danger`) с иконкой Lucide — эталон для Demo и гайдов.
 - `PatternVariantStackComponent` / `PatternVariantSectionComponent` (`src/app/shared/ui/pattern-showcase/`)

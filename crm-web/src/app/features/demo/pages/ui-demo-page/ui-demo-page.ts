@@ -15,7 +15,6 @@ import {
 import {
   ContentCardComponent,
   DictionaryHubTileComponent,
-  DictionaryHubWideTileComponent,
   ProductCardComponent,
 } from '../../../../shared/ui/cards/public-api';
 import { CrudLayoutComponent, TableColumn } from '../../../../shared/ui/crud-layout/public-api';
@@ -71,7 +70,6 @@ type DemoProduct = {
     PageShellComponent,
     ContentCardComponent,
     DictionaryHubTileComponent,
-    DictionaryHubWideTileComponent,
     PatternVariantStackComponent,
     PatternVariantSectionComponent,
     CrudLayoutComponent,

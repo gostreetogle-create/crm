@@ -19,6 +19,8 @@ import { SurfaceFinishesStore } from '../../../surface-finishes/state/surface-fi
 import { ProductionWorkTypesStore } from '../../../production-work-types/state/production-work-types.store';
 import { ClientsStore } from '../../../clients/state/clients.store';
 import { ClientItemInput } from '../../../clients/model/client-item';
+import { MaterialCharacteristicItemInput } from '../../../material-characteristics/model/material-characteristic-item';
+import { MaterialCharacteristicsStore } from '../../../material-characteristics/state/material-characteristics.store';
 import { CrudLayoutComponent, TableColumn } from '../../../../shared/ui/crud-layout/public-api';
 import { UiFormGridComponent } from '../../../../shared/ui/form-grid/public-api';
 import { UiModal as UiModalComponent } from '../../../../shared/ui/modal/public-api';
@@ -29,10 +31,7 @@ import { UiCheckboxFieldComponent } from '../../../../shared/ui/ui-checkbox-fiel
 import { UiFormFieldComponent } from '../../../../shared/ui/ui-form-field/ui-form-field.component';
 import { HexRgbFieldComponent } from '../../../../shared/ui/hex-rgb-field/public-api';
 import { HubCrudExpandStateService } from '../../../../shared/ui/hub-crud-expandable/public-api';
-import {
-  DictionaryHubTileComponent,
-  DictionaryHubWideTileComponent,
-} from '../../../../shared/ui/cards/public-api';
+import { DictionaryHubTileComponent } from '../../../../shared/ui/cards/public-api';
 
 @Component({
   selector: 'app-dictionaries-page',
@@ -43,7 +42,6 @@ import {
     ReactiveFormsModule,
     PageShellComponent,
     DictionaryHubTileComponent,
-    DictionaryHubWideTileComponent,
     CrudLayoutComponent,
     UiModalComponent,
     UiModalFormActionsComponent,
@@ -71,8 +69,11 @@ export class DictionariesPage implements OnDestroy {
   readonly surfaceFinishesStore = inject(SurfaceFinishesStore);
   readonly productionWorkTypesStore = inject(ProductionWorkTypesStore);
   readonly clientsStore = inject(ClientsStore);
+  readonly materialCharacteristicsStore = inject(MaterialCharacteristicsStore);
 
   readonly isWorkTypesModalOpen = signal(false);
+  readonly isMaterialCharacteristicsModalOpen = signal(false);
+  readonly isMaterialCharacteristicsViewMode = signal(false);
   readonly isMaterialsModalOpen = signal(false);
   readonly isGeometriesModalOpen = signal(false);
   readonly isUnitsModalOpen = signal(false);
@@ -89,15 +90,45 @@ export class DictionariesPage implements OnDestroy {
   readonly isSurfaceFinishesViewMode = signal(false);
   readonly isWorkTypesViewMode = signal(false);
   readonly colorQuickAddForMaterials = signal(false);
+  readonly colorQuickAddForMaterialCharacteristics = signal(false);
   readonly unitQuickAddForMaterials = signal(false);
   readonly coatingQuickAddForMaterials = signal(false);
+  readonly coatingQuickAddForMaterialCharacteristics = signal(false);
   readonly surfaceQuickAddForMaterials = signal(false);
+  readonly surfaceQuickAddForMaterialCharacteristics = signal(false);
   readonly excelImportStatus = signal('');
 
   /** На хабе одна колонка hubLine; короткий заголовок колонки по смыслу справочника (см. naming convention). */
   readonly workTypesColumns: TableColumn[] = [{ key: 'hubLine', label: 'Вид работ' }];
 
-  readonly materialsColumns: TableColumn[] = [{ key: 'hubLine', label: 'Материал' }];
+  readonly materialCharacteristicsColumns: TableColumn[] = [
+    { key: 'name', label: 'Название' },
+    { key: 'code', label: 'Код' },
+    { key: 'densityKgM3', label: 'Плотность' },
+    { key: 'color', label: 'Цвет', swatchHexKey: 'colorHex' },
+    { key: 'finish', label: 'Отделка' },
+    { key: 'coating', label: 'Покрытие' },
+    { key: 'notes', label: 'Заметка' },
+    { key: 'isActiveLabel', label: 'Активен' },
+  ];
+
+  /** Широкая плитка материалов: все основные поля строкой таблицы (не одна склейка hubLine). */
+  readonly materialsColumns: TableColumn[] = [
+    { key: 'name', label: 'Название' },
+    { key: 'code', label: 'Код' },
+    { key: 'unit', label: 'Ед.' },
+    { key: 'priceLabel', label: 'Цена' },
+    { key: 'densityKgM3', label: 'Плотность' },
+    { key: 'color', label: 'Цвет', swatchHexKey: 'colorHex' },
+    { key: 'finishType', label: 'Отделка' },
+    { key: 'roughnessClass', label: 'Шерох.' },
+    { key: 'raMicron', label: 'Ra, мкм' },
+    { key: 'coatingType', label: 'Покрытие' },
+    { key: 'coatingSpec', label: 'Спецификация' },
+    { key: 'coatingThicknessMicron', label: 'Толщ., мкм' },
+    { key: 'notes', label: 'Заметка' },
+    { key: 'isActiveLabel', label: 'Активен' },
+  ];
 
   readonly geometriesColumns: TableColumn[] = [{ key: 'hubLine', label: 'Профиль' }];
 
@@ -123,6 +154,25 @@ export class DictionariesPage implements OnDestroy {
     code: [''],
     unitId: ['', Validators.required],
     purchasePriceRub: [0, [Validators.required, Validators.min(1)]],
+    densityKgM3: [null as number | null],
+    colorId: [''],
+    colorName: [''],
+    colorHex: [''],
+    surfaceFinishId: [''],
+    finishType: [''],
+    roughnessClass: [''],
+    raMicron: [null as number | null],
+    coatingId: [''],
+    coatingType: [''],
+    coatingSpec: [''],
+    coatingThicknessMicron: [null as number | null],
+    notes: [''],
+    isActive: [true],
+  });
+
+  readonly materialCharacteristicsForm = this.fb.nonNullable.group({
+    name: ['', [Validators.required, Validators.minLength(2)]],
+    code: [''],
     densityKgM3: [null as number | null],
     colorId: [''],
     colorName: [''],
@@ -205,6 +255,7 @@ export class DictionariesPage implements OnDestroy {
 
   constructor() {
     this.materialsStore.loadItems();
+    this.materialCharacteristicsStore.loadItems();
     this.geometriesStore.loadItems();
     this.unitsStore.loadItems();
     this.colorsStore.loadItems();
@@ -243,6 +294,21 @@ export class DictionariesPage implements OnDestroy {
     this.sub.add(
       this.materialsForm.controls.coatingId.valueChanges.subscribe((id) => {
         this.syncMaterialCoatingFromReference(id ?? '');
+      })
+    );
+    this.sub.add(
+      this.materialCharacteristicsForm.controls.colorId.valueChanges.subscribe((id) => {
+        this.syncMaterialCharacteristicColorFromReference(id ?? '');
+      })
+    );
+    this.sub.add(
+      this.materialCharacteristicsForm.controls.surfaceFinishId.valueChanges.subscribe((id) => {
+        this.syncMaterialCharacteristicFinishFromReference(id ?? '');
+      })
+    );
+    this.sub.add(
+      this.materialCharacteristicsForm.controls.coatingId.valueChanges.subscribe((id) => {
+        this.syncMaterialCharacteristicCoatingFromReference(id ?? '');
       })
     );
   }
@@ -545,6 +611,149 @@ export class DictionariesPage implements OnDestroy {
     this.isMaterialsModalOpen.set(true);
   }
 
+  openMaterialCharacteristicsCreate(): void {
+    if (!this.permissions.crud().canCreate) return;
+    this.isMaterialCharacteristicsViewMode.set(false);
+    this.materialCharacteristicsForm.enable({ emitEvent: false });
+    this.materialCharacteristicsStore.startCreate();
+    this.materialCharacteristicsForm.reset({
+      name: '',
+      code: '',
+      densityKgM3: null,
+      colorId: '',
+      colorName: '',
+      colorHex: '',
+      surfaceFinishId: '',
+      finishType: '',
+      roughnessClass: '',
+      raMicron: null,
+      coatingId: '',
+      coatingType: '',
+      coatingSpec: '',
+      coatingThicknessMicron: null,
+      notes: '',
+      isActive: true,
+    });
+    this.syncMaterialCharacteristicColorFromReference('');
+    this.syncMaterialCharacteristicFinishFromReference('');
+    this.syncMaterialCharacteristicCoatingFromReference('');
+    this.isMaterialCharacteristicsModalOpen.set(true);
+  }
+
+  openMaterialCharacteristicsEdit(id: string): void {
+    if (!this.permissions.crud().canEdit) return;
+    this.isMaterialCharacteristicsViewMode.set(false);
+    this.materialCharacteristicsForm.enable({ emitEvent: false });
+    const item = this.materialCharacteristicsStore.items().find((x) => x.id === id);
+    if (!item) return;
+    this.materialCharacteristicsStore.startEdit(item.id);
+    this.materialCharacteristicsForm.reset({
+      name: item.name ?? '',
+      code: item.code ?? '',
+      densityKgM3: item.densityKgM3 ?? null,
+      colorId: item.colorId ?? '',
+      colorName: item.colorName ?? '',
+      colorHex: item.colorHex ?? '',
+      surfaceFinishId: item.surfaceFinishId ?? '',
+      finishType: item.finishType ?? '',
+      roughnessClass: item.roughnessClass ?? '',
+      raMicron: item.raMicron ?? null,
+      coatingId: item.coatingId ?? '',
+      coatingType: item.coatingType ?? '',
+      coatingSpec: item.coatingSpec ?? '',
+      coatingThicknessMicron: item.coatingThicknessMicron ?? null,
+      notes: item.notes ?? '',
+      isActive: item.isActive,
+    });
+    this.syncMaterialCharacteristicColorFromReference(item.colorId ?? '');
+    this.syncMaterialCharacteristicFinishFromReference(item.surfaceFinishId ?? '');
+    this.syncMaterialCharacteristicCoatingFromReference(item.coatingId ?? '');
+    this.isMaterialCharacteristicsModalOpen.set(true);
+  }
+
+  closeMaterialCharacteristicsModal(): void {
+    this.materialCharacteristicsStore.resetForm();
+    this.isMaterialCharacteristicsViewMode.set(false);
+    this.isMaterialCharacteristicsModalOpen.set(false);
+  }
+
+  submitMaterialCharacteristics(): void {
+    const payload = this.buildMaterialCharacteristicsPayload();
+    if (this.materialCharacteristicsForm.invalid) {
+      this.materialCharacteristicsStore.submit({ value: payload, isValid: false });
+      this.materialCharacteristicsForm.markAllAsTouched();
+      return;
+    }
+    this.materialCharacteristicsStore.submit({ value: payload, isValid: true });
+    this.closeMaterialCharacteristicsModal();
+  }
+
+  deleteMaterialCharacteristic(id: string): void {
+    if (!this.permissions.crud().canDelete) return;
+    this.materialCharacteristicsStore.delete(id);
+  }
+
+  duplicateMaterialCharacteristic(id: string): void {
+    if (!this.permissions.can('crud.duplicate')) return;
+    const item = this.materialCharacteristicsStore.items().find((x) => x.id === id);
+    if (!item) return;
+    this.isMaterialCharacteristicsViewMode.set(false);
+    this.materialCharacteristicsForm.enable({ emitEvent: false });
+    this.materialCharacteristicsStore.startCreate();
+    this.materialCharacteristicsForm.reset({
+      name: item.name ? `${item.name} (копия)` : '',
+      code: item.code ?? '',
+      densityKgM3: item.densityKgM3 ?? null,
+      colorId: item.colorId ?? '',
+      colorName: item.colorName ?? '',
+      colorHex: item.colorHex ?? '',
+      surfaceFinishId: item.surfaceFinishId ?? '',
+      finishType: item.finishType ?? '',
+      roughnessClass: item.roughnessClass ?? '',
+      raMicron: item.raMicron ?? null,
+      coatingId: item.coatingId ?? '',
+      coatingType: item.coatingType ?? '',
+      coatingSpec: item.coatingSpec ?? '',
+      coatingThicknessMicron: item.coatingThicknessMicron ?? null,
+      notes: item.notes ?? '',
+      isActive: item.isActive,
+    });
+    this.syncMaterialCharacteristicColorFromReference(item.colorId ?? '');
+    this.syncMaterialCharacteristicFinishFromReference(item.surfaceFinishId ?? '');
+    this.syncMaterialCharacteristicCoatingFromReference(item.coatingId ?? '');
+    this.isMaterialCharacteristicsModalOpen.set(true);
+  }
+
+  openMaterialCharacteristicsView(id: string): void {
+    const item = this.materialCharacteristicsStore.items().find((x) => x.id === id);
+    if (!item) return;
+    this.materialCharacteristicsStore.resetForm();
+    this.materialCharacteristicsForm.reset({
+      name: item.name ?? '',
+      code: item.code ?? '',
+      densityKgM3: item.densityKgM3 ?? null,
+      colorId: item.colorId ?? '',
+      colorName: item.colorName ?? '',
+      colorHex: item.colorHex ?? '',
+      surfaceFinishId: item.surfaceFinishId ?? '',
+      finishType: item.finishType ?? '',
+      roughnessClass: item.roughnessClass ?? '',
+      raMicron: item.raMicron ?? null,
+      coatingId: item.coatingId ?? '',
+      coatingType: item.coatingType ?? '',
+      coatingSpec: item.coatingSpec ?? '',
+      coatingThicknessMicron: item.coatingThicknessMicron ?? null,
+      notes: item.notes ?? '',
+      isActive: item.isActive,
+    });
+    this.syncMaterialCharacteristicColorFromReference(item.colorId ?? '');
+    this.syncMaterialCharacteristicFinishFromReference(item.surfaceFinishId ?? '');
+    this.syncMaterialCharacteristicCoatingFromReference(item.coatingId ?? '');
+    this.materialCharacteristicsForm.disable({ emitEvent: false });
+    this.isMaterialCharacteristicsViewMode.set(true);
+    this.isMaterialCharacteristicsModalOpen.set(true);
+  }
+
   openGeometriesCreate(): void {
     if (!this.permissions.crud().canCreate) return;
     this.isGeometriesViewMode.set(false);
@@ -749,7 +958,7 @@ export class DictionariesPage implements OnDestroy {
     this.isUnitsModalOpen.set(true);
   }
 
-  openColorsCreate(fromMaterials = false): void {
+  openColorsCreate(fromMaterials = false, fromMaterialCharacteristics = false): void {
     if (!this.permissions.crud().canCreate) return;
     this.isColorsViewMode.set(false);
     this.colorsForm.enable({ emitEvent: false });
@@ -760,6 +969,7 @@ export class DictionariesPage implements OnDestroy {
       hex: '#000000',
     });
     this.colorQuickAddForMaterials.set(fromMaterials);
+    this.colorQuickAddForMaterialCharacteristics.set(fromMaterialCharacteristics);
     this.isColorsModalOpen.set(true);
   }
 
@@ -782,6 +992,7 @@ export class DictionariesPage implements OnDestroy {
     this.colorsStore.resetForm();
     this.isColorsViewMode.set(false);
     this.colorQuickAddForMaterials.set(false);
+    this.colorQuickAddForMaterialCharacteristics.set(false);
     this.isColorsModalOpen.set(false);
   }
 
@@ -792,16 +1003,28 @@ export class DictionariesPage implements OnDestroy {
       this.colorsForm.markAllAsTouched();
       return;
     }
-    const quickAdd = this.colorQuickAddForMaterials();
+    const quickAddMaterials = this.colorQuickAddForMaterials();
+    const quickAddMc = this.colorQuickAddForMaterialCharacteristics();
     const snapshotKey = `${payload.name}|${payload.hex}|${payload.ralCode ?? ''}`;
     this.colorsStore.submit({ value: payload, isValid: true });
-    if (quickAdd) {
+    if (quickAddMaterials) {
       queueMicrotask(() => {
         const created = this.colorsStore
           .items()
           .find((x) => `${x.name}|${x.hex}|${x.ralCode ?? ''}` === snapshotKey);
         if (created) {
           this.materialsForm.controls.colorId.setValue(created.id);
+        }
+      });
+    }
+    if (quickAddMc) {
+      queueMicrotask(() => {
+        const created = this.colorsStore
+          .items()
+          .find((x) => `${x.name}|${x.hex}|${x.ralCode ?? ''}` === snapshotKey);
+        if (created) {
+          this.materialCharacteristicsForm.controls.colorId.setValue(created.id);
+          this.syncMaterialCharacteristicColorFromReference(created.id);
         }
       });
     }
@@ -813,6 +1036,9 @@ export class DictionariesPage implements OnDestroy {
     this.colorsStore.delete(id);
     if (this.materialsForm.controls.colorId.value === id) {
       this.materialsForm.controls.colorId.setValue('');
+    }
+    if (this.materialCharacteristicsForm.controls.colorId.value === id) {
+      this.materialCharacteristicsForm.controls.colorId.setValue('');
     }
   }
 
@@ -845,7 +1071,7 @@ export class DictionariesPage implements OnDestroy {
     this.isColorsModalOpen.set(true);
   }
 
-  openSurfaceFinishesCreate(fromMaterials = false): void {
+  openSurfaceFinishesCreate(fromMaterials = false, fromMaterialCharacteristics = false): void {
     if (!this.permissions.crud().canCreate) return;
     this.isSurfaceFinishesViewMode.set(false);
     this.surfaceFinishesForm.enable({ emitEvent: false });
@@ -856,6 +1082,7 @@ export class DictionariesPage implements OnDestroy {
       raMicron: null,
     });
     this.surfaceQuickAddForMaterials.set(fromMaterials);
+    this.surfaceQuickAddForMaterialCharacteristics.set(fromMaterialCharacteristics);
     this.isSurfaceFinishesModalOpen.set(true);
   }
 
@@ -878,6 +1105,7 @@ export class DictionariesPage implements OnDestroy {
     this.surfaceFinishesStore.resetForm();
     this.isSurfaceFinishesViewMode.set(false);
     this.surfaceQuickAddForMaterials.set(false);
+    this.surfaceQuickAddForMaterialCharacteristics.set(false);
     this.isSurfaceFinishesModalOpen.set(false);
   }
 
@@ -888,10 +1116,11 @@ export class DictionariesPage implements OnDestroy {
       this.surfaceFinishesForm.markAllAsTouched();
       return;
     }
-    const quickAdd = this.surfaceQuickAddForMaterials();
+    const quickAddMaterials = this.surfaceQuickAddForMaterials();
+    const quickAddMc = this.surfaceQuickAddForMaterialCharacteristics();
     const snapshotKey = `${payload.finishType}|${payload.roughnessClass}|${payload.raMicron ?? ''}`;
     this.surfaceFinishesStore.submit({ value: payload, isValid: true });
-    if (quickAdd) {
+    if (quickAddMaterials) {
       queueMicrotask(() => {
         const created = this.surfaceFinishesStore
           .items()
@@ -904,6 +1133,20 @@ export class DictionariesPage implements OnDestroy {
         }
       });
     }
+    if (quickAddMc) {
+      queueMicrotask(() => {
+        const created = this.surfaceFinishesStore
+          .items()
+          .find(
+            (x) =>
+              `${x.finishType}|${x.roughnessClass}|${x.raMicron ?? ''}` === snapshotKey
+          );
+        if (created) {
+          this.materialCharacteristicsForm.controls.surfaceFinishId.setValue(created.id);
+          this.syncMaterialCharacteristicFinishFromReference(created.id);
+        }
+      });
+    }
     this.closeSurfaceFinishesModal();
   }
 
@@ -912,6 +1155,9 @@ export class DictionariesPage implements OnDestroy {
     this.surfaceFinishesStore.delete(id);
     if (this.materialsForm.controls.surfaceFinishId.value === id) {
       this.materialsForm.controls.surfaceFinishId.setValue('');
+    }
+    if (this.materialCharacteristicsForm.controls.surfaceFinishId.value === id) {
+      this.materialCharacteristicsForm.controls.surfaceFinishId.setValue('');
     }
   }
 
@@ -944,7 +1190,7 @@ export class DictionariesPage implements OnDestroy {
     this.isSurfaceFinishesModalOpen.set(true);
   }
 
-  openCoatingsCreate(fromMaterials = false): void {
+  openCoatingsCreate(fromMaterials = false, fromMaterialCharacteristics = false): void {
     if (!this.permissions.crud().canCreate) return;
     this.isCoatingsViewMode.set(false);
     this.coatingsForm.enable({ emitEvent: false });
@@ -955,6 +1201,7 @@ export class DictionariesPage implements OnDestroy {
       thicknessMicron: null,
     });
     this.coatingQuickAddForMaterials.set(fromMaterials);
+    this.coatingQuickAddForMaterialCharacteristics.set(fromMaterialCharacteristics);
     this.isCoatingsModalOpen.set(true);
   }
 
@@ -977,6 +1224,7 @@ export class DictionariesPage implements OnDestroy {
     this.coatingsStore.resetForm();
     this.isCoatingsViewMode.set(false);
     this.coatingQuickAddForMaterials.set(false);
+    this.coatingQuickAddForMaterialCharacteristics.set(false);
     this.isCoatingsModalOpen.set(false);
   }
 
@@ -987,10 +1235,11 @@ export class DictionariesPage implements OnDestroy {
       this.coatingsForm.markAllAsTouched();
       return;
     }
-    const quickAdd = this.coatingQuickAddForMaterials();
+    const quickAddMaterials = this.coatingQuickAddForMaterials();
+    const quickAddMc = this.coatingQuickAddForMaterialCharacteristics();
     const snapshotKey = `${payload.coatingType}|${payload.coatingSpec}|${payload.thicknessMicron ?? ''}`;
     this.coatingsStore.submit({ value: payload, isValid: true });
-    if (quickAdd) {
+    if (quickAddMaterials) {
       queueMicrotask(() => {
         const created = this.coatingsStore
           .items()
@@ -1003,6 +1252,20 @@ export class DictionariesPage implements OnDestroy {
         }
       });
     }
+    if (quickAddMc) {
+      queueMicrotask(() => {
+        const created = this.coatingsStore
+          .items()
+          .find(
+            (x) =>
+              `${x.coatingType}|${x.coatingSpec}|${x.thicknessMicron ?? ''}` === snapshotKey
+          );
+        if (created) {
+          this.materialCharacteristicsForm.controls.coatingId.setValue(created.id);
+          this.syncMaterialCharacteristicCoatingFromReference(created.id);
+        }
+      });
+    }
     this.closeCoatingsModal();
   }
 
@@ -1011,6 +1274,9 @@ export class DictionariesPage implements OnDestroy {
     this.coatingsStore.delete(id);
     if (this.materialsForm.controls.coatingId.value === id) {
       this.materialsForm.controls.coatingId.setValue('');
+    }
+    if (this.materialCharacteristicsForm.controls.coatingId.value === id) {
+      this.materialCharacteristicsForm.controls.coatingId.setValue('');
     }
   }
 
@@ -1179,6 +1445,14 @@ export class DictionariesPage implements OnDestroy {
     return selected?.hex ?? this.materialsForm.controls.colorHex.value ?? '';
   }
 
+  selectedMaterialCharacteristicColorHex(): string {
+    const id = this.materialCharacteristicsForm.controls.colorId.value;
+    const selected = this.colorsStore.options().find((x) => x.id === id);
+    return (
+      selected?.hex ?? this.materialCharacteristicsForm.controls.colorHex.value ?? ''
+    );
+  }
+
   colorNameWithRal(): string {
     const name = this.colorsForm.controls.name.value.trim();
     const ralCode = this.normalizeRalCode(this.colorsForm.controls.ralCode.value) ?? '';
@@ -1304,6 +1578,21 @@ export class DictionariesPage implements OnDestroy {
         return;
       }
       this.materialsStore.createMany(parsed.rows);
+      this.excelImportStatus.set(`Импортировано: ${parsed.rows.length} строк.`);
+    } catch {
+      this.excelImportStatus.set('Импорт отклонен: не удалось прочитать файл.');
+    }
+  }
+
+  async onMaterialCharacteristicsExcelImported(file: File): Promise<void> {
+    try {
+      const rows = await this.excelRowsFromFile(file);
+      const parsed = this.validateAndMapMaterialCharacteristicsRows(rows);
+      if (!parsed.ok) {
+        this.excelImportStatus.set(`Импорт отклонен: ${parsed.errors.join(' | ')}`);
+        return;
+      }
+      this.materialCharacteristicsStore.createMany(parsed.rows);
       this.excelImportStatus.set(`Импортировано: ${parsed.rows.length} строк.`);
     } catch {
       this.excelImportStatus.set('Импорт отклонен: не удалось прочитать файл.');
@@ -1439,6 +1728,65 @@ export class DictionariesPage implements OnDestroy {
         },
       ],
       ['Название', 'Код', 'Код ЕИ', 'Цена ₽', 'Плотность', 'Цвет', 'Финиш', 'Покрытие']
+    );
+  }
+
+  async exportMaterialCharacteristicsExcel(): Promise<void> {
+    const headers = [
+      'Название',
+      'Код',
+      'Плотность',
+      'Цвет',
+      'Финиш',
+      'Покрытие',
+      'Заметки',
+      'Активен',
+    ];
+    const rows = this.materialCharacteristicsStore.items().map((item) => ({
+      Название: item.name,
+      Код: item.code ?? '',
+      Плотность: item.densityKgM3 ?? '',
+      Цвет: item.colorName ?? item.colorHex ?? '',
+      Финиш: item.finishType ?? '',
+      Покрытие: [item.coatingType, item.coatingSpec].filter(Boolean).join(' · '),
+      Заметки: item.notes ?? '',
+      Активен: item.isActive ? 'да' : 'нет',
+    }));
+    await this.exportRowsToExcel(
+      'material-characteristics.xlsx',
+      'MaterialCharacteristics',
+      rows,
+      headers
+    );
+  }
+
+  async downloadMaterialCharacteristicsTemplateExcel(): Promise<void> {
+    const headers = [
+      'Название',
+      'Код',
+      'Плотность',
+      'Цвет',
+      'Финиш',
+      'Покрытие',
+      'Заметки',
+      'Активен',
+    ];
+    await this.exportRowsToExcel(
+      'material-characteristics-template.xlsx',
+      'MaterialCharacteristics_TEMPLATE',
+      [
+        {
+          Название: 'Профиль 09Г2С · RAL 7035',
+          Код: 'MC-ST-7035',
+          Плотность: 7850,
+          Цвет: 'RAL 7035',
+          Финиш: 'Matte',
+          Покрытие: 'Powder coating',
+          Заметки: '',
+          Активен: 'да',
+        },
+      ],
+      headers
     );
   }
 
@@ -1699,11 +2047,85 @@ export class DictionariesPage implements OnDestroy {
     );
   }
 
+  private syncMaterialCharacteristicColorFromReference(colorId: string): void {
+    const selected = this.colorsStore.options().find((x) => x.id === colorId);
+    if (!selected) {
+      if (!colorId) {
+        this.materialCharacteristicsForm.patchValue(
+          { colorName: '', colorHex: '' },
+          { emitEvent: false }
+        );
+      }
+      return;
+    }
+    this.materialCharacteristicsForm.patchValue(
+      {
+        colorName: selected.label,
+        colorHex: selected.hex,
+      },
+      { emitEvent: false }
+    );
+  }
+
+  private syncMaterialCharacteristicFinishFromReference(surfaceFinishId: string): void {
+    const selected = this.surfaceFinishesStore.options().find((x) => x.id === surfaceFinishId);
+    if (!selected) {
+      if (!surfaceFinishId) {
+        this.materialCharacteristicsForm.patchValue(
+          { finishType: '', roughnessClass: '', raMicron: null },
+          { emitEvent: false }
+        );
+      }
+      return;
+    }
+    this.materialCharacteristicsForm.patchValue(
+      {
+        finishType: selected.finishType,
+        roughnessClass: selected.roughnessClass,
+        raMicron: selected.raMicron ?? null,
+      },
+      { emitEvent: false }
+    );
+  }
+
+  private syncMaterialCharacteristicCoatingFromReference(coatingId: string): void {
+    const selected = this.coatingsStore.options().find((x) => x.id === coatingId);
+    if (!selected) {
+      if (!coatingId) {
+        this.materialCharacteristicsForm.patchValue(
+          { coatingType: '', coatingSpec: '', coatingThicknessMicron: null },
+          { emitEvent: false }
+        );
+      }
+      return;
+    }
+    this.materialCharacteristicsForm.patchValue(
+      {
+        coatingType: selected.coatingType,
+        coatingSpec: selected.coatingSpec,
+        coatingThicknessMicron: selected.thicknessMicron ?? null,
+      },
+      { emitEvent: false }
+    );
+  }
+
   isMaterialsInvalid(controlName: keyof typeof this.materialsForm.controls): boolean {
     const control = this.materialsForm.controls[controlName];
     return (
       control.invalid &&
       (control.touched || control.dirty || this.materialsStore.formSubmitAttempted())
+    );
+  }
+
+  isMaterialCharacteristicsInvalid(
+    controlName: keyof typeof this.materialCharacteristicsForm.controls
+  ): boolean {
+    const control = this.materialCharacteristicsForm.controls[controlName];
+    return (
+      control.invalid &&
+      (control.touched ||
+        control.dirty ||
+        this.materialCharacteristicsStore.formSubmitAttempted())
     );
   }
 
@@ -1804,6 +2226,30 @@ export class DictionariesPage implements OnDestroy {
       coatingThicknessMicron: this.materialsForm.controls.coatingThicknessMicron.value ?? undefined,
       notes: this.materialsForm.controls.notes.value.trim() || undefined,
       isActive: this.materialsForm.controls.isActive.value,
+    };
+  }
+
+  private buildMaterialCharacteristicsPayload(): MaterialCharacteristicItemInput {
+    return {
+      name: this.materialCharacteristicsForm.controls.name.value.trim(),
+      code: this.materialCharacteristicsForm.controls.code.value.trim() || undefined,
+      densityKgM3: this.materialCharacteristicsForm.controls.densityKgM3.value ?? undefined,
+      colorId: this.materialCharacteristicsForm.controls.colorId.value || undefined,
+      colorName: this.materialCharacteristicsForm.controls.colorName.value.trim() || undefined,
+      colorHex: this.materialCharacteristicsForm.controls.colorHex.value.trim() || undefined,
+      surfaceFinishId:
+        this.materialCharacteristicsForm.controls.surfaceFinishId.value || undefined,
+      finishType: this.materialCharacteristicsForm.controls.finishType.value.trim() || undefined,
+      roughnessClass:
+        this.materialCharacteristicsForm.controls.roughnessClass.value.trim() || undefined,
+      raMicron: this.materialCharacteristicsForm.controls.raMicron.value ?? undefined,
+      coatingId: this.materialCharacteristicsForm.controls.coatingId.value || undefined,
+      coatingType: this.materialCharacteristicsForm.controls.coatingType.value.trim() || undefined,
+      coatingSpec: this.materialCharacteristicsForm.controls.coatingSpec.value.trim() || undefined,
+      coatingThicknessMicron:
+        this.materialCharacteristicsForm.controls.coatingThicknessMicron.value ?? undefined,
+      notes: this.materialCharacteristicsForm.controls.notes.value.trim() || undefined,
+      isActive: this.materialCharacteristicsForm.controls.isActive.value,
     };
   }
 
@@ -2109,6 +2555,104 @@ export class DictionariesPage implements OnDestroy {
         coatingType,
         coatingSpec: undefined,
         isActive: true,
+      });
+    });
+
+    if (errors.length) return { ok: false, rows: mapped, errors: errors.slice(0, 6) };
+    return { ok: true, rows: mapped, errors: [] };
+  }
+
+  private validateAndMapMaterialCharacteristicsRows(rows: ReadonlyArray<Record<string, unknown>>): {
+    ok: boolean;
+    rows: MaterialCharacteristicItemInput[];
+    errors: string[];
+  } {
+    const errors: string[] = [];
+    const mapped: MaterialCharacteristicItemInput[] = [];
+
+    if (!rows.length) return { ok: false, rows: mapped, errors: ['Пустой файл.'] };
+
+    const requiredHeaders = [
+      'Название',
+      'Код',
+      'Плотность',
+      'Цвет',
+      'Финиш',
+      'Покрытие',
+      'Заметки',
+      'Активен',
+    ];
+    const firstKeys = Object.keys(rows[0] ?? {});
+    const missingHeaders = requiredHeaders.filter((h) => !firstKeys.includes(h));
+    if (missingHeaders.length) {
+      return {
+        ok: false,
+        rows: mapped,
+        errors: [`Нет колонок: ${missingHeaders.join(', ')}`],
+      };
+    }
+
+    rows.forEach((row, idx) => {
+      const rowNo = idx + 2;
+      const name = String(row['Название'] ?? '').trim();
+      const code = String(row['Код'] ?? '').trim();
+      const densityRaw = row['Плотность'];
+      const colorRaw = String(row['Цвет'] ?? '').trim();
+      const finishType = String(row['Финиш'] ?? '').trim();
+      const coatingCell = String(row['Покрытие'] ?? '').trim();
+      const notes = String(row['Заметки'] ?? '').trim();
+      const activeRaw = String(row['Активен'] ?? '')
+        .trim()
+        .toLowerCase();
+
+      if (!name || !colorRaw || !finishType || !coatingCell) {
+        errors.push(`Строка ${rowNo}: заполните Название/Цвет/Финиш/Покрытие.`);
+        return;
+      }
+
+      let densityKgM3: number | undefined;
+      if (densityRaw !== '' && densityRaw !== null && densityRaw !== undefined) {
+        const d = this.parseNumberOrNull(densityRaw);
+        if (d === null || d < 0) {
+          errors.push(`Строка ${rowNo}: Плотность должна быть числом >= 0 или пусто.`);
+          return;
+        }
+        densityKgM3 = d;
+      }
+
+      let isActiveRow = true;
+      if (!activeRaw) {
+        isActiveRow = true;
+      } else if (['да', 'yes', 'true', '1'].includes(activeRaw)) {
+        isActiveRow = true;
+      } else if (['нет', 'no', 'false', '0'].includes(activeRaw)) {
+        isActiveRow = false;
+      } else {
+        errors.push(`Строка ${rowNo}: в «Активен» укажите да или нет.`);
+        return;
+      }
+
+      const colorHexMatch = /^#([A-Fa-f0-9]{6})$/.exec(colorRaw);
+      const colorHex = colorHexMatch
+        ? (`#${colorHexMatch[1]}`.toUpperCase() as string)
+        : undefined;
+      const colorName = colorHex ? undefined : colorRaw;
+
+      const coatingParts = coatingCell.split(/\s*·\s*/u).map((s) => s.trim()).filter(Boolean);
+      const coatingType = coatingParts[0] ?? coatingCell;
+      const coatingSpec = coatingParts.length > 1 ? coatingParts.slice(1).join(' · ') : undefined;
+
+      mapped.push({
+        name,
+        code: code || undefined,
+        densityKgM3,
+        colorHex,
+        colorName,
+        finishType,
+        coatingType,
+        coatingSpec,
+        notes: notes || undefined,
+        isActive: isActiveRow,
       });
     });
 
