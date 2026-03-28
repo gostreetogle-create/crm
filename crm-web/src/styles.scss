@@ -105,8 +105,8 @@
   /* Used by SectionLabel */
   --bg: var(--surface-soft);
 
-  /* Modal backdrop must follow theme tokens (bg-base/danger/shadow) */
-  --modal-backdrop-bg: color-mix(in srgb, var(--bg-base) 45%, #000 55%);
+  /* Затемнение за модалкой: чуть плотнее, чем «очень лёгкое», без сплошного серого */
+  --modal-backdrop-bg: color-mix(in srgb, #0f172a 90%, transparent);
 
   --radius-card: 4px;
   --radius-pill: 4px;

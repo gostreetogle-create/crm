@@ -1,5 +1,5 @@
 import { CdkTrapFocus } from '@angular/cdk/a11y';
-import { NgClass, NgTemplateOutlet } from '@angular/common';
+import { DOCUMENT, isPlatformBrowser, NgClass, NgTemplateOutlet } from '@angular/common';
 import {
   AfterViewInit,
   Component,
@@ -7,7 +7,9 @@ import {
   EventEmitter,
   HostListener,
   Input,
+  OnDestroy,
   Output,
+  PLATFORM_ID,
   TemplateRef,
   ViewChild,
   inject,
@@ -22,6 +24,8 @@ export const MODAL_AUTO_CAPTURE = true;
  *
  * Один компонент на весь продукт: отдельной «модалки без скролла» нет — контент до высоты окна,
  * прокрутка только если форма выше вьюпорта (см. design-system).
+ *
+ * Хост переносится в document.body: иначе у предков с filter/transform fixed-backdrop не на весь viewport.
  */
 /* eslint-disable @angular-eslint/component-selector */
 @Component({
@@ -31,7 +35,8 @@ export const MODAL_AUTO_CAPTURE = true;
   templateUrl: './ui-modal.html',
   styleUrl: './ui-modal.scss',
 })
-export class UiModal implements AfterViewInit {
+export class UiModal implements AfterViewInit, OnDestroy {
+  private static openModalCount = 0;
   @Input({ required: true }) title!: string;
   @Input({ required: true }) content!: TemplateRef<unknown>;
   @Input() actions: TemplateRef<unknown> | null = null;
@@ -46,14 +51,38 @@ export class UiModal implements AfterViewInit {
   private readonly modalCloseButtonRef?: ElementRef<HTMLButtonElement>;
 
   private readonly hostRef = inject(ElementRef<HTMLElement>);
+  private readonly doc = inject(DOCUMENT);
+  private readonly platformId = inject(PLATFORM_ID);
   readonly autoCapture = MODAL_AUTO_CAPTURE;
 
   readonly titleId = `ui-modal-title-${Math.random().toString(36).slice(2, 10)}`;
   private readonly previouslyFocusedElement = document.activeElement as HTMLElement | null;
 
   ngAfterViewInit(): void {
+    if (isPlatformBrowser(this.platformId)) {
+      const host = this.hostRef.nativeElement;
+      if (host.parentElement && host.parentElement !== this.doc.body) {
+        this.doc.body.appendChild(host);
+      }
+      if (UiModal.openModalCount === 0) {
+        this.doc.documentElement.style.overflow = 'hidden';
+        this.doc.body.style.overflow = 'hidden';
+      }
+      UiModal.openModalCount += 1;
+    }
     // В CDK 21+ initial focus через autoCapture, не cdkFocusInitial.
     queueMicrotask(() => this.ensureInitialFocusFallback());
+  }
+
+  ngOnDestroy(): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+    UiModal.openModalCount = Math.max(0, UiModal.openModalCount - 1);
+    if (UiModal.openModalCount === 0) {
+      this.doc.documentElement.style.overflow = '';
+      this.doc.body.style.overflow = '';
+    }
   }
 
   @HostListener('document:keydown.escape')

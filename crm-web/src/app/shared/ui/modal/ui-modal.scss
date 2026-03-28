@@ -7,6 +7,7 @@
   justify-content: center;
   padding: var(--ui-modal-backdrop-padding);
   background: var(--modal-backdrop-bg);
+  overscroll-behavior: none;
 }
 
 .modalDialog {

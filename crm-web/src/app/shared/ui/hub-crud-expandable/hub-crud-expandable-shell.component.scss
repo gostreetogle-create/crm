@@ -29,8 +29,10 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  /* Фон и скругление у внутренней content-card; тень усиливает оверлей. */
-  box-shadow: 0 12px 40px var(--shadow-color);
+  /* Тень без filter на родителе — иначе position:fixed у модалок внутри плитки ломается (не на весь экран). */
+  box-shadow:
+    0 12px 40px color-mix(in srgb, var(--shadow-color) 85%, transparent),
+    0 24px 48px color-mix(in srgb, var(--shadow-color) 45%, transparent);
 }
 
 .hubCrudExpandable__panel--open .hubCrudExpandable__toggle {
@@ -38,9 +40,9 @@
   margin-top: var(--ui-space-2);
 }
 
+/* Не filter: иначе fixed-backdrop модалки привязывается к плитке — остальные справочники «просвечивают». */
 .hubCrudExpandable--open {
   z-index: 40;
-  filter: drop-shadow(0 20px 36px var(--shadow-color));
 }
 
 .hubCrudExpandable__toggle {
