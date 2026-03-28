@@ -84,7 +84,7 @@
       type="button"
       class="rowActionBtn rowActionBtnWarning"
       (click)="onView(row)"
-      [attr.data-testid]="'view-button-' + (row?.id ?? rowIndex)"
+      [attr.data-testid]="'view-button-' + (row['id'] ?? rowIndex)"
       aria-label="Просмотр"
       title="Просмотр"
     >
@@ -96,7 +96,7 @@
       type="button"
       class="rowActionBtn rowActionBtnAffirm"
       (click)="onDuplicate(row)"
-      [attr.data-testid]="'duplicate-button-' + (row?.id ?? rowIndex)"
+      [attr.data-testid]="'duplicate-button-' + (row['id'] ?? rowIndex)"
       aria-label="Дублировать"
       title="Дублировать"
     >
@@ -108,7 +108,7 @@
       type="button"
       class="rowActionBtn"
       (click)="onEdit(row)"
-      [attr.data-testid]="'edit-button-' + (row?.id ?? rowIndex)"
+      [attr.data-testid]="'edit-button-' + (row['id'] ?? rowIndex)"
       aria-label="Редактировать"
       title="Редактировать"
     >
@@ -120,7 +120,7 @@
       type="button"
       class="rowActionBtn rowActionBtnDanger"
       (click)="onDelete(row)"
-      [attr.data-testid]="'delete-button-' + (row?.id ?? rowIndex)"
+      [attr.data-testid]="'delete-button-' + (row['id'] ?? rowIndex)"
       aria-label="Удалить"
       title="Удалить"
     >
@@ -201,7 +201,7 @@
       </tr>
     </thead>
     <tbody>
-      @for (row of crudTableBodyRows; track row?.id ?? $index) {
+      @for (row of crudTableBodyRows; track row['id'] ?? $index) {
         <tr>
           @if (columns.length === 1 && hasRowActions) {
             <td class="crudHubMergedCell" [attr.colspan]="2">
@@ -315,7 +315,7 @@
               type="button"
               class="rowActionBtn rowActionBtnWarning"
               (click)="onView(row)"
-              [attr.data-testid]="'view-button-' + (row?.id ?? $index)"
+              [attr.data-testid]="'view-button-' + (row['id'] ?? $index)"
               aria-label="Просмотр"
               title="Просмотр"
             >
@@ -327,7 +327,7 @@
               type="button"
               class="rowActionBtn rowActionBtnAffirm"
               (click)="onDuplicate(row)"
-              [attr.data-testid]="'duplicate-button-' + (row?.id ?? $index)"
+              [attr.data-testid]="'duplicate-button-' + (row['id'] ?? $index)"
               aria-label="Дублировать"
               title="Дублировать"
             >
@@ -339,7 +339,7 @@
               type="button"
               class="rowActionBtn"
               (click)="onEdit(row)"
-              [attr.data-testid]="'edit-button-' + (row?.id ?? $index)"
+              [attr.data-testid]="'edit-button-' + (row['id'] ?? $index)"
               aria-label="Редактировать"
               title="Редактировать"
             >
@@ -351,7 +351,7 @@
               type="button"
               class="rowActionBtn rowActionBtnDanger"
               (click)="onDelete(row)"
-              [attr.data-testid]="'delete-button-' + (row?.id ?? $index)"
+              [attr.data-testid]="'delete-button-' + (row['id'] ?? $index)"
               aria-label="Удалить"
               title="Удалить"
             >

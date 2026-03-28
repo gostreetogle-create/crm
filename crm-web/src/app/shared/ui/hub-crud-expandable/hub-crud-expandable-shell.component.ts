@@ -1,13 +1,14 @@
 import {
   AfterViewInit,
-  ChangeDetectorRef,
+  ChangeDetectionStrategy,
   Component,
   ElementRef,
-  HostListener,
-  Input,
+  computed,
+  inject,
+  input,
   NgZone,
   OnDestroy,
-  inject,
+  signal,
 } from '@angular/core';
 import { LucideMenu } from '@lucide/angular';
 import { HubCrudExpandStateService } from './hub-crud-expand-state.service';
@@ -18,62 +19,65 @@ import { HubCrudExpandStateService } from './hub-crud-expand-state.service';
   imports: [LucideMenu],
   templateUrl: './hub-crud-expandable-shell.component.html',
   styleUrl: './hub-crud-expandable-shell.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HubCrudExpandableShellComponent implements AfterViewInit, OnDestroy {
   /** Уникальный ключ плитки (хаб или demo). */
-  @Input({ required: true }) tileKey!: string;
-  @Input() ariaLabel = 'Показать или скрыть полный список строк таблицы';
+  readonly tileKey = input.required<string>();
+
+  readonly ariaLabel = input('Показать или скрыть полный список строк таблицы');
 
   /**
    * Fallback min-height якоря при открытии, если измерение дало 0 (ещё не отрисовалось).
    */
-  @Input() layoutReserveWhenOpen = 'min(13.5rem, 36vh)';
+  readonly layoutReserveWhenOpen = input('min(13.5rem, 36vh)');
 
   readonly expand = inject(HubCrudExpandStateService);
   private readonly host = inject(ElementRef<HTMLElement>);
   private readonly ngZone = inject(NgZone);
-  private readonly cdr = inject(ChangeDetectorRef);
 
   private resizeObserver: ResizeObserver | null = null;
+  private shellHostRegistered = false;
 
   /**
    * Высота всей плитки в свёрнутом виде (как в потоке документа), px.
-   * Перед открытием обязательно переснимаем синхронно — иначе после position:absolute якорь схлопывается и контент «прыгает».
+   * Перед открытием переснимаем синхронно — иначе после position:absolute якорь схлопывается и контент «прыгает».
    */
-  private collapsedFlowHeightPx: number | null = null;
+  private readonly collapsedFlowHeightPx = signal<number | null>(null);
 
-  @HostListener('document:click', ['$event'])
-  onDocumentClick(event: MouseEvent): void {
-    if (!this.expand.isOpen(this.tileKey)) {
-      return;
+  readonly isExpanded = computed(() => this.expand.expandState()[this.tileKey()] ?? false);
+
+  readonly anchorMinHeightWhenOpen = computed(() => {
+    if (!this.isExpanded()) {
+      return null;
     }
-    const target = event.target;
-    if (!(target instanceof Node)) {
-      return;
+    const h = this.collapsedFlowHeightPx();
+    if (h != null && h > 0) {
+      return `${h}px`;
     }
-    if (this.host.nativeElement.contains(target)) {
-      return;
-    }
-    this.expand.close(this.tileKey);
-  }
+    return this.layoutReserveWhenOpen();
+  });
 
   onToggleClick(event: MouseEvent): void {
     event.stopPropagation();
-    if (!this.expand.isOpen(this.tileKey)) {
+    if (!this.isExpanded()) {
       const h = this.host.nativeElement.offsetHeight;
-      this.collapsedFlowHeightPx = h > 0 ? h : null;
+      this.collapsedFlowHeightPx.set(h > 0 ? h : null);
     }
-    this.expand.toggle(this.tileKey);
+    this.expand.toggle(this.tileKey());
   }
 
   ngAfterViewInit(): void {
     const root = this.host.nativeElement;
+    this.expand.registerShellHost(this.tileKey(), root);
+    this.shellHostRegistered = true;
+
     if (typeof ResizeObserver === 'undefined') {
       return;
     }
 
     this.resizeObserver = new ResizeObserver(() => {
-      if (this.expand.isOpen(this.tileKey)) {
+      if (this.isExpanded()) {
         return;
       }
       this.applyMeasuredHeight(root.offsetHeight);
@@ -82,27 +86,19 @@ export class HubCrudExpandableShellComponent implements AfterViewInit, OnDestroy
   }
 
   ngOnDestroy(): void {
+    if (this.shellHostRegistered) {
+      this.expand.unregisterShellHost(this.tileKey());
+      this.shellHostRegistered = false;
+    }
     this.resizeObserver?.disconnect();
     this.resizeObserver = null;
-  }
-
-  /** Min-height якоря в потоке, пока оверлей открыт. */
-  anchorMinHeightWhenOpen(): string | null {
-    if (!this.expand.isOpen(this.tileKey)) {
-      return null;
-    }
-    if (this.collapsedFlowHeightPx != null && this.collapsedFlowHeightPx > 0) {
-      return `${this.collapsedFlowHeightPx}px`;
-    }
-    return this.layoutReserveWhenOpen;
   }
 
   private applyMeasuredHeight(h: number): void {
     const next = h > 0 ? h : null;
     this.ngZone.run(() => {
-      if (this.collapsedFlowHeightPx !== next) {
-        this.collapsedFlowHeightPx = next;
-        this.cdr.markForCheck();
+      if (this.collapsedFlowHeightPx() !== next) {
+        this.collapsedFlowHeightPx.set(next);
       }
     });
   }

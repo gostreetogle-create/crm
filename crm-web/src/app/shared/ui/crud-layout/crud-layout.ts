@@ -20,6 +20,9 @@ export type TableColumn = {
   swatchHexKey?: string;
 };
 
+/** Строка таблицы CRUD: ожидается поле `id`; остальные ключи — по колонкам и полям поиска. */
+export type CrudTableRow = Record<string, unknown>;
+
 @Component({
   selector: 'crud-layout',
   standalone: true,
@@ -41,7 +44,7 @@ export type TableColumn = {
 })
 export class CrudLayoutComponent {
   @Input({ required: true }) columns: TableColumn[] = [];
-  @Input({ required: true }) data: any[] = [];
+  @Input({ required: true }) data: CrudTableRow[] = [];
   @Input() toolbarActions: TemplateRef<unknown> | null = null;
   @Input() formActions: TemplateRef<unknown> | null = null;
   @Input({ required: true }) title!: string;
@@ -120,7 +123,7 @@ export class CrudLayoutComponent {
     return this.columns.length > 5;
   }
 
-  get visibleData(): any[] {
+  get visibleData(): CrudTableRow[] {
     if (!this.showNameSearch) {
       return this.data;
     }
@@ -134,7 +137,7 @@ export class CrudLayoutComponent {
   }
 
   /** Строки тела таблицы и мобильных карточек (с учётом maxTableBodyRows). */
-  get crudTableBodyRows(): any[] {
+  get crudTableBodyRows(): CrudTableRow[] {
     const rows = this.visibleData;
     const max = this.maxTableBodyRows;
     if (max != null && Number.isFinite(max) && max >= 0) {
@@ -148,28 +151,32 @@ export class CrudLayoutComponent {
     this.nameSearchTerm = value;
   }
 
-  onView(row: any): void {
-    if (!row?.id) return;
-    this.view.emit(String(row.id));
+  onView(row: CrudTableRow): void {
+    const id = row['id'];
+    if (id == null || id === '') return;
+    this.view.emit(String(id));
   }
 
   onCreate(): void {
     this.create.emit();
   }
 
-  onDuplicate(row: any): void {
-    if (!row?.id) return;
-    this.duplicate.emit(String(row.id));
+  onDuplicate(row: CrudTableRow): void {
+    const id = row['id'];
+    if (id == null || id === '') return;
+    this.duplicate.emit(String(id));
   }
 
-  onEdit(row: any): void {
-    if (!row?.id) return;
-    this.edit.emit(String(row.id));
+  onEdit(row: CrudTableRow): void {
+    const id = row['id'];
+    if (id == null || id === '') return;
+    this.edit.emit(String(id));
   }
 
-  onDelete(row: any): void {
-    if (!row?.id) return;
-    this.pendingDeleteId = String(row.id);
+  onDelete(row: CrudTableRow): void {
+    const id = row['id'];
+    if (id == null || id === '') return;
+    this.pendingDeleteId = String(id);
     this.isDeleteConfirmOpen = true;
   }
 
@@ -202,12 +209,10 @@ export class CrudLayoutComponent {
     this.exportExcel.emit();
   }
 
-  private rowMatchesName(row: any, term: string): boolean {
-    if (!row) return false;
-
-    const preferred = [row?.name, row?.title, row?.label, row?.hubLine];
+  private rowMatchesName(row: CrudTableRow, term: string): boolean {
+    const preferred = [row['name'], row['title'], row['label'], row['hubLine']];
     const firstColumnValue =
-      this.columns.length > 0 ? row?.[this.columns[0].key] : undefined;
+      this.columns.length > 0 ? row[this.columns[0].key] : undefined;
 
     const candidates = [...preferred, firstColumnValue]
       .filter((v) => v !== null && v !== undefined)

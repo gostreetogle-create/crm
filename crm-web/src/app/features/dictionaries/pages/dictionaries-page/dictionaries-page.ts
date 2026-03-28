@@ -16,7 +16,6 @@ import { ColorsStore } from '../../../colors/state/colors.store';
 import { CoatingsStore } from '../../../coatings/state/coatings.store';
 import { SurfaceFinishesStore } from '../../../surface-finishes/state/surface-finishes.store';
 import { ProductionWorkTypesStore } from '../../../production-work-types/state/production-work-types.store';
-import { ContentCardComponent } from '../../../../shared/ui/content-card/content-card.component';
 import { CrudLayoutComponent, TableColumn } from '../../../../shared/ui/crud-layout/public-api';
 import { UiModal as UiModalComponent } from '../../../../shared/ui/modal/public-api';
 import { PageShellComponent } from '../../../../shared/ui/page-shell/page-shell.component';
@@ -24,10 +23,8 @@ import { UiButtonComponent } from '../../../../shared/ui/ui-button/ui-button.com
 import { UiCheckboxFieldComponent } from '../../../../shared/ui/ui-checkbox-field/ui-checkbox-field.component';
 import { UiFormFieldComponent } from '../../../../shared/ui/ui-form-field/ui-form-field.component';
 import { HexRgbFieldComponent } from '../../../../shared/ui/hex-rgb-field/public-api';
-import {
-  HubCrudExpandStateService,
-  HubCrudExpandableShellComponent,
-} from '../../../../shared/ui/hub-crud-expandable/public-api';
+import { HubCrudExpandStateService } from '../../../../shared/ui/hub-crud-expandable/public-api';
+import { DictionaryHubTileComponent } from '../../components/dictionary-hub-tile/dictionary-hub-tile.component';
 
 @Component({
   selector: 'app-dictionaries-page',
@@ -37,14 +34,13 @@ import {
     NgFor,
     ReactiveFormsModule,
     PageShellComponent,
-    ContentCardComponent,
+    DictionaryHubTileComponent,
     CrudLayoutComponent,
     UiModalComponent,
     UiButtonComponent,
     UiCheckboxFieldComponent,
     UiFormFieldComponent,
     HexRgbFieldComponent,
-    HubCrudExpandableShellComponent,
   ],
   templateUrl: './dictionaries-page.html',
   styleUrl: './dictionaries-page.scss',
