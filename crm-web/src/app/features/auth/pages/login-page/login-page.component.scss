@@ -32,16 +32,19 @@
   pointer-events: none;
 }
 
-/* Фон чуть «дальше от камеры»: scale < 1 + центр чуть выше — больше воздуха вокруг площадки. */
+/*
+ * Hero: спокойный центр под стеклянную карточку, оборудование по краям (низ слева / справа).
+ * Масштаб и вуаль согласованы с макетом: не «в лоб» в симулятор, читаемость формы входа.
+ */
 .loginBackdrop::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: url('/branding/login-street-workout-bg.png') no-repeat 50% 42% / cover;
-  opacity: 0.37;
-  filter: saturate(1.08) contrast(1.04) brightness(1.03);
-  transform: scale(0.82);
-  transform-origin: 50% 44%;
+  background: url('/branding/login-street-workout-bg.png') no-repeat 50% 46% / cover;
+  opacity: 0.39;
+  filter: saturate(1.06) contrast(1.03) brightness(1.02);
+  transform: scale(0.9);
+  transform-origin: 50% 46%;
 }
 
 .loginBackdrop::after {
@@ -49,10 +52,10 @@
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse 95% 85% at 42% 38%, color-mix(in srgb, #fff 8%, transparent) 0%, transparent 55%),
-    radial-gradient(ellipse 100% 90% at 50% 40%, transparent 0%, color-mix(in srgb, var(--bg-base) 42%, transparent) 68%),
-    radial-gradient(ellipse 120% 80% at 0% 0%, color-mix(in srgb, var(--accent) 14%, transparent) 0%, transparent 55%),
-    radial-gradient(ellipse 90% 70% at 100% 25%, color-mix(in srgb, var(--success) 22%, transparent) 0%, transparent 48%);
+    radial-gradient(ellipse 52% 68% at 50% 40%, color-mix(in srgb, #fff 10%, transparent) 0%, transparent 58%),
+    radial-gradient(ellipse 100% 92% at 50% 44%, transparent 0%, color-mix(in srgb, var(--bg-base) 36%, transparent) 70%),
+    radial-gradient(ellipse 120% 80% at 0% 0%, color-mix(in srgb, var(--accent) 12%, transparent) 0%, transparent 55%),
+    radial-gradient(ellipse 90% 70% at 100% 28%, color-mix(in srgb, var(--success) 18%, transparent) 0%, transparent 50%);
   pointer-events: none;
 }
 
