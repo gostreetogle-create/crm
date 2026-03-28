@@ -31,14 +31,14 @@
   pointer-events: none;
 }
 
-/* Воркаут / зелёный парк / композиция «тренажёры в углу» — под настроение СпортИН-ЮГ (уличные площадки). */
+/* Современный уличный воркаут: слева компактные станции, справа — турники / кольца на стропах; парк на заднем плане. */
 .loginBackdrop::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: url('/branding/login-street-workout-bg.png') no-repeat 72% 45% / cover;
-  opacity: 0.36;
-  filter: saturate(1.12) brightness(1.02);
+  background: url('/branding/login-street-workout-bg.png') no-repeat 50% 44% / cover;
+  opacity: 0.37;
+  filter: saturate(1.08) contrast(1.04) brightness(1.03);
 }
 
 .loginBackdrop::after {
