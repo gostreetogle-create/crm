@@ -16,6 +16,8 @@ import { UiButtonComponent } from '../ui-button/ui-button.component';
 export type TableColumn = {
   key: string;
   label: string;
+  /** Ключ поля с HEX (#rrggbb) — мини-образец слева от текста (как в модалке «RAL и название»). */
+  swatchHexKey?: string;
 };
 
 @Component({
@@ -80,6 +82,19 @@ export class CrudLayoutComponent {
   isDeleteConfirmOpen = false;
   private pendingDeleteId: string | null = null;
   nameSearchTerm = '';
+
+  /** Безопасный фон для квадрата-образца (только #RGB / #RRGGBB). */
+  swatchBackground(row: Record<string, unknown> | null | undefined, hexKey: string | undefined): string {
+    if (!row || !hexKey) {
+      return 'transparent';
+    }
+    const v = row[hexKey];
+    if (typeof v !== 'string') {
+      return 'transparent';
+    }
+    const s = v.trim();
+    return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(s) ? s : 'transparent';
+  }
 
   get hasExcelActions(): boolean {
     return (
@@ -173,7 +188,7 @@ export class CrudLayoutComponent {
   private rowMatchesName(row: any, term: string): boolean {
     if (!row) return false;
 
-    const preferred = [row?.name, row?.title, row?.label];
+    const preferred = [row?.name, row?.title, row?.label, row?.hubLine];
     const firstColumnValue =
       this.columns.length > 0 ? row?.[this.columns[0].key] : undefined;
 

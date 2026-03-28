@@ -7,6 +7,8 @@
     0 var(--ui-shadow-card-offset-y) var(--ui-shadow-card-blur) var(--shadow-color),
     0 var(--ui-shadow-card-thin-offset-y) 0 var(--shadow-color);
   margin-top: var(--ui-card-margin-top);
+  min-width: 0;
+  max-width: 100%;
 }
 
 .cardConstrainedWidth {

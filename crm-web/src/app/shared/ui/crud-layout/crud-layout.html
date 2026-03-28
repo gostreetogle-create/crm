@@ -100,7 +100,22 @@
       @for (row of visibleData; track row?.id ?? $index) {
         <tr>
           @for (column of columns; track column.key) {
-            <td>{{ row?.[column.key] ?? '—' }}</td>
+            <td>
+              @if (column.swatchHexKey) {
+                @let bg = swatchBackground(row, column.swatchHexKey);
+                <span class="crudCellLine">
+                  <span
+                    class="crudSwatch"
+                    [class.crudSwatchEmpty]="bg === 'transparent'"
+                    [style.background]="bg === 'transparent' ? 'transparent' : bg"
+                    aria-hidden="true"
+                  ></span>
+                  <span class="crudCellText">{{ row?.[column.key] ?? '—' }}</span>
+                </span>
+              } @else {
+                {{ row?.[column.key] ?? '—' }}
+              }
+            </td>
           }
           @if (hasRowActions) {
             <td class="actionsCol">
@@ -187,7 +202,22 @@
         @for (column of columns; track column.key) {
           <div class="card-row">
             <span class="card-label">{{ column.label }}</span>
-            <span class="card-value">{{ row?.[column.key] ?? '—' }}</span>
+            <span class="card-value">
+              @if (column.swatchHexKey) {
+                @let bg = swatchBackground(row, column.swatchHexKey);
+                <span class="crudCellLine">
+                  <span
+                    class="crudSwatch"
+                    [class.crudSwatchEmpty]="bg === 'transparent'"
+                    [style.background]="bg === 'transparent' ? 'transparent' : bg"
+                    aria-hidden="true"
+                  ></span>
+                  <span class="crudCellText">{{ row?.[column.key] ?? '—' }}</span>
+                </span>
+              } @else {
+                {{ row?.[column.key] ?? '—' }}
+              }
+            </span>
           </div>
         }
       </div>

@@ -30,6 +30,7 @@ export const SurfaceFinishesStore = signalStore(
         .map((item) => ({
           id: item.id,
           finishType: item.finishType,
+          hubLine: [item.finishType, item.roughnessClass].filter(Boolean).join(' · '),
           roughnessClass: item.roughnessClass,
           raMicron: item.raMicron ?? '—',
         }))

@@ -28,6 +28,9 @@ export const ColorsStore = signalStore(
           id: item.id,
           ralCode: item.ralCode || '—',
           name: item.name,
+          hubLine: item.ralCode?.trim()
+            ? `${item.ralCode.trim()} · ${item.name}`
+            : item.name,
           hex: item.hex,
           rgb: `${item.rgb.r}, ${item.rgb.g}, ${item.rgb.b}`,
         }))

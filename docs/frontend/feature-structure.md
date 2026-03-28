@@ -10,6 +10,7 @@
 
 2. `src/app/features/<feature-name>/components/...` (по мере роста)
    - Локальные компоненты, которые не хочется переиспользовать в других фичах.
+   - **Справочники в хабе `/dictionaries`:** UI-блок каждого справочника — в `features/dictionaries/components/<...>/`, доменные типы/репозиторий/store остаются в `features/<entity>/`. Так страница-хаб не превращается в один неограниченно растущий файл.
 
 3. `src/app/shared/model/...`
    - Общие типы/интерфейсы (например, `FieldRow`).
@@ -21,7 +22,7 @@
 ## Роутинг
 
 - Страницы подключаются в `src/app/app.routes.ts`.
-- По мере роста имеет смысл заводить feature-level `*.routes.ts` и агрегировать их в `app.routes.ts`.
+- Feature-level `*.routes.ts` — только если файл **реально импортируется** в `app.routes.ts` (или в дочерний `loadChildren`). Не держать «висячие» `*.routes.ts` и неподключённые `*-crud-page`, дублирующие хаб справочников — см. `docs/frontend/dictionaries-crud-playbook.md`, раздел «Порядок: единый хаб».
 
 ## SCSS
 

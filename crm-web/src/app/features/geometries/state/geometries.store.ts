@@ -40,6 +40,7 @@ export const GeometriesStore = signalStore(
         .map((g) => ({
           id: g.id,
           name: g.name,
+          hubLine: `${g.name} — ${formatGeometryParamsDisplay(g)}`,
           shape: g.shapeKey,
           params: formatGeometryParamsDisplay(g),
           isActiveLabel: g.isActive ? 'Да' : 'Нет',

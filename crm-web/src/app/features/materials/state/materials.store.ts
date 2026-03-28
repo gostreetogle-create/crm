@@ -37,6 +37,9 @@ export const MaterialsStore = signalStore(
         .map((item) => ({
           id: item.id,
           name: item.name,
+          hubLine: item.code?.trim()
+            ? `${item.name} (${item.code.trim()})`
+            : item.name,
           code: item.code || '—',
           unit: item.unitName || '—',
           priceLabel:

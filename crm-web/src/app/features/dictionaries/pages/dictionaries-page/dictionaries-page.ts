@@ -77,57 +77,20 @@ export class DictionariesPage implements OnDestroy {
   readonly surfaceQuickAddForMaterials = signal(false);
   readonly excelImportStatus = signal('');
 
-  readonly workTypesColumns: TableColumn[] = [
-    { key: 'name', label: 'Наименование' },
-    { key: 'shortLabel', label: 'Коротк. обозн.' },
-    { key: 'hourlyRateLabel', label: '₽/ч' },
-    { key: 'isActiveLabel', label: 'Активна' },
-  ];
+  /** На хабе одна колонка hubLine; короткий заголовок колонки по смыслу справочника (см. naming convention). */
+  readonly workTypesColumns: TableColumn[] = [{ key: 'hubLine', label: 'Вид работ' }];
 
-  readonly materialsColumns: TableColumn[] = [
-    { key: 'name', label: 'Название' },
-    { key: 'code', label: 'Код' },
-    { key: 'unit', label: 'Ед. изм.' },
-    { key: 'priceLabel', label: '₽/ед.' },
-    { key: 'densityKgM3', label: 'Плотность' },
-    { key: 'color', label: 'Цвет' },
-    { key: 'finish', label: 'Финиш/шерох.' },
-    { key: 'coating', label: 'Покрытие' },
-    { key: 'isActiveLabel', label: 'Активен' },
-  ];
+  readonly materialsColumns: TableColumn[] = [{ key: 'hubLine', label: 'Материал' }];
 
-  readonly geometriesColumns: TableColumn[] = [
-    { key: 'name', label: 'Название' },
-    { key: 'shape', label: 'Тип' },
-    { key: 'params', label: 'Параметры' },
-    { key: 'isActiveLabel', label: 'Активна' },
-  ];
+  readonly geometriesColumns: TableColumn[] = [{ key: 'hubLine', label: 'Профиль' }];
 
-  readonly unitsColumns: TableColumn[] = [
-    { key: 'name', label: 'Ед. изм.' },
-    { key: 'code', label: 'Код' },
-    { key: 'notes', label: 'Комментарий' },
-    { key: 'isActiveLabel', label: 'Активна' },
-  ];
+  readonly unitsColumns: TableColumn[] = [{ key: 'hubLine', label: 'Ед. изм.' }];
 
-  readonly colorsColumns: TableColumn[] = [
-    { key: 'ralCode', label: 'RAL' },
-    { key: 'name', label: 'Название' },
-    { key: 'hex', label: 'HEX' },
-    { key: 'rgb', label: 'RGB' },
-  ];
+  readonly colorsColumns: TableColumn[] = [{ key: 'hubLine', label: 'Цвет', swatchHexKey: 'hex' }];
 
-  readonly surfaceFinishesColumns: TableColumn[] = [
-    { key: 'finishType', label: 'Тип отд.' },
-    { key: 'roughnessClass', label: 'Шерох.' },
-    { key: 'raMicron', label: 'Ra, мкм' },
-  ];
+  readonly surfaceFinishesColumns: TableColumn[] = [{ key: 'hubLine', label: 'Отделка' }];
 
-  readonly coatingsColumns: TableColumn[] = [
-    { key: 'coatingType', label: 'Тип покрытия' },
-    { key: 'coatingSpec', label: 'Спецификация' },
-    { key: 'thicknessMicron', label: 'Толщина, мкм' },
-  ];
+  readonly coatingsColumns: TableColumn[] = [{ key: 'hubLine', label: 'Покрытие' }];
 
   readonly workTypesForm = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.minLength(2)]],
@@ -1052,7 +1015,19 @@ export class DictionariesPage implements OnDestroy {
   colorNameWithRal(): string {
     const name = this.colorsForm.controls.name.value.trim();
     const ralCode = this.normalizeRalCode(this.colorsForm.controls.ralCode.value) ?? '';
-    return `${name}${name && ralCode ? ' ' : ''}${ralCode}`.trim();
+    if (ralCode && name) {
+      return `${ralCode} · ${name}`;
+    }
+    if (ralCode) {
+      return ralCode;
+    }
+    return name;
+  }
+
+  /** HEX для образца в форме цвета (только валидный #RGB / #RRGGBB). */
+  colorPreviewHexForColorsForm(): string | null {
+    const v = this.colorsForm.controls.hex.value?.trim() ?? '';
+    return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(v) ? v : null;
   }
 
   onRalCodeFocus(): void {

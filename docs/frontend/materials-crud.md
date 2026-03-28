@@ -21,9 +21,8 @@
    - `MaterialsStore` подключается провайдером в `app.routes.ts` внутри route `/dictionaries` (не `providedIn: 'root'`), чтобы состояние было изолировано в рамках раздела справочников.
    - данные из mock-репозитория: `crm-web/src/app/features/materials/data/materials.mock-repository.ts`, токен `MATERIALS_REPOSITORY`.
 
-4. Страница:
-   - `crm-web/src/app/features/materials/pages/materials-crud-page/`
-   - поля формы вынесены в один `ng-template`, чтобы создание и редактирование не расходились по разметке.
+4. Страница (единый UI):
+   - блок «Материалы» на `crm-web/src/app/features/dictionaries/pages/dictionaries-page/` (модалка и форма; общий `ng-template` для create/edit).
 
 5. UI-правила:
    - кнопки через `UiButtonComponent`;

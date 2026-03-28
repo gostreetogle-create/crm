@@ -34,6 +34,7 @@
   - Единый заголовок страницы + блок фактов справа.
 - `CrudLayoutComponent` (`src/app/shared/ui/crud-layout/`)
   - Таблица/карточки CRUD: колонки, данные, тулбар и действия формы через `ng-template`, флаг `loading` (пустой список при загрузке), row-actions с Lucide-иконками.
+  - На хабе `/dictionaries` таблица: **одна** колонка `hubLine` с коротким доменным заголовком + «Действия»; при `showCardLabel` заголовок карточки по центру сверху, под ним ряд `+` / поиск / Excel. Компактная таблица: `table-layout: fixed`, текст с ellipsis; у `TableColumn` опционально `swatchHexKey` — квадрат цвета (HEX) слева от текста.
   - Встроенный toolbar-стандарт Excel: `downloadTemplate` / `importExcel` / `exportExcel` с иконками и единым UX.
   - Видимость Excel-кнопок также управляется правами через `PermissionsService`.
   - `subtitle` и `facts` доступны, но по умолчанию для справочников НЕ используем; включаем только по явному согласованию UX.

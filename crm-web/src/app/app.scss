@@ -3,5 +3,5 @@
 }
 
 .appMain {
-  padding: calc((var(--ui-app-header-padding-y) * 2) + var(--ui-control-min-height) + 12px) 16px 20px;
+  padding: var(--app-main-padding-top) var(--app-main-padding-x) var(--app-main-padding-bottom);
 }

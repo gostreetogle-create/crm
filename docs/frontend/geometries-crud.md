@@ -11,8 +11,8 @@
 - Формат строки «Параметры» (таблица, экспорт): `crm-web/src/app/features/geometries/utils/format-geometry-params-display.ts`
 - Mock + репозиторий: `geometries/data/`
 - Store (в т.ч. `params` для таблицы): `geometries/state/geometries.store.ts`
-- Отдельная страница CRUD: `geometries/pages/geometries-crud-page/`
-- UI-блок, модалка и Excel: `dictionaries/pages/dictionaries-page/`
+- UI-блок, модалка и Excel: `dictionaries/pages/dictionaries-page/` (отдельного маршрута/страницы CRUD нет)
+- На хабе `/dictionaries` все справочники в сетке одинаковой плиткой `dictionaryTile` (несколько плиток в ряд). Класс `dictionaryTileWide` в SCSS оставлен на будущее, если понадобится одна плитка на всю ширину сетки.
 - Провайдеры: `app.routes.ts` (route `dictionaries`)
 
 ## Поля (домен ↔ UI)

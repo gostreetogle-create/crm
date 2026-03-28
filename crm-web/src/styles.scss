@@ -67,7 +67,11 @@
   --ui-page-shell-padding-top: 24px;
   --ui-page-shell-padding-x: 16px;
   --ui-page-shell-padding-bottom: 48px;
-  --ui-page-shell-max-width: min(1560px, calc(100vw - (var(--ui-page-shell-padding-x) * 2)));
+  /* Отступ main под фиксированный хедер + низ: для расчёта min-height shell без «фантомного» скролла */
+  --app-main-padding-top: calc((var(--ui-app-header-padding-y) * 2) + var(--ui-control-min-height) + 12px);
+  --app-main-padding-bottom: 20px;
+  --app-main-padding-x: 16px;
+  --ui-page-shell-max-width: min(1720px, calc(100vw - (var(--ui-page-shell-padding-x) * 2)));
   --ui-space-1: 4px;
   --ui-space-2: 8px;
   --ui-space-3: 12px;

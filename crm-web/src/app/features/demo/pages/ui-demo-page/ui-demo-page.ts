@@ -224,18 +224,21 @@ export class UiDemoPage {
     return this.filteredProducts().slice(start, start + this.productPageSize);
   });
 
-  readonly columns: TableColumn[] = [
-    { key: 'name', label: 'Название' },
-    { key: 'category', label: 'Категория' },
-    { key: 'status', label: 'Статус' },
-  ];
+  /** Как на хабе `/dictionaries`: одна колонка «Запись» (hubLine); детали — в модалке. */
+  readonly columns: TableColumn[] = [{ key: 'hubLine', label: 'Строка' }];
 
   readonly rows = signal<DemoRow[]>([
     { id: 'demo-1', name: 'Эталонная запись 1', category: 'Металл', status: 'Черновик' },
     { id: 'demo-2', name: 'Эталонная запись 2', category: 'Полимер', status: 'Активно' },
   ]);
   readonly universalCrudData = computed(() =>
-    [...this.rows()].sort((a, b) => String(a.name).localeCompare(String(b.name))),
+    [...this.rows()]
+      .map((r) => ({
+        id: r.id,
+        name: r.name,
+        hubLine: `${r.name} · ${r.category} · ${r.status}`,
+      }))
+      .sort((a, b) => String(a.name).localeCompare(String(b.name))),
   );
 
   readonly demoData = computed(() => {

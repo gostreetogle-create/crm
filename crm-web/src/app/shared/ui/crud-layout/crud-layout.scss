@@ -88,6 +88,35 @@
   padding-right: var(--ui-space-2);
 }
 
+/* Строка таблицы / карточка: образец цвета + подпись (как в модалке цвета, компактнее). */
+.crudCellLine {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-2);
+  min-width: 0;
+}
+
+.crudSwatch {
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--border-color);
+}
+
+.crudSwatchEmpty {
+  background: var(--surface-soft) !important;
+}
+
+.crudCellText {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .rowActionBtn {
   border: 1px solid var(--border-color);
   background: var(--surface);

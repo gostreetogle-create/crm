@@ -27,6 +27,7 @@ export const CoatingsStore = signalStore(
         .map((item) => ({
           id: item.id,
           coatingType: item.coatingType,
+          hubLine: [item.coatingType, item.coatingSpec].filter(Boolean).join(' · '),
           coatingSpec: item.coatingSpec,
           thicknessMicron: item.thicknessMicron ?? '—',
         }))

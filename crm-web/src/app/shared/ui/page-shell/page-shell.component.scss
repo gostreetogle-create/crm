@@ -1,6 +1,7 @@
 :host {
   display: block;
-  min-height: 100vh;
+  /* Не 100vh: иначе + отступ main под fixed header даёт высоту > viewport и пустой скролл */
+  min-height: calc(100vh - var(--app-main-padding-top) - var(--app-main-padding-bottom));
   padding: var(--ui-page-shell-padding-top) var(--ui-page-shell-padding-x)
     var(--ui-page-shell-padding-bottom);
   color: var(--text-primary);

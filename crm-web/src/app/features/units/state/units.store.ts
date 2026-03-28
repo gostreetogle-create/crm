@@ -27,6 +27,7 @@ export const UnitsStore = signalStore(
         .map((item) => ({
           id: item.id,
           name: item.name,
+          hubLine: `${item.name} (${item.code?.trim() || '—'})`,
           code: item.code || '—',
           notes: item.notes || '—',
           isActiveLabel: item.isActive ? 'Да' : 'Нет',

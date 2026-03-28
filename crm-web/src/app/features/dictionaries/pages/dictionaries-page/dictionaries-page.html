@@ -1,6 +1,6 @@
 <app-page-shell>
   <div class="dictionaryGrid">
-    <section class="dictionaryTile dictionaryTileWide">
+    <section class="dictionaryTile">
       <app-content-card title="" [hideTitle]="true">
         <crud-layout
           title="Материалы"
@@ -34,7 +34,7 @@
       </app-content-card>
     </section>
 
-    <section class="dictionaryTile dictionaryTileWide">
+    <section class="dictionaryTile">
       <app-content-card title="" [hideTitle]="true">
         <crud-layout
           title="Вид работ"
@@ -171,7 +171,7 @@
       </app-content-card>
     </section>
 
-    <section class="dictionaryTile dictionaryTileWide">
+    <section class="dictionaryTile">
       <app-content-card title="" [hideTitle]="true">
         <crud-layout
           title="Форма и габаритные размеры"
@@ -605,8 +605,14 @@
 
 <ng-template #colorsContentTpl>
   <form id="colors-form" [formGroup]="colorsForm" (ngSubmit)="submitColors()" class="formGrid">
-    <app-ui-form-field label="Полное наименование">
-      <input type="text" [value]="colorNameWithRal()" readonly />
+    <app-ui-form-field label="RAL и название">
+      <div class="colorHexPreviewRow colorHexPreviewRowLeadSwatch">
+        <span
+          class="colorSwatch"
+          [style.background]="colorPreviewHexForColorsForm() ?? undefined"
+        ></span>
+        <input type="text" [value]="colorNameWithRal()" readonly class="colorFullNameInput" />
+      </div>
     </app-ui-form-field>
 
     <app-ui-form-field

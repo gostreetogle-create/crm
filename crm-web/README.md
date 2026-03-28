@@ -100,7 +100,7 @@ And join the Nx community:
 - [Our Youtube channel](https://www.youtube.com/@nxdevtools)
 - [Our blog](https://nx.dev/blog?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
 
-## Signals Migration: Step 2 (geometries-crud-page)
+## Signals Migration: Step 2 (geometries CRUD, позже — хаб `/dictionaries`)
 
 What changed:
 - `items$` -> `items = toSignal(repo.getItems(), { initialValue: [] })`
@@ -128,7 +128,7 @@ What changed:
 - Added feature-local `MaterialsStore` using `withState`, `withComputed`, `withMethods`
 - CRUD workflows moved to store methods with `patchState`
 - Added `rxMethod` entrypoints for `loadItems`, `submit`, and `delete`
-- `materials-crud-page` now consumes store signals and calls store actions
+- Materials CRUD (в хабе `/dictionaries`) consumes store signals and calls store actions
 
 Why:
 - Store keeps feature state centralized, predictable and testable
@@ -149,7 +149,7 @@ What changed:
 - Added feature-local `GeometriesStore` with `withState`, `withComputed`, `withMethods`
 - CRUD actions moved to store methods and `rxMethod` entrypoints
 - State updates centralized through `patchState`
-- `geometries-crud-page` now reads store signals and triggers store actions
+- Geometries CRUD (в хабе `/dictionaries`) reads store signals and triggers store actions
 
 Why:
 - Feature state becomes isolated and easier to test
@@ -217,7 +217,7 @@ References:
 
 What changed:
 - Removed duplicate store aliases in CRUD pages (e.g. `materialsData = store[...]`)
-- `materials-crud-page` and `geometries-crud-page` now use single `vm = computed(...)`
+- Materials/geometries UI в `/dictionaries` использует единый подход store + computed там, где это применимо
 - Templates consume only `vm()` values for table and UI flags
 
 Why:
@@ -228,6 +228,11 @@ Why:
 Validation:
 - `npx nx build`
 - Smoke: materials/geometries create/edit/delete
+
+## Routing cleanup (single dictionaries hub)
+
+- Удалены неиспользуемые `materials.routes.ts` / `geometries.routes.ts` (нигде не импортировались) и отдельные страницы `materials-crud-page` / `geometries-crud-page`.
+- Канонический UI: вкладки «Материалы» и «Геометрии» на `/dictionaries`; `/materials` и `/geometries` по-прежнему редиректят на хаб.
 
 ## Signals Migration: Step 10.1 (TanStack Query pilot for materials)
 

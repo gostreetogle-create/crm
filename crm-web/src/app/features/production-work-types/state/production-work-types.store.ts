@@ -30,6 +30,9 @@ export const ProductionWorkTypesStore = signalStore(
         .map((item) => ({
           id: item.id,
           name: item.name,
+          hubLine: item.shortLabel?.trim()
+            ? `${item.name} · ${item.shortLabel.trim()}`
+            : item.name,
           shortLabel: item.shortLabel,
           hourlyRateLabel: `${item.hourlyRateRub} ₽/ч`,
           isActiveLabel: item.isActive ? 'Да' : 'Нет',

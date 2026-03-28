@@ -29,13 +29,16 @@
 ## 2) Подключение в раздел справочников
 
 - [ ] Подключены providers в `src/app/app.routes.ts` внутри route `path: 'dictionaries'`
-- [ ] В `dictionaries-page` добавлен блок таблицы через `CrudLayout`
+- [ ] **Новый** справочник: UI-блок в `src/app/features/dictionaries/components/...`, вставка в шаблон `dictionaries-page`. Если пока оставлено внутри `dictionaries-page` — запись в `temporary-deviations-log.md` + план вынести. Уже существующие блоки до рефакторинга не блокируют merge.
+- [ ] Нет второго параллельного экрана CRUD (неподключённый `*-crud-page` / неиспользуемый `*.routes.ts`) — только хаб `/dictionaries`
+- [ ] В компоненте блока (или в `dictionaries-page`, если блок ещё не вынесен) — таблица через `CrudLayout`
 - [ ] Для create/edit добавлена `UiModal`-форма
 - [ ] Для delete добавлено подтверждение (`confirmDeleteAction`)
 - [ ] Подтверждение delete выполнено через `UiModal` (не `window.confirm`)
 
 ## 3) UI-канон (обязательно)
 
+- [ ] В таблице хаба одна колонка `hubLine` с **коротким заголовком по смыслу** (как у соседних карточек: `Ед. изм.`, `Цвет`, …), не слово «Запись»; действия в строке как у остальных справочников
 - [ ] `CrudLayout` в "чистом" режиме: без `subtitle` и `[facts]` (если не согласовано отдельно)
 - [ ] Row actions — иконки (без текстовых кнопок), включая view/duplicate/edit/delete
 - [ ] Нейминг согласован с `docs/frontend/dictionaries-naming-convention.md` (длинное/короткое, ГОСТ-style сокращения)
