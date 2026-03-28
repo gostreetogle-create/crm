@@ -14,4 +14,8 @@ export class HubCrudExpandStateService {
   toggle(key: string): void {
     this.state.update((m) => ({ ...m, [key]: !m[key] }));
   }
+
+  close(key: string): void {
+    this.state.update((m) => ({ ...m, [key]: false }));
+  }
 }
