@@ -1,0 +1,15 @@
+/* Текст вводного абзаца для блоков «эталон / вариант» (Demo, документация). */
+.pattern-variant-intro {
+  margin: 0 0 12px;
+  font-size: var(--font-size-small);
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.pattern-variant-intro p {
+  margin: 0 0 8px;
+}
+
+.pattern-variant-intro p:last-child {
+  margin-bottom: 0;
+}

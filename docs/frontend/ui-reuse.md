@@ -24,8 +24,17 @@
 
 ## Текущий UI-kit (пример)
 
-- `ContentCardComponent` (`src/app/shared/ui/content-card/`)
+- `ContentCardComponent` (`src/app/shared/ui/cards/content-card/`)
   - Обёртка “карточка/секция” с заголовком, используется как контейнер для блоков на страницах.
+- `DictionaryHubTileComponent` / `DictionaryHubWideTileComponent` (`src/app/shared/ui/cards/dictionary-hub-tile/`, `.../dictionary-hub-wide-tile/`)
+  - Плитка хаба справочников: раскрытие + `content-card` + проекция `crud-layout`; wide — на всю ширину `dictionaryGrid` (`grid-column: 1 / -1`).
+- `UiStateCardComponent` (`src/app/shared/ui/state-card/`)
+  - Компактная плитка состояния (`info` / `success` / `warning` / `danger`) с иконкой Lucide — эталон для Demo и гайдов.
+- `PatternVariantStackComponent` / `PatternVariantSectionComponent` (`src/app/shared/ui/pattern-showcase/`)
+  - Вертикальный стек и один блок «вариант эталона»: заголовок, вводный блок с классом `.pattern-variant-intro` (глобальные стили в `shared/styles/pattern-variant-doc.scss`), внутри — `dictionaryGrid` + проекция контента.
+- Общие классы форм: `formGrid`, `inlineRow`, `formActionsRow`, `formAuxAction` — `src/app/shared/styles/form-stack.scss` (подключать через `@use` в страницах/компонентах).
+- `UiModalFormActionsComponent` (`src/app/shared/ui/modal-form-actions/`)
+  - Футер модалки с формой: «Закрыть»/«Отмена» + submit, связанный с формой по `id`; хост `display: contents` под разметку `ui-modal` (`.modalActions`).
 - `FieldsTableComponent` (`src/app/shared/ui/fields-table/`)
   - Универсальная таблица полей для отображения `{ key, label, type, required, comment }` (тип `FieldRow` в `src/app/shared/model/field-row.ts`).
 - `PageShellComponent` (`src/app/shared/ui/page-shell/`)

@@ -3,11 +3,7 @@ import { Component, TemplateRef, ViewChild, computed, inject, signal } from '@an
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   LucideCheck,
-  LucideCircleAlert,
-  LucideCircleCheck,
   LucideDownload,
-  LucideInbox,
-  LucideLoader2,
   LucidePlus,
   LucideRotateCcw,
   LucideSave,
@@ -16,7 +12,12 @@ import {
   LucideTrash2,
   LucideX,
 } from '@lucide/angular';
-import { ContentCardComponent } from '../../../../shared/ui/content-card/content-card.component';
+import {
+  ContentCardComponent,
+  DictionaryHubTileComponent,
+  DictionaryHubWideTileComponent,
+  ProductCardComponent,
+} from '../../../../shared/ui/cards/public-api';
 import { CrudLayoutComponent, TableColumn } from '../../../../shared/ui/crud-layout/public-api';
 import {
   FilterOption,
@@ -26,13 +27,14 @@ import { UiModal } from '../../../../shared/ui/modal/public-api';
 import { PageShellComponent } from '../../../../shared/ui/page-shell/page-shell.component';
 import { UiButtonComponent } from '../../../../shared/ui/ui-button/ui-button.component';
 import { UiFormFieldComponent } from '../../../../shared/ui/ui-form-field/ui-form-field.component';
-import { ProductCardComponent } from '../../../../shared/ui/product-card/public-api';
 import { UiPaginationComponent } from '../../../../shared/ui/ui-pagination/ui-pagination.component';
 import { PermissionsService, UserRole } from '../../../../core/auth/public-api';
+import { HubCrudExpandStateService } from '../../../../shared/ui/hub-crud-expandable/public-api';
 import {
-  HubCrudExpandStateService,
-  HubCrudExpandableShellComponent,
-} from '../../../../shared/ui/hub-crud-expandable/public-api';
+  PatternVariantSectionComponent,
+  PatternVariantStackComponent,
+} from '../../../../shared/ui/pattern-showcase/public-api';
+import { UiStateCardComponent } from '../../../../shared/ui/state-card/ui-state-card.component';
 
 type DemoRow = {
   id: string;
@@ -58,11 +60,7 @@ type DemoProduct = {
     NgTemplateOutlet,
     ReactiveFormsModule,
     LucideCheck,
-    LucideCircleAlert,
-    LucideCircleCheck,
     LucideDownload,
-    LucideInbox,
-    LucideLoader2,
     LucidePlus,
     LucideRotateCcw,
     LucideSave,
@@ -72,6 +70,10 @@ type DemoProduct = {
     LucideX,
     PageShellComponent,
     ContentCardComponent,
+    DictionaryHubTileComponent,
+    DictionaryHubWideTileComponent,
+    PatternVariantStackComponent,
+    PatternVariantSectionComponent,
     CrudLayoutComponent,
     FiltersBarComponent,
     UiButtonComponent,
@@ -79,7 +81,7 @@ type DemoProduct = {
     UiModal,
     ProductCardComponent,
     UiPaginationComponent,
-    HubCrudExpandableShellComponent,
+    UiStateCardComponent,
   ],
   templateUrl: './ui-demo-page.html',
   styleUrl: './ui-demo-page.scss',

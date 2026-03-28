@@ -1,6 +1,6 @@
 <app-page-shell>
   <div class="dictionaryGrid">
-    <app-dictionary-hub-tile tileKey="materials">
+    <app-dictionary-hub-wide-tile tileKey="materials">
       <crud-layout
         title="Материалы"
         [showHeader]="false"
@@ -32,7 +32,7 @@
         (edit)="openMaterialsEdit($event)"
         (delete)="deleteMaterial($event)"
       ></crud-layout>
-    </app-dictionary-hub-tile>
+    </app-dictionary-hub-wide-tile>
 
     <app-dictionary-hub-tile tileKey="workTypes">
       <crud-layout
@@ -341,14 +341,14 @@
 </ng-template>
 
 <ng-template #workTypesActionsTpl>
-  <app-ui-button variant="soft" (clicked)="closeWorkTypesModal()">
-    {{ isWorkTypesViewMode() ? 'Закрыть' : 'Отмена' }}
-  </app-ui-button>
-  @if (!isWorkTypesViewMode()) {
-    <app-ui-button type="submit" [form]="'work-types-form'">
-      {{ productionWorkTypesStore.isEditMode() ? 'Сохранить изменения' : 'Создать вид работ' }}
-    </app-ui-button>
-  }
+  <app-ui-modal-form-actions
+    [viewMode]="isWorkTypesViewMode()"
+    [formId]="'work-types-form'"
+    [submitLabel]="
+      productionWorkTypesStore.isEditMode() ? 'Сохранить изменения' : 'Создать вид работ'
+    "
+    (dismiss)="closeWorkTypesModal()"
+  />
 </ng-template>
 
 <ui-modal
@@ -600,14 +600,12 @@
 </ng-template>
 
 <ng-template #coatingsActionsTpl>
-  <app-ui-button variant="soft" (clicked)="closeCoatingsModal()">
-    {{ isCoatingsViewMode() ? 'Закрыть' : 'Отмена' }}
-  </app-ui-button>
-  @if (!isCoatingsViewMode()) {
-    <app-ui-button type="submit" [form]="'coatings-form'">
-      {{ coatingsStore.isEditMode() ? 'Сохранить изменения' : 'Создать покрытие' }}
-    </app-ui-button>
-  }
+  <app-ui-modal-form-actions
+    [viewMode]="isCoatingsViewMode()"
+    [formId]="'coatings-form'"
+    [submitLabel]="coatingsStore.isEditMode() ? 'Сохранить изменения' : 'Создать покрытие'"
+    (dismiss)="closeCoatingsModal()"
+  />
 </ng-template>
 
 <ui-modal
@@ -741,14 +739,12 @@
 </ng-template>
 
 <ng-template #clientsActionsTpl>
-  <app-ui-button variant="soft" (clicked)="closeClientsModal()">
-    {{ isClientsViewMode() ? 'Закрыть' : 'Отмена' }}
-  </app-ui-button>
-  @if (!isClientsViewMode()) {
-    <app-ui-button type="submit" [form]="'clients-form'">
-      {{ clientsStore.isEditMode() ? 'Сохранить изменения' : 'Создать контакт' }}
-    </app-ui-button>
-  }
+  <app-ui-modal-form-actions
+    [viewMode]="isClientsViewMode()"
+    [formId]="'clients-form'"
+    [submitLabel]="clientsStore.isEditMode() ? 'Сохранить изменения' : 'Создать контакт'"
+    (dismiss)="closeClientsModal()"
+  />
 </ng-template>
 
 <ui-modal
@@ -803,14 +799,12 @@
 </ng-template>
 
 <ng-template #surfaceFinishesActionsTpl>
-  <app-ui-button variant="soft" (clicked)="closeSurfaceFinishesModal()">
-    {{ isSurfaceFinishesViewMode() ? 'Закрыть' : 'Отмена' }}
-  </app-ui-button>
-  @if (!isSurfaceFinishesViewMode()) {
-    <app-ui-button type="submit" [form]="'surface-finishes-form'">
-      {{ surfaceFinishesStore.isEditMode() ? 'Сохранить изменения' : 'Создать финиш' }}
-    </app-ui-button>
-  }
+  <app-ui-modal-form-actions
+    [viewMode]="isSurfaceFinishesViewMode()"
+    [formId]="'surface-finishes-form'"
+    [submitLabel]="surfaceFinishesStore.isEditMode() ? 'Сохранить изменения' : 'Создать финиш'"
+    (dismiss)="closeSurfaceFinishesModal()"
+  />
 </ng-template>
 
 <ui-modal
@@ -890,25 +884,21 @@
 </ng-template>
 
 <ng-template #colorsActionsTpl>
-  <app-ui-button variant="soft" (clicked)="closeColorsModal()">
-    {{ isColorsViewMode() ? 'Закрыть' : 'Отмена' }}
-  </app-ui-button>
-  @if (!isColorsViewMode()) {
-    <app-ui-button type="submit" [form]="'colors-form'">
-      {{ colorsStore.isEditMode() ? 'Сохранить изменения' : 'Создать цвет' }}
-    </app-ui-button>
-  }
+  <app-ui-modal-form-actions
+    [viewMode]="isColorsViewMode()"
+    [formId]="'colors-form'"
+    [submitLabel]="colorsStore.isEditMode() ? 'Сохранить изменения' : 'Создать цвет'"
+    (dismiss)="closeColorsModal()"
+  />
 </ng-template>
 
 <ng-template #materialsActionsTpl>
-  <app-ui-button variant="soft" (clicked)="closeMaterialsModal()">
-    {{ isMaterialsViewMode() ? 'Закрыть' : 'Отмена' }}
-  </app-ui-button>
-  @if (!isMaterialsViewMode()) {
-    <app-ui-button type="submit" [form]="'materials-form'">
-      {{ materialsStore.isEditMode() ? 'Сохранить изменения' : 'Создать материал' }}
-    </app-ui-button>
-  }
+  <app-ui-modal-form-actions
+    [viewMode]="isMaterialsViewMode()"
+    [formId]="'materials-form'"
+    [submitLabel]="materialsStore.isEditMode() ? 'Сохранить изменения' : 'Создать материал'"
+    (dismiss)="closeMaterialsModal()"
+  />
 </ng-template>
 
 <ui-modal
@@ -1018,14 +1008,12 @@
 </ng-template>
 
 <ng-template #geometriesActionsTpl>
-  <app-ui-button variant="soft" (clicked)="closeGeometriesModal()">
-    {{ isGeometriesViewMode() ? 'Закрыть' : 'Отмена' }}
-  </app-ui-button>
-  @if (!isGeometriesViewMode()) {
-    <app-ui-button type="submit" [form]="'geometries-form'">
-      {{ geometriesStore.isEditMode() ? 'Сохранить изменения' : 'Создать геометрию' }}
-    </app-ui-button>
-  }
+  <app-ui-modal-form-actions
+    [viewMode]="isGeometriesViewMode()"
+    [formId]="'geometries-form'"
+    [submitLabel]="geometriesStore.isEditMode() ? 'Сохранить изменения' : 'Создать геометрию'"
+    (dismiss)="closeGeometriesModal()"
+  />
 </ng-template>
 
 <ui-modal
@@ -1083,13 +1071,11 @@
 </ng-template>
 
 <ng-template #unitsActionsTpl>
-  <app-ui-button variant="soft" (clicked)="closeUnitsModal()">
-    {{ isUnitsViewMode() ? 'Закрыть' : 'Отмена' }}
-  </app-ui-button>
-  @if (!isUnitsViewMode()) {
-    <app-ui-button type="submit" [form]="'units-form'">
-      {{ unitsStore.isEditMode() ? 'Сохранить изменения' : 'Создать единицу' }}
-    </app-ui-button>
-  }
+  <app-ui-modal-form-actions
+    [viewMode]="isUnitsViewMode()"
+    [formId]="'units-form'"
+    [submitLabel]="unitsStore.isEditMode() ? 'Сохранить изменения' : 'Создать единицу'"
+    (dismiss)="closeUnitsModal()"
+  />
 </ng-template>
 

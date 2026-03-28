@@ -21,30 +21,10 @@
 
   <app-content-card title="Состояния интерфейса">
     <section class="stateGrid">
-      <article class="stateCard stateCardInfo">
-        <h4 class="stateCardTitle">
-          <span class="stateCardIcon stateCardIcon--accent" aria-hidden="true"><svg lucideLoader2 [size]="18"></svg></span>
-          Loading
-        </h4>
-      </article>
-      <article class="stateCard stateCardOk">
-        <h4 class="stateCardTitle">
-          <span class="stateCardIcon stateCardIcon--affirm" aria-hidden="true"><svg lucideCircleCheck [size]="18"></svg></span>
-          Success
-        </h4>
-      </article>
-      <article class="stateCard stateCardWarn">
-        <h4 class="stateCardTitle">
-          <span class="stateCardIcon stateCardIcon--warn" aria-hidden="true"><svg lucideInbox [size]="18"></svg></span>
-          Empty
-        </h4>
-      </article>
-      <article class="stateCard stateCardErr">
-        <h4 class="stateCardTitle">
-          <span class="stateCardIcon stateCardIcon--danger" aria-hidden="true"><svg lucideCircleAlert [size]="18"></svg></span>
-          Error
-        </h4>
-      </article>
+      <app-ui-state-card tone="info" title="Loading"></app-ui-state-card>
+      <app-ui-state-card tone="success" title="Success"></app-ui-state-card>
+      <app-ui-state-card tone="warning" title="Empty"></app-ui-state-card>
+      <app-ui-state-card tone="danger" title="Error"></app-ui-state-card>
     </section>
   </app-content-card>
 
@@ -163,71 +143,114 @@
     </ng-template>
 
     <p class="demoHint">
-      Общая цепочка: <code>dictionaryGrid</code> → <code>dictionaryTile</code> → при необходимости
+      Общая цепочка: <code>dictionaryGrid</code> → <code>app-dictionary-hub-tile</code> /
+      <code>app-dictionary-hub-wide-tile</code> (<code>shared/ui/cards</code>) → внутри те же
       <code>app-hub-crud-expandable-shell</code> → <code>app-content-card</code> →
-      <code>crud-layout</code>. Ниже четыре варианта: что подключать решаете вы; отдельной «второй карточки»
+      <code>crud-layout</code>. Ниже блоки-эталоны (в т.ч. 1.1 — широкая плитка с тем же раскрытием, что п.&nbsp;1):
+      что подключать решаете вы; отдельной «второй карточки»
       нет — это композиция тех же компонентов. Блоки с плитками вынесены из этой карточки, чтобы ширина колонки
       совпадала с <code>/dictionaries</code> (тот же <code>dictionaryGrid</code> внутри <code>app-page-shell</code>).
+      Нумерация 1 / 1.1 / 2… — эталоны для хаба; 1.1 = тот же паттерн, что 1, с шириной как у 2.
     </p>
   </app-content-card>
 
-  <div class="dictionaryVariantsStack">
-      <article class="dictionaryVariant">
-        <h3 class="dictionaryVariantTitle">1. «Маленькая» плитка хаба — превью и раскрытие</h3>
-        <p class="dictionaryVariantBody">
-          <code>app-hub-crud-expandable-shell</code> + <code>HubCrudExpandStateService</code> (ключ плитки, здесь
+  <app-pattern-variant-stack>
+    <app-pattern-variant-section title="1. «Маленькая» плитка хаба — превью и раскрытие">
+      <div class="pattern-variant-intro">
+        <p>
+          Компонент <code>app-dictionary-hub-tile</code> (<code>shared/ui/cards/dictionary-hub-tile</code>):
+          внутри <code>app-hub-crud-expandable-shell</code> + <code>HubCrudExpandStateService</code> (ключ
           <code>demo-etalon</code>). В свёрнутом виде одна строка; после кнопки с тремя линиями —
           <code>maxTableBodyRows</code> снимается, задаётся <code>tableBodyMaxHeight</code> (на узком экране — скролл
           внутри таблицы; на ширине ≥1024px тот же вход, но <code>crud-layout</code> снимает внутренний скролл —
           таблица по высоте целиком). Раскрытый блок
           идёт <strong>поверх</strong> контента ниже (без сдвига страницы); при необходимости высоту резерва в потоке
           задайте входом <code>layoutReserveWhenOpen</code> на shell. Клик вне плитки сворачивает; кнопка с полосками
-          внизу панели работает и в открытом виде. Так же на <code>/dictionaries</code>.
+          внизу панели работает и в открытом виде. Так же на <code>/dictionaries</code> (обычные справочники).
         </p>
-        <div class="dictionaryGrid">
-          <section class="dictionaryTile">
-            <app-hub-crud-expandable-shell tileKey="demo-etalon">
-              <app-content-card title="" [hideTitle]="true">
-                <crud-layout
-                  title="Демо-запись"
-                  [showHeader]="false"
-                  [showCardLabel]="true"
-                  [showNameSearch]="true"
-                  [showCreateAction]="true"
-                  [canCreate]="permissions.crud().canCreate"
-                  createAriaLabel="Добавить демо-запись"
-                  createTitle="Добавить демо-запись"
-                  [columns]="columns"
-                  [data]="universalCrudData()"
-                  [loading]="false"
-                  [maxTableBodyRows]="hubExpand.previewMaxTableBodyRows('demo-etalon')"
-                  [tableBodyMaxHeight]="hubExpand.previewTableBodyMaxHeight('demo-etalon')"
-                  [showExcelActions]="true"
-                  [canDownloadTemplate]="permissions.can('excel.template')"
-                  [canImportExcel]="permissions.can('excel.import')"
-                  [canExportExcel]="permissions.can('excel.export')"
-                  [canView]="true"
-                  [canDuplicate]="permissions.crud().canDuplicate"
-                  [canEdit]="permissions.crud().canEdit"
-                  [canDelete]="permissions.crud().canDelete"
-                  (create)="addUniversalDemoRow()"
-                  (downloadTemplate)="downloadDemoTemplateExcel()"
-                  (importExcel)="onDemoExcelImported($event)"
-                  (exportExcel)="exportDemoExcel()"
-                  (view)="onView($event)"
-                  (duplicate)="onDuplicate($event)"
-                  (edit)="onEdit($event)"
-                  (delete)="onDelete($event)"
-                ></crud-layout>
-              </app-content-card>
-            </app-hub-crud-expandable-shell>
-          </section>
-        </div>
-      </article>
+      </div>
+      <app-dictionary-hub-tile tileKey="demo-etalon">
+        <crud-layout
+          title="Демо-запись"
+          [showHeader]="false"
+          [showCardLabel]="true"
+          [showNameSearch]="true"
+          [showCreateAction]="true"
+          [canCreate]="permissions.crud().canCreate"
+          createAriaLabel="Добавить демо-запись"
+          createTitle="Добавить демо-запись"
+          [columns]="columns"
+          [data]="universalCrudData()"
+          [loading]="false"
+          [maxTableBodyRows]="hubExpand.previewMaxTableBodyRows('demo-etalon')"
+          [tableBodyMaxHeight]="hubExpand.previewTableBodyMaxHeight('demo-etalon')"
+          [showExcelActions]="true"
+          [canDownloadTemplate]="permissions.can('excel.template')"
+          [canImportExcel]="permissions.can('excel.import')"
+          [canExportExcel]="permissions.can('excel.export')"
+          [canView]="true"
+          [canDuplicate]="permissions.crud().canDuplicate"
+          [canEdit]="permissions.crud().canEdit"
+          [canDelete]="permissions.crud().canDelete"
+          (create)="addUniversalDemoRow()"
+          (downloadTemplate)="downloadDemoTemplateExcel()"
+          (importExcel)="onDemoExcelImported($event)"
+          (exportExcel)="exportDemoExcel()"
+          (view)="onView($event)"
+          (duplicate)="onDuplicate($event)"
+          (edit)="onEdit($event)"
+          (delete)="onDelete($event)"
+        ></crud-layout>
+      </app-dictionary-hub-tile>
+    </app-pattern-variant-section>
 
-      <article class="dictionaryVariant">
-        <h3 class="dictionaryVariantTitle">2. Эталон: полная карточка без кнопки раскрытия</h3>
-        <p class="dictionaryVariantBody">
+    <app-pattern-variant-section title="1.1. Как п.1, на всю ширину сетки (как п.2)">
+      <div class="pattern-variant-intro">
+        <p>
+          Компонент <code>app-dictionary-hub-wide-tile</code> (<code>shared/ui/cards/dictionary-hub-wide-tile</code>):
+          та же композиция, что п.&nbsp;1, но хост задаёт <code>grid-column: 1 / -1</code> в
+          <code>dictionaryGrid</code> (ширина как у п.&nbsp;2). Ключ плитки <code>demo-etalon-wide</code>, чтобы
+          раскрытие не смешивалось с п.&nbsp;1. Для материалов и составных гидов на <code>/dictionaries</code>.
+        </p>
+      </div>
+      <app-dictionary-hub-wide-tile tileKey="demo-etalon-wide">
+        <crud-layout
+          title="Демо-запись"
+          [showHeader]="false"
+          [showCardLabel]="true"
+          [showNameSearch]="true"
+          [showCreateAction]="true"
+          [canCreate]="permissions.crud().canCreate"
+          createAriaLabel="Добавить демо-запись"
+          createTitle="Добавить демо-запись"
+          [columns]="columns"
+          [data]="universalCrudData()"
+          [loading]="false"
+          [maxTableBodyRows]="hubExpand.previewMaxTableBodyRows('demo-etalon-wide')"
+          [tableBodyMaxHeight]="hubExpand.previewTableBodyMaxHeight('demo-etalon-wide')"
+          [showExcelActions]="true"
+          [canDownloadTemplate]="permissions.can('excel.template')"
+          [canImportExcel]="permissions.can('excel.import')"
+          [canExportExcel]="permissions.can('excel.export')"
+          [canView]="true"
+          [canDuplicate]="permissions.crud().canDuplicate"
+          [canEdit]="permissions.crud().canEdit"
+          [canDelete]="permissions.crud().canDelete"
+          (create)="addUniversalDemoRow()"
+          (downloadTemplate)="downloadDemoTemplateExcel()"
+          (importExcel)="onDemoExcelImported($event)"
+          (exportExcel)="exportDemoExcel()"
+          (view)="onView($event)"
+          (duplicate)="onDuplicate($event)"
+          (edit)="onEdit($event)"
+          (delete)="onDelete($event)"
+        ></crud-layout>
+      </app-dictionary-hub-wide-tile>
+    </app-pattern-variant-section>
+
+    <app-pattern-variant-section title="2. Эталон: полная карточка без кнопки раскрытия">
+      <div class="pattern-variant-intro">
+        <p>
           Канон для «большой» карточки: <code>app-content-card</code> + <code>crud-layout</code> без
           <code>app-hub-crud-expandable-shell</code>, без <code>maxTableBodyRows</code> /
           <code>tableBodyMaxHeight</code>. В таблице — <strong>все поля модели строки</strong> (здесь:
@@ -236,50 +259,47 @@
           контентной колонки, что и остальной текст (<code>app-page-shell</code> → <code>.page</code>), не на
           весь монитор.
         </p>
-        <div class="dictionaryGrid">
-          <section class="dictionaryTile dictionaryTileWide">
-            <app-content-card title="" [hideTitle]="true">
-              <ng-container *ngTemplateOutlet="dictionaryStandardFullCrud"></ng-container>
-            </app-content-card>
-          </section>
-        </div>
-      </article>
+      </div>
+      <section class="dictionaryTile dictionaryTileWide">
+        <app-content-card title="" [hideTitle]="true">
+          <ng-container *ngTemplateOutlet="dictionaryStandardFullCrud"></ng-container>
+        </app-content-card>
+      </section>
+    </app-pattern-variant-section>
 
-      <article class="dictionaryVariant">
-        <h3 class="dictionaryVariantTitle">3. Превью одной строки без раскрытия (редко)</h3>
-        <p class="dictionaryVariantBody">
+    <app-pattern-variant-section title="3. Превью одной строки без раскрытия (редко)">
+      <div class="pattern-variant-intro">
+        <p>
           Только входы <code>CrudLayout</code>: <code>maxTableBodyRows="1"</code>, без
           <code>app-hub-crud-expandable-shell</code>. Лишние строки не видны и раскрыть нельзя — имеет смысл
           только для особых сценариев.
         </p>
-        <div class="dictionaryGrid">
-          <section class="dictionaryTile">
-            <app-content-card title="" [hideTitle]="true">
-              <ng-container
-                *ngTemplateOutlet="dictionaryCrudDemo; context: dictionaryCrudDemoContexts.previewOneRow"
-              ></ng-container>
-            </app-content-card>
-          </section>
-        </div>
-      </article>
+      </div>
+      <section class="dictionaryTile">
+        <app-content-card title="" [hideTitle]="true">
+          <ng-container
+            *ngTemplateOutlet="dictionaryCrudDemo; context: dictionaryCrudDemoContexts.previewOneRow"
+          ></ng-container>
+        </app-content-card>
+      </section>
+    </app-pattern-variant-section>
 
-      <article class="dictionaryVariant">
-        <h3 class="dictionaryVariantTitle">4. Полный список в узкой карточке</h3>
-        <p class="dictionaryVariantBody">
+    <app-pattern-variant-section title="4. Полный список в узкой карточке">
+      <div class="pattern-variant-intro">
+        <p>
           Как вариант 2, плюс <code>maxInlineSize</code> на <code>app-content-card</code> — карточка и тулбар не
-          тянутся на всю ширину колонки грида (см. <code>content-card.component.ts</code>).
+          тянутся на всю ширину колонки грида (см. <code>shared/ui/cards/content-card/</code>).
         </p>
-        <div class="dictionaryGrid">
-          <section class="dictionaryTile">
-            <app-content-card title="" [hideTitle]="true" maxInlineSize="min(100%, 22rem)">
-              <ng-container
-                *ngTemplateOutlet="dictionaryCrudDemo; context: dictionaryCrudDemoContexts.full"
-              ></ng-container>
-            </app-content-card>
-          </section>
-        </div>
-      </article>
-  </div>
+      </div>
+      <section class="dictionaryTile">
+        <app-content-card title="" [hideTitle]="true" maxInlineSize="min(100%, 22rem)">
+          <ng-container
+            *ngTemplateOutlet="dictionaryCrudDemo; context: dictionaryCrudDemoContexts.full"
+          ></ng-container>
+        </app-content-card>
+      </section>
+    </app-pattern-variant-section>
+  </app-pattern-variant-stack>
 
   @if (demoExcelStatus()) {
     <p class="importStatus importStatus--dictionaryDemo">{{ demoExcelStatus() }}</p>
@@ -303,12 +323,12 @@
               <option [value]="option">{{ option }}</option>
             }
           </select>
-          <button type="button" class="demoFormAuxAction" (click)="openQuickAdd()">Нет в списке — добавить</button>
+          <button type="button" class="formAuxAction" (click)="openQuickAdd()">Нет в списке — добавить</button>
         </div>
       </app-ui-form-field>
     </form>
 
-    <div class="actions">
+    <div class="formActionsRow">
       <app-ui-button variant="soft" (clicked)="form.reset({ name: '', category: form.controls.category.value })">
         <span class="btnWithIcon btnWithIcon--muted"><svg lucideRotateCcw [size]="18"></svg>Сбросить</span>
       </app-ui-button>

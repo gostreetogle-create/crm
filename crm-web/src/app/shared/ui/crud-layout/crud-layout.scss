@@ -9,7 +9,8 @@
 }
 
 .crudCardHeading {
-  margin: 0 0 var(--ui-space-3);
+  /* Воздух до ряда + / поиск / Excel ≈ высоте квадратной кнопки (--ui-control-min-height). */
+  margin: 0 0 var(--ui-control-min-height);
   text-align: center;
   font-size: var(--font-size-card-title);
   font-weight: 700;

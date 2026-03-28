@@ -1,11 +1,7 @@
 @use '../../../../shared/styles/dictionary-hub-shell';
+@use '../../../../shared/styles/form-stack';
 
-/* Короткие формы (≤6 основных полей): одна колонка. Длинные (>6): добавить класс formGridWide — две колонки. См. docs/frontend/dictionary-field-behavior-guide.md */
-.formGrid {
-  display: grid;
-  gap: 12px;
-  grid-template-columns: minmax(0, 1fr);
-}
+/* Длинные формы (>6 полей): класс formGridWide — две колонки. См. docs/frontend/dictionary-field-behavior-guide.md */
 
 .formGridWide {
   grid-template-columns: repeat(2, minmax(0, 1fr));

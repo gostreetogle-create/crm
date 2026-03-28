@@ -22,13 +22,17 @@ import { ClientItemInput } from '../../../clients/model/client-item';
 import { CrudLayoutComponent, TableColumn } from '../../../../shared/ui/crud-layout/public-api';
 import { UiFormGridComponent } from '../../../../shared/ui/form-grid/public-api';
 import { UiModal as UiModalComponent } from '../../../../shared/ui/modal/public-api';
+import { UiModalFormActionsComponent } from '../../../../shared/ui/modal-form-actions/public-api';
 import { PageShellComponent } from '../../../../shared/ui/page-shell/page-shell.component';
 import { UiButtonComponent } from '../../../../shared/ui/ui-button/ui-button.component';
 import { UiCheckboxFieldComponent } from '../../../../shared/ui/ui-checkbox-field/ui-checkbox-field.component';
 import { UiFormFieldComponent } from '../../../../shared/ui/ui-form-field/ui-form-field.component';
 import { HexRgbFieldComponent } from '../../../../shared/ui/hex-rgb-field/public-api';
 import { HubCrudExpandStateService } from '../../../../shared/ui/hub-crud-expandable/public-api';
-import { DictionaryHubTileComponent } from '../../components/dictionary-hub-tile/dictionary-hub-tile.component';
+import {
+  DictionaryHubTileComponent,
+  DictionaryHubWideTileComponent,
+} from '../../../../shared/ui/cards/public-api';
 
 @Component({
   selector: 'app-dictionaries-page',
@@ -39,8 +43,10 @@ import { DictionaryHubTileComponent } from '../../components/dictionary-hub-tile
     ReactiveFormsModule,
     PageShellComponent,
     DictionaryHubTileComponent,
+    DictionaryHubWideTileComponent,
     CrudLayoutComponent,
     UiModalComponent,
+    UiModalFormActionsComponent,
     UiFormGridComponent,
     UiButtonComponent,
     UiCheckboxFieldComponent,

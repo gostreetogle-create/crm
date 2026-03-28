@@ -24,4 +24,3 @@ export class ProductCardComponent {
   @Input() imageSrc: string | null = null;
   @Input() imageAlt: string | null = null;
 }
-

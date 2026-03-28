@@ -1,0 +1,65 @@
+.uiStateCard {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  padding: 10px 12px;
+}
+
+.uiStateCardTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 6px;
+  font-size: var(--font-size-label);
+  font-weight: 600;
+}
+
+.uiStateCardIcon {
+  display: inline-flex;
+  flex-shrink: 0;
+  line-height: 0;
+}
+
+.uiStateCard--info {
+  border-left: 3px solid var(--accent);
+
+  .uiStateCardIcon svg {
+    color: var(--accent);
+    animation: uiStateCardSpin 1.1s linear infinite;
+  }
+}
+
+.uiStateCard--success {
+  border-left: 3px solid var(--success);
+
+  .uiStateCardIcon svg {
+    color: var(--icon-affirm);
+  }
+}
+
+.uiStateCard--warning {
+  border-left: 3px solid var(--warning);
+
+  .uiStateCardIcon svg {
+    color: var(--warning);
+  }
+}
+
+.uiStateCard--danger {
+  border-left: 3px solid var(--danger);
+
+  .uiStateCardIcon svg {
+    color: var(--danger);
+  }
+}
+
+.uiStateCard p {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+@keyframes uiStateCardSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
