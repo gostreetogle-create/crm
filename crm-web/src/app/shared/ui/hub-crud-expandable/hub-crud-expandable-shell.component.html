@@ -2,7 +2,18 @@
   class="hubCrudExpandable"
   [class.hubCrudExpandable--open]="expand.isOpen(tileKey)"
 >
-  <ng-content />
+  <div
+    class="hubCrudExpandable__anchor"
+    [class.hubCrudExpandable__anchor--open]="expand.isOpen(tileKey)"
+    [style.min-height]="expand.isOpen(tileKey) ? layoutReserveWhenOpen : null"
+  >
+    <div
+      class="hubCrudExpandable__panel"
+      [class.hubCrudExpandable__panel--open]="expand.isOpen(tileKey)"
+    >
+      <ng-content />
+    </div>
+  </div>
   <button
     type="button"
     class="hubCrudExpandable__toggle"

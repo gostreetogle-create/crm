@@ -3,6 +3,21 @@
   z-index: 1;
 }
 
+.hubCrudExpandable__anchor--open {
+  position: relative;
+}
+
+/* Раскрытая таблица не толкает контент ниже — панель поверх следующих блоков. */
+.hubCrudExpandable__panel--open {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 50;
+  width: 100%;
+  box-sizing: border-box;
+}
+
 .hubCrudExpandable--open {
   z-index: 40;
   filter: drop-shadow(0 20px 36px var(--shadow-color));

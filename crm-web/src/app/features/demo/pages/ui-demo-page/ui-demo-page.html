@@ -166,8 +166,9 @@
         <p class="dictionaryVariantBody">
           <code>app-hub-crud-expandable-shell</code> + <code>HubCrudExpandStateService</code> (ключ плитки, здесь
           <code>demo-etalon</code>). В свёрнутом виде одна строка; после кнопки с тремя линиями —
-          <code>maxTableBodyRows</code> снимается, <code>tableBodyMaxHeight</code> включает скролл. Так же на
-          <code>/dictionaries</code>.
+          <code>maxTableBodyRows</code> снимается, <code>tableBodyMaxHeight</code> включает скролл. Раскрытый блок
+          идёт <strong>поверх</strong> контента ниже (без сдвига страницы); при необходимости высоту резерва в потоке
+          задайте входом <code>layoutReserveWhenOpen</code> на shell. Так же на <code>/dictionaries</code>.
         </p>
         <div class="dictionaryGrid">
           <section class="dictionaryTile">
