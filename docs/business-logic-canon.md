@@ -17,6 +17,7 @@
 - Именование: `docs/frontend/dictionaries-naming-convention.md`
 - CRUD справочников: `docs/frontend/dictionaries-crud-playbook.md`
 - Чеклист нового справочника: `docs/frontend/new-dictionary-checklist.md`
+- Клиенты (контрагенты): `docs/frontend/clients-crud.md`
 - Цены в справочниках и себестоимость: `docs/frontend/costing-and-dictionary-prices.md`
 
 **Архив идей (предыдущий проект, не код текущего репо):**  

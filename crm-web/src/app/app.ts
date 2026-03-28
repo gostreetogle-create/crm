@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterModule } from '@angular/router';
+import { SessionAuthService } from './core/auth/session-auth.service';
 import { AppHeaderComponent } from './shared/ui/app-header/app-header.component';
 import { ThemePickerComponent } from './shared/ui/theme-picker/theme-picker.component';
 
@@ -11,4 +12,5 @@ import { ThemePickerComponent } from './shared/ui/theme-picker/theme-picker.comp
 })
 export class App {
   protected title = 'crm-web';
+  protected readonly session = inject(SessionAuthService);
 }

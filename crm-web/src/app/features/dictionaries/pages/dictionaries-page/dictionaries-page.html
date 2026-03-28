@@ -103,6 +103,41 @@
       ></crud-layout>
     </app-dictionary-hub-tile>
 
+    <app-dictionary-hub-tile tileKey="clients">
+      <crud-layout
+        title="Клиенты"
+        [showHeader]="false"
+        [showCardLabel]="true"
+        [showNameSearch]="true"
+        [showCreateAction]="true"
+        [canCreate]="permissions.crud().canCreate"
+        createAriaLabel="Добавить клиента"
+        createTitle="Добавить клиента"
+        [columns]="clientsColumns"
+        [data]="clientsStore.clientsData()"
+        [loading]="clientsStore.loading()"
+        [maxTableBodyRows]="hubExpand.previewMaxTableBodyRows('clients')"
+        [tableBodyMaxHeight]="hubExpand.previewTableBodyMaxHeight('clients')"
+        [showExcelActions]="true"
+        [canDownloadTemplate]="permissions.can('excel.template')"
+        [canImportExcel]="permissions.can('excel.import')"
+        [canExportExcel]="permissions.can('excel.export')"
+        [canView]="true"
+        [canDuplicate]="permissions.crud().canDuplicate"
+        [canEdit]="permissions.crud().canEdit"
+        [canDelete]="permissions.crud().canDelete"
+        deleteConfirmMessage="Удалить клиента?"
+        (create)="openClientsCreate()"
+        (downloadTemplate)="downloadClientsTemplateExcel()"
+        (importExcel)="onClientsExcelImported($event)"
+        (exportExcel)="exportClientsExcel()"
+        (view)="openClientsView($event)"
+        (duplicate)="duplicateClient($event)"
+        (edit)="openClientsEdit($event)"
+        (delete)="deleteClient($event)"
+      ></crud-layout>
+    </app-dictionary-hub-tile>
+
     <app-dictionary-hub-tile tileKey="colors">
       <crud-layout
         title="Цвета (RAL)"
@@ -530,6 +565,80 @@
   @if (!isCoatingsViewMode()) {
     <app-ui-button type="submit" [form]="'coatings-form'">
       {{ coatingsStore.isEditMode() ? 'Сохранить изменения' : 'Создать покрытие' }}
+    </app-ui-button>
+  }
+</ng-template>
+
+<ui-modal
+  *ngIf="isClientsModalOpen()"
+  [title]="
+    isClientsViewMode()
+      ? 'Просмотр клиента — Контрагент'
+      : clientsStore.isEditMode()
+        ? 'Редактирование клиента'
+        : 'Новый клиент'
+  "
+  [content]="clientsContentTpl"
+  [actions]="clientsActionsTpl"
+  (close)="closeClientsModal()"
+  [closeOnBackdrop]="isClientsViewMode()"
+  size="md"
+></ui-modal>
+
+<ng-template #clientsContentTpl>
+  <form id="clients-form" [formGroup]="clientsForm" (ngSubmit)="submitClients()" class="formGrid formGridWide">
+    <app-ui-form-field
+      label="Наименование"
+      [required]="true"
+      [invalid]="isClientsInvalid('name')"
+      [errorText]="isClientsInvalid('name') ? 'Минимум 2 символа' : ''"
+    >
+      <input type="text" formControlName="name" placeholder="ООО «Поставщик»" />
+    </app-ui-form-field>
+
+    <app-ui-form-field
+      label="Код в документах"
+      [invalid]="isClientsInvalid('code')"
+      [errorText]="''"
+    >
+      <input type="text" formControlName="code" placeholder="Напр. CLI-102" />
+    </app-ui-form-field>
+
+    <app-ui-form-field
+      label="Наценка клиента, %"
+      [invalid]="isClientsInvalid('clientMarkupPercent')"
+      [errorText]="
+        clientsForm.controls.clientMarkupPercent.hasError('range')
+          ? 'Диапазон 0…1000 %'
+          : ''
+      "
+    >
+      <input type="number" formControlName="clientMarkupPercent" min="0" max="1000" step="1" placeholder="Пусто — не задано" />
+    </app-ui-form-field>
+
+    <app-ui-form-field label="Email" [invalid]="isClientsInvalid('email')" [errorText]="''">
+      <input type="email" formControlName="email" autocomplete="email" />
+    </app-ui-form-field>
+
+    <app-ui-form-field label="Телефон" [invalid]="isClientsInvalid('phone')" [errorText]="''">
+      <input type="tel" formControlName="phone" autocomplete="tel" />
+    </app-ui-form-field>
+
+    <app-ui-form-field class="formWide" label="Заметки" [wide]="true">
+      <textarea rows="3" formControlName="notes"></textarea>
+    </app-ui-form-field>
+
+    <app-ui-checkbox-field class="checkbox formWide" label="Активен" formControlName="isActive"></app-ui-checkbox-field>
+  </form>
+</ng-template>
+
+<ng-template #clientsActionsTpl>
+  <app-ui-button variant="soft" (clicked)="closeClientsModal()">
+    {{ isClientsViewMode() ? 'Закрыть' : 'Отмена' }}
+  </app-ui-button>
+  @if (!isClientsViewMode()) {
+    <app-ui-button type="submit" [form]="'clients-form'">
+      {{ clientsStore.isEditMode() ? 'Сохранить изменения' : 'Создать клиента' }}
     </app-ui-button>
   }
 </ng-template>

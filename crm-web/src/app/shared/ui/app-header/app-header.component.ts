@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { Component, inject } from '@angular/core';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { SessionAuthService } from '../../../core/auth/session-auth.service';
 
 @Component({
   selector: 'app-app-header',
@@ -8,5 +9,13 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
   templateUrl: './app-header.component.html',
   styleUrl: './app-header.component.scss',
 })
-export class AppHeaderComponent {}
+export class AppHeaderComponent {
+  private readonly session = inject(SessionAuthService);
+  private readonly router = inject(Router);
+
+  logout(): void {
+    this.session.logout();
+    void this.router.navigateByUrl('/');
+  }
+}
 

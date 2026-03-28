@@ -1,5 +1,5 @@
 <header class="appHeader">
-  <a routerLink="/" class="brand" aria-label="Sporting Yoga — CRM, на главную">
+  <a routerLink="/dictionaries" class="brand" aria-label="Sporting Yoga — CRM, к справочникам">
     <img
       class="brandLogo"
       src="/branding/sporting-yoga-mark.svg"
@@ -19,6 +19,7 @@
   </nav>
 
   <div class="headerRight">
+    <button type="button" class="logoutBtn" (click)="logout()">Выйти</button>
     <ng-content></ng-content>
   </div>
 </header>

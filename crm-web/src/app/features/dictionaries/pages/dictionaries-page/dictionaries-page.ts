@@ -16,6 +16,8 @@ import { ColorsStore } from '../../../colors/state/colors.store';
 import { CoatingsStore } from '../../../coatings/state/coatings.store';
 import { SurfaceFinishesStore } from '../../../surface-finishes/state/surface-finishes.store';
 import { ProductionWorkTypesStore } from '../../../production-work-types/state/production-work-types.store';
+import { ClientsStore } from '../../../clients/state/clients.store';
+import { ClientItemInput } from '../../../clients/model/client-item';
 import { CrudLayoutComponent, TableColumn } from '../../../../shared/ui/crud-layout/public-api';
 import { UiModal as UiModalComponent } from '../../../../shared/ui/modal/public-api';
 import { PageShellComponent } from '../../../../shared/ui/page-shell/page-shell.component';
@@ -58,6 +60,7 @@ export class DictionariesPage implements OnDestroy {
   readonly coatingsStore = inject(CoatingsStore);
   readonly surfaceFinishesStore = inject(SurfaceFinishesStore);
   readonly productionWorkTypesStore = inject(ProductionWorkTypesStore);
+  readonly clientsStore = inject(ClientsStore);
 
   readonly isWorkTypesModalOpen = signal(false);
   readonly isMaterialsModalOpen = signal(false);
@@ -65,12 +68,14 @@ export class DictionariesPage implements OnDestroy {
   readonly isUnitsModalOpen = signal(false);
   readonly isColorsModalOpen = signal(false);
   readonly isCoatingsModalOpen = signal(false);
+  readonly isClientsModalOpen = signal(false);
   readonly isSurfaceFinishesModalOpen = signal(false);
   readonly isMaterialsViewMode = signal(false);
   readonly isGeometriesViewMode = signal(false);
   readonly isUnitsViewMode = signal(false);
   readonly isColorsViewMode = signal(false);
   readonly isCoatingsViewMode = signal(false);
+  readonly isClientsViewMode = signal(false);
   readonly isSurfaceFinishesViewMode = signal(false);
   readonly isWorkTypesViewMode = signal(false);
   readonly colorQuickAddForMaterials = signal(false);
@@ -93,6 +98,8 @@ export class DictionariesPage implements OnDestroy {
   readonly surfaceFinishesColumns: TableColumn[] = [{ key: 'hubLine', label: 'Отделка' }];
 
   readonly coatingsColumns: TableColumn[] = [{ key: 'hubLine', label: 'Покрытие' }];
+
+  readonly clientsColumns: TableColumn[] = [{ key: 'hubLine', label: 'Клиент' }];
 
   readonly workTypesForm = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.minLength(2)]],
@@ -169,6 +176,17 @@ export class DictionariesPage implements OnDestroy {
     thicknessMicron: [null as number | null, [Validators.min(0)]],
   });
 
+  readonly clientsForm = this.fb.nonNullable.group({
+    name: ['', [Validators.required, Validators.minLength(2)]],
+    code: [''],
+    /** Пусто в UI = null; диапазон проверяем при отправке. */
+    clientMarkupPercent: [null as number | null],
+    email: [''],
+    phone: [''],
+    notes: [''],
+    isActive: [true],
+  });
+
   constructor() {
     this.materialsStore.loadItems();
     this.geometriesStore.loadItems();
@@ -177,6 +195,7 @@ export class DictionariesPage implements OnDestroy {
     this.coatingsStore.loadItems();
     this.surfaceFinishesStore.loadItems();
     this.productionWorkTypesStore.loadItems();
+    this.clientsStore.loadItems();
 
     this.sub.add(
       this.workTypesForm.controls.name.valueChanges.subscribe(() => {
@@ -1008,6 +1027,112 @@ export class DictionariesPage implements OnDestroy {
     this.isCoatingsModalOpen.set(true);
   }
 
+  openClientsCreate(): void {
+    if (!this.permissions.crud().canCreate) return;
+    this.isClientsViewMode.set(false);
+    this.clientsForm.enable({ emitEvent: false });
+    this.clientsStore.startCreate();
+    this.clientsForm.reset({
+      name: '',
+      code: '',
+      clientMarkupPercent: null,
+      email: '',
+      phone: '',
+      notes: '',
+      isActive: true,
+    });
+    this.isClientsModalOpen.set(true);
+  }
+
+  openClientsEdit(id: string): void {
+    if (!this.permissions.crud().canEdit) return;
+    this.isClientsViewMode.set(false);
+    this.clientsForm.enable({ emitEvent: false });
+    const item = this.clientsStore.items().find((x) => x.id === id);
+    if (!item) return;
+    this.clientsStore.startEdit(item.id);
+    this.clientsForm.reset({
+      name: item.name ?? '',
+      code: item.code ?? '',
+      clientMarkupPercent: item.clientMarkupPercent ?? null,
+      email: item.email ?? '',
+      phone: item.phone ?? '',
+      notes: item.notes ?? '',
+      isActive: item.isActive,
+    });
+    this.isClientsModalOpen.set(true);
+  }
+
+  closeClientsModal(): void {
+    this.clientsStore.resetForm();
+    this.isClientsViewMode.set(false);
+    this.isClientsModalOpen.set(false);
+  }
+
+  submitClients(): void {
+    const markup = this.clientsForm.controls.clientMarkupPercent.value;
+    const cMarkup = this.clientsForm.controls.clientMarkupPercent;
+    if (markup !== null && markup !== undefined && (markup < 0 || markup > 1000)) {
+      cMarkup.setErrors({ range: true });
+      this.clientsStore.submit({ value: this.buildClientPayload(), isValid: false });
+      this.clientsForm.markAllAsTouched();
+      return;
+    }
+    if (cMarkup.hasError('range')) {
+      cMarkup.setErrors(null);
+    }
+    const payload = this.buildClientPayload();
+    if (this.clientsForm.invalid) {
+      this.clientsStore.submit({ value: payload, isValid: false });
+      this.clientsForm.markAllAsTouched();
+      return;
+    }
+    this.clientsStore.submit({ value: payload, isValid: true });
+    this.closeClientsModal();
+  }
+
+  deleteClient(id: string): void {
+    if (!this.permissions.crud().canDelete) return;
+    this.clientsStore.delete(id);
+  }
+
+  duplicateClient(id: string): void {
+    if (!this.permissions.can('crud.duplicate')) return;
+    const item = this.clientsStore.items().find((x) => x.id === id);
+    if (!item) return;
+    this.isClientsViewMode.set(false);
+    this.clientsForm.enable({ emitEvent: false });
+    this.clientsStore.startCreate();
+    this.clientsForm.reset({
+      name: `${item.name} (копия)`,
+      code: item.code ? `${item.code}-копия` : '',
+      clientMarkupPercent: item.clientMarkupPercent ?? null,
+      email: item.email ?? '',
+      phone: item.phone ?? '',
+      notes: item.notes ?? '',
+      isActive: item.isActive,
+    });
+    this.isClientsModalOpen.set(true);
+  }
+
+  openClientsView(id: string): void {
+    const item = this.clientsStore.items().find((x) => x.id === id);
+    if (!item) return;
+    this.clientsStore.resetForm();
+    this.clientsForm.reset({
+      name: item.name ?? '',
+      code: item.code ?? '',
+      clientMarkupPercent: item.clientMarkupPercent ?? null,
+      email: item.email ?? '',
+      phone: item.phone ?? '',
+      notes: item.notes ?? '',
+      isActive: item.isActive,
+    });
+    this.clientsForm.disable({ emitEvent: false });
+    this.isClientsViewMode.set(true);
+    this.isClientsModalOpen.set(true);
+  }
+
   selectedMaterialColorHex(): string {
     const id = this.materialsForm.controls.colorId.value;
     const selected = this.colorsStore.options().find((x) => x.id === id);
@@ -1220,6 +1345,21 @@ export class DictionariesPage implements OnDestroy {
     }
   }
 
+  async onClientsExcelImported(file: File): Promise<void> {
+    try {
+      const rows = await this.excelRowsFromFile(file);
+      const parsed = this.validateAndMapClientsRows(rows);
+      if (!parsed.ok) {
+        this.excelImportStatus.set(`Импорт отклонен: ${parsed.errors.join(' | ')}`);
+        return;
+      }
+      this.clientsStore.createMany(parsed.rows);
+      this.excelImportStatus.set(`Импортировано: ${parsed.rows.length} строк.`);
+    } catch {
+      this.excelImportStatus.set('Импорт отклонен: не удалось прочитать файл.');
+    }
+  }
+
   async exportMaterialsExcel(): Promise<void> {
     const rows = this.materialsStore.items().map((item) => {
       const unit = this.unitsStore.items().find((x) => x.id === item.unitId);
@@ -1382,6 +1522,42 @@ export class DictionariesPage implements OnDestroy {
     );
   }
 
+  async exportClientsExcel(): Promise<void> {
+    await this.exportRowsToExcel(
+      'clients.xlsx',
+      'Clients',
+      this.clientsStore.items().map((item) => ({
+        Наименование: item.name,
+        Код: item.code,
+        'Наценка %': item.clientMarkupPercent ?? '',
+        Email: item.email,
+        Телефон: item.phone,
+        Активен: item.isActive ? 'да' : 'нет',
+        Заметки: item.notes,
+      })),
+      ['Наименование', 'Код', 'Наценка %', 'Email', 'Телефон', 'Активен', 'Заметки']
+    );
+  }
+
+  async downloadClientsTemplateExcel(): Promise<void> {
+    await this.exportRowsToExcel(
+      'clients-template.xlsx',
+      'Clients_TEMPLATE',
+      [
+        {
+          Наименование: 'ООО «Пример»',
+          Код: 'EX-01',
+          'Наценка %': 10,
+          Email: 'office@example.test',
+          Телефон: '+7 900 000-00-00',
+          Активен: 'да',
+          Заметки: 'Предоплата 30%',
+        },
+      ],
+      ['Наименование', 'Код', 'Наценка %', 'Email', 'Телефон', 'Активен', 'Заметки']
+    );
+  }
+
   private syncMaterialColorFromReference(colorId: string): void {
     const selected = this.colorsStore.options().find((x) => x.id === colorId);
     if (!selected) {
@@ -1500,6 +1676,14 @@ export class DictionariesPage implements OnDestroy {
     );
   }
 
+  isClientsInvalid(controlName: keyof typeof this.clientsForm.controls): boolean {
+    const control = this.clientsForm.controls[controlName];
+    return (
+      control.invalid &&
+      (control.touched || control.dirty || this.clientsStore.formSubmitAttempted())
+    );
+  }
+
   materialsPurchasePriceErrorText(): string {
     const c = this.materialsForm.controls.purchasePriceRub;
     if (
@@ -1595,6 +1779,23 @@ export class DictionariesPage implements OnDestroy {
       coatingType: this.coatingsForm.controls.coatingType.value.trim(),
       coatingSpec: this.coatingsForm.controls.coatingSpec.value.trim(),
       thicknessMicron: this.coatingsForm.controls.thicknessMicron.value ?? undefined,
+    };
+  }
+
+  private buildClientPayload(): ClientItemInput {
+    const raw = this.clientsForm.controls.clientMarkupPercent.value;
+    let clientMarkupPercent: number | null = null;
+    if (raw !== null && raw !== undefined && !Number.isNaN(Number(raw))) {
+      clientMarkupPercent = Math.round(Number(raw));
+    }
+    return {
+      name: this.clientsForm.controls.name.value.trim(),
+      code: this.clientsForm.controls.code.value.trim(),
+      clientMarkupPercent,
+      email: this.clientsForm.controls.email.value.trim(),
+      phone: this.clientsForm.controls.phone.value.trim(),
+      notes: this.clientsForm.controls.notes.value.trim(),
+      isActive: this.clientsForm.controls.isActive.value,
     };
   }
 
@@ -2262,6 +2463,81 @@ export class DictionariesPage implements OnDestroy {
       }
 
       mapped.push({ coatingType, coatingSpec, thicknessMicron });
+    });
+
+    if (errors.length) return { ok: false, rows: mapped, errors: errors.slice(0, 6) };
+    return { ok: true, rows: mapped, errors: [] };
+  }
+
+  private validateAndMapClientsRows(rows: ReadonlyArray<Record<string, unknown>>): {
+    ok: boolean;
+    rows: ClientItemInput[];
+    errors: string[];
+  } {
+    const errors: string[] = [];
+    const mapped: ClientItemInput[] = [];
+
+    if (!rows.length) return { ok: false, rows: mapped, errors: ['Пустой файл.'] };
+
+    const requiredHeaders = ['Наименование', 'Код', 'Наценка %', 'Email', 'Телефон', 'Активен', 'Заметки'];
+    const firstKeys = Object.keys(rows[0] ?? {});
+    const missingHeaders = requiredHeaders.filter((h) => !firstKeys.includes(h));
+    if (missingHeaders.length) {
+      return { ok: false, rows: mapped, errors: [`Нет колонок: ${missingHeaders.join(', ')}`] };
+    }
+
+    rows.forEach((row, idx) => {
+      const rowNo = idx + 2;
+      const name = String(row['Наименование'] ?? '').trim();
+      const code = String(row['Код'] ?? '').trim();
+      const markupRaw = row['Наценка %'];
+      const email = String(row['Email'] ?? '').trim();
+      const phone = String(row['Телефон'] ?? '').trim();
+      const activeRaw = String(row['Активен'] ?? '')
+        .trim()
+        .toLowerCase();
+      const notes = String(row['Заметки'] ?? '').trim();
+
+      if (!name) {
+        errors.push(`Строка ${rowNo}: укажите наименование.`);
+        return;
+      }
+
+      let clientMarkupPercent: number | null = null;
+      if (markupRaw !== '' && markupRaw !== null && markupRaw !== undefined) {
+        const n = this.parseNumberOrNull(markupRaw);
+        if (n === null) {
+          errors.push(`Строка ${rowNo}: «Наценка %» должна быть числом или пусто.`);
+          return;
+        }
+        if (n < 0 || n > 1000) {
+          errors.push(`Строка ${rowNo}: наценка в диапазоне 0…1000 %.`);
+          return;
+        }
+        clientMarkupPercent = Math.round(n);
+      }
+
+      let isActiveRow = true;
+      if (!activeRaw) {
+        isActiveRow = true;
+      } else if (['да', 'yes', 'true', '1'].includes(activeRaw)) {
+        isActiveRow = true;
+      } else if (['нет', 'no', 'false', '0'].includes(activeRaw)) {
+        isActiveRow = false;
+      } else {
+        errors.push(`Строка ${rowNo}: в «Активен» укажите да или нет.`);
+        return;
+      }
+
+      mapped.push({
+        name,
+        code,
+        clientMarkupPercent,
+        email,
+        phone,
+        notes,
+        isActive: isActiveRow,
+      });
     });
 
     if (errors.length) return { ok: false, rows: mapped, errors: errors.slice(0, 6) };

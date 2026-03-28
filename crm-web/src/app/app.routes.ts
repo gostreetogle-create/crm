@@ -1,5 +1,6 @@
 import { Route } from '@angular/router';
 import { API_CONFIG, ApiConfig } from './core/api/api-config';
+import { authGuard } from './core/auth/auth.guard';
 import { COLORS_REPOSITORY } from './features/colors/data/colors.repository';
 import { ColorsMockRepository } from './features/colors/data/colors.mock-repository';
 import { ColorsStore } from './features/colors/state/colors.store';
@@ -22,11 +23,19 @@ import { UNITS_REPOSITORY } from './features/units/data/units.repository';
 import { UnitsHttpRepository } from './features/units/data/units.http-repository';
 import { UnitsMockRepository } from './features/units/data/units.mock-repository';
 import { UnitsStore } from './features/units/state/units.store';
+import { CLIENTS_REPOSITORY } from './features/clients/data/clients.repository';
+import { ClientsMockRepository } from './features/clients/data/clients.mock-repository';
+import { ClientsStore } from './features/clients/state/clients.store';
 
 export const appRoutes: Route[] = [
-  { path: '', redirectTo: '/dictionaries', pathMatch: 'full' },
+  {
+    path: '',
+    loadComponent: () =>
+      import('./features/auth/pages/login-page/login-page.component').then((m) => m.LoginPage),
+  },
   {
     path: 'dictionaries',
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./features/dictionaries/pages/dictionaries-page/dictionaries-page').then(
         (m) => m.DictionariesPage
@@ -77,6 +86,12 @@ export const appRoutes: Route[] = [
         provide: PRODUCTION_WORK_TYPES_REPOSITORY,
         useExisting: ProductionWorkTypesMockRepository,
       },
+      ClientsMockRepository,
+      ClientsStore,
+      {
+        provide: CLIENTS_REPOSITORY,
+        useExisting: ClientsMockRepository,
+      },
     ],
   },
   {
@@ -91,6 +106,7 @@ export const appRoutes: Route[] = [
   },
   {
     path: 'demo',
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./features/demo/pages/ui-demo-page/ui-demo-page').then((m) => m.UiDemoPage),
   },

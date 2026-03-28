@@ -5,3 +5,8 @@
 .appMain {
   padding: var(--app-main-padding-top) var(--app-main-padding-x) var(--app-main-padding-bottom);
 }
+
+.appMain--guest {
+  padding-top: max(12px, env(safe-area-inset-top));
+  min-height: 100vh;
+}

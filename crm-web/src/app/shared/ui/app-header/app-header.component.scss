@@ -83,5 +83,31 @@
 
 .headerRight {
   justify-self: end;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logoutBtn {
+  margin: 0;
+  padding: var(--ui-nav-link-padding-y) var(--ui-nav-link-padding-x);
+  font: inherit;
+  font-size: var(--font-size-label);
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}
+
+.logoutBtn:hover {
+  color: var(--text-primary);
+  border-color: var(--border-color);
+  background: var(--surface-soft);
+}
+
+.logoutBtn:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  outline-offset: 2px;
 }
 

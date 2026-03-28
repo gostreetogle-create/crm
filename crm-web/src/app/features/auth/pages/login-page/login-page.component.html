@@ -1,0 +1,61 @@
+<div class="loginStage" aria-label="Экран входа">
+  <div class="loginBackdrop" aria-hidden="true"></div>
+  <div class="loginGrid">
+    <section class="loginPanel">
+      <header class="loginBrand">
+        <img
+          class="loginLogo"
+          src="/branding/sporting-yoga-mark.svg"
+          width="48"
+          height="48"
+          alt=""
+          decoding="async"
+        />
+        <div class="loginBrandText">
+          <h1 class="loginTitle">CRM</h1>
+          <p class="loginTagline">Sporting Yoga · производство</p>
+        </div>
+      </header>
+
+      <p class="loginLead">Войдите, чтобы открыть справочники и рабочие экраны.</p>
+
+      <form class="loginForm" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <app-ui-form-field
+          label="Логин"
+          [required]="true"
+          [invalid]="form.controls.username.invalid && form.controls.username.touched"
+          [errorText]="form.controls.username.touched && form.controls.username.hasError('required') ? 'Укажите логин' : ''"
+        >
+          <input type="text" formControlName="username" name="username" autocomplete="username" />
+        </app-ui-form-field>
+
+        <app-ui-form-field
+          label="Пароль"
+          [required]="true"
+          [invalid]="form.controls.password.invalid && form.controls.password.touched"
+          [errorText]="form.controls.password.touched && form.controls.password.hasError('required') ? 'Укажите пароль' : ''"
+        >
+          <input type="password" formControlName="password" name="password" autocomplete="current-password" />
+        </app-ui-form-field>
+
+        @if (errorText) {
+          <p class="loginFormError" role="alert">{{ errorText }}</p>
+        }
+
+        <div class="loginActions">
+          <app-ui-button type="submit" variant="primary">Войти в систему</app-ui-button>
+        </div>
+      </form>
+
+      <p class="loginHint">Демо-режим: принимается любой непустой логин и пароль. Реальная проверка будет подключена позже.</p>
+    </section>
+
+    <aside class="loginAside" aria-hidden="true">
+      <div class="loginAsideInner">
+        <span class="loginAsideLine">Справочники</span>
+        <span class="loginAsideLine">Материалы · Клиенты · Виды работ</span>
+        <span class="loginAsideLine muted">Единый стиль интерфейса приложения</span>
+      </div>
+    </aside>
+  </div>
+</div>

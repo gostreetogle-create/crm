@@ -146,6 +146,20 @@
       "Цена_базовая",
       "Описание"
     ]
+  },
+  "Справочник_Клиенты": {
+    "status": "exists",
+    "description": "Контрагенты для КП; индивидуальная наценка к ценообразованию (наследие: Client.clientMarkup).",
+    "fields": [
+      "Наименование",
+      "Код",
+      "Наценка_процент",
+      "Email",
+      "Телефон",
+      "Заметки",
+      "Активен"
+    ],
+    "domainVsUi": "В UI: name, code, clientMarkupPercent (0…1000 или null), email, phone, notes, isActive; hubLine в таблице. См. docs/frontend/clients-crud.md."
   }
 }
 </think>
