@@ -28,6 +28,21 @@
   grid-template-columns: auto 1fr;
 }
 
+.colorHexPreviewRow--tight {
+  gap: 6px;
+}
+
+.colorHexPreviewRowLeadSwatch .colorSwatch {
+  inline-size: 3.75rem;
+  block-size: 30px;
+  min-block-size: 30px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--border-color) 50%, transparent),
+    0 1px 2px color-mix(in srgb, var(--shadow-color) 14%, transparent);
+}
+
 .colorFullNameInput {
   min-width: 0;
   width: 100%;
@@ -57,8 +72,72 @@
   line-height: 1.2;
 }
 
+/* Ширина под модалку: раньше 28rem заставляло длинную форму уходить в скролл по вертикали */
 .geometriesFormPanel {
-  max-width: min(100%, 28rem);
+  max-width: 100%;
+}
+
+/* Секции модалок справочников (единый вид с геометрией «Параметры, мм»). */
+.dictionaryFormSection {
+  margin: 0;
+  padding: var(--ui-space-2);
+  border: 1px solid color-mix(in srgb, var(--border-color) 65%, transparent);
+  border-radius: var(--radius-card);
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+.dictionaryFormSection legend {
+  padding: 0 6px;
+  font-size: var(--font-size-small);
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+/* Блок авто-полей: фон как у карточки, не «серый инпут» и без фокуса как у ввода. */
+.dictionaryFormSection--autoFields {
+  background: var(--surface);
+}
+
+.dictionaryFormSectionBody {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.dictionaryFormSectionBody--2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 14px;
+}
+
+.dictionaryFormSectionBody--2 .dictionaryFieldRowFull {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 640px) {
+  .dictionaryFormSectionBody--2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+:host ::ng-deep .dictionaryFormSection--autoFields input[readonly] {
+  background: var(--surface);
+  border: 1px solid transparent;
+  color: var(--text-primary);
+  cursor: default;
+  pointer-events: none;
+  box-shadow: none;
+}
+
+:host ::ng-deep .dictionaryFormSection--autoFields input[readonly]:focus,
+:host ::ng-deep .dictionaryFormSection--autoFields input[readonly]:focus-visible {
+  outline: none;
+  box-shadow: none;
+  border-color: transparent;
+}
+
+:host ::ng-deep .dictionaryFormSection--autoFields .ui-form-field.invalid input[readonly]:focus {
+  outline: none;
 }
 
 .geometryParams {

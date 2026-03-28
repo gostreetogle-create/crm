@@ -11,7 +11,7 @@
       [title]="createTitle"
       (clicked)="onCreate()"
     >
-      +
+      <span class="squareIconTone squareIconTone--affirm"><svg lucidePlus [size]="18"></svg></span>
     </app-ui-button>
   }
 </ng-template>
@@ -178,7 +178,7 @@
     columns.length > 0 && columns.length <= 2 && !(columns.length === 2 && hasRowActions)
   "
   [class.tableViewBodyMaxHeight]="!!tableBodyMaxHeight"
-  [style.max-height]="tableBodyMaxHeight || null"
+  [style.--crud-table-body-max-height]="tableBodyMaxHeight || null"
 >
   <table class="crudTable" [class.crudTableHub]="columns.length > 0 && columns.length <= 2">
     <thead>

@@ -3,7 +3,7 @@ import { patchState, signalStore, withComputed, withMethods, withState } from '@
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { filter, pipe, switchMap, tap } from 'rxjs';
 import { CLIENTS_REPOSITORY, ClientsRepository } from '../data/clients.repository';
-import { ClientItem, ClientItemInput } from '../model/client-item';
+import { ClientItem, ClientItemInput, formatClientFio } from '../model/client-item';
 
 type ClientsState = {
   items: ClientItem[];
@@ -29,24 +29,26 @@ export const ClientsStore = signalStore(
   withComputed(({ items, editId }) => ({
     clientsData: computed(() =>
       items()
-        .map((item) => ({
-          id: item.id,
-          hubLine: [item.name, item.code].filter(Boolean).join(' · '),
-          name: item.name,
-          code: item.code || '—',
-          clientMarkupPercent: formatMarkup(item.clientMarkupPercent),
-          email: item.email || '—',
-          phone: item.phone || '—',
-          isActive: item.isActive ? 'Да' : 'Нет',
-        }))
-        .sort((a, b) => String(a.name).localeCompare(String(b.name), 'ru'))
+        .map((item) => {
+          const fio = formatClientFio(item);
+          return {
+            id: item.id,
+            hubLine: fio,
+            fio,
+            clientMarkupPercent: formatMarkup(item.clientMarkupPercent),
+            email: item.email || '—',
+            phone: item.phone || '—',
+            isActive: item.isActive ? 'Да' : 'Нет',
+          };
+        })
+        .sort((a, b) => String(a.fio).localeCompare(String(b.fio), 'ru'))
     ),
     options: computed(() =>
       items()
         .filter((x) => x.isActive)
         .map((item) => ({
           id: item.id,
-          label: item.code ? `${item.name} (${item.code})` : item.name,
+          label: formatClientFio(item),
         }))
         .sort((a, b) => String(a.label).localeCompare(String(b.label), 'ru'))
     ),

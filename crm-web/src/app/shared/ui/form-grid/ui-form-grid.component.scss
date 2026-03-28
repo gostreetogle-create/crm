@@ -1,0 +1,27 @@
+:host {
+  display: grid;
+  width: 100%;
+  gap: var(--ui-form-grid-gap, var(--ui-space-2, 12px));
+}
+
+:host.uiFormGrid--cols2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: var(--ui-form-grid-column-gap, 14px);
+}
+
+:host.uiFormGrid--cols3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: var(--ui-form-grid-column-gap, 14px);
+}
+
+/* Прямые потомки с маркером на всю ширину сетки */
+:host > .uiFormGrid__full {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 720px) {
+  :host.uiFormGrid--cols2,
+  :host.uiFormGrid--cols3 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

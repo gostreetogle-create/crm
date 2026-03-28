@@ -19,6 +19,9 @@ export const MODAL_AUTO_CAPTURE = true;
  * Reusable modal dialog with CDK focus trap.
  * Используй [cdkTrapFocusAutoCapture]="true" для авто-фокуса.
  * cdkFocusInitial deprecated — не добавляй!
+ *
+ * Один компонент на весь продукт: отдельной «модалки без скролла» нет — контент до высоты окна,
+ * прокрутка только если форма выше вьюпорта (см. design-system).
  */
 /* eslint-disable @angular-eslint/component-selector */
 @Component({
@@ -32,7 +35,8 @@ export class UiModal implements AfterViewInit {
   @Input({ required: true }) title!: string;
   @Input({ required: true }) content!: TemplateRef<unknown>;
   @Input() actions: TemplateRef<unknown> | null = null;
-  @Input() size: 'sm' | 'md' | 'lg' = 'md';
+  /** `lg` / `xl` — шире окно; высота контента везде до `100dvh` без искусственного усечения. */
+  @Input() size: 'sm' | 'md' | 'lg' | 'xl' = 'md';
   @Input() closeOnBackdrop = true;
 
   @Output('close') readonly closed = new EventEmitter<void>();

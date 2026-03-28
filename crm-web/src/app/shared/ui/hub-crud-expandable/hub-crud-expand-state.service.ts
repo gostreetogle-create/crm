@@ -19,7 +19,9 @@ export class HubCrudExpandStateService {
   }
 
   /**
-   * Единое значение max-height тела таблицы в развёрнутом виде (хаб справочников / demo).
+   * Лимит высоты тела таблицы в развёрнутой плитке на узких/средних вьюпортах (менее 1024px по ширине).
+   * На широких экранах тот же вход передаётся в `crud-layout`, но стили снимают max-height —
+   * список виден целиком в плитке, прокрутка у страницы (один канон, без второй разновидности карточки).
    */
   readonly expandedTableBodyMaxHeight = 'min(72vh, 34rem)';
 
@@ -28,7 +30,10 @@ export class HubCrudExpandStateService {
     return this.isOpen(tileKey) ? null : 1;
   }
 
-  /** В свёрнутой плитке — без ограничения высоты по превью; при раскрытии — cap по viewport. */
+  /**
+   * Свёрнуто: без ограничения высоты обёртки (видна одна строка за счёт maxTableBodyRows).
+   * Развёрнуто: передаём cap в `crud-layout` (на широком экране его перекрывает media query в компоненте).
+   */
   previewTableBodyMaxHeight(tileKey: string): string | null {
     return this.isOpen(tileKey) ? this.expandedTableBodyMaxHeight : null;
   }

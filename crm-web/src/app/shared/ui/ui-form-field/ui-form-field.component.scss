@@ -5,12 +5,15 @@
 .ui-form-field .fieldLabel {
   display: flex;
   flex-direction: column;
-  gap: var(--ui-space-0p5);
-  font-size: var(--font-size-label);
+  gap: var(--ui-field-label-value-gap);
 }
 
 .ui-form-field .fieldTitle {
-  color: var(--text-primary);
+  font-size: var(--font-size-label);
+  font-weight: var(--font-weight-field-label);
+  line-height: var(--line-height-field-label);
+  color: var(--text-form-label);
+  letter-spacing: 0.01em;
 }
 
 .ui-form-field .requiredMark {
@@ -24,7 +27,10 @@
   background: var(--surface-soft);
   color: var(--text-primary);
   padding: 4px var(--ui-input-padding-x);
-  font: inherit;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-control);
+  font-weight: 400;
+  line-height: var(--line-height-control);
   min-height: 30px;
 }
 
@@ -34,7 +40,10 @@
   background: var(--surface-soft);
   color: var(--text-primary);
   padding: 6px var(--ui-input-padding-x);
-  font: inherit;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-control);
+  font-weight: 400;
+  line-height: var(--line-height-control);
 }
 
 .ui-form-field.invalid input,

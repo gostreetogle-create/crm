@@ -116,7 +116,10 @@
   color: var(--text-primary);
   padding: 4px var(--ui-input-padding-x);
   min-height: 30px;
-  font: inherit;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-control);
+  font-weight: 400;
+  line-height: var(--line-height-control);
 }
 
 .crudToolbarExcel {
@@ -134,9 +137,19 @@
   overflow-x: auto;
 }
 
+/* tableBodyMaxHeight → --crud-table-body-max-height (HubCrudExpandStateService на хабе). */
 .tableView.tableViewBodyMaxHeight {
+  max-height: var(--crud-table-body-max-height);
   overflow-y: auto;
   overscroll-behavior: contain;
+}
+
+/* ≥1024px: без внутреннего скролла таблицы — рост по высоте, скролл страницы. */
+@media (min-width: 1024px) {
+  .tableView.tableViewBodyMaxHeight {
+    max-height: none;
+    overflow-y: visible;
+  }
 }
 
 /* Хаб (1–2 колонки): таблица укладывается в плитку — без горизонтального скролла (см. crudTableHub). */
@@ -150,10 +163,7 @@
   border-collapse: collapse;
 }
 
-/*
- * Хаб справочников и эталонный CRUD на /demo: 1–2 колонки данных + действия.
- * Единое поведение: одна строка текста + ellipsis, колонка действий не «вылетает» с плитки.
- */
+/* Хаб /demo: 1–2 колонки + действия; ellipsis, действия не вылетают с плитки. */
 .crudTable.crudTableHub {
   table-layout: fixed;
   min-width: 0;
@@ -215,10 +225,7 @@
   min-width: 0;
 }
 
-/*
- * Одна колонка данных + действия (хаб): одна ячейка colspan — flex внутри.
- * Текст с ellipsis; блок действий справа с фоном и лёгким перекрытием конца строки (не уезжает за плитку).
- */
+/* Хаб merged cell: flex, ellipsis, действия справа. */
 .crudTable.crudTableHub td.crudHubMergedCell {
   overflow: visible;
   vertical-align: middle;
@@ -385,11 +392,16 @@
 }
 
 .card-label {
-  color: var(--text-muted);
+  color: var(--text-form-label);
+  font-size: var(--font-size-label);
+  font-weight: var(--font-weight-field-label);
+  line-height: var(--line-height-field-label);
 }
 
 .card-value {
   color: var(--text-primary);
+  font-size: var(--font-size-control);
+  line-height: var(--line-height-control);
   min-width: 0;
 }
 

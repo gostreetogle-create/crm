@@ -1,5 +1,6 @@
 import { NgFor, NgIf } from '@angular/common';
 import { Component, OnDestroy, computed, inject, signal } from '@angular/core';
+import { LucidePlus } from '@lucide/angular';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { PermissionsService } from '../../../../core/auth/public-api';
@@ -19,6 +20,7 @@ import { ProductionWorkTypesStore } from '../../../production-work-types/state/p
 import { ClientsStore } from '../../../clients/state/clients.store';
 import { ClientItemInput } from '../../../clients/model/client-item';
 import { CrudLayoutComponent, TableColumn } from '../../../../shared/ui/crud-layout/public-api';
+import { UiFormGridComponent } from '../../../../shared/ui/form-grid/public-api';
 import { UiModal as UiModalComponent } from '../../../../shared/ui/modal/public-api';
 import { PageShellComponent } from '../../../../shared/ui/page-shell/page-shell.component';
 import { UiButtonComponent } from '../../../../shared/ui/ui-button/ui-button.component';
@@ -39,10 +41,12 @@ import { DictionaryHubTileComponent } from '../../components/dictionary-hub-tile
     DictionaryHubTileComponent,
     CrudLayoutComponent,
     UiModalComponent,
+    UiFormGridComponent,
     UiButtonComponent,
     UiCheckboxFieldComponent,
     UiFormFieldComponent,
     HexRgbFieldComponent,
+    LucidePlus,
   ],
   templateUrl: './dictionaries-page.html',
   styleUrl: './dictionaries-page.scss',
@@ -99,7 +103,7 @@ export class DictionariesPage implements OnDestroy {
 
   readonly coatingsColumns: TableColumn[] = [{ key: 'hubLine', label: 'Покрытие' }];
 
-  readonly clientsColumns: TableColumn[] = [{ key: 'hubLine', label: 'Клиент' }];
+  readonly clientsColumns: TableColumn[] = [{ key: 'hubLine', label: 'ФИО' }];
 
   readonly workTypesForm = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.minLength(2)]],
@@ -177,13 +181,19 @@ export class DictionariesPage implements OnDestroy {
   });
 
   readonly clientsForm = this.fb.nonNullable.group({
-    name: ['', [Validators.required, Validators.minLength(2)]],
-    code: [''],
+    lastName: ['', [Validators.required, Validators.minLength(2)]],
+    firstName: ['', [Validators.required, Validators.minLength(2)]],
+    patronymic: [''],
+    address: [''],
+    phone: [''],
+    email: [''],
+    notes: [''],
     /** Пусто в UI = null; диапазон проверяем при отправке. */
     clientMarkupPercent: [null as number | null],
-    email: [''],
-    phone: [''],
-    notes: [''],
+    passportSeries: [''],
+    passportNumber: [''],
+    passportIssuedBy: [''],
+    passportIssuedDate: [''],
     isActive: [true],
   });
 
@@ -1033,12 +1043,18 @@ export class DictionariesPage implements OnDestroy {
     this.clientsForm.enable({ emitEvent: false });
     this.clientsStore.startCreate();
     this.clientsForm.reset({
-      name: '',
-      code: '',
-      clientMarkupPercent: null,
-      email: '',
+      lastName: '',
+      firstName: '',
+      patronymic: '',
+      address: '',
       phone: '',
+      email: '',
       notes: '',
+      clientMarkupPercent: null,
+      passportSeries: '',
+      passportNumber: '',
+      passportIssuedBy: '',
+      passportIssuedDate: '',
       isActive: true,
     });
     this.isClientsModalOpen.set(true);
@@ -1052,12 +1068,18 @@ export class DictionariesPage implements OnDestroy {
     if (!item) return;
     this.clientsStore.startEdit(item.id);
     this.clientsForm.reset({
-      name: item.name ?? '',
-      code: item.code ?? '',
-      clientMarkupPercent: item.clientMarkupPercent ?? null,
-      email: item.email ?? '',
+      lastName: item.lastName ?? '',
+      firstName: item.firstName ?? '',
+      patronymic: item.patronymic ?? '',
+      address: item.address ?? '',
       phone: item.phone ?? '',
+      email: item.email ?? '',
       notes: item.notes ?? '',
+      clientMarkupPercent: item.clientMarkupPercent ?? null,
+      passportSeries: item.passportSeries ?? '',
+      passportNumber: item.passportNumber ?? '',
+      passportIssuedBy: item.passportIssuedBy ?? '',
+      passportIssuedDate: item.passportIssuedDate ?? '',
       isActive: item.isActive,
     });
     this.isClientsModalOpen.set(true);
@@ -1104,12 +1126,18 @@ export class DictionariesPage implements OnDestroy {
     this.clientsForm.enable({ emitEvent: false });
     this.clientsStore.startCreate();
     this.clientsForm.reset({
-      name: `${item.name} (копия)`,
-      code: item.code ? `${item.code}-копия` : '',
-      clientMarkupPercent: item.clientMarkupPercent ?? null,
-      email: item.email ?? '',
+      lastName: `${item.lastName} (копия)`,
+      firstName: item.firstName ?? '',
+      patronymic: item.patronymic ?? '',
+      address: item.address ?? '',
       phone: item.phone ?? '',
+      email: item.email ?? '',
       notes: item.notes ?? '',
+      clientMarkupPercent: item.clientMarkupPercent ?? null,
+      passportSeries: item.passportSeries ?? '',
+      passportNumber: item.passportNumber ?? '',
+      passportIssuedBy: item.passportIssuedBy ?? '',
+      passportIssuedDate: item.passportIssuedDate ?? '',
       isActive: item.isActive,
     });
     this.isClientsModalOpen.set(true);
@@ -1120,12 +1148,18 @@ export class DictionariesPage implements OnDestroy {
     if (!item) return;
     this.clientsStore.resetForm();
     this.clientsForm.reset({
-      name: item.name ?? '',
-      code: item.code ?? '',
-      clientMarkupPercent: item.clientMarkupPercent ?? null,
-      email: item.email ?? '',
+      lastName: item.lastName ?? '',
+      firstName: item.firstName ?? '',
+      patronymic: item.patronymic ?? '',
+      address: item.address ?? '',
       phone: item.phone ?? '',
+      email: item.email ?? '',
       notes: item.notes ?? '',
+      clientMarkupPercent: item.clientMarkupPercent ?? null,
+      passportSeries: item.passportSeries ?? '',
+      passportNumber: item.passportNumber ?? '',
+      passportIssuedBy: item.passportIssuedBy ?? '',
+      passportIssuedDate: item.passportIssuedDate ?? '',
       isActive: item.isActive,
     });
     this.clientsForm.disable({ emitEvent: false });
@@ -1523,38 +1557,80 @@ export class DictionariesPage implements OnDestroy {
   }
 
   async exportClientsExcel(): Promise<void> {
+    const headers = [
+      'Фамилия',
+      'Имя',
+      'Отчество',
+      'Адрес',
+      'Телефон',
+      'Email',
+      'Наценка %',
+      'Активен',
+      'Заметки',
+      'Паспорт серия',
+      'Паспорт номер',
+      'Кем выдан',
+      'Дата выдачи',
+    ];
     await this.exportRowsToExcel(
       'clients.xlsx',
       'Clients',
       this.clientsStore.items().map((item) => ({
-        Наименование: item.name,
-        Код: item.code,
-        'Наценка %': item.clientMarkupPercent ?? '',
-        Email: item.email,
+        Фамилия: item.lastName,
+        Имя: item.firstName,
+        Отчество: item.patronymic,
+        Адрес: item.address,
         Телефон: item.phone,
+        Email: item.email,
+        'Наценка %': item.clientMarkupPercent ?? '',
         Активен: item.isActive ? 'да' : 'нет',
         Заметки: item.notes,
+        'Паспорт серия': item.passportSeries,
+        'Паспорт номер': item.passportNumber,
+        'Кем выдан': item.passportIssuedBy,
+        'Дата выдачи': item.passportIssuedDate,
       })),
-      ['Наименование', 'Код', 'Наценка %', 'Email', 'Телефон', 'Активен', 'Заметки']
+      headers
     );
   }
 
   async downloadClientsTemplateExcel(): Promise<void> {
+    const headers = [
+      'Фамилия',
+      'Имя',
+      'Отчество',
+      'Адрес',
+      'Телефон',
+      'Email',
+      'Наценка %',
+      'Активен',
+      'Заметки',
+      'Паспорт серия',
+      'Паспорт номер',
+      'Кем выдан',
+      'Дата выдачи',
+    ];
     await this.exportRowsToExcel(
       'clients-template.xlsx',
       'Clients_TEMPLATE',
       [
         {
-          Наименование: 'ООО «Пример»',
-          Код: 'EX-01',
-          'Наценка %': 10,
-          Email: 'office@example.test',
+          Фамилия: 'Иванов',
+          Имя: 'Пётр',
+          Отчество: 'Сергеевич',
+          Адрес: 'Москва, ул. Примерная, д. 1',
           Телефон: '+7 900 000-00-00',
+          Email: 'contact@example.test',
+          'Наценка %': 10,
           Активен: 'да',
           Заметки: 'Предоплата 30%',
+          'Паспорт серия': '',
+          'Паспорт номер': '',
+          'Кем выдан': '',
+          'Дата выдачи': '',
         },
       ],
-      ['Наименование', 'Код', 'Наценка %', 'Email', 'Телефон', 'Активен', 'Заметки']
+      headers
     );
   }
 
@@ -1789,12 +1865,18 @@ export class DictionariesPage implements OnDestroy {
       clientMarkupPercent = Math.round(Number(raw));
     }
     return {
-      name: this.clientsForm.controls.name.value.trim(),
-      code: this.clientsForm.controls.code.value.trim(),
-      clientMarkupPercent,
-      email: this.clientsForm.controls.email.value.trim(),
+      lastName: this.clientsForm.controls.lastName.value.trim(),
+      firstName: this.clientsForm.controls.firstName.value.trim(),
+      patronymic: this.clientsForm.controls.patronymic.value.trim(),
+      address: this.clientsForm.controls.address.value.trim(),
       phone: this.clientsForm.controls.phone.value.trim(),
+      email: this.clientsForm.controls.email.value.trim(),
       notes: this.clientsForm.controls.notes.value.trim(),
+      clientMarkupPercent,
+      passportSeries: this.clientsForm.controls.passportSeries.value.trim(),
+      passportNumber: this.clientsForm.controls.passportNumber.value.trim(),
+      passportIssuedBy: this.clientsForm.controls.passportIssuedBy.value.trim(),
+      passportIssuedDate: this.clientsForm.controls.passportIssuedDate.value.trim(),
       isActive: this.clientsForm.controls.isActive.value,
     };
   }
@@ -2479,7 +2561,21 @@ export class DictionariesPage implements OnDestroy {
 
     if (!rows.length) return { ok: false, rows: mapped, errors: ['Пустой файл.'] };
 
-    const requiredHeaders = ['Наименование', 'Код', 'Наценка %', 'Email', 'Телефон', 'Активен', 'Заметки'];
+    const requiredHeaders = [
+      'Фамилия',
+      'Имя',
+      'Отчество',
+      'Адрес',
+      'Телефон',
+      'Email',
+      'Наценка %',
+      'Активен',
+      'Заметки',
+      'Паспорт серия',
+      'Паспорт номер',
+      'Кем выдан',
+      'Дата выдачи',
+    ];
     const firstKeys = Object.keys(rows[0] ?? {});
     const missingHeaders = requiredHeaders.filter((h) => !firstKeys.includes(h));
     if (missingHeaders.length) {
@@ -2488,18 +2584,28 @@ export class DictionariesPage implements OnDestroy {
 
     rows.forEach((row, idx) => {
       const rowNo = idx + 2;
-      const name = String(row['Наименование'] ?? '').trim();
-      const code = String(row['Код'] ?? '').trim();
-      const markupRaw = row['Наценка %'];
-      const email = String(row['Email'] ?? '').trim();
+      const lastName = String(row['Фамилия'] ?? '').trim();
+      const firstName = String(row['Имя'] ?? '').trim();
+      const patronymic = String(row['Отчество'] ?? '').trim();
+      const address = String(row['Адрес'] ?? '').trim();
       const phone = String(row['Телефон'] ?? '').trim();
+      const email = String(row['Email'] ?? '').trim();
+      const markupRaw = row['Наценка %'];
       const activeRaw = String(row['Активен'] ?? '')
         .trim()
         .toLowerCase();
       const notes = String(row['Заметки'] ?? '').trim();
+      const passportSeries = String(row['Паспорт серия'] ?? '').trim();
+      const passportNumber = String(row['Паспорт номер'] ?? '').trim();
+      const passportIssuedBy = String(row['Кем выдан'] ?? '').trim();
+      const passportIssuedDate = String(row['Дата выдачи'] ?? '').trim();
 
-      if (!name) {
-        errors.push(`Строка ${rowNo}: укажите наименование.`);
+      if (!lastName) {
+        errors.push(`Строка ${rowNo}: укажите фамилию.`);
+        return;
+      }
+      if (!firstName) {
+        errors.push(`Строка ${rowNo}: укажите имя.`);
         return;
       }
 
@@ -2530,12 +2636,18 @@ export class DictionariesPage implements OnDestroy {
       }
 
       mapped.push({
-        name,
-        code,
-        clientMarkupPercent,
-        email,
+        lastName,
+        firstName,
+        patronymic,
+        address,
         phone,
+        email,
         notes,
+        clientMarkupPercent,
+        passportSeries,
+        passportNumber,
+        passportIssuedBy,
+        passportIssuedDate,
         isActive: isActiveRow,
       });
     });

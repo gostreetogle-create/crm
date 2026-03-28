@@ -69,6 +69,17 @@
         <span class="btnWithIcon btnWithIcon--accent"><svg lucideDownload [size]="18"></svg>Экспорт CSV</span>
       </app-ui-button>
     </div>
+    <p class="iconCaption">Только иконка — тот же primary и зелёный плюс, что у «Создать»</p>
+    <div class="buttonRow">
+      <app-ui-button
+        type="button"
+        [square]="true"
+        aria-label="Добавить запись"
+        title="Добавить запись"
+      >
+        <span class="squareIconTone squareIconTone--affirm"><svg lucidePlus [size]="18"></svg></span>
+      </app-ui-button>
+    </div>
   </app-content-card>
 
   <app-content-card title="Фильтры (как в модели полей)">
@@ -166,7 +177,9 @@
         <p class="dictionaryVariantBody">
           <code>app-hub-crud-expandable-shell</code> + <code>HubCrudExpandStateService</code> (ключ плитки, здесь
           <code>demo-etalon</code>). В свёрнутом виде одна строка; после кнопки с тремя линиями —
-          <code>maxTableBodyRows</code> снимается, <code>tableBodyMaxHeight</code> включает скролл.           Раскрытый блок
+          <code>maxTableBodyRows</code> снимается, задаётся <code>tableBodyMaxHeight</code> (на узком экране — скролл
+          внутри таблицы; на ширине ≥1024px тот же вход, но <code>crud-layout</code> снимает внутренний скролл —
+          таблица по высоте целиком). Раскрытый блок
           идёт <strong>поверх</strong> контента ниже (без сдвига страницы); при необходимости высоту резерва в потоке
           задайте входом <code>layoutReserveWhenOpen</code> на shell. Клик вне плитки сворачивает; кнопка с полосками
           внизу панели работает и в открытом виде. Так же на <code>/dictionaries</code>.
@@ -290,9 +303,7 @@
               <option [value]="option">{{ option }}</option>
             }
           </select>
-          <app-ui-button type="button" variant="primary" [square]="true" (clicked)="openQuickAdd()" aria-label="Добавить категорию">
-            <span class="squareIconTone squareIconTone--affirm"><svg lucidePlus [size]="18"></svg></span>
-          </app-ui-button>
+          <button type="button" class="demoFormAuxAction" (click)="openQuickAdd()">Нет в списке — добавить</button>
         </div>
       </app-ui-form-field>
     </form>

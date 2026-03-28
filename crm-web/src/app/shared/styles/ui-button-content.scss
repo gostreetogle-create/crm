@@ -1,0 +1,49 @@
+/**
+ * Контент внутри `app-ui-button`: иконка + текст или только иконка.
+ * Эталон в демо: карточка «Кнопки (единый стиль)» — primary (жёлтая в теме light) + зелёный плюс через --affirm.
+ */
+.btnWithIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.btnWithIcon svg {
+  flex-shrink: 0;
+}
+
+.btnWithIcon--affirm svg {
+  color: var(--icon-affirm);
+}
+
+.btnWithIcon--accent svg {
+  color: var(--accent);
+}
+
+.btnWithIcon--danger svg {
+  color: var(--danger);
+}
+
+.btnWithIcon--muted svg {
+  color: var(--text-muted);
+}
+
+.squareIconTone {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+
+.squareIconTone--affirm svg {
+  color: var(--icon-affirm);
+}
+
+.squareIconTone--accent svg {
+  color: var(--accent);
+}
+
+.squareIconTone--warn svg {
+  color: var(--warning);
+}

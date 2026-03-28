@@ -105,14 +105,15 @@
 
     <app-dictionary-hub-tile tileKey="clients">
       <crud-layout
-        title="Клиенты"
+        title="Контактные лица"
         [showHeader]="false"
         [showCardLabel]="true"
         [showNameSearch]="true"
+        nameSearchPlaceholder="Поиск по ФИО..."
         [showCreateAction]="true"
         [canCreate]="permissions.crud().canCreate"
-        createAriaLabel="Добавить клиента"
-        createTitle="Добавить клиента"
+        createAriaLabel="Добавить контакт"
+        createTitle="Добавить контакт"
         [columns]="clientsColumns"
         [data]="clientsStore.clientsData()"
         [loading]="clientsStore.loading()"
@@ -126,7 +127,7 @@
         [canDuplicate]="permissions.crud().canDuplicate"
         [canEdit]="permissions.crud().canEdit"
         [canDelete]="permissions.crud().canDelete"
-        deleteConfirmMessage="Удалить клиента?"
+        deleteConfirmMessage="Удалить контакт?"
         (create)="openClientsCreate()"
         (downloadTemplate)="downloadClientsTemplateExcel()"
         (importExcel)="onClientsExcelImported($event)"
@@ -298,34 +299,44 @@
 
 <ng-template #workTypesContentTpl>
   <form id="work-types-form" [formGroup]="workTypesForm" (ngSubmit)="submitWorkTypes()" class="formGrid">
-    <app-ui-form-field
-      label="Наименование"
-      [required]="true"
-      [invalid]="isWorkTypesInvalid('name')"
-      [errorText]="workTypesNameErrorText()"
-    >
-      <input type="text" formControlName="name" placeholder="Сварка" />
-    </app-ui-form-field>
+    <fieldset class="dictionaryFormSection">
+      <legend>Вид работ и расценка</legend>
+      <div class="dictionaryFormSectionBody">
+        <app-ui-form-field
+          label="Наименование"
+          [required]="true"
+          [invalid]="isWorkTypesInvalid('name')"
+          [errorText]="workTypesNameErrorText()"
+        >
+          <input type="text" formControlName="name" placeholder="Сварка" />
+        </app-ui-form-field>
 
-    <app-ui-form-field
-      label="Короткое обозначение"
-      [required]="true"
-      [invalid]="isWorkTypesInvalid('shortLabel')"
-      [errorText]="isWorkTypesInvalid('shortLabel') ? 'Укажите обозначение' : ''"
-    >
-      <input type="text" formControlName="shortLabel" placeholder="Напр. Св." />
-    </app-ui-form-field>
+        <app-ui-form-field
+          label="Короткое обозначение"
+          [required]="true"
+          [invalid]="isWorkTypesInvalid('shortLabel')"
+          [errorText]="isWorkTypesInvalid('shortLabel') ? 'Укажите обозначение' : ''"
+        >
+          <input type="text" formControlName="shortLabel" placeholder="Напр. Св." />
+        </app-ui-form-field>
 
-    <app-ui-form-field
-      label="Ставка, ₽/ч"
-      [required]="true"
-      [invalid]="isWorkTypesInvalid('hourlyRateRub')"
-      [errorText]="workTypesHourlyRateErrorText()"
-    >
-      <input type="number" formControlName="hourlyRateRub" min="1" step="1" placeholder="600" />
-    </app-ui-form-field>
+        <app-ui-form-field
+          label="Ставка, ₽/ч"
+          [required]="true"
+          [invalid]="isWorkTypesInvalid('hourlyRateRub')"
+          [errorText]="workTypesHourlyRateErrorText()"
+        >
+          <input type="number" formControlName="hourlyRateRub" min="1" step="1" placeholder="600" />
+        </app-ui-form-field>
+      </div>
+    </fieldset>
 
-    <app-ui-checkbox-field class="checkbox" label="Активна" formControlName="isActive"></app-ui-checkbox-field>
+    <fieldset class="dictionaryFormSection">
+      <legend>Статус</legend>
+      <div class="dictionaryFormSectionBody">
+        <app-ui-checkbox-field class="checkbox" label="Активна" formControlName="isActive"></app-ui-checkbox-field>
+      </div>
+    </fieldset>
   </form>
 </ng-template>
 
@@ -353,166 +364,187 @@
   [actions]="materialsActionsTpl"
   (close)="closeMaterialsModal()"
   [closeOnBackdrop]="isMaterialsViewMode()"
-  size="lg"
+  size="xl"
 ></ui-modal>
 
 <ng-template #materialsContentTpl>
-  <form id="materials-form" [formGroup]="materialsForm" (ngSubmit)="submitMaterials()" class="formGrid formGridWide">
-    <app-ui-form-field
-      label="Название"
-      [required]="true"
-      [invalid]="isMaterialsInvalid('name')"
-      [errorText]="isMaterialsInvalid('name') ? 'Минимум 2 символа' : ''"
-    >
-      <input type="text" formControlName="name" />
-    </app-ui-form-field>
-
-    <app-ui-form-field label="Код">
-      <input type="text" formControlName="code" />
-    </app-ui-form-field>
-
-    <app-ui-form-field
-      label="Единица измерения"
-      [required]="true"
-      [invalid]="isMaterialsInvalid('unitId')"
-      [errorText]="isMaterialsInvalid('unitId') ? 'Выберите единицу из справочника' : ''"
-    >
-      <div class="colorRefRow">
-        <select formControlName="unitId">
-          <option value="">— Не выбрана —</option>
-          @for (option of unitsStore.options(); track option.id) {
-            <option [value]="option.id">{{ option.label }}</option>
-          }
-        </select>
-        <app-ui-button
-          type="button"
-          variant="soft"
-          [square]="true"
-          ariaLabel="Добавить единицу измерения"
-          title="Добавить единицу измерения"
-          (clicked)="openUnitsCreate(true)"
+  <form id="materials-form" [formGroup]="materialsForm" (ngSubmit)="submitMaterials()" class="formGrid">
+    <fieldset class="dictionaryFormSection">
+      <legend>Учёт и цена</legend>
+      <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
+        <app-ui-form-field
+          label="Название"
+          [required]="true"
+          [invalid]="isMaterialsInvalid('name')"
+          [errorText]="isMaterialsInvalid('name') ? 'Минимум 2 символа' : ''"
         >
-          +
-        </app-ui-button>
-      </div>
-    </app-ui-form-field>
+          <input type="text" formControlName="name" />
+        </app-ui-form-field>
 
-    <app-ui-form-field
-      label="Цена, ₽ за 1 ед."
-      [required]="true"
-      [invalid]="isMaterialsInvalid('purchasePriceRub')"
-      [errorText]="materialsPurchasePriceErrorText()"
-    >
-      <input type="number" formControlName="purchasePriceRub" min="1" step="1" />
-    </app-ui-form-field>
+        <app-ui-form-field label="Код">
+          <input type="text" formControlName="code" />
+        </app-ui-form-field>
 
-    <app-ui-form-field label="Плотность (кг/м3)">
-      <input type="number" formControlName="densityKgM3" />
-    </app-ui-form-field>
-
-    <app-ui-form-field label="Цвет (RAL)">
-      <div class="colorRefRow">
-        <select formControlName="colorId">
-          <option value="">— Не выбран —</option>
-          @for (option of colorsStore.options(); track option.id) {
-            <option [value]="option.id">{{ option.label }}</option>
-          }
-        </select>
-        <app-ui-button
-          type="button"
-          variant="soft"
-          [square]="true"
-          ariaLabel="Добавить цвет RAL"
-          title="Добавить цвет RAL"
-          (clicked)="openColorsCreate(true)"
+        <app-ui-form-field
+          class="dictionaryFieldRowFull"
+          label="Единица измерения"
+          [required]="true"
+          [invalid]="isMaterialsInvalid('unitId')"
+          [errorText]="isMaterialsInvalid('unitId') ? 'Выберите единицу из справочника' : ''"
         >
-          +
-        </app-ui-button>
-      </div>
-    </app-ui-form-field>
+          <div class="colorRefRow">
+            <select formControlName="unitId">
+              <option value="">— Не выбрана —</option>
+              @for (option of unitsStore.options(); track option.id) {
+                <option [value]="option.id">{{ option.label }}</option>
+              }
+            </select>
+            <app-ui-button
+              type="button"
+              [square]="true"
+              ariaLabel="Добавить единицу измерения"
+              title="Добавить единицу измерения"
+              (clicked)="openUnitsCreate(true)"
+            >
+              <span class="squareIconTone squareIconTone--affirm"><svg lucidePlus [size]="18"></svg></span>
+            </app-ui-button>
+          </div>
+        </app-ui-form-field>
 
-    <app-ui-form-field label="Тип отд. / шерох.">
-      <div class="colorRefRow">
-        <select formControlName="surfaceFinishId">
-          <option value="">— Не выбран —</option>
-          @for (option of surfaceFinishesStore.options(); track option.id) {
-            <option [value]="option.id">{{ option.label }}</option>
-          }
-        </select>
-        <app-ui-button
-          type="button"
-          variant="soft"
-          [square]="true"
-          ariaLabel="Добавить финиш"
-          title="Добавить финиш"
-          (clicked)="openSurfaceFinishesCreate(true)"
+        <app-ui-form-field
+          label="Цена, ₽ за 1 ед."
+          [required]="true"
+          [invalid]="isMaterialsInvalid('purchasePriceRub')"
+          [errorText]="materialsPurchasePriceErrorText()"
         >
-          +
-        </app-ui-button>
+          <input type="number" formControlName="purchasePriceRub" min="1" step="1" />
+        </app-ui-form-field>
+
+        <app-ui-form-field label="Плотность (кг/м³)">
+          <input type="number" formControlName="densityKgM3" />
+        </app-ui-form-field>
       </div>
-    </app-ui-form-field>
+    </fieldset>
 
-    <app-ui-form-field label="Тип отд.">
-      <input type="text" formControlName="finishType" readonly />
-    </app-ui-form-field>
+    <fieldset class="dictionaryFormSection">
+      <legend>Справочники — выбор записей</legend>
+      <div class="dictionaryFormSectionBody">
+        <app-ui-form-field label="Цвет (RAL)">
+          <div class="colorRefRow">
+            <select formControlName="colorId">
+              <option value="">— Не выбран —</option>
+              @for (option of colorsStore.options(); track option.id) {
+                <option [value]="option.id">{{ option.label }}</option>
+              }
+            </select>
+            <app-ui-button
+              type="button"
+              [square]="true"
+              ariaLabel="Добавить цвет RAL"
+              title="Добавить цвет RAL"
+              (clicked)="openColorsCreate(true)"
+            >
+              <span class="squareIconTone squareIconTone--affirm"><svg lucidePlus [size]="18"></svg></span>
+            </app-ui-button>
+          </div>
+        </app-ui-form-field>
 
-    <app-ui-form-field label="Покрытие">
-      <div class="colorRefRow">
-        <select formControlName="coatingId">
-          <option value="">— Не выбран —</option>
-          @for (option of coatingsStore.options(); track option.id) {
-            <option [value]="option.id">{{ option.label }}</option>
-          }
-        </select>
-        <app-ui-button
-          type="button"
-          variant="soft"
-          [square]="true"
-          ariaLabel="Добавить покрытие"
-          title="Добавить покрытие"
-          (clicked)="openCoatingsCreate(true)"
-        >
-          +
-        </app-ui-button>
+        <app-ui-form-field label="Тип отделки / шероховатость">
+          <div class="colorRefRow">
+            <select formControlName="surfaceFinishId">
+              <option value="">— Не выбран —</option>
+              @for (option of surfaceFinishesStore.options(); track option.id) {
+                <option [value]="option.id">{{ option.label }}</option>
+              }
+            </select>
+            <app-ui-button
+              type="button"
+              [square]="true"
+              ariaLabel="Добавить финиш"
+              title="Добавить финиш"
+              (clicked)="openSurfaceFinishesCreate(true)"
+            >
+              <span class="squareIconTone squareIconTone--affirm"><svg lucidePlus [size]="18"></svg></span>
+            </app-ui-button>
+          </div>
+        </app-ui-form-field>
+
+        <app-ui-form-field label="Покрытие">
+          <div class="colorRefRow">
+            <select formControlName="coatingId">
+              <option value="">— Не выбран —</option>
+              @for (option of coatingsStore.options(); track option.id) {
+                <option [value]="option.id">{{ option.label }}</option>
+              }
+            </select>
+            <app-ui-button
+              type="button"
+              [square]="true"
+              ariaLabel="Добавить покрытие"
+              title="Добавить покрытие"
+              (clicked)="openCoatingsCreate(true)"
+            >
+              <span class="squareIconTone squareIconTone--affirm"><svg lucidePlus [size]="18"></svg></span>
+            </app-ui-button>
+          </div>
+        </app-ui-form-field>
       </div>
-    </app-ui-form-field>
+    </fieldset>
 
-    <app-ui-form-field label="Тип покрытия">
-      <input type="text" formControlName="coatingType" readonly />
-    </app-ui-form-field>
+    <fieldset class="dictionaryFormSection dictionaryFormSection--autoFields">
+      <legend>Из справочников</legend>
+      <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
+        <app-ui-form-field label="Цвет — название">
+          <input type="text" formControlName="colorName" readonly />
+        </app-ui-form-field>
 
-    <app-ui-form-field label="Спецификация покрытия">
-      <input type="text" formControlName="coatingSpec" readonly />
-    </app-ui-form-field>
+        <app-ui-form-field label="Цвет — HEX">
+          <div class="colorHexPreviewRow colorHexPreviewRowLeadSwatch colorHexPreviewRow--tight">
+            <span
+              class="colorSwatch"
+              aria-hidden="true"
+              [style.background]="selectedMaterialColorHex() || '#000000'"
+            ></span>
+            <input type="text" formControlName="colorHex" readonly />
+          </div>
+        </app-ui-form-field>
 
-    <app-ui-form-field label="Толщина покрытия, мкм">
-      <input type="number" formControlName="coatingThicknessMicron" readonly />
-    </app-ui-form-field>
+        <app-ui-form-field label="Отделка — тип">
+          <input type="text" formControlName="finishType" readonly />
+        </app-ui-form-field>
 
-    <app-ui-form-field label="Шерох.">
-      <input type="text" formControlName="roughnessClass" readonly />
-    </app-ui-form-field>
+        <app-ui-form-field label="Отделка — шероховатость (класс)">
+          <input type="text" formControlName="roughnessClass" readonly />
+        </app-ui-form-field>
 
-    <app-ui-form-field label="Ra, мкм">
-      <input type="number" formControlName="raMicron" readonly />
-    </app-ui-form-field>
+        <app-ui-form-field label="Отделка — Ra, мкм">
+          <input type="number" formControlName="raMicron" readonly />
+        </app-ui-form-field>
 
-    <app-ui-form-field label="Цвет (название)">
-      <input type="text" formControlName="colorName" readonly />
-    </app-ui-form-field>
+        <app-ui-form-field label="Покрытие — тип">
+          <input type="text" formControlName="coatingType" readonly />
+        </app-ui-form-field>
 
-    <app-ui-form-field label="Цвет (HEX)">
-      <div class="colorHexPreviewRow">
-        <input type="text" formControlName="colorHex" readonly />
-        <span class="colorSwatch" [style.background]="selectedMaterialColorHex() || '#000000'"></span>
+        <app-ui-form-field label="Покрытие — спецификация">
+          <input type="text" formControlName="coatingSpec" readonly />
+        </app-ui-form-field>
+
+        <app-ui-form-field label="Покрытие — толщина, мкм">
+          <input type="number" formControlName="coatingThicknessMicron" readonly />
+        </app-ui-form-field>
       </div>
-    </app-ui-form-field>
+    </fieldset>
 
-    <app-ui-form-field class="formWide" label="Заметки" [wide]="true">
-      <textarea rows="3" formControlName="notes"></textarea>
-    </app-ui-form-field>
+    <fieldset class="dictionaryFormSection">
+      <legend>Дополнительно</legend>
+      <div class="dictionaryFormSectionBody">
+        <app-ui-form-field label="Заметки" [wide]="true">
+          <textarea rows="2" formControlName="notes"></textarea>
+        </app-ui-form-field>
 
-    <app-ui-checkbox-field class="checkbox formWide" label="Активен" formControlName="isActive"></app-ui-checkbox-field>
+        <app-ui-checkbox-field class="checkbox" label="Активен" formControlName="isActive"></app-ui-checkbox-field>
+      </div>
+    </fieldset>
   </form>
 </ng-template>
 
@@ -534,27 +566,36 @@
 
 <ng-template #coatingsContentTpl>
   <form id="coatings-form" [formGroup]="coatingsForm" (ngSubmit)="submitCoatings()" class="formGrid">
-    <app-ui-form-field
-      label="Тип покрытия"
-      [required]="true"
-      [invalid]="isCoatingsInvalid('coatingType')"
-      [errorText]="isCoatingsInvalid('coatingType') ? 'Минимум 2 символа' : ''"
-    >
-      <input type="text" formControlName="coatingType" placeholder="Anodizing / Powder / Galvanized..." />
-    </app-ui-form-field>
+    <fieldset class="dictionaryFormSection">
+      <legend>Параметры покрытия</legend>
+      <div class="dictionaryFormSectionBody">
+        <app-ui-form-field
+          label="Тип покрытия"
+          [required]="true"
+          [invalid]="isCoatingsInvalid('coatingType')"
+          [errorText]="isCoatingsInvalid('coatingType') ? 'Минимум 2 символа' : ''"
+        >
+          <input type="text" formControlName="coatingType" placeholder="Anodizing / Powder / Galvanized..." />
+        </app-ui-form-field>
 
-    <app-ui-form-field
-      label="Спецификация"
-      [required]="true"
-      [invalid]="isCoatingsInvalid('coatingSpec')"
-      [errorText]="isCoatingsInvalid('coatingSpec') ? 'Минимум 2 символа' : ''"
-    >
-      <input type="text" formControlName="coatingSpec" placeholder="Clear anodized / Zn hot-dip..." />
-    </app-ui-form-field>
+        <app-ui-form-field
+          label="Спецификация"
+          [required]="true"
+          [invalid]="isCoatingsInvalid('coatingSpec')"
+          [errorText]="isCoatingsInvalid('coatingSpec') ? 'Минимум 2 символа' : ''"
+        >
+          <input type="text" formControlName="coatingSpec" placeholder="Clear anodized / Zn hot-dip..." />
+        </app-ui-form-field>
 
-    <app-ui-form-field label="Толщина, мкм" [invalid]="isCoatingsInvalid('thicknessMicron')" [errorText]="isCoatingsInvalid('thicknessMicron') ? 'Проверьте значение' : ''">
-      <input type="number" formControlName="thicknessMicron" />
-    </app-ui-form-field>
+        <app-ui-form-field
+          label="Толщина, мкм"
+          [invalid]="isCoatingsInvalid('thicknessMicron')"
+          [errorText]="isCoatingsInvalid('thicknessMicron') ? 'Проверьте значение' : ''"
+        >
+          <input type="number" formControlName="thicknessMicron" />
+        </app-ui-form-field>
+      </div>
+    </fieldset>
   </form>
 </ng-template>
 
@@ -573,62 +614,129 @@
   *ngIf="isClientsModalOpen()"
   [title]="
     isClientsViewMode()
-      ? 'Просмотр клиента — Контрагент'
+      ? 'Просмотр контакта — ФЛ'
       : clientsStore.isEditMode()
-        ? 'Редактирование клиента'
-        : 'Новый клиент'
+        ? 'Редактирование контакта'
+        : 'Новый контакт'
   "
   [content]="clientsContentTpl"
   [actions]="clientsActionsTpl"
   (close)="closeClientsModal()"
   [closeOnBackdrop]="isClientsViewMode()"
-  size="md"
+  size="xl"
 ></ui-modal>
 
 <ng-template #clientsContentTpl>
-  <form id="clients-form" [formGroup]="clientsForm" (ngSubmit)="submitClients()" class="formGrid formGridWide">
-    <app-ui-form-field
-      label="Наименование"
-      [required]="true"
-      [invalid]="isClientsInvalid('name')"
-      [errorText]="isClientsInvalid('name') ? 'Минимум 2 символа' : ''"
-    >
-      <input type="text" formControlName="name" placeholder="ООО «Поставщик»" />
-    </app-ui-form-field>
+  <form id="clients-form" [formGroup]="clientsForm" (ngSubmit)="submitClients()" class="formGrid">
+    <fieldset class="dictionaryFormSection">
+      <legend>ФИО</legend>
+      <ui-form-grid [columns]="3">
+        <app-ui-form-field
+          label="Фамилия"
+          [required]="true"
+          [invalid]="isClientsInvalid('lastName')"
+          [errorText]="isClientsInvalid('lastName') ? 'Минимум 2 символа' : ''"
+        >
+          <input type="text" formControlName="lastName" autocomplete="family-name" />
+        </app-ui-form-field>
 
-    <app-ui-form-field
-      label="Код в документах"
-      [invalid]="isClientsInvalid('code')"
-      [errorText]="''"
-    >
-      <input type="text" formControlName="code" placeholder="Напр. CLI-102" />
-    </app-ui-form-field>
+        <app-ui-form-field
+          label="Имя"
+          [required]="true"
+          [invalid]="isClientsInvalid('firstName')"
+          [errorText]="isClientsInvalid('firstName') ? 'Минимум 2 символа' : ''"
+        >
+          <input type="text" formControlName="firstName" autocomplete="given-name" />
+        </app-ui-form-field>
 
-    <app-ui-form-field
-      label="Наценка клиента, %"
-      [invalid]="isClientsInvalid('clientMarkupPercent')"
-      [errorText]="
-        clientsForm.controls.clientMarkupPercent.hasError('range')
-          ? 'Диапазон 0…1000 %'
-          : ''
-      "
-    >
-      <input type="number" formControlName="clientMarkupPercent" min="0" max="1000" step="1" placeholder="Пусто — не задано" />
-    </app-ui-form-field>
+        <app-ui-form-field label="Отчество" [invalid]="isClientsInvalid('patronymic')" [errorText]="''">
+          <input type="text" formControlName="patronymic" autocomplete="additional-name" />
+        </app-ui-form-field>
+      </ui-form-grid>
+    </fieldset>
 
-    <app-ui-form-field label="Email" [invalid]="isClientsInvalid('email')" [errorText]="''">
-      <input type="email" formControlName="email" autocomplete="email" />
-    </app-ui-form-field>
+    <fieldset class="dictionaryFormSection">
+      <legend>Контакты</legend>
+      <ui-form-grid [columns]="3">
+        <app-ui-form-field
+          class="uiFormGrid__full"
+          label="Адрес"
+          [wide]="true"
+          [invalid]="isClientsInvalid('address')"
+          [errorText]="''"
+        >
+          <input type="text" formControlName="address" autocomplete="street-address" />
+        </app-ui-form-field>
 
-    <app-ui-form-field label="Телефон" [invalid]="isClientsInvalid('phone')" [errorText]="''">
-      <input type="tel" formControlName="phone" autocomplete="tel" />
-    </app-ui-form-field>
+        <app-ui-form-field label="Телефон" [invalid]="isClientsInvalid('phone')" [errorText]="''">
+          <input type="tel" formControlName="phone" autocomplete="tel" />
+        </app-ui-form-field>
 
-    <app-ui-form-field class="formWide" label="Заметки" [wide]="true">
-      <textarea rows="3" formControlName="notes"></textarea>
-    </app-ui-form-field>
+        <app-ui-form-field label="Email" [invalid]="isClientsInvalid('email')" [errorText]="''">
+          <input type="email" formControlName="email" autocomplete="email" />
+        </app-ui-form-field>
+      </ui-form-grid>
+    </fieldset>
 
-    <app-ui-checkbox-field class="checkbox formWide" label="Активен" formControlName="isActive"></app-ui-checkbox-field>
+    <fieldset class="dictionaryFormSection">
+      <legend>Ценообразование (КП)</legend>
+      <ui-form-grid [columns]="3">
+        <app-ui-form-field
+          label="Наценка клиента, %"
+          [invalid]="isClientsInvalid('clientMarkupPercent')"
+          [errorText]="
+            clientsForm.controls.clientMarkupPercent.hasError('range')
+              ? 'Диапазон 0…1000 %'
+              : ''
+          "
+        >
+          <input type="number" formControlName="clientMarkupPercent" min="0" max="1000" step="1" placeholder="Пусто — не задано" />
+        </app-ui-form-field>
+      </ui-form-grid>
+    </fieldset>
+
+    <fieldset class="dictionaryFormSection">
+      <legend>Заметки</legend>
+      <div class="dictionaryFormSectionBody">
+        <app-ui-form-field label="Текст" [wide]="true">
+          <textarea rows="2" formControlName="notes"></textarea>
+        </app-ui-form-field>
+      </div>
+    </fieldset>
+
+    <fieldset class="dictionaryFormSection">
+      <legend>Паспорт (необязательно)</legend>
+      <ui-form-grid [columns]="3">
+        <app-ui-form-field label="Серия" [invalid]="isClientsInvalid('passportSeries')" [errorText]="''">
+          <input type="text" formControlName="passportSeries" inputmode="numeric" autocomplete="off" />
+        </app-ui-form-field>
+
+        <app-ui-form-field label="Номер" [invalid]="isClientsInvalid('passportNumber')" [errorText]="''">
+          <input type="text" formControlName="passportNumber" inputmode="numeric" autocomplete="off" />
+        </app-ui-form-field>
+
+        <app-ui-form-field label="Дата выдачи" [invalid]="isClientsInvalid('passportIssuedDate')" [errorText]="''">
+          <input type="text" formControlName="passportIssuedDate" placeholder="ГГГГ-ММ-ДД или произвольно" autocomplete="off" />
+        </app-ui-form-field>
+
+        <app-ui-form-field
+          class="uiFormGrid__full"
+          label="Кем выдан"
+          [wide]="true"
+          [invalid]="isClientsInvalid('passportIssuedBy')"
+          [errorText]="''"
+        >
+          <input type="text" formControlName="passportIssuedBy" autocomplete="off" />
+        </app-ui-form-field>
+      </ui-form-grid>
+    </fieldset>
+
+    <fieldset class="dictionaryFormSection">
+      <legend>Статус</legend>
+      <div class="dictionaryFormSectionBody">
+        <app-ui-checkbox-field class="checkbox" label="Активен" formControlName="isActive"></app-ui-checkbox-field>
+      </div>
+    </fieldset>
   </form>
 </ng-template>
 
@@ -638,7 +746,7 @@
   </app-ui-button>
   @if (!isClientsViewMode()) {
     <app-ui-button type="submit" [form]="'clients-form'">
-      {{ clientsStore.isEditMode() ? 'Сохранить изменения' : 'Создать клиента' }}
+      {{ clientsStore.isEditMode() ? 'Сохранить изменения' : 'Создать контакт' }}
     </app-ui-button>
   }
 </ng-template>
@@ -661,27 +769,36 @@
 
 <ng-template #surfaceFinishesContentTpl>
   <form id="surface-finishes-form" [formGroup]="surfaceFinishesForm" (ngSubmit)="submitSurfaceFinishes()" class="formGrid">
-    <app-ui-form-field
-      label="Тип отд."
-      [required]="true"
-      [invalid]="isSurfaceFinishesInvalid('finishType')"
-      [errorText]="isSurfaceFinishesInvalid('finishType') ? 'Минимум 2 символа' : ''"
-    >
-      <input type="text" formControlName="finishType" placeholder="Glossy / Matte / Satin..." />
-    </app-ui-form-field>
+    <fieldset class="dictionaryFormSection">
+      <legend>Отделка и шероховатость</legend>
+      <div class="dictionaryFormSectionBody">
+        <app-ui-form-field
+          label="Тип отделки"
+          [required]="true"
+          [invalid]="isSurfaceFinishesInvalid('finishType')"
+          [errorText]="isSurfaceFinishesInvalid('finishType') ? 'Минимум 2 символа' : ''"
+        >
+          <input type="text" formControlName="finishType" placeholder="Glossy / Matte / Satin..." />
+        </app-ui-form-field>
 
-    <app-ui-form-field
-      label="Шерох."
-      [required]="true"
-      [invalid]="isSurfaceFinishesInvalid('roughnessClass')"
-      [errorText]="isSurfaceFinishesInvalid('roughnessClass') ? 'Минимум 2 символа' : ''"
-    >
-      <input type="text" formControlName="roughnessClass" placeholder="Ra 0.8 / N7 / Полированная..." />
-    </app-ui-form-field>
+        <app-ui-form-field
+          label="Шероховатость (класс / обозначение)"
+          [required]="true"
+          [invalid]="isSurfaceFinishesInvalid('roughnessClass')"
+          [errorText]="isSurfaceFinishesInvalid('roughnessClass') ? 'Минимум 2 символа' : ''"
+        >
+          <input type="text" formControlName="roughnessClass" placeholder="Ra 0.8 / N7 / Полированная..." />
+        </app-ui-form-field>
 
-    <app-ui-form-field label="Ra, мкм" [invalid]="isSurfaceFinishesInvalid('raMicron')" [errorText]="isSurfaceFinishesInvalid('raMicron') ? 'Проверьте значение' : ''">
-      <input type="number" formControlName="raMicron" />
-    </app-ui-form-field>
+        <app-ui-form-field
+          label="Ra, мкм"
+          [invalid]="isSurfaceFinishesInvalid('raMicron')"
+          [errorText]="isSurfaceFinishesInvalid('raMicron') ? 'Проверьте значение' : ''"
+        >
+          <input type="number" formControlName="raMicron" />
+        </app-ui-form-field>
+      </div>
+    </fieldset>
   </form>
 </ng-template>
 
@@ -714,45 +831,61 @@
 
 <ng-template #colorsContentTpl>
   <form id="colors-form" [formGroup]="colorsForm" (ngSubmit)="submitColors()" class="formGrid">
-    <app-ui-form-field label="RAL и название">
-      <div class="colorHexPreviewRow colorHexPreviewRowLeadSwatch">
-        <span
-          class="colorSwatch"
-          [style.background]="colorPreviewHexForColorsForm() ?? undefined"
-        ></span>
-        <input type="text" [value]="colorNameWithRal()" readonly class="colorFullNameInput" />
+    <fieldset class="dictionaryFormSection">
+      <legend>Код и название</legend>
+      <div class="dictionaryFormSectionBody">
+        <app-ui-form-field
+          label="Код RAL"
+          [invalid]="isColorsInvalidOnBlur('ralCode')"
+          [errorText]="isColorsInvalidOnBlur('ralCode') ? 'Формат: RAL 0000 или 0000; RAL DESIGN 000 00 00' : ''"
+        >
+          <input
+            type="text"
+            formControlName="ralCode"
+            placeholder="RAL 7035 / RAL DESIGN 270 30 35"
+            (focus)="onRalCodeFocus()"
+            (blur)="onRalCodeBlur()"
+          />
+        </app-ui-form-field>
+
+        <app-ui-form-field
+          label="Название"
+          [required]="true"
+          [invalid]="isColorsInvalid('name')"
+          [errorText]="isColorsInvalid('name') ? 'Минимум 2 символа' : ''"
+        >
+          <input type="text" formControlName="name" />
+        </app-ui-form-field>
       </div>
-    </app-ui-form-field>
+    </fieldset>
 
-    <app-ui-form-field
-      label="Код RAL"
-      [invalid]="isColorsInvalidOnBlur('ralCode')"
-      [errorText]="isColorsInvalidOnBlur('ralCode') ? 'Формат: RAL 0000 или 0000; RAL DESIGN 000 00 00' : ''"
-    >
-      <input
-        type="text"
-        formControlName="ralCode"
-        placeholder="RAL 7035 / RAL DESIGN 270 30 35"
-        (focus)="onRalCodeFocus()"
-        (blur)="onRalCodeBlur()"
-      />
-    </app-ui-form-field>
+    <fieldset class="dictionaryFormSection">
+      <legend>Цвет (HEX / RGB)</legend>
+      <div class="dictionaryFormSectionBody">
+        <app-hex-rgb-field
+          [control]="colorsForm.controls.hex"
+          [required]="true"
+          [invalid]="isColorsInvalid('hex')"
+          [errorText]="isColorsInvalid('hex') ? 'HEX в формате #RRGGBB' : ''"
+        ></app-hex-rgb-field>
+      </div>
+    </fieldset>
 
-    <app-ui-form-field
-      label="Название"
-      [required]="true"
-      [invalid]="isColorsInvalid('name')"
-      [errorText]="isColorsInvalid('name') ? 'Минимум 2 символа' : ''"
-    >
-      <input type="text" formControlName="name" />
-    </app-ui-form-field>
-
-    <app-hex-rgb-field
-      [control]="colorsForm.controls.hex"
-      [required]="true"
-      [invalid]="isColorsInvalid('hex')"
-      [errorText]="isColorsInvalid('hex') ? 'HEX в формате #RRGGBB' : ''"
-    ></app-hex-rgb-field>
+    <fieldset class="dictionaryFormSection dictionaryFormSection--autoFields">
+      <legend>Сводка</legend>
+      <div class="dictionaryFormSectionBody">
+        <app-ui-form-field label="RAL и название (как в списках)">
+          <div class="colorHexPreviewRow colorHexPreviewRowLeadSwatch colorHexPreviewRow--tight">
+            <span
+              class="colorSwatch"
+              aria-hidden="true"
+              [style.background]="colorPreviewHexForColorsForm() ?? undefined"
+            ></span>
+            <input type="text" [value]="colorNameWithRal()" readonly class="colorFullNameInput" />
+          </div>
+        </app-ui-form-field>
+      </div>
+    </fieldset>
   </form>
 </ng-template>
 
@@ -791,30 +924,35 @@
   [actions]="geometriesActionsTpl"
   (close)="closeGeometriesModal()"
   [closeOnBackdrop]="isGeometriesViewMode()"
-  size="md"
+  size="lg"
 ></ui-modal>
 
 <ng-template #geometriesContentTpl>
   <form id="geometries-form" [formGroup]="geometriesForm" (ngSubmit)="submitGeometries()" class="formGrid geometriesFormPanel">
-    <app-ui-form-field
-      label="Название"
-      [required]="true"
-      [invalid]="isGeometriesInvalid('name')"
-      [errorText]="isGeometriesInvalid('name') ? 'Минимум 2 символа' : ''"
-    >
-      <input type="text" formControlName="name" />
-    </app-ui-form-field>
+    <fieldset class="dictionaryFormSection">
+      <legend>Наименование и тип</legend>
+      <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
+        <app-ui-form-field
+          label="Название"
+          [required]="true"
+          [invalid]="isGeometriesInvalid('name')"
+          [errorText]="isGeometriesInvalid('name') ? 'Минимум 2 символа' : ''"
+        >
+          <input type="text" formControlName="name" />
+        </app-ui-form-field>
 
-    <app-ui-form-field
-      label="Тип геометрии"
-      [required]="true"
-      [invalid]="isGeometriesInvalid('shapeKey')"
-      [errorText]="isGeometriesInvalid('shapeKey') ? 'Укажите тип' : ''"
-    >
-      <select formControlName="shapeKey">
-        <option *ngFor="let s of shapeOptions" [value]="s.value">{{ s.label }}</option>
-      </select>
-    </app-ui-form-field>
+        <app-ui-form-field
+          label="Тип геометрии"
+          [required]="true"
+          [invalid]="isGeometriesInvalid('shapeKey')"
+          [errorText]="isGeometriesInvalid('shapeKey') ? 'Укажите тип' : ''"
+        >
+          <select formControlName="shapeKey">
+            <option *ngFor="let s of shapeOptions" [value]="s.value">{{ s.label }}</option>
+          </select>
+        </app-ui-form-field>
+      </div>
+    </fieldset>
 
     <fieldset class="geometryParams">
       <legend>Параметры, мм</legend>
@@ -866,11 +1004,16 @@
       </div>
     </fieldset>
 
-    <app-ui-form-field class="formWide" label="Заметки" [wide]="true">
-      <textarea rows="3" formControlName="notes"></textarea>
-    </app-ui-form-field>
+    <fieldset class="dictionaryFormSection">
+      <legend>Дополнительно</legend>
+      <div class="dictionaryFormSectionBody">
+        <app-ui-form-field label="Заметки" [wide]="true">
+          <textarea rows="2" formControlName="notes"></textarea>
+        </app-ui-form-field>
 
-    <app-ui-checkbox-field class="checkbox formWide" label="Активна" formControlName="isActive"></app-ui-checkbox-field>
+        <app-ui-checkbox-field class="checkbox" label="Активна" formControlName="isActive"></app-ui-checkbox-field>
+      </div>
+    </fieldset>
   </form>
 </ng-template>
 
@@ -903,29 +1046,39 @@
 
 <ng-template #unitsContentTpl>
   <form id="units-form" [formGroup]="unitsForm" (ngSubmit)="submitUnits()" class="formGrid">
-    <app-ui-form-field
-      label="Название"
-      [required]="true"
-      [invalid]="isUnitsInvalid('name')"
-      [errorText]="isUnitsInvalid('name') ? 'Введите название' : ''"
-    >
-      <input type="text" formControlName="name" />
-    </app-ui-form-field>
+    <fieldset class="dictionaryFormSection">
+      <legend>Обозначение</legend>
+      <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
+        <app-ui-form-field
+          label="Название"
+          [required]="true"
+          [invalid]="isUnitsInvalid('name')"
+          [errorText]="isUnitsInvalid('name') ? 'Введите название' : ''"
+        >
+          <input type="text" formControlName="name" />
+        </app-ui-form-field>
 
-    <app-ui-form-field
-      label="Код"
-      [required]="true"
-      [invalid]="isUnitsInvalid('code')"
-      [errorText]="isUnitsInvalid('code') ? 'Минимум 2 символа' : ''"
-    >
-      <input type="text" formControlName="code" />
-    </app-ui-form-field>
+        <app-ui-form-field
+          label="Код"
+          [required]="true"
+          [invalid]="isUnitsInvalid('code')"
+          [errorText]="isUnitsInvalid('code') ? 'Минимум 2 символа' : ''"
+        >
+          <input type="text" formControlName="code" />
+        </app-ui-form-field>
+      </div>
+    </fieldset>
 
-    <app-ui-form-field label="Комментарий" [wide]="true">
-      <textarea rows="3" formControlName="notes"></textarea>
-    </app-ui-form-field>
+    <fieldset class="dictionaryFormSection">
+      <legend>Дополнительно</legend>
+      <div class="dictionaryFormSectionBody">
+        <app-ui-form-field label="Комментарий" [wide]="true">
+          <textarea rows="2" formControlName="notes"></textarea>
+        </app-ui-form-field>
 
-    <app-ui-checkbox-field class="checkbox" label="Активна" formControlName="isActive"></app-ui-checkbox-field>
+        <app-ui-checkbox-field class="checkbox" label="Активна" formControlName="isActive"></app-ui-checkbox-field>
+      </div>
+    </fieldset>
   </form>
 </ng-template>
 

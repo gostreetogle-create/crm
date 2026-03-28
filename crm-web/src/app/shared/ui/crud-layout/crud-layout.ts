@@ -6,6 +6,7 @@ import {
   LucideEye,
   LucideFileSpreadsheet,
   LucidePencil,
+  LucidePlus,
   LucideTrash2,
   LucideUpload,
 } from '@lucide/angular';
@@ -34,6 +35,7 @@ export type CrudTableRow = Record<string, unknown>;
     LucideEye,
     LucideFileSpreadsheet,
     LucidePencil,
+    LucidePlus,
     LucideTrash2,
     LucideUpload,
     UiModalComponent,

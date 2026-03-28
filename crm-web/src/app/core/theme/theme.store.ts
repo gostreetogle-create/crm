@@ -51,6 +51,8 @@ function applyThemeToCssVars(theme: ThemeTokens): void {
   root.setProperty('--font-size-page-title', theme.fontSizePageTitle);
   root.setProperty('--text-primary', theme.textPrimary);
   root.setProperty('--text-muted', theme.textMuted);
+  root.setProperty('--font-size-control', theme.fontSizeBase);
+  root.setProperty('--text-form-label', theme.textMuted);
   root.setProperty('--bg-base', theme.bgBase);
   root.setProperty('--bg-gradient-a', theme.bgGradientA);
   root.setProperty('--bg-gradient-b', theme.bgGradientB);

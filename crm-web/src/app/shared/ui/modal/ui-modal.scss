@@ -12,7 +12,9 @@
 .modalDialog {
   width: 100%;
   max-height: calc(100dvh - 2rem);
-  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-card);
   background: var(--surface);
@@ -33,7 +35,12 @@
   max-width: 56rem;
 }
 
+.modalDialog--xl {
+  max-width: min(92vw, 72rem);
+}
+
 .modalHeader {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -64,12 +71,14 @@
 }
 
 .modalContent {
+  flex: 1 1 auto;
+  min-height: 0;
   padding: var(--ui-modal-content-padding);
-  max-height: calc((30px + var(--font-size-label) + 28px) * 5);
   overflow-y: auto;
 }
 
 .modalActions {
+  flex-shrink: 0;
   display: flex;
   justify-content: flex-end;
   gap: 0.75rem;
