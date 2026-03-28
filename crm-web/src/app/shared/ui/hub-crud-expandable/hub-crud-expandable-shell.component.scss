@@ -1,3 +1,8 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
 .hubCrudExpandable {
   position: relative;
   z-index: 1;
@@ -5,6 +10,11 @@
 
 .hubCrudExpandable__anchor--open {
   position: relative;
+}
+
+/* BFC: margin-top у вложенной content-card не «выпадает» из панели — offsetHeight/резерв совпадают с визуалом. */
+.hubCrudExpandable__panel {
+  display: flow-root;
 }
 
 /* Раскрытая таблица не толкает контент ниже — панель поверх следующих блоков. */

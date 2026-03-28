@@ -7,7 +7,6 @@ import {
   Input,
   NgZone,
   OnDestroy,
-  ViewChild,
   inject,
 } from '@angular/core';
 import { LucideMenu } from '@lucide/angular';
@@ -26,11 +25,9 @@ export class HubCrudExpandableShellComponent implements AfterViewInit, OnDestroy
   @Input() ariaLabel = 'Показать или скрыть полный список строк таблицы';
 
   /**
-   * Запас высоты в потоке при открытии, если ещё не успели измерить свёрнутую панель (fallback).
+   * Fallback min-height якоря при открытии, если измерение дало 0 (ещё не отрисовалось).
    */
   @Input() layoutReserveWhenOpen = 'min(13.5rem, 36vh)';
-
-  @ViewChild('hubPanel', { read: ElementRef }) private hubPanelRef?: ElementRef<HTMLElement>;
 
   readonly expand = inject(HubCrudExpandStateService);
   private readonly host = inject(ElementRef<HTMLElement>);
@@ -39,7 +36,10 @@ export class HubCrudExpandableShellComponent implements AfterViewInit, OnDestroy
 
   private resizeObserver: ResizeObserver | null = null;
 
-  /** Высота панели в свёрнутом виде (контент + кнопка), пиксели — для min-height якоря при открытии. */
+  /**
+   * Высота всей плитки в свёрнутом виде (как в потоке документа), px.
+   * Перед открытием обязательно переснимаем синхронно — иначе после position:absolute якорь схлопывается и контент «прыгает».
+   */
   private collapsedFlowHeightPx: number | null = null;
 
   @HostListener('document:click', ['$event'])
@@ -59,12 +59,16 @@ export class HubCrudExpandableShellComponent implements AfterViewInit, OnDestroy
 
   onToggleClick(event: MouseEvent): void {
     event.stopPropagation();
+    if (!this.expand.isOpen(this.tileKey)) {
+      const h = this.host.nativeElement.offsetHeight;
+      this.collapsedFlowHeightPx = h > 0 ? h : null;
+    }
     this.expand.toggle(this.tileKey);
   }
 
   ngAfterViewInit(): void {
-    const el = this.hubPanelRef?.nativeElement;
-    if (!el || typeof ResizeObserver === 'undefined') {
+    const root = this.host.nativeElement;
+    if (typeof ResizeObserver === 'undefined') {
       return;
     }
 
@@ -72,17 +76,9 @@ export class HubCrudExpandableShellComponent implements AfterViewInit, OnDestroy
       if (this.expand.isOpen(this.tileKey)) {
         return;
       }
-      const h = el.getBoundingClientRect().height;
-      const rounded = Math.ceil(h);
-      const next = rounded > 0 ? Math.max(rounded, 48) : null;
-      this.ngZone.run(() => {
-        if (this.collapsedFlowHeightPx !== next) {
-          this.collapsedFlowHeightPx = next;
-          this.cdr.markForCheck();
-        }
-      });
+      this.applyMeasuredHeight(root.offsetHeight);
     });
-    this.resizeObserver.observe(el);
+    this.resizeObserver.observe(root);
   }
 
   ngOnDestroy(): void {
@@ -90,14 +86,24 @@ export class HubCrudExpandableShellComponent implements AfterViewInit, OnDestroy
     this.resizeObserver = null;
   }
 
-  /** Min-height якоря в документе, пока оверлей открыт (без скачка относительно свёрнутого вида). */
+  /** Min-height якоря в потоке, пока оверлей открыт. */
   anchorMinHeightWhenOpen(): string | null {
     if (!this.expand.isOpen(this.tileKey)) {
       return null;
     }
-    if (this.collapsedFlowHeightPx != null) {
+    if (this.collapsedFlowHeightPx != null && this.collapsedFlowHeightPx > 0) {
       return `${this.collapsedFlowHeightPx}px`;
     }
     return this.layoutReserveWhenOpen;
+  }
+
+  private applyMeasuredHeight(h: number): void {
+    const next = h > 0 ? h : null;
+    this.ngZone.run(() => {
+      if (this.collapsedFlowHeightPx !== next) {
+        this.collapsedFlowHeightPx = next;
+        this.cdr.markForCheck();
+      }
+    });
   }
 }
