@@ -1,8 +1,8 @@
-<div class="loginStage" aria-label="Экран входа">
+<div class="loginStage" aria-label="Главный экран входа">
   <div class="loginBackdrop" aria-hidden="true"></div>
   <div class="loginGrid">
     <section class="loginPanel">
-      <header class="loginBrand">
+      <a routerLink="/" class="loginBrand loginBrand--link" aria-label="Sporting Yoga — CRM, главная">
         <img
           class="loginLogo"
           src="/branding/sporting-yoga-mark.svg"
@@ -15,46 +15,63 @@
           <h1 class="loginTitle">CRM</h1>
           <p class="loginTagline">Sporting Yoga · производство</p>
         </div>
-      </header>
+      </a>
 
-      <p class="loginLead">Войдите, чтобы открыть справочники и рабочие экраны.</p>
-
-      <form class="loginForm" [formGroup]="form" (ngSubmit)="submit()" novalidate>
-        <app-ui-form-field
-          label="Логин"
-          [required]="true"
-          [invalid]="form.controls.username.invalid && form.controls.username.touched"
-          [errorText]="form.controls.username.touched && form.controls.username.hasError('required') ? 'Укажите логин' : ''"
-        >
-          <input type="text" formControlName="username" name="username" autocomplete="username" />
-        </app-ui-form-field>
-
-        <app-ui-form-field
-          label="Пароль"
-          [required]="true"
-          [invalid]="form.controls.password.invalid && form.controls.password.touched"
-          [errorText]="form.controls.password.touched && form.controls.password.hasError('required') ? 'Укажите пароль' : ''"
-        >
-          <input type="password" formControlName="password" name="password" autocomplete="current-password" />
-        </app-ui-form-field>
-
-        @if (errorText) {
-          <p class="loginFormError" role="alert">{{ errorText }}</p>
-        }
-
-        <div class="loginActions">
-          <app-ui-button type="submit" variant="primary">Войти в систему</app-ui-button>
+      @if (session.isAuthenticated()) {
+        <p class="loginLead">Вы вошли в систему. Главная — здесь; рабочие экраны — в справочниках.</p>
+        <div class="loginActions loginActions--row">
+          <app-ui-button variant="primary" type="button" (clicked)="goDictionaries()">К справочникам</app-ui-button>
+          <app-ui-button variant="soft" type="button" (clicked)="logout()">Выйти</app-ui-button>
         </div>
-      </form>
+        <p class="loginHint">
+          Регистрация новых пользователей появится после подключения бэкенда. Сейчас доступна только учётная запись
+          разработчика.
+        </p>
+      } @else {
+        <p class="loginLead">Войдите, чтобы открыть справочники и рабочие экраны.</p>
 
-      <p class="loginHint">Демо-режим: принимается любой непустой логин и пароль. Реальная проверка будет подключена позже.</p>
+        <form class="loginForm" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+          <app-ui-form-field
+            label="Логин"
+            [required]="true"
+            [invalid]="form.controls.username.invalid && form.controls.username.touched"
+            [errorText]="form.controls.username.touched && form.controls.username.hasError('required') ? 'Укажите логин' : ''"
+          >
+            <input type="text" formControlName="username" name="username" autocomplete="username" />
+          </app-ui-form-field>
+
+          <app-ui-form-field
+            label="Пароль"
+            [required]="true"
+            [invalid]="form.controls.password.invalid && form.controls.password.touched"
+            [errorText]="form.controls.password.touched && form.controls.password.hasError('required') ? 'Укажите пароль' : ''"
+          >
+            <input type="password" formControlName="password" name="password" autocomplete="current-password" />
+          </app-ui-form-field>
+
+          @if (errorText) {
+            <p class="loginFormError" role="alert">{{ errorText }}</p>
+          }
+
+          <div class="loginActions">
+            <app-ui-button type="submit" variant="primary">Войти в систему</app-ui-button>
+          </div>
+        </form>
+
+        <p class="loginHint">
+          Пока нет сервера входа: логин <strong>{{ devUser }}</strong>, пароль <strong>{{ devPass }}</strong>. Свой фон
+          (jpg/webp) можно добавить в <code>public/branding/</code> и вынести слоем в стилях страницы входа рядом с
+          <code>landing-hero.svg</code>.
+        </p>
+      }
     </section>
 
     <aside class="loginAside" aria-hidden="true">
+      <div class="loginAsideVisual"></div>
       <div class="loginAsideInner">
-        <span class="loginAsideLine">Справочники</span>
-        <span class="loginAsideLine">Материалы · Клиенты · Виды работ</span>
-        <span class="loginAsideLine muted">Единый стиль интерфейса приложения</span>
+        <span class="loginAsideLine">Производственная CRM</span>
+        <span class="loginAsideLine">Справочники · материалы · клиенты</span>
+        <span class="loginAsideLine muted">Единый интерфейс приложения</span>
       </div>
     </aside>
   </div>

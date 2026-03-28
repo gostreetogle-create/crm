@@ -13,11 +13,14 @@
   inset: 0;
   z-index: 0;
   background:
+    url('/branding/landing-hero.svg') no-repeat 85% 45% / min(92%, 720px) auto,
     radial-gradient(ellipse 120% 80% at 0% 0%, color-mix(in srgb, var(--accent) 22%, transparent) 0%, transparent 55%),
     radial-gradient(ellipse 90% 70% at 100% 20%, color-mix(in srgb, var(--success) 18%, transparent) 0%, transparent 50%),
     linear-gradient(165deg, var(--bg-base) 0%, color-mix(in srgb, var(--surface-soft) 88%, var(--bg-base)) 100%);
   pointer-events: none;
 }
+
+/* Опционально: положите hero.jpg / hero.webp в public/branding/ и раскомментируйте слой выше градиентов. */
 
 .loginBackdrop::after {
   content: '';
@@ -75,6 +78,23 @@
   margin-bottom: 20px;
 }
 
+.loginBrand--link {
+  text-decoration: none;
+  color: inherit;
+  width: fit-content;
+  max-width: 100%;
+  border-radius: calc(var(--radius-card) + 4px);
+}
+
+.loginBrand--link:hover .loginTitle {
+  color: color-mix(in srgb, var(--accent) 55%, var(--text-primary));
+}
+
+.loginBrand--link:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  outline-offset: 4px;
+}
+
 .loginLogo {
   flex-shrink: 0;
   filter: drop-shadow(0 2px 6px color-mix(in srgb, var(--accent) 25%, transparent));
@@ -125,6 +145,18 @@
   margin-top: var(--ui-space-2);
 }
 
+.loginActions--row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-space-2);
+  align-items: center;
+}
+
+.loginHint code {
+  font-size: 10px;
+  word-break: break-all;
+}
+
 .loginHint {
   margin: 22px 0 0;
   font-size: 11px;
@@ -133,18 +165,31 @@
 }
 
 .loginAside {
+  position: relative;
   align-self: stretch;
-  min-height: 280px;
+  min-height: min(420px, 52vh);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 32px 24px;
   border-radius: calc(var(--radius-card) + 10px);
-  border: 1px dashed color-mix(in srgb, var(--border-color) 70%, transparent);
-  background: color-mix(in srgb, var(--surface-soft) 55%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border-color) 55%, transparent);
+  background: color-mix(in srgb, var(--surface-soft) 62%, transparent);
+  overflow: hidden;
+}
+
+.loginAsideVisual {
+  position: absolute;
+  inset: -8%;
+  background: url('/branding/landing-hero.svg') no-repeat center / cover;
+  opacity: 0.2;
+  filter: saturate(1.1);
+  pointer-events: none;
 }
 
 .loginAsideInner {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   gap: 10px;

@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600" fill="none" aria-hidden="true">
+  <defs>
+    <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1f6feb" stop-opacity="0.22" />
+      <stop offset="55%" stop-color="#0e9f6e" stop-opacity="0.12" />
+      <stop offset="100%" stop-color="#1f6feb" stop-opacity="0.08" />
+    </linearGradient>
+    <linearGradient id="g2" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#101828" stop-opacity="0.06" />
+      <stop offset="100%" stop-color="#101828" stop-opacity="0" />
+    </linearGradient>
+    <filter id="blur" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="24" />
+    </filter>
+  </defs>
+  <rect width="900" height="600" fill="url(#g1)" />
+  <ellipse cx="720" cy="120" rx="200" ry="160" fill="#1f6feb" fill-opacity="0.09" filter="url(#blur)" />
+  <ellipse cx="140" cy="480" rx="220" ry="180" fill="#0e9f6e" fill-opacity="0.08" filter="url(#blur)" />
+  <path
+    d="M120 380 L280 220 L420 320 L560 180 L780 400"
+    stroke="#1f6feb"
+    stroke-opacity="0.18"
+    stroke-width="3"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <g stroke="#101828" stroke-opacity="0.07" stroke-width="1.2">
+    <rect x="480" y="140" width="160" height="110" rx="8" fill="url(#g2)" />
+    <rect x="220" y="260" width="200" height="140" rx="8" fill="url(#g2)" />
+    <line x1="200" y1="120" x2="360" y2="120" />
+    <line x1="200" y1="140" x2="320" y2="140" />
+  </g>
+  <circle cx="650" cy="420" r="6" fill="#1f6feb" fill-opacity="0.35" />
+  <circle cx="690" cy="400" r="4" fill="#0e9f6e" fill-opacity="0.4" />
+  <circle cx="230" cy="200" r="5" fill="#1f6feb" fill-opacity="0.28" />
+</svg>

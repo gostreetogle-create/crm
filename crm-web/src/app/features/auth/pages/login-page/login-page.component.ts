@@ -1,34 +1,35 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
-import { SessionAuthService } from '../../../../core/auth/session-auth.service';
+import { Router, RouterLink } from '@angular/router';
+import {
+  DEV_BOOTSTRAP_PASSWORD,
+  DEV_BOOTSTRAP_USERNAME,
+  SessionAuthService,
+} from '../../../../core/auth/session-auth.service';
 import { UiButtonComponent } from '../../../../shared/ui/ui-button/ui-button.component';
 import { UiFormFieldComponent } from '../../../../shared/ui/ui-form-field/ui-form-field.component';
 
 @Component({
   selector: 'app-login-page',
   standalone: true,
-  imports: [ReactiveFormsModule, UiFormFieldComponent, UiButtonComponent],
+  imports: [ReactiveFormsModule, RouterLink, UiFormFieldComponent, UiButtonComponent],
   templateUrl: './login-page.component.html',
   styleUrl: './login-page.component.scss',
 })
-export class LoginPage implements OnInit {
+export class LoginPage {
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
-  private readonly session = inject(SessionAuthService);
+  readonly session = inject(SessionAuthService);
+
+  readonly devUser = DEV_BOOTSTRAP_USERNAME;
+  readonly devPass = DEV_BOOTSTRAP_PASSWORD;
 
   readonly form = this.fb.nonNullable.group({
-    username: ['', [Validators.required, Validators.minLength(1)]],
-    password: ['', [Validators.required, Validators.minLength(1)]],
+    username: [DEV_BOOTSTRAP_USERNAME, [Validators.required, Validators.minLength(1)]],
+    password: [DEV_BOOTSTRAP_PASSWORD, [Validators.required, Validators.minLength(1)]],
   });
 
   errorText = '';
-
-  ngOnInit(): void {
-    if (this.session.isAuthenticated()) {
-      void this.router.navigateByUrl('/dictionaries');
-    }
-  }
 
   submit(): void {
     this.errorText = '';
@@ -38,7 +39,23 @@ export class LoginPage implements OnInit {
       return;
     }
     const { username, password } = this.form.getRawValue();
-    this.session.login(username.trim(), password);
+    const ok = this.session.login(username.trim(), password);
+    if (!ok) {
+      this.errorText = `Неверная пара логин/пароль. Для dev: ${this.devUser} / ${this.devPass}.`;
+      return;
+    }
+    void this.router.navigateByUrl('/dictionaries');
+  }
+
+  logout(): void {
+    this.session.logout();
+    this.form.reset({
+      username: DEV_BOOTSTRAP_USERNAME,
+      password: DEV_BOOTSTRAP_PASSWORD,
+    });
+  }
+
+  goDictionaries(): void {
     void this.router.navigateByUrl('/dictionaries');
   }
 }

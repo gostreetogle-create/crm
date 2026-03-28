@@ -2,8 +2,13 @@ import { Injectable, computed, signal } from '@angular/core';
 
 const STORAGE_KEY = 'crm.authenticated';
 
+/** Учётка до появления бэкенда (согласовано для локальной разработки). */
+export const DEV_BOOTSTRAP_USERNAME = 'admin';
+export const DEV_BOOTSTRAP_PASSWORD = 'admin';
+
 /**
- * Локальная сессия входа (без реального бэкенда): достаточно для макета главного экрана и guard маршрутов.
+ * Локальная сессия входа (без реального бэкенда): guard маршрутов и главный экран.
+ * Пока система в разработке — вход только парами из констант выше.
  */
 @Injectable({ providedIn: 'root' })
 export class SessionAuthService {
@@ -11,7 +16,12 @@ export class SessionAuthService {
 
   readonly isAuthenticated = computed(() => this.authenticated());
 
-  login(_username: string, _password: string): boolean {
+  login(username: string, password: string): boolean {
+    const u = username.trim();
+    const p = password;
+    if (u !== DEV_BOOTSTRAP_USERNAME || p !== DEV_BOOTSTRAP_PASSWORD) {
+      return false;
+    }
     this.authenticated.set(true);
     try {
       sessionStorage.setItem(STORAGE_KEY, '1');
