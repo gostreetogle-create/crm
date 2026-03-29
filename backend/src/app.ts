@@ -13,7 +13,16 @@ import { rolesRouter } from './routes/roles.routes.js';
 import { surfaceFinishesRouter } from './routes/surface-finishes.routes.js';
 import { unitsRouter } from './routes/units.routes.js';
 import { usersRouter } from './routes/users.routes.js';
+import { authAuthedRouter, authPublicRouter } from './routes/auth.routes.js';
+import { requireAdmin, requireAuth } from './middleware/auth-jwt.js';
 import { httpErrorHandler } from './middleware/http-error.js';
+
+function materialGeometryProtected(): express.Router {
+  const r = express.Router();
+  r.use(requireAuth);
+  r.use(materialGeometryRouter);
+  return r;
+}
 
 export function createApp() {
   const app = express();
@@ -30,21 +39,36 @@ export function createApp() {
   app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
   const api = express.Router();
-  api.use('/units', unitsRouter);
-  api.use('/colors', colorsRouter);
-  api.use('/surface-finishes', surfaceFinishesRouter);
-  api.use('/coatings', coatingsRouter);
-  api.use('/geometries', geometriesRouter);
-  api.use('/production-work-types', productionWorkTypesRouter);
-  api.use('/clients', clientsRouter);
-  api.use('/material-characteristics', materialCharacteristicsRouter);
-  api.use('/materials', materialsRouter);
-  api.use('/roles', rolesRouter);
-  api.use('/users', usersRouter);
+
+  api.use('/auth', authPublicRouter);
+
+  const authed = express.Router();
+  authed.use(requireAuth);
+  authed.use('/auth', authAuthedRouter);
+  authed.use('/units', unitsRouter);
+  authed.use('/colors', colorsRouter);
+  authed.use('/surface-finishes', surfaceFinishesRouter);
+  authed.use('/coatings', coatingsRouter);
+  authed.use('/geometries', geometriesRouter);
+  authed.use('/production-work-types', productionWorkTypesRouter);
+  authed.use('/clients', clientsRouter);
+  authed.use('/material-characteristics', materialCharacteristicsRouter);
+  authed.use('/materials', materialsRouter);
+
+  const admin = express.Router();
+  admin.use(requireAuth);
+  admin.use(requireAdmin);
+  admin.use('/users', usersRouter);
+  admin.use('/roles', rolesRouter);
+
+  api.use(authed);
+  api.use(admin);
+
   app.use('/api', api);
 
-  app.use(materialGeometryRouter);
-  app.use('/api', materialGeometryRouter);
+  const mg = materialGeometryProtected();
+  app.use(mg);
+  app.use('/api', mg);
 
   app.get('/', (_req, res) =>
     res.json({

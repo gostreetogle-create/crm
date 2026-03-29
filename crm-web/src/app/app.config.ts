@@ -1,8 +1,9 @@
 import {
+  APP_INITIALIZER,
   ApplicationConfig,
   provideBrowserGlobalErrorListeners,
 } from '@angular/core';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
 import { appRoutes } from './app.routes';
 import { API_CONFIG, ApiConfig, DEFAULT_API_CONFIG } from './core/api/api-config';
@@ -12,11 +13,23 @@ import { RolesHttpRepository } from './features/roles/data/roles.http-repository
 import { USERS_REPOSITORY } from './features/users/data/users.repository';
 import { UsersMockRepository } from './features/users/data/users.mock-repository';
 import { UsersHttpRepository } from './features/users/data/users.http-repository';
+import { authBearerInterceptor } from './core/auth/auth-bearer.interceptor';
+import { SessionAuthService } from './core/auth/session-auth.service';
+
+function authAppInitializerFactory(session: SessionAuthService): () => Promise<void> {
+  return () => session.hydrateSession();
+}
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
-    provideHttpClient(),
+    provideHttpClient(withInterceptors([authBearerInterceptor])),
+    {
+      provide: APP_INITIALIZER,
+      multi: true,
+      useFactory: authAppInitializerFactory,
+      deps: [SessionAuthService],
+    },
     provideRouter(appRoutes),
     { provide: API_CONFIG, useValue: DEFAULT_API_CONFIG },
     RolesMockRepository,

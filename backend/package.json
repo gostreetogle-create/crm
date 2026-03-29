@@ -19,6 +19,7 @@
     "cors": "*",
     "dotenv": "*",
     "express": "*",
+    "jose": "^5.10.0",
     "zod": "*"
   },
   "devDependencies": {

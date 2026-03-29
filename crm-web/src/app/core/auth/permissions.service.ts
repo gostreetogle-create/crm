@@ -175,6 +175,16 @@ export class PermissionsService {
     }
   }
 
+  /** После выхода: сбросить сохранённую «роль интерфейса», чтобы не тянуть прошлую роль из localStorage. */
+  resetRoleAfterLogout(): void {
+    this.roleSignal.set(ROLE_ID_SYSTEM_VIEWER);
+    try {
+      localStorage.removeItem(STORAGE_KEY_ROLE);
+    } catch {
+      // no-op
+    }
+  }
+
   readonly orderedPermissionKeys = PERMISSION_KEYS_ORDERED;
 
   /** Есть ли хотя бы одно сохранённое переопределение матрицы в этом браузере. */

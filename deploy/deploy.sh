@@ -17,6 +17,7 @@ require_non_empty() {
 echo "[deploy] Проверяю обязательные поля deploy/.env..."
 require_non_empty WEB_PORT
 require_non_empty BACKEND_PORT
+require_non_empty JWT_SECRET
 
 echo "[deploy] Обновляю код (если это серверный сценарий)..."
 if git -C .. rev-parse --is-inside-work-tree >/dev/null 2>&1; then

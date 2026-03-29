@@ -23,7 +23,7 @@
           <a routerLink="/dictionaries" class="loginInlineLink">Открыть справочники</a>
         </p>
         <p class="loginHint">
-          Регистрация новых пользователей — после подключения бэкенда. Выйти можно кнопкой в шапке.
+          Новых пользователей заводит администратор: «Справочники» → плитка «Пользователи». Выйти — кнопка в шапке.
         </p>
       } @else {
         <p class="loginLead">Войдите, чтобы открыть справочники и рабочие экраны.</p>
@@ -56,9 +56,17 @@
           </div>
         </form>
 
-        <p class="loginHint">
-          До сервера входа: логин <strong>{{ devUser }}</strong>, пароль <strong>{{ devPass }}</strong>.
-        </p>
+        @if (session.useMockAuth()) {
+          <p class="loginHint">
+            Режим без API: для просмотра UI — логин <strong>{{ devUser }}</strong>, пароль
+            <strong>{{ devPass }}</strong>.
+          </p>
+        } @else {
+          <p class="loginHint">
+            После первого развёртывания можно войти учёткой из сида БД (например <code>demo</code> / <code>demo</code>),
+            если пароль не меняли.
+          </p>
+        }
       }
     </section>
   </div>

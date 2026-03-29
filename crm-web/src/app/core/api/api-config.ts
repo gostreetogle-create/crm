@@ -8,8 +8,8 @@ export type ApiConfig = {
 export const DEFAULT_API_CONFIG: ApiConfig = {
   // Can stay empty in development if proxy/rewrite is used.
   baseUrl: '',
-  // While backend is not ready we keep mock repositories enabled.
-  useMockRepositories: true,
+  // Прод: nginx проксирует /api на backend. Локально без API — временно true (вход admin/admin без JWT).
+  useMockRepositories: false,
 };
 
 export const API_CONFIG = new InjectionToken<ApiConfig>('API_CONFIG');
