@@ -1,53 +1,35 @@
 # Runbook: включение реального backend
 
-Этот документ написан как рабочая инструкция для агента: как безопасно переключить фронт с mock на реальный backend.
+Как переключить фронт с моков на HTTP там, где уже есть реализация.
 
-## Где переключатель
+## Переключатель
 
 - Файл: `crm-web/src/app/core/api/api-config.ts`
-- Поля:
-  - `useMockRepositories`
-  - `baseUrl`
+- Поля: `useMockRepositories`, `baseUrl`
 
-## Пошагово (боевой порядок)
+## Локальная разработка (рекомендуется)
 
-1. Подготовка backend
-   - Проверить, что endpoint `GET /material-geometry/model` доступен.
-   - Проверить, что формат ответа совместим с `MaterialGeometryModel`:
-     - `version: string`
-     - `materialFields: FieldRow[]`
-     - `geometryFields: FieldRow[]`
+1. Поднять PostgreSQL и backend (см. `backend/README.md`).
+2. В `api-config.ts`:
+   - `useMockRepositories: false`
+   - `baseUrl: ''` — запросы на `/api/*` идут через **прокси** `crm-web/proxy.conf.json` на `http://127.0.0.1:3000`.
 
-2. Переключение фронта
-   - В `api-config.ts` поставить:
-     - `useMockRepositories: false`
-     - `baseUrl: 'http://<host>:<port>'` (если backend на другом origin)
+## Проверка единиц измерения (первый реальный ресурс)
 
-3. Прогон проверок
-   - `npx nx build crm-web`
-   - Запустить dev-server и открыть страницу `material-geometry`
-   - Убедиться, что:
-     - таблицы заполняются,
-     - нет ошибок в консоли браузера,
-     - ThemePicker работает,
-     - тема из JSON entry point (`crm-web/src/app/shared/theme/theme-json-entry.ts`) корректно подхватывается при старте (когда нет пользовательской темы в `localStorage`).
+1. Backend: `GET http://localhost:3000/api/units` возвращает массив объектов `UnitItem` (`id`, `name`, `code?`, `notes?`, `isActive`).
+2. Создание/редактирование плитки «Единицы измерения» на `/dictionaries` работает без ошибок в консоли.
 
-4. Если backend и frontend на разных origin
-   - Проверить CORS на backend.
-   - В случае 401/403 — настроить auth-заголовки (следующий этап, пока не включён).
+## Прод (один домен, nginx из `deploy/`)
 
-## Быстрый откат (если backend не готов)
+- Статика и API с одного origin: `baseUrl: ''`, backend за прокси `location /api/`.
+- Если по каким-то причинам API на **другом origin**, задать `baseUrl: 'https://api.example.com'` (или порт backend) и проверить CORS.
 
-- В `api-config.ts` вернуть:
-  - `useMockRepositories: true`
-  - `baseUrl: ''`
+## Откат
 
-После отката UI снова питается из `MaterialGeometryMockRepository`.
+- `useMockRepositories: true`, `baseUrl: ''` — снова моки (в т.ч. `UnitsMockRepository`).
 
-## Что делать при несовместимом ответе backend
+## Несовместимый ответ API
 
-1. Не менять UI-слой.
-2. Править только `material-geometry.http-repository.ts`:
-   - адаптировать backend-shape -> `MaterialGeometryModel`.
-3. Зафиксировать маппинг в `docs/frontend/api-contracts.md`.
-
+1. Не ломать UI ради бэка.
+2. Маппинг править в соответствующем `*.http-repository.ts`.
+3. Зафиксировать контракт в `docs/frontend/api-contracts.md`.

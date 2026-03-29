@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, of } from 'rxjs';
 import { SurfaceFinishItem, SurfaceFinishItemInput } from '../model/surface-finish-item';
 import { SurfaceFinishesRepository } from './surface-finishes.repository';
 
@@ -21,15 +21,20 @@ export class SurfaceFinishesMockRepository implements SurfaceFinishesRepository 
     return this.itemsSubject.asObservable();
   }
 
-  create(input: SurfaceFinishItemInput): void {
-    this.itemsSubject.next([{ id: newId(), ...input }, ...this.itemsSubject.value]);
+  create(input: SurfaceFinishItemInput): Observable<SurfaceFinishItem> {
+    const row: SurfaceFinishItem = { id: newId(), ...input };
+    this.itemsSubject.next([row, ...this.itemsSubject.value]);
+    return of(row);
   }
 
-  update(id: string, input: SurfaceFinishItemInput): void {
-    this.itemsSubject.next(this.itemsSubject.value.map((x) => (x.id === id ? { id, ...input } : x)));
+  update(id: string, input: SurfaceFinishItemInput): Observable<SurfaceFinishItem> {
+    const row: SurfaceFinishItem = { id, ...input };
+    this.itemsSubject.next(this.itemsSubject.value.map((x) => (x.id === id ? row : x)));
+    return of(row);
   }
 
-  remove(id: string): void {
+  remove(id: string): Observable<void> {
     this.itemsSubject.next(this.itemsSubject.value.filter((x) => x.id !== id));
+    return of(void 0);
   }
 }

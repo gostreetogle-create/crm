@@ -4,9 +4,9 @@ import { ColorItem, ColorItemInput } from '../model/color-item';
 
 export interface ColorsRepository {
   getItems(): Observable<ColorItem[]>;
-  create(input: ColorItemInput): void;
-  update(id: string, input: ColorItemInput): void;
-  remove(id: string): void;
+  create(input: ColorItemInput): Observable<ColorItem>;
+  update(id: string, input: ColorItemInput): Observable<ColorItem>;
+  remove(id: string): Observable<void>;
 }
 
 export const COLORS_REPOSITORY = new InjectionToken<ColorsRepository>('COLORS_REPOSITORY');

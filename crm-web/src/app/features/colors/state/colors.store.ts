@@ -1,7 +1,7 @@
 import { computed, inject } from '@angular/core';
 import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { filter, pipe, switchMap, tap } from 'rxjs';
+import { concatMap, filter, from, pipe, switchMap, tap, toArray } from 'rxjs';
 import { COLORS_REPOSITORY, ColorsRepository } from '../data/colors.repository';
 import { ColorItem, ColorItemInput } from '../model/color-item';
 
@@ -78,37 +78,40 @@ export const ColorsStore = signalStore(
           }
         }),
         filter(({ isValid }) => isValid),
-        tap(({ value }) => {
+        switchMap(({ value }) => {
           const id = store.editId();
-          if (id) {
-            repo.update(id, value);
-          } else {
-            repo.create(value);
-          }
-          patchState(store, { editId: null, formSubmitAttempted: false });
+          const save$ = id ? repo.update(id, value) : repo.create(value);
+          return save$;
         }),
+        tap(() => patchState(store, { editId: null, formSubmitAttempted: false })),
         switchMap(() => repo.getItems()),
         tap((items) => patchState(store, { items }))
       )
     ),
     createMany: rxMethod<ColorItemInput[]>(
       pipe(
-        tap((rows) => {
-          rows.forEach((row) => repo.create(row));
-          patchState(store, { editId: null, formSubmitAttempted: false });
-        }),
+        switchMap((rows) =>
+          from(rows).pipe(
+            concatMap((row) => repo.create(row)),
+            toArray(),
+            tap(() => patchState(store, { editId: null, formSubmitAttempted: false })),
+          ),
+        ),
         switchMap(() => repo.getItems()),
         tap((items) => patchState(store, { items }))
       )
     ),
     delete: rxMethod<string>(
       pipe(
-        tap((id) => {
-          repo.remove(id);
-          if (store.editId() === id) {
-            patchState(store, { editId: null, formSubmitAttempted: false });
-          }
-        }),
+        switchMap((id) =>
+          repo.remove(id).pipe(
+            tap(() => {
+              if (store.editId() === id) {
+                patchState(store, { editId: null, formSubmitAttempted: false });
+              }
+            }),
+          ),
+        ),
         switchMap(() => repo.getItems()),
         tap((items) => patchState(store, { items }))
       )

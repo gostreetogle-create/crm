@@ -25,6 +25,9 @@ describe('GeometriesStore', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     repo.getItems.mockReturnValue(of(mockItems));
+    repo.create.mockReturnValue(of(mockItems[0]));
+    repo.update.mockReturnValue(of(mockItems[0]));
+    repo.remove.mockReturnValue(of(void 0));
 
     TestBed.configureTestingModule({
       providers: [{ provide: GEOMETRIES_REPOSITORY, useValue: repo }],

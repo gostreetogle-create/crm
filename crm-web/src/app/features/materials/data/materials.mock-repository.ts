@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, of } from 'rxjs';
 import { MaterialItem, MaterialItemInput } from '../model/material-item';
 import { MaterialsRepository } from './materials.repository';
 
@@ -44,17 +44,20 @@ export class MaterialsMockRepository implements MaterialsRepository {
     return this.itemsSubject.asObservable();
   }
 
-  create(input: MaterialItemInput): void {
+  create(input: MaterialItemInput): Observable<MaterialItem> {
     const next: MaterialItem = { id: newId(), ...input };
     this.itemsSubject.next([next, ...this.itemsSubject.value]);
+    return of(next);
   }
 
-  update(id: string, input: MaterialItemInput): void {
-    const updated = this.itemsSubject.value.map((x) => (x.id === id ? { id, ...input } : x));
-    this.itemsSubject.next(updated);
+  update(id: string, input: MaterialItemInput): Observable<MaterialItem> {
+    const row: MaterialItem = { id, ...input };
+    this.itemsSubject.next(this.itemsSubject.value.map((x) => (x.id === id ? row : x)));
+    return of(row);
   }
 
-  remove(id: string): void {
+  remove(id: string): Observable<void> {
     this.itemsSubject.next(this.itemsSubject.value.filter((x) => x.id !== id));
+    return of(void 0);
   }
 }

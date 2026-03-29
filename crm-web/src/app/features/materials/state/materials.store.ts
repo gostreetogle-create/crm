@@ -7,7 +7,7 @@ import {
   withState,
 } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { filter, pipe, switchMap, tap } from 'rxjs';
+import { concatMap, filter, from, pipe, switchMap, tap, toArray } from 'rxjs';
 import { MaterialCharacteristicsStore } from '../../material-characteristics/state/material-characteristics.store';
 import { GeometriesStore } from '../../geometries/state/geometries.store';
 import {
@@ -120,37 +120,39 @@ export const MaterialsStore = signalStore(
           }
         }),
         filter(({ isValid }) => isValid),
-        tap(({ value }) => {
+        switchMap(({ value }) => {
           const id = store.editId();
-          if (id) {
-            repo.update(id, value);
-          } else {
-            repo.create(value);
-          }
-          patchState(store, { editId: null, formSubmitAttempted: false });
+          return id ? repo.update(id, value) : repo.create(value);
         }),
+        tap(() => patchState(store, { editId: null, formSubmitAttempted: false })),
         switchMap(() => repo.getItems()),
         tap((items) => patchState(store, { items }))
       )
     ),
     delete: rxMethod<string>(
       pipe(
-        tap((id) => {
-          repo.remove(id);
-          if (store.editId() === id) {
-            patchState(store, { editId: null, formSubmitAttempted: false });
-          }
-        }),
+        switchMap((id) =>
+          repo.remove(id).pipe(
+            tap(() => {
+              if (store.editId() === id) {
+                patchState(store, { editId: null, formSubmitAttempted: false });
+              }
+            }),
+          ),
+        ),
         switchMap(() => repo.getItems()),
         tap((items) => patchState(store, { items }))
       )
     ),
     createMany: rxMethod<MaterialItemInput[]>(
       pipe(
-        tap((rows) => {
-          rows.forEach((row) => repo.create(row));
-          patchState(store, { editId: null, formSubmitAttempted: false });
-        }),
+        switchMap((rows) =>
+          from(rows).pipe(
+            concatMap((row) => repo.create(row)),
+            toArray(),
+            tap(() => patchState(store, { editId: null, formSubmitAttempted: false })),
+          ),
+        ),
         switchMap(() => repo.getItems()),
         tap((items) => patchState(store, { items }))
       )

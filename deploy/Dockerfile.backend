@@ -1,19 +1,25 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
+RUN apk add --no-cache openssl
 COPY backend/package*.json ./
 RUN npm ci
 
 FROM node:20-alpine AS build
 WORKDIR /app
+RUN apk add --no-cache openssl
 COPY --from=deps /app/node_modules ./node_modules
 COPY backend/ ./
+ENV DATABASE_URL=postgresql://crm:crm@localhost:5432/crm?schema=public
+# npx tsc: на Alpine иногда нет +x у node_modules/.bin/tsc — см. backend/package.json "build"
 RUN npm run build
 
 FROM node:20-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
+RUN apk add --no-cache openssl wget
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
+COPY --from=build /app/prisma ./prisma
+COPY --from=build /app/package.json ./
 EXPOSE 3000
-CMD ["node", "dist/server.js"]
-
+CMD ["sh", "-c", "npx prisma migrate deploy && npx prisma db seed && node dist/server.js"]

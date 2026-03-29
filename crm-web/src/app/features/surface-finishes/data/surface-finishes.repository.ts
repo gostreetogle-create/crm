@@ -4,9 +4,9 @@ import { SurfaceFinishItem, SurfaceFinishItemInput } from '../model/surface-fini
 
 export interface SurfaceFinishesRepository {
   getItems(): Observable<SurfaceFinishItem[]>;
-  create(input: SurfaceFinishItemInput): void;
-  update(id: string, input: SurfaceFinishItemInput): void;
-  remove(id: string): void;
+  create(input: SurfaceFinishItemInput): Observable<SurfaceFinishItem>;
+  update(id: string, input: SurfaceFinishItemInput): Observable<SurfaceFinishItem>;
+  remove(id: string): Observable<void>;
 }
 
 export const SURFACE_FINISHES_REPOSITORY = new InjectionToken<SurfaceFinishesRepository>(

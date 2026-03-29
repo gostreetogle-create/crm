@@ -7,7 +7,7 @@ import {
   withState,
 } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { filter, pipe, switchMap, take, tap } from 'rxjs';
+import { concatMap, filter, from, pipe, switchMap, take, tap, toArray } from 'rxjs';
 import {
   GEOMETRIES_REPOSITORY,
   GeometriesRepository,
@@ -97,19 +97,22 @@ export const GeometriesStore = signalStore(
           }
         }),
         filter(({ isValid }) => isValid),
-        tap(({ value }) => {
+        switchMap(({ value }) => {
           const id = store.editId();
           if (id) {
-            repo.update(id, value);
-            patchState(store, {
-              isEditDialogOpen: false,
-              editId: null,
-              formSubmitAttempted: false,
-            });
-          } else {
-            repo.create(value);
-            patchState(store, { editId: null, formSubmitAttempted: false });
+            return repo.update(id, value).pipe(
+              tap(() =>
+                patchState(store, {
+                  isEditDialogOpen: false,
+                  editId: null,
+                  formSubmitAttempted: false,
+                }),
+              ),
+            );
           }
+          return repo.create(value).pipe(
+            tap(() => patchState(store, { editId: null, formSubmitAttempted: false })),
+          );
         }),
         switchMap(() => repo.getItems().pipe(take(1))),
         tap((items) => patchState(store, { items }))
@@ -117,30 +120,38 @@ export const GeometriesStore = signalStore(
     ),
     delete: rxMethod<string>(
       pipe(
-        tap((id) => {
-          repo.remove(id);
-          if (store.editId() === id) {
-            patchState(store, {
-              editId: null,
-              formSubmitAttempted: false,
-              isEditDialogOpen: false,
-            });
-          }
-        }),
+        switchMap((id) =>
+          repo.remove(id).pipe(
+            tap(() => {
+              if (store.editId() === id) {
+                patchState(store, {
+                  editId: null,
+                  formSubmitAttempted: false,
+                  isEditDialogOpen: false,
+                });
+              }
+            }),
+          ),
+        ),
         switchMap(() => repo.getItems().pipe(take(1))),
         tap((items) => patchState(store, { items }))
       )
     ),
     createMany: rxMethod<GeometryItemInput[]>(
       pipe(
-        tap((rows) => {
-          rows.forEach((row) => repo.create(row));
-          patchState(store, {
-            editId: null,
-            formSubmitAttempted: false,
-            isEditDialogOpen: false,
-          });
-        }),
+        switchMap((rows) =>
+          from(rows).pipe(
+            concatMap((row) => repo.create(row)),
+            toArray(),
+            tap(() =>
+              patchState(store, {
+                editId: null,
+                formSubmitAttempted: false,
+                isEditDialogOpen: false,
+              }),
+            ),
+          ),
+        ),
         switchMap(() => repo.getItems().pipe(take(1))),
         tap((items) => patchState(store, { items }))
       )

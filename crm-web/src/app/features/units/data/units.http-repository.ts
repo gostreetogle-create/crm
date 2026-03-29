@@ -11,7 +11,8 @@ export class UnitsHttpRepository implements UnitsRepository {
   private readonly api = inject(API_CONFIG);
 
   private endpoint(path = ''): string {
-    return `${this.api.baseUrl}/units${path}`;
+    const base = this.api.baseUrl.replace(/\/$/, '');
+    return `${base}/api/units${path}`;
   }
 
   getItems(): Observable<UnitItem[]> {

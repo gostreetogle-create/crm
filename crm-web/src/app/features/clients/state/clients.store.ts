@@ -1,7 +1,7 @@
 import { computed, inject } from '@angular/core';
 import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { filter, pipe, switchMap, tap } from 'rxjs';
+import { concatMap, filter, from, pipe, switchMap, tap, toArray } from 'rxjs';
 import { CLIENTS_REPOSITORY, ClientsRepository } from '../data/clients.repository';
 import { ClientItem, ClientItemInput, formatClientFio } from '../model/client-item';
 
@@ -77,32 +77,37 @@ export const ClientsStore = signalStore(
           if (!isValid) patchState(store, { formSubmitAttempted: true });
         }),
         filter(({ isValid }) => isValid),
-        tap(({ value }) => {
+        switchMap(({ value }) => {
           const id = store.editId();
-          if (id) repo.update(id, value);
-          else repo.create(value);
-          patchState(store, { editId: null, formSubmitAttempted: false });
+          return id ? repo.update(id, value) : repo.create(value);
         }),
+        tap(() => patchState(store, { editId: null, formSubmitAttempted: false })),
         switchMap(() => repo.getItems()),
         tap((items) => patchState(store, { items }))
       )
     ),
     delete: rxMethod<string>(
       pipe(
-        tap((id) => {
-          repo.remove(id);
-          if (store.editId() === id) patchState(store, { editId: null, formSubmitAttempted: false });
-        }),
+        switchMap((id) =>
+          repo.remove(id).pipe(
+            tap(() => {
+              if (store.editId() === id) patchState(store, { editId: null, formSubmitAttempted: false });
+            }),
+          ),
+        ),
         switchMap(() => repo.getItems()),
         tap((items) => patchState(store, { items }))
       )
     ),
     createMany: rxMethod<ClientItemInput[]>(
       pipe(
-        tap((rows) => {
-          rows.forEach((row) => repo.create(row));
-          patchState(store, { editId: null, formSubmitAttempted: false });
-        }),
+        switchMap((rows) =>
+          from(rows).pipe(
+            concatMap((row) => repo.create(row)),
+            toArray(),
+            tap(() => patchState(store, { editId: null, formSubmitAttempted: false })),
+          ),
+        ),
         switchMap(() => repo.getItems()),
         tap((items) => patchState(store, { items }))
       )

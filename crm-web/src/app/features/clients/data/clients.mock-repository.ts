@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, of } from 'rxjs';
 import { ClientItem, ClientItemInput } from '../model/client-item';
 import { ClientsRepository } from './clients.repository';
 
@@ -50,15 +50,20 @@ export class ClientsMockRepository implements ClientsRepository {
     return this.itemsSubject.asObservable();
   }
 
-  create(input: ClientItemInput): void {
-    this.itemsSubject.next([{ id: newId(), ...input }, ...this.itemsSubject.value]);
+  create(input: ClientItemInput): Observable<ClientItem> {
+    const row: ClientItem = { id: newId(), ...input };
+    this.itemsSubject.next([row, ...this.itemsSubject.value]);
+    return of(row);
   }
 
-  update(id: string, input: ClientItemInput): void {
-    this.itemsSubject.next(this.itemsSubject.value.map((x) => (x.id === id ? { id, ...input } : x)));
+  update(id: string, input: ClientItemInput): Observable<ClientItem> {
+    const row: ClientItem = { id, ...input };
+    this.itemsSubject.next(this.itemsSubject.value.map((x) => (x.id === id ? row : x)));
+    return of(row);
   }
 
-  remove(id: string): void {
+  remove(id: string): Observable<void> {
     this.itemsSubject.next(this.itemsSubject.value.filter((x) => x.id !== id));
+    return of(void 0);
   }
 }

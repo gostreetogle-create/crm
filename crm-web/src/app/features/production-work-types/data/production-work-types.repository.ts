@@ -4,9 +4,9 @@ import { ProductionWorkTypeItem, ProductionWorkTypeItemInput } from '../model/pr
 
 export interface ProductionWorkTypesRepository {
   getItems(): Observable<ProductionWorkTypeItem[]>;
-  create(input: ProductionWorkTypeItemInput): void;
-  update(id: string, input: ProductionWorkTypeItemInput): void;
-  remove(id: string): void;
+  create(input: ProductionWorkTypeItemInput): Observable<ProductionWorkTypeItem>;
+  update(id: string, input: ProductionWorkTypeItemInput): Observable<ProductionWorkTypeItem>;
+  remove(id: string): Observable<void>;
 }
 
 export const PRODUCTION_WORK_TYPES_REPOSITORY = new InjectionToken<ProductionWorkTypesRepository>(

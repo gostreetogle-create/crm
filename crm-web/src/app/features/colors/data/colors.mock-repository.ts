@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, of } from 'rxjs';
 import { ColorItem, ColorItemInput } from '../model/color-item';
 import { ColorsRepository } from './colors.repository';
 
@@ -72,7 +72,7 @@ export class ColorsMockRepository implements ColorsRepository {
     return this.itemsSubject.asObservable();
   }
 
-  create(input: ColorItemInput): void {
+  create(input: ColorItemInput): Observable<ColorItem> {
     const hex = normalizeHex(input.hex);
     const next: ColorItem = {
       id: newId(),
@@ -81,24 +81,18 @@ export class ColorsMockRepository implements ColorsRepository {
       rgb: rgbFromHex(hex),
     };
     this.itemsSubject.next([next, ...this.itemsSubject.value]);
+    return of(next);
   }
 
-  update(id: string, input: ColorItemInput): void {
+  update(id: string, input: ColorItemInput): Observable<ColorItem> {
     const hex = normalizeHex(input.hex);
-    const updated = this.itemsSubject.value.map((x) =>
-      x.id === id
-        ? {
-            id,
-            ...input,
-            hex,
-            rgb: rgbFromHex(hex),
-          }
-        : x
-    );
-    this.itemsSubject.next(updated);
+    const row: ColorItem = { id, ...input, hex, rgb: rgbFromHex(hex) };
+    this.itemsSubject.next(this.itemsSubject.value.map((x) => (x.id === id ? row : x)));
+    return of(row);
   }
 
-  remove(id: string): void {
+  remove(id: string): Observable<void> {
     this.itemsSubject.next(this.itemsSubject.value.filter((x) => x.id !== id));
+    return of(void 0);
   }
 }

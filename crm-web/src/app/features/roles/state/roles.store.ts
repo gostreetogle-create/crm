@@ -1,5 +1,6 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { concatMap, from, switchMap, take } from 'rxjs';
 import { RoleItem, RoleItemInput } from '../model/role-item';
 import { ROLES_REPOSITORY } from '../data/roles.repository';
 import { compareRolesBySortOrder } from '../utils/role-sort';
@@ -7,6 +8,7 @@ import { compareRolesBySortOrder } from '../utils/role-sort';
 @Injectable({ providedIn: 'root' })
 export class RolesStore {
   private readonly repo = inject(ROLES_REPOSITORY);
+  private readonly destroyRef = inject(DestroyRef);
   readonly items = signal<RoleItem[]>([]);
 
   constructor() {
@@ -47,20 +49,42 @@ export class RolesStore {
   }
 
   create(input: RoleItemInput): void {
-    this.repo.create(input);
+    this.repo
+      .create(input)
+      .pipe(
+        switchMap(() => this.repo.getItems().pipe(take(1))),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((items) => this.items.set(items));
   }
 
   update(id: string, input: RoleItemInput): void {
-    this.repo.update(id, input);
+    this.repo
+      .update(id, input)
+      .pipe(
+        switchMap(() => this.repo.getItems().pipe(take(1))),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((items) => this.items.set(items));
   }
 
   remove(id: string): void {
-    this.repo.remove(id);
+    this.repo
+      .remove(id)
+      .pipe(
+        switchMap(() => this.repo.getItems().pipe(take(1))),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((items) => this.items.set(items));
   }
 
   createMany(rows: readonly RoleItemInput[]): void {
-    for (const row of rows) {
-      this.repo.create(row);
-    }
+    from(rows)
+      .pipe(
+        concatMap((row) => this.repo.create(row)),
+        switchMap(() => this.repo.getItems().pipe(take(1))),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((items) => this.items.set(items));
   }
 }

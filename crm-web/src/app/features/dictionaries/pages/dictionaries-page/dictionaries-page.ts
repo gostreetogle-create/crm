@@ -2,7 +2,7 @@ import { NgFor, NgIf } from '@angular/common';
 import { Component, OnDestroy, computed, inject, signal } from '@angular/core';
 import { LucidePlus } from '@lucide/angular';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
-import { Subscription, firstValueFrom } from 'rxjs';
+import { Observable, Subscription, firstValueFrom, forkJoin, of } from 'rxjs';
 import { PermissionsService } from '../../../../core/auth/public-api';
 import { permissionKeyForDictionaryHubTile } from '../../../../core/auth/dict-hub-permissions';
 import { GeometriesStore } from '../../../geometries/state/geometries.store';
@@ -1954,13 +1954,25 @@ export class DictionariesPage implements OnDestroy {
     const drafts = [...this.mcImportPendingDrafts];
     this.resetMcImportAssistUi();
     if (!plan || !drafts.length) return;
-    plan.colorsToCreate.forEach((c) => this.colorsRepository.create(c));
-    plan.finishesToCreate.forEach((f) => this.surfaceFinishesRepository.create(f));
-    plan.coatingsToCreate.forEach((c) => this.coatingsRepository.create(c));
-    this.colorsStore.loadItems();
-    this.surfaceFinishesStore.loadItems();
-    this.coatingsStore.loadItems();
-    void this.finishMaterialCharacteristicsImportAfterRefCreates(drafts);
+    const creates = [
+      ...plan.colorsToCreate.map((c) => this.colorsRepository.create(c)),
+      ...plan.finishesToCreate.map((f) => this.surfaceFinishesRepository.create(f)),
+      ...plan.coatingsToCreate.map((c) => this.coatingsRepository.create(c)),
+    ];
+    const done$: Observable<unknown> = creates.length ? forkJoin(creates) : of(null);
+    this.sub.add(
+      done$.subscribe({
+        next: () => {
+          this.colorsStore.loadItems();
+          this.surfaceFinishesStore.loadItems();
+          this.coatingsStore.loadItems();
+          void this.finishMaterialCharacteristicsImportAfterRefCreates(drafts);
+        },
+        error: () => {
+          this.excelImportStatus.set('Импорт: не удалось добавить записи в малые справочники.');
+        },
+      }),
+    );
   }
 
   private resetMcImportAssistUi(): void {

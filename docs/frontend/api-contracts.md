@@ -12,7 +12,7 @@ For backend integration, keep contracts in feature modules (`materials`, `geomet
 - UI-обозначение units:
   - карточка (длинное): `Единицы измерения`,
   - поля/колонки (сокращение): `Ед. изм.`.
-- API-ресурс: `/units`.
+- API-ресурс: **`/api/units`** (префикс `/api` общий для backend за nginx и для dev-proxy во фронте).
 - Поля API (канон): `id`, `name`, `code`, `notes`, `isActive`.
 - В backend и интеграционных сообщениях использовать термин `units` / `единицы измерения`.
 - Сокращение `Ед. изм.` использовать только в UI-текстах, не в JSON-ключах и не в именах endpoint.
@@ -38,4 +38,10 @@ Set:
 
 Operational runbook:
 - `docs/frontend/backend-enable-runbook.md`
+
+## Локальная связка crm-web ↔ backend
+
+- Backend: `backend/README.md` (Postgres, миграции, `npm run dev`).
+- Angular dev-server: прокси `proxy.conf.json` в проекте `crm-web` — запросы на `/api/*` уходят на backend.
+- В `api-config.ts`: при работе с реальным API выставить `useMockRepositories: false`; `baseUrl` оставить `''`, чтобы использовать тот же origin и прокси.
 

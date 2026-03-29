@@ -1,0 +1,174 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Unit {
+  id        String   @id @default(uuid())
+  name      String
+  code      String?
+  notes     String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  materials Material[]
+}
+
+model Color {
+  id        String   @id @default(uuid())
+  ralCode   String?
+  name      String
+  hex       String
+  rgbR      Int
+  rgbG      Int
+  rgbB      Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  characteristics MaterialCharacteristic[]
+}
+
+model SurfaceFinish {
+  id             String   @id @default(uuid())
+  finishType     String
+  roughnessClass String
+  raMicron       Float?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  characteristics MaterialCharacteristic[]
+}
+
+model Coating {
+  id              String   @id @default(uuid())
+  coatingType     String
+  coatingSpec     String
+  thicknessMicron Float?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  characteristics MaterialCharacteristic[]
+}
+
+model Geometry {
+  id          String   @id @default(uuid())
+  name        String
+  shapeKey    String
+  heightMm    Float?
+  lengthMm    Float?
+  widthMm     Float?
+  diameterMm  Float?
+  thicknessMm Float?
+  notes       String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  materials Material[]
+}
+
+model ProductionWorkType {
+  id            String   @id @default(uuid())
+  name          String
+  shortLabel    String
+  hourlyRateRub Float
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Client {
+  id                   String   @id @default(uuid())
+  lastName             String
+  firstName            String
+  patronymic           String
+  phone                String
+  address              String
+  email                String
+  notes                String   @default("")
+  clientMarkupPercent  Float?
+  isActive             Boolean  @default(true)
+  passportSeries       String   @default("")
+  passportNumber       String   @default("")
+  passportIssuedBy     String   @default("")
+  passportIssuedDate   String   @default("")
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model Role {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  name      String
+  sortOrder Int
+  notes     String?
+  isActive  Boolean  @default(true)
+  isSystem  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users User[]
+}
+
+model User {
+  id           String   @id @default(uuid())
+  login        String   @unique
+  passwordHash String
+  fullName     String
+  email        String
+  phone        String
+  roleId       String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  role Role @relation(fields: [roleId], references: [id], onDelete: Restrict)
+}
+
+model MaterialCharacteristic {
+  id                     String   @id @default(uuid())
+  name                   String
+  code                   String?
+  densityKgM3            Float?
+  colorId                String?
+  colorName              String?
+  colorHex               String?
+  surfaceFinishId        String?
+  finishType             String?
+  roughnessClass         String?
+  raMicron               Float?
+  coatingId              String?
+  coatingType            String?
+  coatingSpec            String?
+  coatingThicknessMicron Float?
+  notes                  String?
+  isActive               Boolean  @default(true)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  color          Color?          @relation(fields: [colorId], references: [id], onDelete: SetNull)
+  surfaceFinish  SurfaceFinish?  @relation(fields: [surfaceFinishId], references: [id], onDelete: SetNull)
+  coating        Coating?        @relation(fields: [coatingId], references: [id], onDelete: SetNull)
+  materials      Material[]
+}
+
+model Material {
+  id                       String   @id @default(uuid())
+  name                     String
+  code                     String?
+  unitId                   String?
+  purchasePriceRub         Float?
+  materialCharacteristicId String
+  geometryId               String
+  notes                    String?
+  isActive                 Boolean  @default(true)
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  unit           Unit?                  @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  characteristic MaterialCharacteristic @relation(fields: [materialCharacteristicId], references: [id], onDelete: Restrict)
+  geometry       Geometry               @relation(fields: [geometryId], references: [id], onDelete: Restrict)
+}

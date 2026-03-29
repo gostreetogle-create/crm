@@ -1,5 +1,6 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { concatMap, from, switchMap, take } from 'rxjs';
 import { RolesStore } from '../../roles/state/roles.store';
 import { UserItem, UserItemInput } from '../model/user-item';
 import { USERS_REPOSITORY } from '../data/users.repository';
@@ -7,6 +8,7 @@ import { USERS_REPOSITORY } from '../data/users.repository';
 @Injectable({ providedIn: 'root' })
 export class UsersStore {
   private readonly repo = inject(USERS_REPOSITORY);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly rolesStore = inject(RolesStore);
   readonly items = signal<UserItem[]>([]);
 
@@ -41,20 +43,42 @@ export class UsersStore {
   }
 
   create(input: UserItemInput): void {
-    this.repo.create(input);
+    this.repo
+      .create(input)
+      .pipe(
+        switchMap(() => this.repo.getItems().pipe(take(1))),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((items) => this.items.set(items));
   }
 
   update(id: string, input: UserItemInput): void {
-    this.repo.update(id, input);
+    this.repo
+      .update(id, input)
+      .pipe(
+        switchMap(() => this.repo.getItems().pipe(take(1))),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((items) => this.items.set(items));
   }
 
   remove(id: string): void {
-    this.repo.remove(id);
+    this.repo
+      .remove(id)
+      .pipe(
+        switchMap(() => this.repo.getItems().pipe(take(1))),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((items) => this.items.set(items));
   }
 
   createMany(rows: readonly UserItemInput[]): void {
-    for (const row of rows) {
-      this.repo.create(row);
-    }
+    from(rows)
+      .pipe(
+        concatMap((row) => this.repo.create(row)),
+        switchMap(() => this.repo.getItems().pipe(take(1))),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((items) => this.items.set(items));
   }
 }

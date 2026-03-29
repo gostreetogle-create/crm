@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, of } from 'rxjs';
 import { GeometriesRepository } from './geometries.repository';
 import { GeometryItem, GeometryItemInput } from '../model/geometry-item';
 
@@ -39,17 +39,20 @@ export class GeometriesMockRepository implements GeometriesRepository {
     return this.itemsSubject.asObservable();
   }
 
-  create(input: GeometryItemInput): void {
+  create(input: GeometryItemInput): Observable<GeometryItem> {
     const next: GeometryItem = { id: newId(), ...input };
     this.itemsSubject.next([next, ...this.itemsSubject.value]);
+    return of(next);
   }
 
-  update(id: string, input: GeometryItemInput): void {
-    const updated = this.itemsSubject.value.map((x) => (x.id === id ? { id, ...input } : x));
-    this.itemsSubject.next(updated);
+  update(id: string, input: GeometryItemInput): Observable<GeometryItem> {
+    const row: GeometryItem = { id, ...input };
+    this.itemsSubject.next(this.itemsSubject.value.map((x) => (x.id === id ? row : x)));
+    return of(row);
   }
 
-  remove(id: string): void {
+  remove(id: string): Observable<void> {
     this.itemsSubject.next(this.itemsSubject.value.filter((x) => x.id !== id));
+    return of(void 0);
   }
 }

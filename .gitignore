@@ -1,3 +1,9 @@
 # Local raw sources (not for git)
 Basics/
 Исходники/
+
+backend/.env
+backend/node_modules/
+backend/dist/
+
+.idea/

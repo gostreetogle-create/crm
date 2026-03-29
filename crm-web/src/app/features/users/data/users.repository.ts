@@ -5,10 +5,10 @@ import { UserItem, UserItemInput } from '../model/user-item';
 export interface UsersRepository {
   getItems(): Observable<UserItem[]>;
   getSnapshot?(): UserItem[];
-  create(input: UserItemInput): void;
+  create(input: UserItemInput): Observable<UserItem>;
   /** Пустой `password` в `input` — сохранить прежний пароль. */
-  update(id: string, input: UserItemInput): void;
-  remove(id: string): void;
+  update(id: string, input: UserItemInput): Observable<UserItem>;
+  remove(id: string): Observable<void>;
 }
 
 export const USERS_REPOSITORY = new InjectionToken<UsersRepository>('USERS_REPOSITORY');

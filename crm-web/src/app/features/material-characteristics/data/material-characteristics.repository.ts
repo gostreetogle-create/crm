@@ -4,9 +4,9 @@ import { MaterialCharacteristicItem, MaterialCharacteristicItemInput } from '../
 
 export type MaterialCharacteristicsRepository = {
   getItems(): Observable<MaterialCharacteristicItem[]>;
-  create(input: MaterialCharacteristicItemInput): void;
-  update(id: string, input: MaterialCharacteristicItemInput): void;
-  remove(id: string): void;
+  create(input: MaterialCharacteristicItemInput): Observable<MaterialCharacteristicItem>;
+  update(id: string, input: MaterialCharacteristicItemInput): Observable<MaterialCharacteristicItem>;
+  remove(id: string): Observable<void>;
 };
 
 export const MATERIAL_CHARACTERISTICS_REPOSITORY = new InjectionToken<MaterialCharacteristicsRepository>(
