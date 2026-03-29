@@ -1,6 +1,7 @@
 import { NgIf, NgTemplateOutlet } from '@angular/common';
 import { Component, TemplateRef, ViewChild, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import {
   LucideCheck,
   LucideDownload,
@@ -27,7 +28,7 @@ import { PageShellComponent } from '../../../../shared/ui/page-shell/page-shell.
 import { UiButtonComponent } from '../../../../shared/ui/ui-button/ui-button.component';
 import { UiFormFieldComponent } from '../../../../shared/ui/ui-form-field/ui-form-field.component';
 import { UiPaginationComponent } from '../../../../shared/ui/ui-pagination/ui-pagination.component';
-import { PermissionsService, UserRole } from '../../../../core/auth/public-api';
+import { PermissionsService } from '../../../../core/auth/public-api';
 import { HubCrudExpandStateService } from '../../../../shared/ui/hub-crud-expandable/public-api';
 import {
   PatternVariantSectionComponent,
@@ -80,6 +81,7 @@ type DemoProduct = {
     ProductCardComponent,
     UiPaginationComponent,
     UiStateCardComponent,
+    RouterLink,
   ],
   templateUrl: './ui-demo-page.html',
   styleUrl: './ui-demo-page.scss',
@@ -323,12 +325,6 @@ export class UiDemoPage {
     name: ['', [Validators.required, Validators.minLength(2)]],
   });
 
-  readonly roleOptions: ReadonlyArray<{ value: UserRole; label: string }> = [
-    { value: 'admin', label: 'admin (create/edit/delete)' },
-    { value: 'editor', label: 'editor (create/edit)' },
-    { value: 'viewer', label: 'viewer (read only)' },
-  ];
-
   openQuickAdd(): void {
     this.quickAddOpen.set(true);
     this.quickAddFormSubmitAttempted.set(false);
@@ -495,13 +491,6 @@ export class UiDemoPage {
 
   onProductPageChange(page: number): void {
     this.productPage.set(page);
-  }
-
-  onRoleChange(value: string): void {
-    if (value === 'admin' || value === 'editor' || value === 'viewer') {
-      this.permissions.setRole(value);
-      this.lastAction.set(`Роль: ${value}`);
-    }
   }
 
   hasMainError(controlName: 'name' | 'category'): boolean {

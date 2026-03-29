@@ -1,10 +1,6 @@
 @if (session.isAuthenticated()) {
   <app-app-header>
-    @defer (on idle; prefetch on viewport) {
-      <app-theme-picker></app-theme-picker>
-    } @placeholder {
-      <span>Theme...</span>
-    }
+    <app-theme-picker></app-theme-picker>
   </app-app-header>
 }
 

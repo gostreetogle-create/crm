@@ -8,6 +8,8 @@ import {
 } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { filter, pipe, switchMap, tap } from 'rxjs';
+import { MaterialCharacteristicsStore } from '../../material-characteristics/state/material-characteristics.store';
+import { GeometriesStore } from '../../geometries/state/geometries.store';
 import {
   MATERIALS_REPOSITORY,
   MaterialsRepository,
@@ -31,46 +33,64 @@ export const MaterialsStore = signalStore(
     editId: null,
     formSubmitAttempted: false,
   }),
-  withComputed(({ items, editId }) => ({
-    materialsData: computed(() =>
-      items()
-        .map((item) => {
-          const notes = item.notes?.trim();
-          return {
-            id: item.id,
-            name: item.name,
-            hubLine: item.code?.trim()
-              ? `${item.name} (${item.code.trim()})`
-              : item.name,
-            code: item.code?.trim() || '—',
-            unit: item.unitName || '—',
-            priceLabel:
-              item.purchasePriceRub != null ? `${item.purchasePriceRub} ₽` : '—',
-            densityKgM3: item.densityKgM3 != null ? String(item.densityKgM3) : '—',
-            color: item.colorName?.trim() || item.colorHex?.trim() || '—',
-            colorHex: item.colorHex?.trim() || '',
-            finishType: item.finishType?.trim() || '—',
-            roughnessClass: item.roughnessClass?.trim() || '—',
-            raMicron: item.raMicron != null ? String(item.raMicron) : '—',
-            coatingType: item.coatingType?.trim() || '—',
-            coatingSpec: item.coatingSpec?.trim() || '—',
-            coatingThicknessMicron:
-              item.coatingThicknessMicron != null
-                ? String(item.coatingThicknessMicron)
-                : '—',
-            notes:
-              notes && notes.length > 48 ? `${notes.slice(0, 45)}…` : notes || '—',
-            isActiveLabel: item.isActive ? 'Да' : 'Нет',
-          };
-        })
-        .sort((a, b) => String(a.name).localeCompare(String(b.name)))
-    ),
-    isEditMode: computed(() => editId() !== null),
-    facts: computed(() => ({
-      total: items().length,
-      active: items().filter((m) => m.isActive).length,
-    })),
-  })),
+  withComputed(
+    (
+      { items, editId },
+      mcStore = inject(MaterialCharacteristicsStore),
+      geoStore = inject(GeometriesStore)
+    ) => ({
+      materialsData: computed(() => {
+        const mcById = new Map(mcStore.items().map((x) => [x.id, x]));
+        const geoById = new Map(geoStore.items().map((x) => [x.id, x]));
+        return items()
+          .map((item) => {
+            const ch = mcById.get(item.materialCharacteristicId);
+            const g = geoById.get(item.geometryId);
+            const notes = item.notes?.trim();
+            const geomLabel = g?.name ?? item.geometryName ?? '—';
+            const charLabel = ch
+              ? ch.code?.trim()
+                ? `${ch.name} (${ch.code.trim()})`
+                : ch.name
+              : '—';
+            return {
+              id: item.id,
+              name: item.name,
+              hubLine: item.code?.trim()
+                ? `${item.name} (${item.code.trim()})`
+                : item.name,
+              code: item.code?.trim() || '—',
+              characteristic: charLabel,
+              geometry: geomLabel,
+              unit: item.unitName || '—',
+              priceLabel:
+                item.purchasePriceRub != null ? `${item.purchasePriceRub} ₽` : '—',
+              densityKgM3: ch?.densityKgM3 != null ? String(ch.densityKgM3) : '—',
+              color: ch?.colorName?.trim() || ch?.colorHex?.trim() || '—',
+              colorHex: ch?.colorHex?.trim() || '',
+              finishType: ch?.finishType?.trim() || '—',
+              roughnessClass: ch?.roughnessClass?.trim() || '—',
+              raMicron: ch?.raMicron != null ? String(ch.raMicron) : '—',
+              coatingType: ch?.coatingType?.trim() || '—',
+              coatingSpec: ch?.coatingSpec?.trim() || '—',
+              coatingThicknessMicron:
+                ch?.coatingThicknessMicron != null
+                  ? String(ch.coatingThicknessMicron)
+                  : '—',
+              notes:
+                notes && notes.length > 48 ? `${notes.slice(0, 45)}…` : notes || '—',
+              isActiveLabel: item.isActive ? 'Да' : 'Нет',
+            };
+          })
+          .sort((a, b) => String(a.name).localeCompare(String(b.name)));
+      }),
+      isEditMode: computed(() => editId() !== null),
+      facts: computed(() => ({
+        total: items().length,
+        active: items().filter((m) => m.isActive).length,
+      })),
+    })
+  ),
   withMethods((store, repo = inject<MaterialsRepository>(MATERIALS_REPOSITORY)) => ({
     loadItems: rxMethod<void>(
       pipe(

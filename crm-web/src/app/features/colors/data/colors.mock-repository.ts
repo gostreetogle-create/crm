@@ -27,27 +27,40 @@ function normalizeHex(hex: string): string {
   return `#${clean}`;
 }
 
+/** Стабильные id для FK из других справочников (импорт, сиды). */
 const SEED: ColorItem[] = [
   {
-    id: newId(),
+    id: 'c-seed-ral-1000',
     ralCode: 'RAL 1000',
     name: 'Green beige',
     hex: '#CDBA88',
     rgb: rgbFromHex('#CDBA88'),
   },
   {
-    id: newId(),
+    id: 'c-seed-ral-7035',
     ralCode: 'RAL 7035',
     name: 'Light grey',
     hex: '#CBD0CC',
     rgb: rgbFromHex('#CBD0CC'),
   },
   {
-    id: newId(),
+    id: 'c-seed-ral-9005',
     ralCode: 'RAL 9005',
     name: 'Jet black',
     hex: '#0A0A0D',
     rgb: rgbFromHex('#0A0A0D'),
+  },
+  {
+    id: 'c-seed-gray-custom',
+    name: 'Серый',
+    hex: '#6B7280',
+    rgb: rgbFromHex('#6B7280'),
+  },
+  {
+    id: 'c-seed-silver-custom',
+    name: 'Серебристый',
+    hex: '#C0C0C0',
+    rgb: rgbFromHex('#C0C0C0'),
   },
 ];
 

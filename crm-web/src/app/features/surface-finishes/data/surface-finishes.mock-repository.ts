@@ -8,9 +8,9 @@ function newId(): string {
 }
 
 const SEED: SurfaceFinishItem[] = [
-  { id: newId(), finishType: 'Glossy', roughnessClass: 'Ra 0.4', raMicron: 0.4 },
-  { id: newId(), finishType: 'Semi-gloss', roughnessClass: 'Ra 1.6', raMicron: 1.6 },
-  { id: newId(), finishType: 'Matte', roughnessClass: 'Ra 3.2', raMicron: 3.2 },
+  { id: 'sf-seed-glossy', finishType: 'Glossy', roughnessClass: 'Ra 0.4', raMicron: 0.4 },
+  { id: 'sf-seed-semi-gloss', finishType: 'Semi-gloss', roughnessClass: 'Ra 1.6', raMicron: 1.6 },
+  { id: 'sf-seed-matte', finishType: 'Matte', roughnessClass: 'Ra 3.2', raMicron: 3.2 },
 ];
 
 @Injectable()

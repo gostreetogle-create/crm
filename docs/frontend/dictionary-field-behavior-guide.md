@@ -35,7 +35,7 @@
 
 - Одна и та же оболочка для всех справочников на `/dictionaries`: `fieldset` + `legend` + тело `div.dictionaryFormSectionBody` (вариант `--2` для двух колонок). Длинные поясняющие абзацы под секциями не используем — только подписи полей и `legend`.
 - Порядок секций — по логике заполнения: идентификация / учёт → ссылки на другие справочники → авто-поля (если есть) → коммерция / паспорт → заметки → статус.
-- Блок **авто-полей** (значения подставляются из выбора выше): класс `dictionaryFormSection--autoFields` на `fieldset`, поля `readonly`, без лишнего текста; визуально — фон `var(--surface)`, без «серого инпута» и без фокуса как у ввода (стили в `dictionaries-page.scss`).
+- Блок **авто-полей** (значения подставляются из выбора выше): класс `dictionaryFormSection--autoFields` на `fieldset`. **Не использовать** `input readonly` / `UiFormField` с полями ввода — это выглядит как редактирование. Канон: сетка `dictionaryReadonlyGrid` внутри `dictionaryFormSectionBody`, строки `dictionaryReadonlyPair` → `dictionaryReadonlyLabel` + `dictionaryReadonlyValue` (при необходимости `dictionaryReadonlyValueRow` + `colorSwatch`). Значения по-прежнему можно держать в `FormControl` и обновлять `patchValue` — в шаблоне выводить `{{ form.controls.xxx.value }}`, без привязки к инпуту. Стили: `dictionaries-page.scss`.
 - Геометрия: блок размеров остаётся `fieldset.geometryParams` («Параметры, мм») — тот же визуальный язык, что у `dictionaryFormSection`.
 
 ---
@@ -88,6 +88,7 @@
 - В файл попадают **только бизнес-колонки**; системные поля (`id`, `row_version`, …) не в шаблоне до появления upsert.
 - Заголовки листа = те же «человеческие» имена, что в шаблоне и в валидаторе импорта (один источник правды в коде).
 - Импорт в текущем каноне — **только создание** новых строк (`createMany`); ошибки — с номером строки и причиной, без «тихих» пропусков.
+- Нормализация текста, сопоставление Excel с мелкими справочниками без id в файле, снимки на материале и **чеклист аудита таблиц** — [`dictionaries-data-and-import-rules.md`](./dictionaries-data-and-import-rules.md).
 
 ---
 

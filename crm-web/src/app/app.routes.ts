@@ -1,6 +1,6 @@
 import { Route } from '@angular/router';
 import { API_CONFIG, ApiConfig } from './core/api/api-config';
-import { authGuard } from './core/auth/auth.guard';
+import { authGuard, permissionGuard } from './core/auth/public-api';
 import { COLORS_REPOSITORY } from './features/colors/data/colors.repository';
 import { ColorsMockRepository } from './features/colors/data/colors.mock-repository';
 import { ColorsStore } from './features/colors/state/colors.store';
@@ -38,7 +38,8 @@ export const appRoutes: Route[] = [
   },
   {
     path: 'dictionaries',
-    canActivate: [authGuard],
+    canActivate: [authGuard, permissionGuard],
+    data: { permission: 'page.dictionaries' },
     loadComponent: () =>
       import('./features/dictionaries/pages/dictionaries-page/dictionaries-page').then(
         (m) => m.DictionariesPage
@@ -115,9 +116,28 @@ export const appRoutes: Route[] = [
   },
   {
     path: 'demo',
-    canActivate: [authGuard],
+    canActivate: [authGuard, permissionGuard],
+    data: { permission: 'page.demo' },
     loadComponent: () =>
       import('./features/demo/pages/ui-demo-page/ui-demo-page').then((m) => m.UiDemoPage),
+  },
+  {
+    path: 'preferences',
+    canActivate: [authGuard, permissionGuard],
+    data: { permission: 'page.preferences' },
+    loadComponent: () =>
+      import('./features/settings/pages/user-preferences-page/user-preferences-page').then(
+        (m) => m.UserPreferencesPage
+      ),
+  },
+  {
+    path: 'settings',
+    canActivate: [authGuard, permissionGuard],
+    data: { permission: 'page.admin.settings' },
+    loadComponent: () =>
+      import('./features/settings/pages/admin-settings-page/admin-settings-page').then(
+        (m) => m.AdminSettingsPage
+      ),
   },
   { path: '**', redirectTo: '' },
 ];

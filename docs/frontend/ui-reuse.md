@@ -67,7 +67,7 @@
 - `SectionLabelComponent` (`src/app/shared/ui/section-label/`)
   - Малый "приклеенный" label для угла карточек/секций (`text`, `corner=true` по умолчанию).
 - `PermissionsService` + auth types (`src/app/core/auth/`)
-  - Единый источник ролей/прав для UI (`UserRole`, `PermissionKey`, `ROLE_PERMISSIONS`, методы `can()`/`hasAny()`).
+  - Единый источник **прав** для UI: `PermissionKey`, `RoleId`, методы `can()` / `hasAny()`, `crud`; список ролей для матрицы и настроек — из справочника (`RolesStore`). Канон: `docs/frontend/rbac-and-admin-settings.md`.
 - `HasPermissionDirective` (`src/app/shared/directives/has-permission.directive.ts`)
   - Структурная директива для шаблонов: `*appHasPermission="'crud.delete'"` или массив прав + режим `appHasPermissionMode="any"`.
 

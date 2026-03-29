@@ -4,6 +4,10 @@
 
 Поведение полей и сценарии заполнения (create/edit/view/duplicate, placeholder, Excel): [`dictionary-field-behavior-guide.md`](./dictionary-field-behavior-guide.md).
 
+Правила данных, импорта/экспорта и проход по справочникам перед крупными этапами: [`dictionaries-data-and-import-rules.md`](./dictionaries-data-and-import-rules.md).
+
+Роли, ключи `page.*` / `dict.hub.*` / `crud.*` / `excel.*`, guard маршрутов, `/settings`, справочники «Роли» и «Пользователи»: [`rbac-and-admin-settings.md`](./rbac-and-admin-settings.md), [`users-dictionary.md`](./users-dictionary.md).
+
 ### Именование задачи: «карточка цветов» ≠ только цвета
 
 Все плитки на хабе рисуются **одним** `CrudLayout`. Если в задаче сказано «на карточке цветов поправь кнопку/таблицу/отступ» без уточнения **«только эта плитка»**, исполнитель делает правку в **`CrudLayout` (shared)**, чтобы одинаково обновились **все** справочники и эталон на `/demo`. Упоминание конкретного справочника в такой формулировке — обычно **указание места, где заметили проблему**, а не разрешение менять один feature.
@@ -50,11 +54,11 @@
 
 ## Роли и права (обязательный минимум)
 
-Права задаются только через:
+Полный канон: [`rbac-and-admin-settings.md`](./rbac-and-admin-settings.md). Кратко:
 
-- `src/app/core/auth/authz.types.ts`
-- `src/app/core/auth/authz.matrix.ts`
-- `src/app/core/auth/permissions.service.ts`
+- Новый **ключ права** — `authz.types.ts` → `authz.catalog.ts` (+ при плитке хаба `dict-hub-permissions.ts` и обёртка плитки в шаблоне).
+- Новая **бизнес-роль** — запись в справочнике «Роли» + галочки в «Админ-настройках», без enum ролей в коде.
+- Проверки в UI: входы `CrudLayout`, `permissions.can(...)`, при необходимости `*appHasPermission`.
 
 Для новой кнопки/действия:
 

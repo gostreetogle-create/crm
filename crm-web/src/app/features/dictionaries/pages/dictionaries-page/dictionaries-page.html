@@ -1,5 +1,18 @@
 <app-page-shell>
+  @if (excelImportStatus()) {
+  <p
+    class="importStatus"
+    [class.importStatus--success]="excelImportTone() === 'success'"
+    [class.importStatus--error]="excelImportTone() === 'error'"
+    [class.importStatus--info]="excelImportTone() === 'info'"
+    role="status"
+    aria-live="polite"
+  >
+    {{ excelImportStatus() }}
+  </p>
+  }
   <div class="dictionaryGrid">
+    @if (permissions.can(hubTilePerm('materials'))) {
     <app-dictionary-hub-tile tileKey="materials" [fullWidth]="true">
       <crud-layout
         title="Материалы"
@@ -33,7 +46,9 @@
         (delete)="deleteMaterial($event)"
       ></crud-layout>
     </app-dictionary-hub-tile>
+    }
 
+    @if (permissions.can(hubTilePerm('materialCharacteristics'))) {
     <app-dictionary-hub-tile tileKey="materialCharacteristics" [fullWidth]="true">
       <crud-layout
         title="Характеристики материала"
@@ -67,7 +82,9 @@
         (delete)="deleteMaterialCharacteristic($event)"
       ></crud-layout>
     </app-dictionary-hub-tile>
+    }
 
+    @if (permissions.can(hubTilePerm('workTypes'))) {
     <app-dictionary-hub-tile tileKey="workTypes">
       <crud-layout
         title="Вид работ"
@@ -102,7 +119,9 @@
         (delete)="deleteWorkType($event)"
       ></crud-layout>
     </app-dictionary-hub-tile>
+    }
 
+    @if (permissions.can(hubTilePerm('units'))) {
     <app-dictionary-hub-tile tileKey="units">
       <crud-layout
         title="Единицы измерения"
@@ -136,7 +155,9 @@
         (delete)="deleteUnit($event)"
       ></crud-layout>
     </app-dictionary-hub-tile>
+    }
 
+    @if (permissions.can(hubTilePerm('clients'))) {
     <app-dictionary-hub-tile tileKey="clients">
       <crud-layout
         title="Контактные лица"
@@ -172,7 +193,9 @@
         (delete)="deleteClient($event)"
       ></crud-layout>
     </app-dictionary-hub-tile>
+    }
 
+    @if (permissions.can(hubTilePerm('colors'))) {
     <app-dictionary-hub-tile tileKey="colors">
       <crud-layout
         title="Цвета (RAL)"
@@ -206,7 +229,9 @@
         (delete)="deleteColor($event)"
       ></crud-layout>
     </app-dictionary-hub-tile>
+    }
 
+    @if (permissions.can(hubTilePerm('surfaceFinishes'))) {
     <app-dictionary-hub-tile tileKey="surfaceFinishes">
       <crud-layout
         title="Тип отделки / шероховатость"
@@ -240,7 +265,9 @@
         (delete)="deleteSurfaceFinish($event)"
       ></crud-layout>
     </app-dictionary-hub-tile>
+    }
 
+    @if (permissions.can(hubTilePerm('geometries'))) {
     <app-dictionary-hub-tile tileKey="geometries">
       <crud-layout
         title="Форма и габаритные размеры"
@@ -274,7 +301,9 @@
         (delete)="deleteGeometry($event)"
       ></crud-layout>
     </app-dictionary-hub-tile>
+    }
 
+    @if (permissions.can(hubTilePerm('coatings'))) {
     <app-dictionary-hub-tile tileKey="coatings">
       <crud-layout
         title="Покрытие"
@@ -308,12 +337,299 @@
         (delete)="deleteCoating($event)"
       ></crud-layout>
     </app-dictionary-hub-tile>
+    }
+
+    @if (permissions.can(hubTilePerm('roles'))) {
+    <app-dictionary-hub-tile tileKey="roles">
+      <crud-layout
+        title="Роли"
+        [showHeader]="false"
+        [showCardLabel]="true"
+        [showNameSearch]="true"
+        nameSearchPlaceholder="Поиск по названию…"
+        [showCreateAction]="true"
+        [canCreate]="permissions.crud().canCreate"
+        createAriaLabel="Добавить роль"
+        createTitle="Добавить роль"
+        [columns]="rolesColumns"
+        [data]="rolesStore.rolesData()"
+        [loading]="false"
+        [maxTableBodyRows]="hubExpand.previewMaxTableBodyRows('roles')"
+        [tableBodyMaxHeight]="hubExpand.previewTableBodyMaxHeight('roles')"
+        [showExcelActions]="true"
+        [canDownloadTemplate]="permissions.can('excel.template')"
+        [canImportExcel]="permissions.can('excel.import')"
+        [canExportExcel]="permissions.can('excel.export')"
+        [canView]="true"
+        [canDuplicate]="permissions.crud().canDuplicate"
+        [canEdit]="permissions.crud().canEdit"
+        [canDelete]="permissions.crud().canDelete"
+        deleteConfirmMessage="Удалить роль? Системные роли не удаляются."
+        (create)="openRolesCreate()"
+        (downloadTemplate)="downloadRolesTemplateExcel()"
+        (importExcel)="onRolesExcelImported($event)"
+        (exportExcel)="exportRolesExcel()"
+        (view)="openRolesView($event)"
+        (duplicate)="duplicateRole($event)"
+        (edit)="openRolesEdit($event)"
+        (delete)="deleteRole($event)"
+      ></crud-layout>
+    </app-dictionary-hub-tile>
+    }
+
+    @if (permissions.can(hubTilePerm('users'))) {
+    <app-dictionary-hub-tile tileKey="users">
+      <crud-layout
+        title="Пользователи"
+        [showHeader]="false"
+        [showCardLabel]="true"
+        [showNameSearch]="true"
+        nameSearchPlaceholder="Поиск по логину или ФИО..."
+        [showCreateAction]="true"
+        [canCreate]="permissions.crud().canCreate"
+        createAriaLabel="Добавить пользователя"
+        createTitle="Добавить пользователя"
+        [columns]="usersColumns"
+        [data]="usersStore.usersData()"
+        [loading]="false"
+        [maxTableBodyRows]="hubExpand.previewMaxTableBodyRows('users')"
+        [tableBodyMaxHeight]="hubExpand.previewTableBodyMaxHeight('users')"
+        [showExcelActions]="true"
+        [canDownloadTemplate]="permissions.can('excel.template')"
+        [canImportExcel]="permissions.can('excel.import')"
+        [canExportExcel]="permissions.can('excel.export')"
+        [canView]="true"
+        [canDuplicate]="permissions.crud().canDuplicate"
+        [canEdit]="permissions.crud().canEdit"
+        [canDelete]="permissions.crud().canDelete"
+        deleteConfirmMessage="Удалить пользователя?"
+        (create)="openUsersCreate()"
+        (downloadTemplate)="downloadUsersTemplateExcel()"
+        (importExcel)="onUsersExcelImported($event)"
+        (exportExcel)="exportUsersExcel()"
+        (view)="openUsersView($event)"
+        (duplicate)="duplicateUser($event)"
+        (edit)="openUsersEdit($event)"
+        (delete)="deleteUser($event)"
+      ></crud-layout>
+    </app-dictionary-hub-tile>
+    }
   </div>
 </app-page-shell>
 
-@if (excelImportStatus()) {
-  <p class="importStatus">{{ excelImportStatus() }}</p>
-}
+<ui-modal
+  *ngIf="mcImportAssistOpen()"
+  title="Нет в справочниках"
+  [content]="mcImportAssistContentTpl"
+  [actions]="mcImportAssistActionsTpl"
+  (close)="cancelMcImportAssist()"
+  [closeOnBackdrop]="false"
+  size="md"
+></ui-modal>
+
+<ng-template #mcImportAssistContentTpl>
+  <div class="formGrid">
+    <p class="mcImportAssistIntro">
+      Следующие значения из файла не найдены в справочниках «Цвет RAL», «Тип отделки» и «Покрытие». Добавить
+      их автоматически и продолжить импорт характеристик?
+    </p>
+    <ul class="mcImportAssistList">
+      @for (line of mcImportAssistLines(); track line) {
+        <li>{{ line }}</li>
+      }
+    </ul>
+  </div>
+</ng-template>
+
+<ng-template #mcImportAssistActionsTpl>
+  <app-ui-button variant="soft" type="button" (clicked)="cancelMcImportAssist()">Отмена</app-ui-button>
+  <app-ui-button type="button" (clicked)="confirmMcImportAssist()">Добавить и импортировать</app-ui-button>
+</ng-template>
+
+<ui-modal
+  *ngIf="isRolesModalOpen()"
+  [title]="
+    isRolesViewMode()
+      ? 'Просмотр роли'
+      : rolesEditingId()
+        ? 'Редактирование роли'
+        : 'Новая роль'
+  "
+  [content]="rolesContentTpl"
+  [actions]="rolesActionsTpl"
+  (close)="closeRolesModal()"
+  [closeOnBackdrop]="isRolesViewMode()"
+  size="md"
+></ui-modal>
+
+<ng-template #rolesContentTpl>
+  <form id="roles-form" [formGroup]="rolesForm" (ngSubmit)="submitRoles()" class="formGrid">
+    <fieldset class="dictionaryFormSection">
+      <legend>Роль</legend>
+      <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
+        <app-ui-form-field
+          label="Название"
+          [required]="true"
+          [invalid]="rolesForm.controls.name.invalid && (rolesForm.controls.name.touched || rolesForm.controls.name.dirty)"
+          [errorText]="rolesForm.controls.name.hasError('required') ? 'Обязательное поле' : 'Минимум 2 символа'"
+        >
+          <input type="text" formControlName="name" placeholder="Менеджер продаж" />
+        </app-ui-form-field>
+        @if (!isRolesViewMode()) {
+          <p class="muted dictionaryFieldRowFull">
+            После сохранения активная роль появится колонкой в «Админ-настройках» — там выставляются галочки прав.
+            Технический код роли подставляется автоматически (для экспорта и импорта пользователей).
+          </p>
+        }
+
+        <app-ui-form-field
+          label="Порядок (в матрице и списках)"
+          [required]="true"
+          [invalid]="rolesForm.controls.sortOrder.invalid && (rolesForm.controls.sortOrder.touched || rolesForm.controls.sortOrder.dirty)"
+          [errorText]="
+            rolesForm.controls.sortOrder.hasError('required')
+              ? 'Укажите число'
+              : rolesForm.controls.sortOrder.hasError('min') || rolesForm.controls.sortOrder.hasError('max')
+                ? 'Целое от 1 до 999999'
+                : ''
+          "
+        >
+          <input type="number" formControlName="sortOrder" min="1" max="999999" step="1" />
+        </app-ui-form-field>
+        <p class="muted">
+          Чем меньше число, тем левее колонка в «Админ-настройках» и тем выше роль в списках. При «Создать» и
+          «Дублировать» номер подставляется автоматически (следующий после максимального); при необходимости поменяйте
+          вручную.
+        </p>
+
+        <app-ui-form-field class="dictionaryFieldRowFull" label="Заметка" [wide]="true">
+          <textarea rows="2" formControlName="notes" placeholder="Необязательно"></textarea>
+        </app-ui-form-field>
+
+        <app-ui-checkbox-field class="checkbox" label="Активна" formControlName="isActive"></app-ui-checkbox-field>
+      </div>
+    </fieldset>
+  </form>
+</ng-template>
+
+<ng-template #rolesActionsTpl>
+  <app-ui-modal-form-actions
+    [viewMode]="isRolesViewMode()"
+    [formId]="'roles-form'"
+    [submitLabel]="rolesEditingId() ? 'Сохранить изменения' : 'Создать роль'"
+    (dismiss)="closeRolesModal()"
+  />
+</ng-template>
+
+<ui-modal
+  *ngIf="isUsersModalOpen()"
+  [title]="
+    isUsersViewMode()
+      ? 'Просмотр пользователя'
+      : usersEditingId()
+        ? 'Редактирование пользователя'
+        : 'Новый пользователь'
+  "
+  [content]="usersContentTpl"
+  [actions]="usersActionsTpl"
+  (close)="closeUsersModal()"
+  [closeOnBackdrop]="isUsersViewMode()"
+  size="md"
+></ui-modal>
+
+<ng-template #usersContentTpl>
+  <form id="users-form" [formGroup]="usersForm" (ngSubmit)="submitUsers()" class="formGrid">
+    <fieldset class="dictionaryFormSection">
+      <legend>Учётная запись</legend>
+      <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
+        <app-ui-form-field
+          label="Логин"
+          [required]="true"
+          [invalid]="usersForm.controls.login.invalid && (usersForm.controls.login.touched || usersForm.controls.login.dirty)"
+          [errorText]="
+            usersForm.controls.login.hasError('required')
+              ? 'Обязательное поле'
+              : usersForm.controls.login.hasError('minlength')
+                ? 'Минимум 2 символа'
+                : usersForm.controls.login.hasError('duplicate')
+                  ? 'Такой логин уже есть'
+                  : ''
+          "
+        >
+          <input type="text" formControlName="login" autocomplete="username" />
+        </app-ui-form-field>
+
+        @if (!isUsersViewMode()) {
+          <app-ui-form-field
+            [label]="usersEditingId() ? 'Новый пароль (пусто — не менять)' : 'Пароль'"
+            [required]="!usersEditingId()"
+            [invalid]="usersForm.controls.password.invalid && (usersForm.controls.password.touched || usersForm.controls.password.dirty)"
+            [errorText]="
+              usersForm.controls.password.hasError('required')
+                ? 'Задайте пароль'
+                : usersForm.controls.password.hasError('minlength')
+                  ? 'Минимум 4 символа'
+                  : ''
+            "
+          >
+            <input type="password" formControlName="password" autocomplete="new-password" />
+          </app-ui-form-field>
+        } @else {
+          <p class="muted">Пароль в режиме просмотра не показывается.</p>
+        }
+
+        <app-ui-form-field
+          label="ФИО"
+          [required]="true"
+          [invalid]="usersForm.controls.fullName.invalid && (usersForm.controls.fullName.touched || usersForm.controls.fullName.dirty)"
+          [errorText]="usersForm.controls.fullName.hasError('required') ? 'Обязательное поле' : 'Минимум 2 символа'"
+        >
+          <input type="text" formControlName="fullName" autocomplete="name" />
+        </app-ui-form-field>
+
+        <app-ui-form-field
+          label="Email"
+          [invalid]="usersForm.controls.email.invalid && (usersForm.controls.email.touched || usersForm.controls.email.dirty)"
+          [errorText]="usersForm.controls.email.hasError('email') ? 'Некорректный email' : ''"
+        >
+          <input type="email" formControlName="email" autocomplete="email" />
+        </app-ui-form-field>
+
+        <app-ui-form-field label="Телефон" [invalid]="false" [errorText]="''">
+          <input type="tel" formControlName="phone" autocomplete="tel" />
+        </app-ui-form-field>
+
+        <app-ui-form-field
+          label="Роль"
+          [required]="true"
+          [invalid]="usersForm.controls.roleId.invalid && (usersForm.controls.roleId.touched || usersForm.controls.roleId.dirty)"
+          [errorText]="usersForm.controls.roleId.hasError('required') ? 'Выберите роль' : ''"
+        >
+          <select formControlName="roleId">
+            @if (roleSelectOptions().length === 0) {
+              <option value="">— Нет активных ролей —</option>
+            }
+            @for (opt of roleSelectOptions(); track opt.id) {
+              <option [value]="opt.id">{{ opt.label }}</option>
+            }
+          </select>
+        </app-ui-form-field>
+      </div>
+    </fieldset>
+    @if (!isUsersViewMode()) {
+      <p class="muted">В mock пароль хранится открытым текстом; на бэкенде — только хеш и политика сложности.</p>
+    }
+  </form>
+</ng-template>
+
+<ng-template #usersActionsTpl>
+  <app-ui-modal-form-actions
+    [viewMode]="isUsersViewMode()"
+    [formId]="'users-form'"
+    [submitLabel]="usersEditingId() ? 'Сохранить изменения' : 'Создать пользователя'"
+    (dismiss)="closeUsersModal()"
+  />
+</ng-template>
 
 <ui-modal
   *ngIf="isWorkTypesModalOpen()"
@@ -404,10 +720,14 @@
 <ng-template #materialsContentTpl>
   <form id="materials-form" [formGroup]="materialsForm" (ngSubmit)="submitMaterials()" class="formGrid">
     <fieldset class="dictionaryFormSection">
-      <legend>Учёт и цена</legend>
+      <legend>Учётная позиция</legend>
+      <p class="muted dictionaryFieldRowFull">
+        Плотность, цвет, финиш и покрытие задаются в справочнике <strong>«Характеристики материала»</strong> — здесь
+        только выбор профиля и формы, плюс цена и единица для склада.
+      </p>
       <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
         <app-ui-form-field
-          label="Название"
+          label="Название позиции"
           [required]="true"
           [invalid]="isMaterialsInvalid('name')"
           [errorText]="isMaterialsInvalid('name') ? 'Минимум 2 символа' : ''"
@@ -415,8 +735,40 @@
           <input type="text" formControlName="name" />
         </app-ui-form-field>
 
-        <app-ui-form-field label="Код">
+        <app-ui-form-field label="Код позиции">
           <input type="text" formControlName="code" />
+        </app-ui-form-field>
+
+        <app-ui-form-field
+          class="dictionaryFieldRowFull"
+          label="Характеристика материала"
+          [required]="true"
+          [invalid]="isMaterialsInvalid('materialCharacteristicId')"
+          [errorText]="
+            isMaterialsInvalid('materialCharacteristicId') ? 'Выберите профиль из справочника' : ''
+          "
+        >
+          <select formControlName="materialCharacteristicId">
+            <option value="">— Не выбрана —</option>
+            @for (option of materialCharacteristicSelectOptions(); track option.id) {
+              <option [value]="option.id">{{ option.label }}</option>
+            }
+          </select>
+        </app-ui-form-field>
+
+        <app-ui-form-field
+          class="dictionaryFieldRowFull"
+          label="Форма и габариты"
+          [required]="true"
+          [invalid]="isMaterialsInvalid('geometryId')"
+          [errorText]="isMaterialsInvalid('geometryId') ? 'Выберите геометрию из справочника' : ''"
+        >
+          <select formControlName="geometryId">
+            <option value="">— Не выбрана —</option>
+            @for (option of geometrySelectOptions(); track option.id) {
+              <option [value]="option.id">{{ option.label }}</option>
+            }
+          </select>
         </app-ui-form-field>
 
         <app-ui-form-field
@@ -453,121 +805,50 @@
         >
           <input type="number" formControlName="purchasePriceRub" min="1" step="1" />
         </app-ui-form-field>
-
-        <app-ui-form-field label="Плотность (кг/м³)">
-          <input type="number" formControlName="densityKgM3" />
-        </app-ui-form-field>
       </div>
     </fieldset>
 
-    <fieldset class="dictionaryFormSection">
-      <legend>Справочники — выбор записей</legend>
-      <div class="dictionaryFormSectionBody">
-        <app-ui-form-field label="Цвет (RAL)">
-          <div class="colorRefRow">
-            <select formControlName="colorId">
-              <option value="">— Не выбран —</option>
-              @for (option of colorsStore.options(); track option.id) {
-                <option [value]="option.id">{{ option.label }}</option>
-              }
-            </select>
-            <app-ui-button
-              type="button"
-              [square]="true"
-              ariaLabel="Добавить цвет RAL"
-              title="Добавить цвет RAL"
-              (clicked)="openColorsCreate(true)"
-            >
-              <span class="squareIconTone squareIconTone--affirm"><svg lucidePlus [size]="18"></svg></span>
-            </app-ui-button>
+    @if (materialsForm.controls.materialCharacteristicId.value) {
+      <fieldset
+        class="dictionaryFormSection dictionaryFormSection--autoFields"
+        aria-label="Сводка профиля, только просмотр"
+      >
+        <legend>Сводка профиля (только просмотр)</legend>
+        <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2 dictionaryReadonlyGrid">
+          <div class="dictionaryReadonlyPair">
+            <span class="dictionaryReadonlyLabel">Плотность, кг/м³</span>
+            <span class="dictionaryReadonlyValue">{{ materialCharacteristicDensityLabelForMaterials() }}</span>
           </div>
-        </app-ui-form-field>
-
-        <app-ui-form-field label="Тип отделки / шероховатость">
-          <div class="colorRefRow">
-            <select formControlName="surfaceFinishId">
-              <option value="">— Не выбран —</option>
-              @for (option of surfaceFinishesStore.options(); track option.id) {
-                <option [value]="option.id">{{ option.label }}</option>
-              }
-            </select>
-            <app-ui-button
-              type="button"
-              [square]="true"
-              ariaLabel="Добавить финиш"
-              title="Добавить финиш"
-              (clicked)="openSurfaceFinishesCreate(true)"
-            >
-              <span class="squareIconTone squareIconTone--affirm"><svg lucidePlus [size]="18"></svg></span>
-            </app-ui-button>
+          <div class="dictionaryReadonlyPair">
+            <span class="dictionaryReadonlyLabel">Цвет</span>
+            <div class="dictionaryReadonlyValueRow">
+              <span
+                class="colorSwatch"
+                aria-hidden="true"
+                [style.background]="selectedMaterialProfileColorHex() || '#e5e7eb'"
+              ></span>
+              <span class="dictionaryReadonlyValue">{{ materialCharacteristicColorTextForMaterials() }}</span>
+            </div>
           </div>
-        </app-ui-form-field>
-
-        <app-ui-form-field label="Покрытие">
-          <div class="colorRefRow">
-            <select formControlName="coatingId">
-              <option value="">— Не выбран —</option>
-              @for (option of coatingsStore.options(); track option.id) {
-                <option [value]="option.id">{{ option.label }}</option>
-              }
-            </select>
-            <app-ui-button
-              type="button"
-              [square]="true"
-              ariaLabel="Добавить покрытие"
-              title="Добавить покрытие"
-              (clicked)="openCoatingsCreate(true)"
-            >
-              <span class="squareIconTone squareIconTone--affirm"><svg lucidePlus [size]="18"></svg></span>
-            </app-ui-button>
+          <div class="dictionaryReadonlyPair">
+            <span class="dictionaryReadonlyLabel">Отделка</span>
+            <span class="dictionaryReadonlyValue">{{
+              materialCharacteristicPreviewForMaterials()?.finishType?.trim() || '—'
+            }}</span>
           </div>
-        </app-ui-form-field>
-      </div>
-    </fieldset>
-
-    <fieldset class="dictionaryFormSection dictionaryFormSection--autoFields">
-      <legend>Из справочников</legend>
-      <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
-        <app-ui-form-field label="Цвет — название">
-          <input type="text" formControlName="colorName" readonly />
-        </app-ui-form-field>
-
-        <app-ui-form-field label="Цвет — HEX">
-          <div class="colorHexPreviewRow colorHexPreviewRowLeadSwatch colorHexPreviewRow--tight">
-            <span
-              class="colorSwatch"
-              aria-hidden="true"
-              [style.background]="selectedMaterialColorHex() || '#000000'"
-            ></span>
-            <input type="text" formControlName="colorHex" readonly />
+          <div class="dictionaryReadonlyPair">
+            <span class="dictionaryReadonlyLabel">Шероховатость</span>
+            <span class="dictionaryReadonlyValue">{{
+              materialCharacteristicPreviewForMaterials()?.roughnessClass?.trim() || '—'
+            }}</span>
           </div>
-        </app-ui-form-field>
-
-        <app-ui-form-field label="Отделка — тип">
-          <input type="text" formControlName="finishType" readonly />
-        </app-ui-form-field>
-
-        <app-ui-form-field label="Отделка — шероховатость (класс)">
-          <input type="text" formControlName="roughnessClass" readonly />
-        </app-ui-form-field>
-
-        <app-ui-form-field label="Отделка — Ra, мкм">
-          <input type="number" formControlName="raMicron" readonly />
-        </app-ui-form-field>
-
-        <app-ui-form-field label="Покрытие — тип">
-          <input type="text" formControlName="coatingType" readonly />
-        </app-ui-form-field>
-
-        <app-ui-form-field label="Покрытие — спецификация">
-          <input type="text" formControlName="coatingSpec" readonly />
-        </app-ui-form-field>
-
-        <app-ui-form-field label="Покрытие — толщина, мкм">
-          <input type="number" formControlName="coatingThicknessMicron" readonly />
-        </app-ui-form-field>
-      </div>
-    </fieldset>
+          <div class="dictionaryReadonlyPair dictionaryFieldRowFull">
+            <span class="dictionaryReadonlyLabel">Покрытие</span>
+            <span class="dictionaryReadonlyValue">{{ materialCharacteristicCoatingSummaryForMaterials() }}</span>
+          </div>
+        </div>
+      </fieldset>
+    }
 
     <fieldset class="dictionaryFormSection">
       <legend>Дополнительно</legend>
@@ -899,19 +1180,23 @@
       </div>
     </fieldset>
 
-    <fieldset class="dictionaryFormSection dictionaryFormSection--autoFields">
+    <fieldset
+      class="dictionaryFormSection dictionaryFormSection--autoFields"
+      aria-label="Сводка цвета, только просмотр"
+    >
       <legend>Сводка</legend>
-      <div class="dictionaryFormSectionBody">
-        <app-ui-form-field label="RAL и название (как в списках)">
-          <div class="colorHexPreviewRow colorHexPreviewRowLeadSwatch colorHexPreviewRow--tight">
+      <div class="dictionaryFormSectionBody dictionaryReadonlyGrid">
+        <div class="dictionaryReadonlyPair dictionaryFieldRowFull">
+          <span class="dictionaryReadonlyLabel">RAL и название (как в списках)</span>
+          <div class="dictionaryReadonlyValueRow">
             <span
               class="colorSwatch"
               aria-hidden="true"
-              [style.background]="colorPreviewHexForColorsForm() ?? undefined"
+              [style.background]="colorPreviewHexForColorsForm() ?? '#e5e7eb'"
             ></span>
-            <input type="text" [value]="colorNameWithRal()" readonly class="colorFullNameInput" />
+            <span class="dictionaryReadonlyValue">{{ colorNameWithRal() }}</span>
           </div>
-        </app-ui-form-field>
+        </div>
       </div>
     </fieldset>
   </form>
@@ -996,7 +1281,7 @@
               [square]="true"
               ariaLabel="Добавить цвет RAL"
               title="Добавить цвет RAL"
-              (clicked)="openColorsCreate(false, true)"
+              (clicked)="openColorsCreate(true)"
             >
               <span class="squareIconTone squareIconTone--affirm"><svg lucidePlus [size]="18"></svg></span>
             </app-ui-button>
@@ -1016,7 +1301,7 @@
               [square]="true"
               ariaLabel="Добавить финиш"
               title="Добавить финиш"
-              (clicked)="openSurfaceFinishesCreate(false, true)"
+              (clicked)="openSurfaceFinishesCreate(true)"
             >
               <span class="squareIconTone squareIconTone--affirm"><svg lucidePlus [size]="18"></svg></span>
             </app-ui-button>
@@ -1036,7 +1321,7 @@
               [square]="true"
               ariaLabel="Добавить покрытие"
               title="Добавить покрытие"
-              (clicked)="openCoatingsCreate(false, true)"
+              (clicked)="openCoatingsCreate(true)"
             >
               <span class="squareIconTone squareIconTone--affirm"><svg lucidePlus [size]="18"></svg></span>
             </app-ui-button>
@@ -1045,49 +1330,86 @@
       </div>
     </fieldset>
 
-    <fieldset class="dictionaryFormSection dictionaryFormSection--autoFields">
-      <legend>Из справочников</legend>
-      <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
-        <app-ui-form-field label="Цвет — название">
-          <input type="text" formControlName="colorName" readonly />
-        </app-ui-form-field>
-
-        <app-ui-form-field label="Цвет — HEX">
-          <div class="colorHexPreviewRow colorHexPreviewRowLeadSwatch colorHexPreviewRow--tight">
-            <span
-              class="colorSwatch"
-              aria-hidden="true"
-              [style.background]="selectedMaterialCharacteristicColorHex() || '#000000'"
-            ></span>
-            <input type="text" formControlName="colorHex" readonly />
+    @if (
+      materialCharacteristicsForm.controls.colorId.value ||
+      materialCharacteristicsForm.controls.surfaceFinishId.value ||
+      materialCharacteristicsForm.controls.coatingId.value
+    ) {
+      <fieldset
+        class="dictionaryFormSection dictionaryFormSection--autoFields"
+        aria-label="Значения из связанных справочников, только просмотр"
+      >
+        <legend>Из справочников</legend>
+        <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2 dictionaryReadonlyGrid">
+          <div class="dictionaryReadonlyPair">
+            <span class="dictionaryReadonlyLabel">Цвет — название</span>
+            <span class="dictionaryReadonlyValue">{{
+              (materialCharacteristicsForm.controls.colorName.value || '').trim() || '—'
+            }}</span>
           </div>
-        </app-ui-form-field>
 
-        <app-ui-form-field label="Отделка — тип">
-          <input type="text" formControlName="finishType" readonly />
-        </app-ui-form-field>
+          <div class="dictionaryReadonlyPair">
+            <span class="dictionaryReadonlyLabel">Цвет — HEX</span>
+            <div class="dictionaryReadonlyValueRow">
+              <span
+                class="colorSwatch"
+                aria-hidden="true"
+                [style.background]="selectedMaterialCharacteristicColorHex() || '#e5e7eb'"
+              ></span>
+              <span class="dictionaryReadonlyValue">{{
+                (materialCharacteristicsForm.controls.colorHex.value || '').trim() || '—'
+              }}</span>
+            </div>
+          </div>
 
-        <app-ui-form-field label="Отделка — шероховатость (класс)">
-          <input type="text" formControlName="roughnessClass" readonly />
-        </app-ui-form-field>
+          <div class="dictionaryReadonlyPair">
+            <span class="dictionaryReadonlyLabel">Отделка — тип</span>
+            <span class="dictionaryReadonlyValue">{{
+              (materialCharacteristicsForm.controls.finishType.value || '').trim() || '—'
+            }}</span>
+          </div>
 
-        <app-ui-form-field label="Отделка — Ra, мкм">
-          <input type="number" formControlName="raMicron" readonly />
-        </app-ui-form-field>
+          <div class="dictionaryReadonlyPair">
+            <span class="dictionaryReadonlyLabel">Отделка — шероховатость (класс)</span>
+            <span class="dictionaryReadonlyValue">{{
+              (materialCharacteristicsForm.controls.roughnessClass.value || '').trim() || '—'
+            }}</span>
+          </div>
 
-        <app-ui-form-field label="Покрытие — тип">
-          <input type="text" formControlName="coatingType" readonly />
-        </app-ui-form-field>
+          <div class="dictionaryReadonlyPair">
+            <span class="dictionaryReadonlyLabel">Отделка — Ra, мкм</span>
+            <span class="dictionaryReadonlyValue">{{
+              materialCharacteristicsForm.controls.raMicron.value != null
+                ? materialCharacteristicsForm.controls.raMicron.value
+                : '—'
+            }}</span>
+          </div>
 
-        <app-ui-form-field label="Покрытие — спецификация">
-          <input type="text" formControlName="coatingSpec" readonly />
-        </app-ui-form-field>
+          <div class="dictionaryReadonlyPair">
+            <span class="dictionaryReadonlyLabel">Покрытие — тип</span>
+            <span class="dictionaryReadonlyValue">{{
+              (materialCharacteristicsForm.controls.coatingType.value || '').trim() || '—'
+            }}</span>
+          </div>
 
-        <app-ui-form-field label="Покрытие — толщина, мкм">
-          <input type="number" formControlName="coatingThicknessMicron" readonly />
-        </app-ui-form-field>
-      </div>
-    </fieldset>
+          <div class="dictionaryReadonlyPair">
+            <span class="dictionaryReadonlyLabel">Покрытие — спецификация</span>
+            <span class="dictionaryReadonlyValue">{{
+              (materialCharacteristicsForm.controls.coatingSpec.value || '').trim() || '—'
+            }}</span>
+          </div>
+
+          <div class="dictionaryReadonlyPair">
+            <span class="dictionaryReadonlyLabel">Покрытие — толщина, мкм</span>
+            <span class="dictionaryReadonlyValue">{{
+              materialCharacteristicsForm.controls.coatingThicknessMicron.value != null
+                ? materialCharacteristicsForm.controls.coatingThicknessMicron.value
+                : '—'
+            }}</span>
+          </div>
+        </div>
+      </fieldset>
+    }
 
     <fieldset class="dictionaryFormSection">
       <legend>Дополнительно</legend>

@@ -14,13 +14,31 @@
   </a>
 
   <nav class="mainNav" aria-label="Main navigation">
-    <a routerLink="/dictionaries" routerLinkActive="isActive">Справочники</a>
-    <a routerLink="/demo" routerLinkActive="isActive">Demo</a>
+    @if (canPage('page.dictionaries')) {
+      <a routerLink="/dictionaries" routerLinkActive="isActive">Справочники</a>
+    }
+    @if (canPage('page.demo')) {
+      <a routerLink="/demo" routerLinkActive="isActive">Demo</a>
+    }
+    @if (canPage('page.admin.settings')) {
+      <a routerLink="/settings" routerLinkActive="isActive">Админ-настройки</a>
+    }
   </nav>
 
   <div class="headerRight">
-    <button type="button" class="logoutBtn" (click)="logout()">Выйти</button>
+    @if (canPage('page.preferences')) {
+      <a
+        routerLink="/preferences"
+        routerLinkActive="isActive"
+        class="iconNavBtn"
+        aria-label="Настройки приложения"
+        title="Настройки"
+      >
+        <svg lucideSettings [size]="18" aria-hidden="true"></svg>
+      </a>
+    }
     <ng-content></ng-content>
+    <button type="button" class="logoutBtn" (click)="logout()">Выйти</button>
   </div>
 </header>
 

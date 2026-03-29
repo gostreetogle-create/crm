@@ -3,20 +3,18 @@
     <p class="meta">Последнее действие: {{ lastAction() }}</p>
   </app-content-card>
 
-  <app-content-card title="Роль пользователя (demo)">
-    <div class="roleRow">
-      <label class="roleLabel" for="demo-role">Текущая роль</label>
-      <select
-        id="demo-role"
-        class="roleSelect"
-        [value]="permissions.role()"
-        (change)="onRoleChange($any($event.target).value)"
-      >
-        @for (option of roleOptions; track option.value) {
-          <option [value]="option.value">{{ option.label }}</option>
-        }
-      </select>
-    </div>
+  <app-content-card title="Роль и права">
+    <p class="roleHint">
+      Роль сессии и права настраиваются в
+      <a routerLink="/preferences" class="roleHintLink">Настройках</a>
+      (шестерёнка в шапке).
+      @if (permissions.can('page.admin.settings')) {
+        Матрица прав по ролям — в
+        <a routerLink="/settings" class="roleHintLink">Админ-настройках</a>.
+      } @else {
+        Матрицу прав по ролям может менять только администратор.
+      }
+    </p>
   </app-content-card>
 
   <app-content-card title="Состояния интерфейса">

@@ -5,6 +5,8 @@
 
 **Поведение полей (таблица / модалка / сценарии / Excel):** [`dictionary-field-behavior-guide.md`](./dictionary-field-behavior-guide.md).
 
+**Нормализация текста и импорт:** зафиксировать для нового справочника по [`dictionaries-data-and-import-rules.md`](./dictionaries-data-and-import-rules.md) (чеклист в §4).
+
 Для manufacturing: реестр полей, бэклог и шлюз «ок, пункт N» — [`справочники/README.md`](../../справочники/README.md). Сводная бизнес-логика домена: [`business-logic-canon.md`](../business-logic-canon.md).
 
 ## Manufacturing: первый поток (порядок внедрения до REST)

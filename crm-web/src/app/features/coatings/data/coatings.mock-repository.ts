@@ -8,9 +8,24 @@ function newId(): string {
 }
 
 const SEED: CoatingItem[] = [
-  { id: newId(), coatingType: 'Powder coating', coatingSpec: 'RAL polyester', thicknessMicron: 80 },
-  { id: newId(), coatingType: 'Anodizing', coatingSpec: 'Clear anodized', thicknessMicron: 20 },
-  { id: newId(), coatingType: 'Galvanized', coatingSpec: 'Zn hot-dip', thicknessMicron: 60 },
+  {
+    id: 'coat-seed-powder',
+    coatingType: 'Powder coating',
+    coatingSpec: 'RAL polyester',
+    thicknessMicron: 80,
+  },
+  {
+    id: 'coat-seed-anodizing',
+    coatingType: 'Anodizing',
+    coatingSpec: 'Clear anodized',
+    thicknessMicron: 20,
+  },
+  {
+    id: 'coat-seed-galvanized',
+    coatingType: 'Galvanized',
+    coatingSpec: 'Zn hot-dip',
+    thicknessMicron: 60,
+  },
 ];
 
 @Injectable()

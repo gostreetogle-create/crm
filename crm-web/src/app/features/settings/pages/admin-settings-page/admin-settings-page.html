@@ -1,0 +1,137 @@
+<app-page-shell>
+  <app-content-card title="Админ-настройки: права доступа">
+    <p class="lead">
+      Матрица разрешений для текущего браузера: <strong>страницы</strong>,
+      <strong>плитки на хабе «Справочники»</strong>, <strong>кнопки в карточках</strong> и <strong>Excel</strong>.
+      Роли — из справочника «Роли». <strong>Суперадминистратор</strong> в таблице не показывается: у него всегда полный
+      доступ, матрица на него не действует.       Для остальных ролей по умолчанию права пустые, пока вы не отметите
+      галочки; «К канону» снимает сохранённые переопределения и возвращает к этому пустому умолчанию. Порядок колонок
+      совпадает с полем <strong>Порядок</strong> в справочнике «Роли» (меньше число — левее). Матрица хранится в
+      <code>localStorage</code> до сброса.
+    </p>
+    <p class="muted">
+      Проверить интерфейс «как под другой ролью» в этом браузере — в
+      <a routerLink="/preferences" class="inlineLink">Настройках</a> (шестерёнка). Назначить роль сотруднику — в
+      «Справочниках» → «Пользователи». Ключ страницы: <code>page.admin.settings</code>.
+    </p>
+
+    <div class="matrixToolbar">
+      <app-ui-button
+        variant="soft"
+        type="button"
+        [disabled]="!permissions.hasAnyMatrixOverride()"
+        (clicked)="resetAllMatrix()"
+      >
+        Сбросить все переопределения матрицы
+      </app-ui-button>
+    </div>
+    <p class="matrixGlobalHint">
+      В каждой таблице столбцы ролей одинаковые. «К канону» убирает сохранённые переопределения для роли: снова
+      действует пустое умолчанию (все галочки сняты), пока вы снова не сохраните матрицу. Кнопка неактивна, если для
+      роли нет своего переопределения в браузере.
+    </p>
+
+    <div class="matrixSections" [attr.data-matrix-rev]="matrixRev()">
+      @for (section of matrixSections; track section.group) {
+        <section class="matrixSection" [attr.aria-labelledby]="'matrix-sec-' + section.group">
+          <div class="matrixSectionHead">
+            <h3 class="matrixSectionTitle" [id]="'matrix-sec-' + section.group">{{ section.titleRu }}</h3>
+            <p class="matrixSectionHint">{{ section.hintRu }}</p>
+          </div>
+          <div class="tableWrap matrixWrap">
+            <table class="matrixTable">
+              <thead>
+                <tr>
+                  <th scope="col" class="matrixCorner">Разрешение</th>
+                  @for (role of matrixRoles(); track role.id) {
+                    <th scope="col" class="roleHead">
+                      <div class="roleHeadStack">
+                        <span class="roleHeadLabel">{{ roleLabel(role) }}</span>
+                        <span class="roleHeadSort">Пор. {{ role.sortOrder }}</span>
+                        <button
+                          type="button"
+                          class="roleResetBtn"
+                          [disabled]="!canResetRoleColumn(role)"
+                          (click)="resetRoleColumn(role)"
+                        >
+                          К канону
+                        </button>
+                      </div>
+                    </th>
+                  }
+                </tr>
+              </thead>
+              <tbody>
+                @for (key of section.keys; track key) {
+                  <tr>
+                    <th scope="row" class="permCell">
+                      <code class="permKey">{{ key }}</code>
+                      <span class="permLabel">{{ permissionLabelRu(key) }}</span>
+                    </th>
+                    @for (role of matrixRoles(); track role.id) {
+                      <td class="checkCell">
+                        <input
+                          type="checkbox"
+                          [checked]="permissions.hasPermissionForRole(roleColumnId(role), key)"
+                          (change)="onMatrixToggle(role, key, $event)"
+                          [attr.aria-label]="section.titleRu + ' — ' + role.name + ': ' + key"
+                        />
+                      </td>
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+      }
+    </div>
+  </app-content-card>
+
+  <app-content-card title="Правила полей и импорта">
+    <p class="lead">
+      Справочник для сотрудников: как вводить данные и как они обрабатываются при импорте Excel. Полный канон —
+      <span class="docRef">docs/frontend/dictionaries-data-and-import-rules.md</span>.
+    </p>
+
+    <div class="tableWrap">
+      <table class="rulesTable">
+        <thead>
+          <tr>
+            <th scope="col">Справочник</th>
+            <th scope="col">Поле</th>
+            <th scope="col">Подпись</th>
+            <th scope="col">Правило</th>
+            <th scope="col">Excel / импорт</th>
+            <th scope="col">Пример</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of rules; track row.dictionaryKey + row.fieldKey) {
+            <tr>
+              <td>
+                <span class="dictKey">{{ row.dictionaryKey }}</span>
+                <span class="dictLabel">{{ row.dictionaryLabel }}</span>
+              </td>
+              <td><code class="fieldKey">{{ row.fieldKey }}</code></td>
+              <td>{{ row.fieldLabel }}</td>
+              <td>{{ row.ruleSummary }}</td>
+              <td>{{ row.excelHint }}</td>
+              <td>
+                @if (row.exampleBefore != null && row.exampleAfter != null) {
+                  <span class="example">
+                    <span class="exampleBefore">{{ row.exampleBefore }}</span>
+                    <span class="exampleArrow" aria-hidden="true">→</span>
+                    <span class="exampleAfter">{{ row.exampleAfter }}</span>
+                  </span>
+                } @else {
+                  <span class="muted">—</span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </app-content-card>
+</app-page-shell>

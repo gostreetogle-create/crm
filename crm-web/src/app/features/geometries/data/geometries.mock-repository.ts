@@ -9,7 +9,7 @@ function newId(): string {
 
 const SEED: GeometryItem[] = [
   {
-    id: newId(),
+    id: 'geo-seed-profile-6040',
     name: 'Профиль 60x40x2',
     shapeKey: 'rectangular',
     lengthMm: 3000,
@@ -20,7 +20,7 @@ const SEED: GeometryItem[] = [
     isActive: true,
   },
   {
-    id: newId(),
+    id: 'geo-seed-tube-32',
     name: 'Круглая труба 32x2',
     shapeKey: 'tube',
     diameterMm: 32,
@@ -53,4 +53,3 @@ export class GeometriesMockRepository implements GeometriesRepository {
     this.itemsSubject.next(this.itemsSubject.value.filter((x) => x.id !== id));
   }
 }
-

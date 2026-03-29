@@ -1,5 +1,9 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
+import { GeometriesStore } from '../../geometries/state/geometries.store';
+import { MaterialCharacteristicItem } from '../../material-characteristics/model/material-characteristic-item';
+import { MaterialCharacteristicsStore } from '../../material-characteristics/state/material-characteristics.store';
 import {
   MATERIALS_REPOSITORY,
   MaterialsRepository,
@@ -10,6 +14,25 @@ import { MaterialsStore } from './materials.store';
 describe('MaterialsStore', () => {
   let store: InstanceType<typeof MaterialsStore>;
 
+  const mockMc: MaterialCharacteristicItem[] = [
+    {
+      id: 'mc1',
+      name: 'Profile',
+      code: 'P1',
+      densityKgM3: 1000,
+      isActive: true,
+    },
+  ];
+
+  const mockGeos = [
+    {
+      id: 'g1',
+      name: 'Geo 1',
+      shapeKey: 'rectangular',
+      isActive: true,
+    },
+  ];
+
   const mockItems: MaterialItem[] = [
     {
       id: '2',
@@ -17,6 +40,8 @@ describe('MaterialsStore', () => {
       unitId: 'u-1',
       unitName: 'кг (kg)',
       purchasePriceRub: 10,
+      materialCharacteristicId: 'mc1',
+      geometryId: 'g1',
       isActive: false,
     },
     {
@@ -25,6 +50,8 @@ describe('MaterialsStore', () => {
       unitId: 'u-1',
       unitName: 'кг (kg)',
       purchasePriceRub: 20,
+      materialCharacteristicId: 'mc1',
+      geometryId: 'g1',
       isActive: true,
     },
   ];
@@ -41,7 +68,12 @@ describe('MaterialsStore', () => {
     repo.getItems.mockReturnValue(of(mockItems));
 
     TestBed.configureTestingModule({
-      providers: [{ provide: MATERIALS_REPOSITORY, useValue: repo }, MaterialsStore],
+      providers: [
+        { provide: MATERIALS_REPOSITORY, useValue: repo },
+        { provide: MaterialCharacteristicsStore, useValue: { items: signal(mockMc) } },
+        { provide: GeometriesStore, useValue: { items: signal(mockGeos) } },
+        MaterialsStore,
+      ],
     });
 
     store = TestBed.inject(MaterialsStore);
@@ -69,6 +101,7 @@ describe('MaterialsStore', () => {
 
     const names = store.materialsData().map((x) => x.name);
     expect(names).toEqual(['Steel', 'Wood']);
+    expect(store.materialsData()[0].geometry).toBe('Geo 1');
   });
 
   it('startEdit and submit(valid) reset edit state', () => {
@@ -81,6 +114,8 @@ describe('MaterialsStore', () => {
         unitId: 'u-1',
         unitName: 'кг (kg)',
         purchasePriceRub: 20,
+        materialCharacteristicId: 'mc1',
+        geometryId: 'g1',
         isActive: true,
       },
       isValid: true,
@@ -91,6 +126,8 @@ describe('MaterialsStore', () => {
       unitId: 'u-1',
       unitName: 'кг (kg)',
       purchasePriceRub: 20,
+      materialCharacteristicId: 'mc1',
+      geometryId: 'g1',
       isActive: true,
     });
     expect(store.editId()).toBeNull();
@@ -99,7 +136,12 @@ describe('MaterialsStore', () => {
 
   it('submit(invalid) marks submit attempted', () => {
     store.submit({
-      value: { name: '', isActive: true },
+      value: {
+        name: '',
+        materialCharacteristicId: '',
+        geometryId: '',
+        isActive: true,
+      },
       isValid: false,
     });
 

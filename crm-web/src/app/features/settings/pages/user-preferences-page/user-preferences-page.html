@@ -1,0 +1,75 @@
+<app-page-shell>
+  <app-content-card title="Настройки">
+    <p class="lead">
+      Здесь — <strong>ваш интерфейс</strong> (тема) и куда идти за ролями. <strong>Кому какая роль в организации</strong>
+      задаётся в справочнике пользователей на странице «Справочники», а не этим переключателем.
+    </p>
+
+    <section class="prefSection prefSection--highlight" aria-labelledby="pref-staff-title">
+      <div class="prefSectionHead">
+        <h3 id="pref-staff-title" class="prefSectionTitle">Сотрудники и роли в системе</h3>
+        <p class="prefSectionHint">
+          Директор или администратор открывает <strong>Справочники</strong>, плитку «Пользователи», выбирает человека и
+          поле «Роль» — так назначается, кем он входит в CRM после появления сервера.
+        </p>
+      </div>
+      <div class="prefSectionBody prefSectionBody--stack">
+        @if (canOpenUsersHub()) {
+          <a routerLink="/dictionaries" class="prefActionLink">Перейти к справочникам → «Пользователи»</a>
+        } @else {
+          <p class="prefSectionHint prefSectionHint--tight">
+            У вас нет доступа к плитке «Пользователи» на хабе. Назначение ролей сотрудникам выполнит пользователь с
+            правом на эту плитку (см. «Админ-настройки»).
+          </p>
+        }
+        @if (canOpenAdminSettings()) {
+          <p class="prefSectionHint prefSectionHint--tight">
+            Какие разделы и кнопки доступны <strong>каждой роли</strong> (галочки), настраивается в
+            <a routerLink="/settings" class="inlineLink">Админ-настройках</a>.
+          </p>
+        }
+      </div>
+    </section>
+
+    <section class="prefSection" aria-labelledby="pref-appearance-title">
+      <div class="prefSectionHead">
+        <h3 id="pref-appearance-title" class="prefSectionTitle">Оформление</h3>
+        <p class="prefSectionHint">Светлая или тёмная тема (дублирует кнопку солнце/луна в шапке).</p>
+      </div>
+      <div class="prefSectionBody">
+        <app-theme-picker />
+      </div>
+    </section>
+
+    <section class="prefSection prefSection--muted" aria-labelledby="pref-role-title">
+      <div class="prefSectionHead">
+        <h3 id="pref-role-title" class="prefSectionTitle">Роль только в этой вкладке браузера</h3>
+        <p class="prefSectionHint">
+          Пока нет API, это <strong>локальная имитация</strong>: смотреть интерфейс «как будто вы вошли под другой
+          ролью». Сохраняется в этом браузере; на учётные записи сотрудников <strong>не влияет</strong>. После бэкенда
+          здесь останется профиль, а роль возьмётся с сервера.
+        </p>
+      </div>
+      <div class="roleSession">
+        <label class="roleLabel" for="pref-role">Просмотр от имени роли</label>
+        <select
+          id="pref-role"
+          class="roleSelect"
+          (change)="onRoleChange($any($event.target).value)"
+        >
+          @for (option of roleOptions(); track option.id) {
+            <option [value]="option.id" [selected]="option.id === permissions.role()">{{ option.label }}</option>
+          }
+        </select>
+      </div>
+    </section>
+
+    <section class="prefSection prefSection--muted" aria-labelledby="pref-account-title">
+      <h3 id="pref-account-title" class="prefSectionTitle">Учётная запись</h3>
+      <p class="prefSectionHint">
+        Вход по логину/паролю; сессия в <code>sessionStorage</code>. После появления API здесь появятся смена пароля,
+        профиль и привязка к организации.
+      </p>
+    </section>
+  </app-content-card>
+</app-page-shell>
