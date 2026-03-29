@@ -1,7 +1,6 @@
 import { Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { API_CONFIG } from '../../../../core/api/api-config';
-import { PermissionsService } from '../../../../core/auth/public-api';
+import { PermissionsService, SessionAuthService } from '../../../../core/auth/public-api';
 import { RolesStore } from '../../../roles/state/roles.store';
 import { ContentCardComponent } from '../../../../shared/ui/cards/public-api';
 import { PageShellComponent } from '../../../../shared/ui/page-shell/page-shell.component';
@@ -17,7 +16,7 @@ import { ThemePickerComponent } from '../../../../shared/ui/theme-picker/theme-p
 export class UserPreferencesPage {
   readonly permissions = inject(PermissionsService);
   readonly rolesStore = inject(RolesStore);
-  readonly api = inject(API_CONFIG);
+  readonly session = inject(SessionAuthService);
 
   /** Назначать роли сотрудникам — в справочнике на хабе. */
   readonly canOpenUsersHub = computed(() => this.permissions.can('dict.hub.users'));

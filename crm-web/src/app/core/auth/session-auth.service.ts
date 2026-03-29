@@ -1,4 +1,4 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Injectable, computed, inject, isDevMode, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom, map, of, catchError, tap } from 'rxjs';
 import { API_CONFIG } from '../api/api-config';
@@ -26,8 +26,8 @@ type LoginResponse = { token: string; user: AuthUserDto };
 type MeResponse = { user: AuthUserDto };
 
 /**
- * Сессия: при реальном API — JWT в sessionStorage и роль с сервера;
- * в режиме моков — прежний флаг + логин admin/admin.
+ * Сессия: при реальном API — JWT в sessionStorage и роль с сервера.
+ * Моковый вход admin/admin — только в dev (`ng serve`), не в production-сборке.
  */
 @Injectable({ providedIn: 'root' })
 export class SessionAuthService {
@@ -35,10 +35,15 @@ export class SessionAuthService {
   private readonly apiConfig = inject(API_CONFIG);
   private readonly permissions = inject(PermissionsService);
 
+  /** Локальный admin/admin — только `ng serve` + `useMockRepositories`, не production bundle. */
+  private isMockAuthPath(): boolean {
+    return this.apiConfig.useMockRepositories && isDevMode();
+  }
+
   private readonly authenticated = signal(this.computeInitialAuthenticated());
 
   readonly isAuthenticated = computed(() => this.authenticated());
-  readonly useMockAuth = computed(() => this.apiConfig.useMockRepositories);
+  readonly useMockAuth = computed(() => this.isMockAuthPath());
 
   private apiUrl(path: string): string {
     const base = this.apiConfig.baseUrl.replace(/\/$/, '');
@@ -47,7 +52,14 @@ export class SessionAuthService {
 
   /** APP_INITIALIZER: подтянуть профиль по сохранённому токену. */
   hydrateSession(): Promise<void> {
-    if (this.apiConfig.useMockRepositories) {
+    if (!this.isMockAuthPath()) {
+      try {
+        sessionStorage.removeItem(LEGACY_STORAGE_KEY);
+      } catch {
+        // no-op
+      }
+    }
+    if (this.isMockAuthPath()) {
       if (this.readLegacyStored()) {
         this.permissions.setRole(ROLE_ID_SYSTEM_ADMIN);
         this.authenticated.set(true);
@@ -74,7 +86,7 @@ export class SessionAuthService {
   login(username: string, password: string) {
     const u = username.trim();
     const p = password;
-    if (this.apiConfig.useMockRepositories) {
+    if (this.isMockAuthPath()) {
       const ok = u === DEV_BOOTSTRAP_USERNAME && p === DEV_BOOTSTRAP_PASSWORD;
       if (ok) {
         this.setMockSession();
@@ -97,7 +109,7 @@ export class SessionAuthService {
   }
 
   private computeInitialAuthenticated(): boolean {
-    if (this.apiConfig.useMockRepositories) {
+    if (this.isMockAuthPath()) {
       return this.readLegacyStored();
     }
     return !!this.readToken();

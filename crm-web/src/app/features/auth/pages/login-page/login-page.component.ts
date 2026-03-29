@@ -1,7 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { API_CONFIG } from '../../../../core/api/api-config';
 import {
   DEV_BOOTSTRAP_PASSWORD,
   DEV_BOOTSTRAP_USERNAME,
@@ -20,7 +19,6 @@ import { UiFormFieldComponent } from '../../../../shared/ui/ui-form-field/ui-for
 export class LoginPage {
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
-  private readonly api = inject(API_CONFIG);
   readonly session = inject(SessionAuthService);
 
   readonly devUser = DEV_BOOTSTRAP_USERNAME;
@@ -34,7 +32,7 @@ export class LoginPage {
   errorText = '';
 
   constructor() {
-    if (this.api.useMockRepositories) {
+    if (this.session.useMockAuth()) {
       this.form.patchValue({
         username: DEV_BOOTSTRAP_USERNAME,
         password: DEV_BOOTSTRAP_PASSWORD,
@@ -52,7 +50,7 @@ export class LoginPage {
     const { username, password } = this.form.getRawValue();
     this.session.login(username.trim(), password).subscribe((ok) => {
       if (!ok) {
-        this.errorText = this.api.useMockRepositories
+        this.errorText = this.session.useMockAuth()
           ? `Неверная пара логин/пароль. Для dev: ${this.devUser} / ${this.devPass}.`
           : 'Неверная пара логин/пароль. Учётную запись создаёт администратор в «Справочники» → «Пользователи».';
         return;
@@ -63,7 +61,7 @@ export class LoginPage {
 
   logout(): void {
     this.session.logout();
-    if (this.api.useMockRepositories) {
+    if (this.session.useMockAuth()) {
       this.form.reset({
         username: DEV_BOOTSTRAP_USERNAME,
         password: DEV_BOOTSTRAP_PASSWORD,

@@ -41,7 +41,7 @@
       </div>
     </section>
 
-    @if (api.useMockRepositories) {
+    @if (session.useMockAuth()) {
       <section class="prefSection prefSection--muted" aria-labelledby="pref-role-title">
         <div class="prefSectionHead">
           <h3 id="pref-role-title" class="prefSectionTitle">Роль только в этой вкладке браузера</h3>
