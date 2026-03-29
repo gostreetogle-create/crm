@@ -37,7 +37,8 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: url('/branding/login-street-workout-bg.png') no-repeat center center / contain;
+  /* Файл должен существовать в `public/branding/` (иначе nginx отдаст index.html — поломка фона / загрузки). */
+  background: url('/branding/landing-hero.svg') no-repeat center center / contain;
   opacity: 0.42;
   filter: saturate(1.06) contrast(1.03) brightness(1.02);
 }
