@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, isDevMode, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { firstValueFrom, map, of, catchError, tap } from 'rxjs';
+import { firstValueFrom, map, of, catchError, tap, timeout } from 'rxjs';
 import { API_CONFIG } from '../api/api-config';
 import { PermissionsService } from './permissions.service';
 import { ROLE_ID_SYSTEM_ADMIN } from '../../features/roles/data/roles.seed';
@@ -71,7 +71,11 @@ export class SessionAuthService {
       this.authenticated.set(false);
       return Promise.resolve();
     }
-    return firstValueFrom(this.http.get<MeResponse>(this.apiUrl('/auth/me')))
+    /** Без таймаута запрос мог бы «висеть» бесконечно и блокировать весь bootstrap (пустая страница). */
+    const hydrateTimeoutMs = 12_000;
+    return firstValueFrom(
+      this.http.get<MeResponse>(this.apiUrl('/auth/me')).pipe(timeout(hydrateTimeoutMs)),
+    )
       .then((r) => {
         this.applyServerUser(r.user);
         this.authenticated.set(true);
