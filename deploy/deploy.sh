@@ -19,13 +19,26 @@ require_non_empty WEB_PORT
 require_non_empty BACKEND_PORT
 require_non_empty JWT_SECRET
 
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+
 echo "[deploy] Обновляю код (если это серверный сценарий)..."
-if git -C .. rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-  git -C .. fetch origin || true
-  if git -C .. pull --ff-only; then
+if git -C "${REPO_ROOT}" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  git -C "${REPO_ROOT}" fetch origin || true
+  if git -C "${REPO_ROOT}" pull --ff-only; then
     :
   else
-    echo "[deploy] Внимание: fast-forward невозможен. Оставляю как есть (ручное вмешательство при необходимости)."
+    echo "[deploy] pull --ff-only не удался (часто: на сервере правили отслеживаемые файлы в deploy/, например deploy.sh)."
+    echo "[deploy] Откладываю изменения в deploy/ в git stash (deploy/.env не в git — не затрагивается) и повторяю pull..."
+    git -C "${REPO_ROOT}" stash push -m "crm-deploy auto $(date -Iseconds 2>/dev/null || date)" -- deploy/ 2>/dev/null || true
+    if ! git -C "${REPO_ROOT}" pull --ff-only; then
+      echo "[deploy] ОШИБКА: всё ещё не удалось обновить репозиторий."
+      echo "[deploy] Выполните вручную на сервере:"
+      echo "[deploy]   cd ${REPO_ROOT} && git status"
+      echo "[deploy] Чтобы принять состояние как на GitHub (не удаляет неотслеживаемый deploy/.env):"
+      echo "[deploy]   cd ${REPO_ROOT} && git fetch origin && git reset --hard origin/main"
+      exit 1
+    fi
+    echo "[deploy] Код обновлён. Старые правки в deploy/ лежат в stash: cd ${REPO_ROOT} && git stash list"
   fi
 fi
 
@@ -34,7 +47,7 @@ docker compose --env-file .env pull || true
 
 echo "[deploy] Сборка образов..."
 unset WEB_BUILD_ID 2>/dev/null || true
-WEB_BUILD_ID="$(git -C .. rev-parse HEAD 2>/dev/null || echo unknown)"
+WEB_BUILD_ID="$(git -C "${REPO_ROOT}" rev-parse HEAD 2>/dev/null || echo unknown)"
 export WEB_BUILD_ID
 echo "[deploy] WEB_BUILD_ID=${WEB_BUILD_ID}"
 

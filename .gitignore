@@ -3,6 +3,7 @@ Basics/
 Исходники/
 
 backend/.env
+deploy/.env
 backend/node_modules/
 backend/dist/
 
