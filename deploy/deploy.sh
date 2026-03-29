@@ -57,10 +57,24 @@ if ! curl -fsS "http://localhost:${BACKEND_PORT:-3000}/health" >/dev/null 2>&1; 
   exit 1
 fi
 
-if curl -fsS "http://127.0.0.1:${WEB_PORT:-8080}/" >/dev/null 2>&1; then
+echo "[deploy] Проверяю ответ nginx (web)..."
+web_ok=0
+for i in {1..30}; do
+  if curl -fsS "http://127.0.0.1:${WEB_PORT:-8080}/" >/dev/null 2>&1; then
+    web_ok=1
+    break
+  fi
+  sleep 2
+done
+
+if [[ "${web_ok}" -eq 1 ]]; then
   echo "[deploy] Web (nginx) отвечает на GET / (порт ${WEB_PORT:-8080})."
 else
-  echo "[deploy] Предупреждение: нет ответа web на http://127.0.0.1:${WEB_PORT:-8080}/ — см. docker compose logs web --tail 120"
+  echo "[deploy] Предупреждение: web не ответил за ~60 с на http://127.0.0.1:${WEB_PORT:-8080}/"
+  echo "[deploy] Состояние контейнеров:"
+  docker compose --env-file .env ps -a
+  echo "[deploy] Последние логи web:"
+  docker compose --env-file .env logs web --tail 120
 fi
 
 echo "[deploy] Готово: deploy выполнен успешно."
