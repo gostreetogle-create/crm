@@ -1,6 +1,6 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { concatMap, from, switchMap, take } from 'rxjs';
+import { catchError, concatMap, from, of, switchMap, take } from 'rxjs';
 import { RolesStore } from '../../roles/state/roles.store';
 import { UserItem, UserItemInput } from '../model/user-item';
 import { USERS_REPOSITORY } from '../data/users.repository';
@@ -20,6 +20,14 @@ export class UsersStore {
     this.repo
       .getItems()
       .pipe(takeUntilDestroyed(inject(DestroyRef)))
+      .pipe(
+        catchError((err) => {
+          // На этапе логина/первого редиректа доступ к `/api/users` может требовать admin.
+          // В этом случае просто оставляем пустой список (UI переключит роль/права после login).
+          console.warn('[UsersStore] Failed to load users (will use empty list):', err);
+          return of([] as UserItem[]);
+        }),
+      )
       .subscribe((items) => this.items.set(items));
   }
 

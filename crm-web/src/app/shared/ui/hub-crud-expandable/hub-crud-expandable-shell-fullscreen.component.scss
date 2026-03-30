@@ -1,0 +1,100 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.hubCrudExpandableFullscreen {
+  position: relative;
+  z-index: 1;
+}
+
+.hubCrudExpandableFullscreen__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1400;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ui-modal-backdrop-padding);
+  background: var(--modal-backdrop-bg);
+  /* Чтобы клики уходили именно на backdrop/panel, а не в фон. */
+  pointer-events: auto;
+  overscroll-behavior: none;
+}
+
+.hubCrudExpandableFullscreen__anchor--open {
+  position: relative;
+}
+
+/* BFC: margin-top у вложенной content-card не «выпадает» из панели — резерв совпадает с визуалом. */
+.hubCrudExpandableFullscreen__panel {
+  display: flow-root;
+}
+
+/* Full-screen режим: фиксируем панель и расширяем на всю ширину экрана,
+   при этом «якорь» в потоке сохраняет высоту — без прыжка вниз. */
+.hubCrudExpandableFullscreen__panel--open {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1401;
+  width: calc(100vw - (2 * var(--ui-modal-backdrop-padding)));
+  max-width: 100vw;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  max-height: calc(100dvh - (2 * var(--ui-modal-backdrop-padding)));
+  overflow-y: auto;
+
+  /* Тень без filter на родителе — иначе fixed внутри плитки может ломаться. */
+  box-shadow:
+    0 12px 40px color-mix(in srgb, var(--shadow-color) 85%, transparent),
+    0 24px 48px color-mix(in srgb, var(--shadow-color) 45%, transparent);
+}
+
+.hubCrudExpandableFullscreen__panel--open .hubCrudExpandableFullscreen__toggle {
+  flex-shrink: 0;
+  margin-top: var(--ui-space-2);
+}
+
+.hubCrudExpandableFullscreen__toggle {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  margin-top: var(--ui-space-2);
+  padding: var(--ui-space-2) var(--ui-space-3);
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border-color));
+  border-radius: var(--radius-card);
+  background: color-mix(in srgb, var(--accent) 11%, var(--surface-soft));
+  color: color-mix(in srgb, var(--accent) 82%, var(--text-primary));
+  cursor: pointer;
+  font: inherit;
+  line-height: 0;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.hubCrudExpandableFullscreen__toggle:hover {
+  background: color-mix(in srgb, var(--accent) 18%, var(--surface-soft));
+  border-color: color-mix(in srgb, var(--accent) 38%, var(--border-color));
+}
+
+.hubCrudExpandableFullscreen__toggle:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  outline-offset: 2px;
+}
+
+.hubCrudExpandableFullscreen--open {
+  z-index: 40;
+}
+
+/* Full-screen: не используем горизонтальный «clip» у хаба (иначе часть полей визуально теряется). */
+.hubCrudExpandableFullscreen--open .tableView.tableViewHubClip {
+  overflow-x: auto !important;
+}
+

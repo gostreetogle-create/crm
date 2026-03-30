@@ -85,7 +85,7 @@
     }
 
     @if (permissions.can(hubTilePerm('workTypes'))) {
-    <app-dictionary-hub-tile tileKey="workTypes">
+    <app-dictionary-hub-tile-fullscreen tileKey="workTypes">
       <crud-layout
         title="Вид работ"
         [showHeader]="false"
@@ -95,7 +95,7 @@
         [canCreate]="permissions.crud().canCreate"
         createAriaLabel="Добавить вид работ"
         createTitle="Добавить вид работ"
-        [columns]="workTypesColumns"
+        [columns]="workTypesColumnsFull"
         [data]="productionWorkTypesStore.workTypesData()"
         [loading]="productionWorkTypesStore.loading()"
         [maxTableBodyRows]="hubExpand.previewMaxTableBodyRows('workTypes')"
@@ -118,11 +118,11 @@
         (edit)="openWorkTypesEdit($event)"
         (delete)="deleteWorkType($event)"
       ></crud-layout>
-    </app-dictionary-hub-tile>
+    </app-dictionary-hub-tile-fullscreen>
     }
 
     @if (permissions.can(hubTilePerm('units'))) {
-    <app-dictionary-hub-tile tileKey="units">
+    <app-dictionary-hub-tile-fullscreen tileKey="units">
       <crud-layout
         title="Единицы измерения"
         [showHeader]="false"
@@ -132,7 +132,7 @@
         [canCreate]="permissions.crud().canCreate"
         createAriaLabel="Добавить единицу измерения"
         createTitle="Добавить единицу измерения"
-        [columns]="unitsColumns"
+        [columns]="unitsColumnsFull"
         [data]="unitsStore.unitsData()"
         [loading]="unitsStore.loading()"
         [maxTableBodyRows]="hubExpand.previewMaxTableBodyRows('units')"
@@ -154,11 +154,11 @@
         (edit)="openUnitsEdit($event)"
         (delete)="deleteUnit($event)"
       ></crud-layout>
-    </app-dictionary-hub-tile>
+    </app-dictionary-hub-tile-fullscreen>
     }
 
     @if (permissions.can(hubTilePerm('clients'))) {
-    <app-dictionary-hub-tile tileKey="clients">
+    <app-dictionary-hub-tile-fullscreen tileKey="clients">
       <crud-layout
         title="Контактные лица"
         [showHeader]="false"
@@ -169,7 +169,7 @@
         [canCreate]="permissions.crud().canCreate"
         createAriaLabel="Добавить контакт"
         createTitle="Добавить контакт"
-        [columns]="clientsColumns"
+        [columns]="clientsColumnsFull"
         [data]="clientsStore.clientsData()"
         [loading]="clientsStore.loading()"
         [maxTableBodyRows]="hubExpand.previewMaxTableBodyRows('clients')"
@@ -192,11 +192,11 @@
         (edit)="openClientsEdit($event)"
         (delete)="deleteClient($event)"
       ></crud-layout>
-    </app-dictionary-hub-tile>
+    </app-dictionary-hub-tile-fullscreen>
     }
 
     @if (permissions.can(hubTilePerm('colors'))) {
-    <app-dictionary-hub-tile tileKey="colors">
+    <app-dictionary-hub-tile-fullscreen tileKey="colors">
       <crud-layout
         title="Цвета (RAL)"
         [showHeader]="false"
@@ -206,7 +206,7 @@
         [canCreate]="permissions.crud().canCreate"
         createAriaLabel="Добавить цвет RAL"
         createTitle="Добавить цвет RAL"
-        [columns]="colorsColumns"
+        [columns]="colorsColumnsFull"
         [data]="colorsStore.colorsData()"
         [loading]="colorsStore.loading()"
         [maxTableBodyRows]="hubExpand.previewMaxTableBodyRows('colors')"
@@ -228,11 +228,11 @@
         (edit)="openColorsEdit($event)"
         (delete)="deleteColor($event)"
       ></crud-layout>
-    </app-dictionary-hub-tile>
+    </app-dictionary-hub-tile-fullscreen>
     }
 
     @if (permissions.can(hubTilePerm('surfaceFinishes'))) {
-    <app-dictionary-hub-tile tileKey="surfaceFinishes">
+    <app-dictionary-hub-tile-fullscreen tileKey="surfaceFinishes">
       <crud-layout
         title="Тип отделки / шероховатость"
         [showHeader]="false"
@@ -242,7 +242,7 @@
         [canCreate]="permissions.crud().canCreate"
         createAriaLabel="Добавить финиш"
         createTitle="Добавить финиш"
-        [columns]="surfaceFinishesColumns"
+        [columns]="surfaceFinishesColumnsFull"
         [data]="surfaceFinishesStore.surfaceFinishesData()"
         [loading]="surfaceFinishesStore.loading()"
         [maxTableBodyRows]="hubExpand.previewMaxTableBodyRows('surfaceFinishes')"
@@ -264,11 +264,11 @@
         (edit)="openSurfaceFinishesEdit($event)"
         (delete)="deleteSurfaceFinish($event)"
       ></crud-layout>
-    </app-dictionary-hub-tile>
+    </app-dictionary-hub-tile-fullscreen>
     }
 
     @if (permissions.can(hubTilePerm('geometries'))) {
-    <app-dictionary-hub-tile tileKey="geometries">
+    <app-dictionary-hub-tile-fullscreen tileKey="geometries">
       <crud-layout
         title="Форма и габаритные размеры"
         [showHeader]="false"
@@ -278,7 +278,7 @@
         [canCreate]="permissions.crud().canCreate"
         createAriaLabel="Добавить форму и габаритные размеры"
         createTitle="Добавить форму и габаритные размеры"
-        [columns]="geometriesColumns"
+        [columns]="geometriesColumnsFull"
         [data]="geometriesStore.geometriesData()"
         [loading]="geometriesStore.loading()"
         [maxTableBodyRows]="hubExpand.previewMaxTableBodyRows('geometries')"
@@ -300,11 +300,11 @@
         (edit)="openGeometriesEdit($event)"
         (delete)="deleteGeometry($event)"
       ></crud-layout>
-    </app-dictionary-hub-tile>
+    </app-dictionary-hub-tile-fullscreen>
     }
 
     @if (permissions.can(hubTilePerm('coatings'))) {
-    <app-dictionary-hub-tile tileKey="coatings">
+    <app-dictionary-hub-tile-fullscreen tileKey="coatings">
       <crud-layout
         title="Покрытие"
         [showHeader]="false"
@@ -314,7 +314,7 @@
         [canCreate]="permissions.crud().canCreate"
         createAriaLabel="Добавить покрытие"
         createTitle="Добавить покрытие"
-        [columns]="coatingsColumns"
+        [columns]="coatingsColumnsFull"
         [data]="coatingsStore.coatingsData()"
         [loading]="coatingsStore.loading()"
         [maxTableBodyRows]="hubExpand.previewMaxTableBodyRows('coatings')"
@@ -336,11 +336,11 @@
         (edit)="openCoatingsEdit($event)"
         (delete)="deleteCoating($event)"
       ></crud-layout>
-    </app-dictionary-hub-tile>
+    </app-dictionary-hub-tile-fullscreen>
     }
 
     @if (permissions.can(hubTilePerm('roles'))) {
-    <app-dictionary-hub-tile tileKey="roles">
+    <app-dictionary-hub-tile-fullscreen tileKey="roles">
       <crud-layout
         title="Роли"
         [showHeader]="false"
@@ -351,7 +351,7 @@
         [canCreate]="permissions.crud().canCreate"
         createAriaLabel="Добавить роль"
         createTitle="Добавить роль"
-        [columns]="rolesColumns"
+        [columns]="rolesColumnsFull"
         [data]="rolesStore.rolesData()"
         [loading]="false"
         [maxTableBodyRows]="hubExpand.previewMaxTableBodyRows('roles')"
@@ -374,11 +374,11 @@
         (edit)="openRolesEdit($event)"
         (delete)="deleteRole($event)"
       ></crud-layout>
-    </app-dictionary-hub-tile>
+    </app-dictionary-hub-tile-fullscreen>
     }
 
     @if (permissions.can(hubTilePerm('users'))) {
-    <app-dictionary-hub-tile tileKey="users">
+    <app-dictionary-hub-tile-fullscreen tileKey="users">
       <crud-layout
         title="Пользователи"
         [showHeader]="false"
@@ -389,7 +389,7 @@
         [canCreate]="permissions.crud().canCreate"
         createAriaLabel="Добавить пользователя"
         createTitle="Добавить пользователя"
-        [columns]="usersColumns"
+        [columns]="usersColumnsFull"
         [data]="usersStore.usersData()"
         [loading]="false"
         [maxTableBodyRows]="hubExpand.previewMaxTableBodyRows('users')"
@@ -412,7 +412,7 @@
         (edit)="openUsersEdit($event)"
         (delete)="deleteUser($event)"
       ></crud-layout>
-    </app-dictionary-hub-tile>
+    </app-dictionary-hub-tile-fullscreen>
     }
   </div>
 </app-page-shell>

@@ -1,6 +1,6 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { concatMap, from, switchMap, take } from 'rxjs';
+import { catchError, concatMap, from, of, switchMap, take } from 'rxjs';
 import { RoleItem, RoleItemInput } from '../model/role-item';
 import { ROLES_REPOSITORY } from '../data/roles.repository';
 import { compareRolesBySortOrder } from '../utils/role-sort';
@@ -19,6 +19,14 @@ export class RolesStore {
     this.repo
       .getItems()
       .pipe(takeUntilDestroyed(inject(DestroyRef)))
+      .pipe(
+        catchError((err) => {
+          // На этапе логина/первого редиректа роли могут ещё быть недоступны (требуется auth/admin).
+          // Без обработчика RxJS неавторизованные запросы шумят в консоли и могут мешать отладке.
+          console.warn('[RolesStore] Failed to load roles (will use empty list):', err);
+          return of([] as RoleItem[]);
+        }),
+      )
       .subscribe((items) => this.items.set(items));
   }
 

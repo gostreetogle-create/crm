@@ -1,4 +1,4 @@
-import { NgFor, NgIf } from '@angular/common';
+import { DOCUMENT, NgFor, NgIf } from '@angular/common';
 import { Component, OnDestroy, computed, inject, signal } from '@angular/core';
 import { LucidePlus } from '@lucide/angular';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
@@ -54,7 +54,7 @@ import { UiCheckboxFieldComponent } from '../../../../shared/ui/ui-checkbox-fiel
 import { UiFormFieldComponent } from '../../../../shared/ui/ui-form-field/ui-form-field.component';
 import { HexRgbFieldComponent } from '../../../../shared/ui/hex-rgb-field/public-api';
 import { HubCrudExpandStateService } from '../../../../shared/ui/hub-crud-expandable/public-api';
-import { DictionaryHubTileComponent } from '../../../../shared/ui/cards/public-api';
+import { DictionaryHubTileComponent, DictionaryHubTileFullscreenComponent } from '../../../../shared/ui/cards/public-api';
 
 @Component({
   selector: 'app-dictionaries-page',
@@ -65,6 +65,7 @@ import { DictionaryHubTileComponent } from '../../../../shared/ui/cards/public-a
     ReactiveFormsModule,
     PageShellComponent,
     DictionaryHubTileComponent,
+    DictionaryHubTileFullscreenComponent,
     CrudLayoutComponent,
     UiModalComponent,
     UiModalFormActionsComponent,
@@ -80,6 +81,7 @@ import { DictionaryHubTileComponent } from '../../../../shared/ui/cards/public-a
 })
 export class DictionariesPage implements OnDestroy {
   private readonly fb = inject(FormBuilder);
+  private readonly doc = inject(DOCUMENT);
   private readonly sub = new Subscription();
 
   readonly permissions = inject(PermissionsService);
@@ -154,6 +156,14 @@ export class DictionariesPage implements OnDestroy {
   /** На хабе одна колонка hubLine; короткий заголовок колонки по смыслу справочника (см. naming convention). */
   readonly workTypesColumns: TableColumn[] = [{ key: 'hubLine', label: 'Вид работ' }];
 
+  /** Full-view для раскрытия: показываем все значимые поля строки. */
+  readonly workTypesColumnsFull: TableColumn[] = [
+    { key: 'name', label: 'Название' },
+    { key: 'shortLabel', label: 'Коротко' },
+    { key: 'hourlyRateLabel', label: 'Ставка ₽/ч' },
+    { key: 'isActiveLabel', label: 'Активен' },
+  ];
+
   readonly materialCharacteristicsColumns: TableColumn[] = [
     { key: 'name', label: 'Название' },
     { key: 'code', label: 'Код' },
@@ -187,20 +197,85 @@ export class DictionariesPage implements OnDestroy {
 
   readonly geometriesColumns: TableColumn[] = [{ key: 'hubLine', label: 'Профиль' }];
 
+  /** Full-view для раскрытия geometries. */
+  readonly geometriesColumnsFull: TableColumn[] = [
+    { key: 'name', label: 'Название' },
+    { key: 'shape', label: 'Форма' },
+    { key: 'params', label: 'Параметры' },
+    { key: 'isActiveLabel', label: 'Активен' },
+  ];
+
   readonly unitsColumns: TableColumn[] = [{ key: 'hubLine', label: 'Ед. изм.' }];
+
+  /** Full-view для раскрытия units. */
+  readonly unitsColumnsFull: TableColumn[] = [
+    { key: 'name', label: 'Название' },
+    { key: 'code', label: 'Код' },
+    { key: 'notes', label: 'Заметка' },
+    { key: 'isActiveLabel', label: 'Активен' },
+  ];
 
   readonly colorsColumns: TableColumn[] = [{ key: 'hubLine', label: 'Цвет', swatchHexKey: 'hex' }];
 
+  /** Full-view для раскрытия colors. */
+  readonly colorsColumnsFull: TableColumn[] = [
+    { key: 'ralCode', label: 'Код RAL' },
+    { key: 'name', label: 'Название' },
+    { key: 'hex', label: 'HEX', swatchHexKey: 'hex' },
+    { key: 'rgb', label: 'RGB' },
+  ];
+
   readonly surfaceFinishesColumns: TableColumn[] = [{ key: 'hubLine', label: 'Отделка' }];
+
+  /** Full-view для раскрытия surface finishes. */
+  readonly surfaceFinishesColumnsFull: TableColumn[] = [
+    { key: 'finishType', label: 'Отделка' },
+    { key: 'roughnessClass', label: 'Шероховатость' },
+    { key: 'raMicron', label: 'Ra, мкм' },
+  ];
 
   readonly coatingsColumns: TableColumn[] = [{ key: 'hubLine', label: 'Покрытие' }];
 
+  /** Full-view для раскрытия coatings. */
+  readonly coatingsColumnsFull: TableColumn[] = [
+    { key: 'coatingType', label: 'Тип покрытия' },
+    { key: 'coatingSpec', label: 'Спецификация' },
+    { key: 'thicknessMicron', label: 'Толщ., мкм' },
+  ];
+
   readonly clientsColumns: TableColumn[] = [{ key: 'hubLine', label: 'ФИО' }];
+
+  /** Full-view для раскрытия clients. */
+  readonly clientsColumnsFull: TableColumn[] = [
+    { key: 'fio', label: 'ФИО' },
+    { key: 'clientMarkupPercent', label: 'Наценка' },
+    { key: 'email', label: 'Email' },
+    { key: 'phone', label: 'Телефон' },
+    { key: 'isActive', label: 'Активен' },
+  ];
 
   /** Как у остальных узких плиток хаба: одна колонка превью, раскрытие — полная таблица. */
   readonly rolesColumns: TableColumn[] = [{ key: 'hubLine', label: 'Роль' }];
 
+  /** Full-view для раскрытия roles. */
+  readonly rolesColumnsFull: TableColumn[] = [
+    { key: 'hubLine', label: 'Роль' },
+    { key: 'code', label: 'Код' },
+    { key: 'notes', label: 'Заметки' },
+    { key: 'isActiveLabel', label: 'Активна' },
+    { key: 'isSystemLabel', label: 'Системная' },
+  ];
+
   readonly usersColumns: TableColumn[] = [{ key: 'hubLine', label: 'Пользователь' }];
+
+  /** Full-view для раскрытия users. */
+  readonly usersColumnsFull: TableColumn[] = [
+    { key: 'hubLine', label: 'Пользователь' },
+    { key: 'login', label: 'Логин' },
+    { key: 'roleLabel', label: 'Роль' },
+    { key: 'email', label: 'Email' },
+    { key: 'phone', label: 'Телефон' },
+  ];
 
   /** Активные роли для поля «Роль» в карточке пользователя. */
   readonly roleSelectOptions = computed(() =>
@@ -348,6 +423,9 @@ export class DictionariesPage implements OnDestroy {
   });
 
   constructor() {
+    // Русское название в заголовке вкладки браузера.
+    this.doc.title = 'Справочники — CRM';
+
     this.materialsStore.loadItems();
     this.materialCharacteristicsStore.loadItems();
     this.geometriesStore.loadItems();

@@ -1,0 +1,34 @@
+<div
+  class="hubCrudExpandableFullscreen"
+  [class.hubCrudExpandableFullscreen--open]="isExpanded()"
+>
+  @if (isExpanded()) {
+    <div
+      class="hubCrudExpandableFullscreen__backdrop"
+      (click)="expand.close(tileKey())"
+      aria-hidden="true"
+    ></div>
+  }
+  <div
+    class="hubCrudExpandableFullscreen__anchor"
+    [class.hubCrudExpandableFullscreen__anchor--open]="isExpanded()"
+    [style.min-height]="anchorMinHeightWhenOpen()"
+  >
+    <div
+      class="hubCrudExpandableFullscreen__panel"
+      [class.hubCrudExpandableFullscreen__panel--open]="isExpanded()"
+    >
+      <ng-content />
+      <button
+        type="button"
+        class="hubCrudExpandableFullscreen__toggle"
+        [attr.aria-expanded]="isExpanded()"
+        [attr.aria-label]="ariaLabel()"
+        (click)="onToggleClick($event)"
+      >
+        <svg lucideMenu [size]="20" aria-hidden="true"></svg>
+      </button>
+    </div>
+  </div>
+</div>
+

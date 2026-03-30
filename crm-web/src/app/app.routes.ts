@@ -45,7 +45,7 @@ export const appRoutes: Route[] = [
       import('./features/auth/pages/login-page/login-page.component').then((m) => m.LoginPage),
   },
   {
-    path: 'dictionaries',
+    path: 'справочники',
     canActivate: [authGuard, permissionGuard],
     data: { permission: 'page.dictionaries' },
     loadComponent: () =>
@@ -152,13 +152,18 @@ export const appRoutes: Route[] = [
     ],
   },
   {
+    path: 'dictionaries',
+    redirectTo: '/справочники',
+    pathMatch: 'full',
+  },
+  {
     path: 'materials',
-    redirectTo: '/dictionaries',
+    redirectTo: '/справочники',
     pathMatch: 'full',
   },
   {
     path: 'geometries',
-    redirectTo: '/dictionaries',
+    redirectTo: '/справочники',
     pathMatch: 'full',
   },
   {

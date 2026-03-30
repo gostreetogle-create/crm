@@ -5,6 +5,8 @@ import { CrudPermissions, PermissionKey, RoleId } from './authz.types';
 import { RolesStore } from '../../features/roles/state/roles.store';
 import {
   ROLE_ID_SYSTEM_ADMIN,
+  ROLE_ID_SEED_ACCOUNTANT,
+  ROLE_ID_SEED_DIRECTOR,
   ROLE_ID_SYSTEM_EDITOR,
   ROLE_ID_SYSTEM_VIEWER,
 } from '../../features/roles/data/roles.seed';
@@ -13,6 +15,20 @@ const STORAGE_KEY_ROLE = 'crm.currentRole';
 const STORAGE_KEY_MATRIX = 'crm.authz.matrixOverride';
 
 const VALID_PERMISSIONS = new Set<PermissionKey>(PERMISSION_KEYS_ORDERED);
+
+/**
+ * Без запроса в `/api/roles` (и до загрузки `RolesStore`) мы всё равно должны уметь вычислить код роли,
+ * чтобы дефолтные права (по `DEFAULT_ROLE_PERMISSIONS_BY_CODE`) применялись на первом роутинге.
+ *
+ * Это мост между `roleId` в JWT (и localStorage) и `role code`, используемым в каноне матрицы по умолчанию.
+ */
+const DEFAULT_ROLE_CODE_BY_ROLE_ID: Readonly<Record<RoleId, string>> = {
+  [ROLE_ID_SYSTEM_ADMIN]: 'admin',
+  [ROLE_ID_SYSTEM_EDITOR]: 'editor',
+  [ROLE_ID_SYSTEM_VIEWER]: 'viewer',
+  [ROLE_ID_SEED_DIRECTOR]: 'director',
+  [ROLE_ID_SEED_ACCOUNTANT]: 'accountant',
+};
 
 /** Старые ключи матрицы в localStorage до перехода на id ролей. */
 const LEGACY_ROLE_CODE_TO_ID: Readonly<Record<string, string>> = {
@@ -98,7 +114,11 @@ export class PermissionsService {
 
   /** Суперадмин (`isSystem`): всегда полный набор прав, матрица не ограничивает. */
   isSuperAdminRole(roleId: RoleId): boolean {
-    return this.rolesStore.roleById(roleId)?.isSystem === true;
+    // Важно: `RolesStore` подтягивает роли асинхронно (и некоторые эндпоинты требуют auth),
+    // поэтому на момент первой навигации `rolesStore.items` может быть пустым.
+    // Для системной админ-ролы считаем права сразу, чтобы `authGuard/permissionGuard`
+    // не блокировали UI на входе.
+    return roleId === ROLE_ID_SYSTEM_ADMIN || this.rolesStore.roleById(roleId)?.isSystem === true;
   }
 
   effectiveKeysForRole(roleId: RoleId): ReadonlyArray<PermissionKey> {
@@ -110,7 +130,7 @@ export class PermissionsService {
       return o[roleId]!;
     }
     const item = this.rolesStore.roleById(roleId);
-    const code = item?.code?.trim() ?? '';
+    const code = item?.code?.trim() ?? DEFAULT_ROLE_CODE_BY_ROLE_ID[roleId] ?? '';
     return this.defaultKeysForRoleCode(code);
   }
 
@@ -164,9 +184,6 @@ export class PermissionsService {
   }
 
   setRole(roleId: RoleId): void {
-    if (!this.rolesStore.roleExists(roleId)) {
-      return;
-    }
     this.roleSignal.set(roleId);
     try {
       localStorage.setItem(STORAGE_KEY_ROLE, roleId);
@@ -197,16 +214,16 @@ export class PermissionsService {
     try {
       const raw = localStorage.getItem(STORAGE_KEY_ROLE);
       if (!raw) {
-        return ROLE_ID_SYSTEM_ADMIN;
+        // Safe default: если роль ещё неизвестна (rolesStore мог не подгрузиться),
+        // не выдаём лишних прав. Это предотвращает «привилегии по умолчанию».
+        return ROLE_ID_SYSTEM_VIEWER;
       }
       const migrated = LEGACY_ROLE_CODE_TO_ID[raw] ?? raw;
-      if (this.rolesStore.roleExists(migrated)) {
-        return migrated;
-      }
+      return migrated;
     } catch {
       // no-op for restricted environments
     }
-    return ROLE_ID_SYSTEM_ADMIN;
+    return ROLE_ID_SYSTEM_VIEWER;
   }
 
   private readMatrixFromStorage(): Partial<Record<RoleId, PermissionKey[]>> | null {

@@ -19,8 +19,11 @@
 
       @if (session.isAuthenticated()) {
         <p class="loginLead">Вы вошли в систему. Справочники — в шапке или по ссылке ниже.</p>
+        @if (errorText) {
+          <p class="loginFormError" role="alert">{{ errorText }}</p>
+        }
         <p class="loginPostAuth">
-          <a routerLink="/dictionaries" class="loginInlineLink">Открыть справочники</a>
+          <a routerLink="/справочники" class="loginInlineLink">Открыть справочники</a>
         </p>
         <p class="loginHint">
           Новых пользователей заводит администратор: «Справочники» → плитка «Пользователи». Выйти — кнопка в шапке.

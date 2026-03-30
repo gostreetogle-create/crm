@@ -1,6 +1,7 @@
-import { Component, inject } from '@angular/core';
+import { Component, DestroyRef, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   DEV_BOOTSTRAP_PASSWORD,
   DEV_BOOTSTRAP_USERNAME,
@@ -19,6 +20,8 @@ import { UiFormFieldComponent } from '../../../../shared/ui/ui-form-field/ui-for
 export class LoginPage {
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private readonly destroyRef = inject(DestroyRef);
   readonly session = inject(SessionAuthService);
 
   readonly devUser = DEV_BOOTSTRAP_USERNAME;
@@ -32,6 +35,17 @@ export class LoginPage {
   errorText = '';
 
   constructor() {
+    // `permissionGuard` может редиректить на `/` с `?accessDenied=...` после успешного логина.
+    // Поэтому реагируем на смену query-params, а не только на snapshot в конструкторе.
+    this.route.queryParamMap
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((p) => {
+        const accessDenied = p.get('accessDenied');
+        this.errorText = accessDenied
+          ? 'У вас нет прав для открытия этой страницы. Попросите администратора настроить матрицу.'
+          : '';
+      });
+
     if (this.session.useMockAuth()) {
       this.form.patchValue({
         username: DEV_BOOTSTRAP_USERNAME,
@@ -55,7 +69,7 @@ export class LoginPage {
           : 'Неверная пара логин/пароль. Учётную запись создаёт администратор в «Справочники» → «Пользователи».';
         return;
       }
-      void this.router.navigateByUrl('/dictionaries');
+      void this.router.navigateByUrl('/справочники');
     });
   }
 

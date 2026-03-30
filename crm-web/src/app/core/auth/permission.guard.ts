@@ -28,5 +28,12 @@ export const permissionGuard: CanActivateFn = (route) => {
   }
   const router = inject(Router);
   const fallback = route.data['fallbackRoute'] as string | undefined;
-  return router.createUrlTree([fallback ?? '/dictionaries']);
+  // Важно: дефолтный редирект не должен возвращать на ту же страницу,
+  // иначе получаем редирект-цикл (визуально «ничего не происходит»).
+  // `/` ведёт на страницу логина.
+  return router.createUrlTree([fallback ?? '/'], {
+    queryParams: {
+      accessDenied: keys.join(','),
+    },
+  });
 };
