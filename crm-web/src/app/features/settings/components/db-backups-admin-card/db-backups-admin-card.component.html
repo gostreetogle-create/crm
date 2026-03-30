@@ -1,0 +1,131 @@
+<app-content-card title="Резервное копирование базы данных">
+  <p class="lead">
+    Полные архивы PostgreSQL (формат custom, <code>pg_dump</code>). Автоархив — раз в сутки в заданное время;
+    каждый сохранённый файл хранится <strong>{{ retentionDays() }}</strong> дней, затем удаляется автоматически.
+  </p>
+  @if (errorText()) {
+    <p class="errorBanner" role="alert">{{ errorText() }}</p>
+  }
+
+  <section class="section" aria-labelledby="db-backup-schedule-title">
+    <h3 class="sectionTitle" id="db-backup-schedule-title">Расписание</h3>
+    <div class="scheduleRow">
+      <label class="field">
+        <span class="fieldLabel">Автоархивирование</span>
+        <input type="checkbox" [ngModel]="scheduleEnabled()" (ngModelChange)="scheduleEnabled.set($event)" />
+      </label>
+      <label class="field">
+        <span class="fieldLabel">Время (сервер)</span>
+        <input
+          type="time"
+          [ngModel]="scheduleTime()"
+          (ngModelChange)="scheduleTime.set($event)"
+          [disabled]="loading()"
+        />
+      </label>
+      <app-ui-button type="button" [disabled]="loading() || saving()" (clicked)="saveSchedule()">
+        Сохранить расписание
+      </app-ui-button>
+    </div>
+    @if (lastRunDate()) {
+      <p class="muted small">Последний автобэкап (дата): {{ lastRunDate() }}</p>
+    }
+    <p class="muted small">
+      Время считается в часовом поясе процесса Node на сервере (в Docker по умолчанию часто UTC). При необходимости
+      задайте переменную окружения <code>TZ</code> для контейнера backend.
+    </p>
+  </section>
+
+  <section class="section" aria-labelledby="db-backup-manual-title">
+    <h3 class="sectionTitle" id="db-backup-manual-title">Архивы</h3>
+    <div class="toolbar">
+      <app-ui-button type="button" [disabled]="loading() || jobBusy()" (clicked)="createNow()">
+        Создать архив сейчас
+      </app-ui-button>
+      <app-ui-button variant="soft" type="button" [disabled]="loading() || jobBusy()" (clicked)="reload()">
+        Обновить список
+      </app-ui-button>
+    </div>
+    @if (backupDir()) {
+      <p class="muted small">Каталог на сервере: <code>{{ backupDir() }}</code></p>
+    }
+
+    <div class="tableWrap">
+      <table class="backupTable">
+        <thead>
+          <tr>
+            <th scope="col">Файл</th>
+            <th scope="col">Размер</th>
+            <th scope="col">Дата</th>
+            <th scope="col">Действия</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of items(); track row.fileName) {
+            <tr>
+              <td><code class="fileName">{{ row.fileName }}</code></td>
+              <td>{{ formatBytes(row.sizeBytes) }}</td>
+              <td>{{ row.createdAt | date: 'short' }}</td>
+              <td class="actions">
+                <app-ui-button variant="soft" type="button" (clicked)="download(row)">Скачать</app-ui-button>
+                <app-ui-button variant="soft" type="button" [disabled]="jobBusy()" (clicked)="askRestore(row)">
+                  Восстановить
+                </app-ui-button>
+                <app-ui-button variant="danger" type="button" [disabled]="jobBusy()" (clicked)="askDelete(row)">
+                  Удалить
+                </app-ui-button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="4" class="muted">Архивов пока нет.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+</app-content-card>
+
+@if (deleteTarget()) {
+  <ng-template #deleteContent>
+    <p class="muted">Файл: <code>{{ deleteTarget()!.fileName }}</code></p>
+    <p class="muted">Удаление необратимо.</p>
+  </ng-template>
+  <ng-template #deleteActions>
+    <app-ui-button variant="soft" type="button" (clicked)="closeDeleteModal()">Отмена</app-ui-button>
+    <app-ui-button variant="danger" type="button" (clicked)="confirmDelete()">Удалить</app-ui-button>
+  </ng-template>
+  <ui-modal
+    title="Удалить архив?"
+    [content]="deleteContent"
+    [actions]="deleteActions"
+    [closeOnBackdrop]="true"
+    size="md"
+    (close)="closeDeleteModal()"
+  ></ui-modal>
+}
+
+@if (restoreTarget()) {
+  <ng-template #restoreContent>
+    <p class="muted">
+      Будет выполнено <code>pg_restore --clean --if-exists</code> в текущую БД из файла
+      <code>{{ restoreTarget()!.fileName }}</code>.
+    </p>
+    <p class="warn">
+      Текущие данные в базе будут перезаписаны согласно архиву. Рекомендуется иметь свежий бэкап перед операцией.
+    </p>
+  </ng-template>
+  <ng-template #restoreActions>
+    <app-ui-button variant="soft" type="button" (clicked)="closeRestoreModal()">Отмена</app-ui-button>
+    <app-ui-button type="button" (clicked)="confirmRestore()">Восстановить</app-ui-button>
+  </ng-template>
+  <ui-modal
+    title="Восстановить базу из архива?"
+    [content]="restoreContent"
+    [actions]="restoreActions"
+    [closeOnBackdrop]="true"
+    size="md"
+    (close)="closeRestoreModal()"
+  ></ui-modal>
+}

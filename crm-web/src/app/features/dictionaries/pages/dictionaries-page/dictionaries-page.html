@@ -923,6 +923,26 @@
   />
 </ng-template>
 
+<app-linked-dictionary-propagation-confirm
+  *ngIf="isCoatingPropagationConfirmOpen()"
+  mode="update"
+  entityLabel="Покрытие"
+  [relatedCount]="coatingPropagationPlan()?.relatedCount ?? 0"
+  (local)="applyCoatingPropagationLocal()"
+  (global)="applyCoatingPropagationAll()"
+  (closed)="closeCoatingPropagationConfirm()"
+></app-linked-dictionary-propagation-confirm>
+
+<app-linked-dictionary-propagation-confirm
+  *ngIf="isCoatingDeletePropagationConfirmOpen()"
+  mode="delete"
+  entityLabel="Покрытие"
+  [relatedCount]="coatingDeletePropagationPlan()?.relatedCount ?? 0"
+  (local)="applyCoatingDeletePropagationLocal()"
+  (global)="applyCoatingDeletePropagationAll()"
+  (closed)="closeCoatingDeletePropagationConfirm()"
+></app-linked-dictionary-propagation-confirm>
+
 <ui-modal
   *ngIf="isClientsModalOpen()"
   [title]="
@@ -1122,6 +1142,26 @@
   />
 </ng-template>
 
+<app-linked-dictionary-propagation-confirm
+  *ngIf="isSurfaceFinishPropagationConfirmOpen()"
+  mode="update"
+  entityLabel="Тип отделки / шероховатость"
+  [relatedCount]="surfaceFinishPropagationPlan()?.relatedCount ?? 0"
+  (local)="applySurfaceFinishPropagationLocal()"
+  (global)="applySurfaceFinishPropagationAll()"
+  (closed)="closeSurfaceFinishPropagationConfirm()"
+></app-linked-dictionary-propagation-confirm>
+
+<app-linked-dictionary-propagation-confirm
+  *ngIf="isSurfaceFinishDeletePropagationConfirmOpen()"
+  mode="delete"
+  entityLabel="Тип отделки / шероховатость"
+  [relatedCount]="surfaceFinishDeletePropagationPlan()?.relatedCount ?? 0"
+  (local)="applySurfaceFinishDeletePropagationLocal()"
+  (global)="applySurfaceFinishDeletePropagationAll()"
+  (closed)="closeSurfaceFinishDeletePropagationConfirm()"
+></app-linked-dictionary-propagation-confirm>
+
 <ui-modal
   *ngIf="isColorsModalOpen()"
   [title]="
@@ -1210,6 +1250,26 @@
     (dismiss)="closeColorsModal()"
   />
 </ng-template>
+
+<app-linked-dictionary-propagation-confirm
+  *ngIf="isColorPropagationConfirmOpen()"
+  mode="update"
+  entityLabel="Цвет RAL"
+  [relatedCount]="colorPropagationPlan()?.relatedCount ?? 0"
+  (local)="applyColorPropagationLocal()"
+  (global)="applyColorPropagationAll()"
+  (closed)="closeColorPropagationConfirm()"
+></app-linked-dictionary-propagation-confirm>
+
+<app-linked-dictionary-propagation-confirm
+  *ngIf="isColorDeletePropagationConfirmOpen()"
+  mode="delete"
+  entityLabel="Цвет RAL"
+  [relatedCount]="colorDeletePropagationPlan()?.relatedCount ?? 0"
+  (local)="applyColorDeletePropagationLocal()"
+  (global)="applyColorDeletePropagationAll()"
+  (closed)="closeColorDeletePropagationConfirm()"
+></app-linked-dictionary-propagation-confirm>
 
 <ng-template #materialsActionsTpl>
   <app-ui-modal-form-actions

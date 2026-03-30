@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, of } from 'rxjs';
 import { ColorItem, ColorItemInput } from '../model/color-item';
-import { ColorsRepository } from './colors.repository';
+import { ColorsRepository, DictionaryPropagationOptions } from './colors.repository';
 
 function newId(): string {
   return `c-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
@@ -84,14 +84,14 @@ export class ColorsMockRepository implements ColorsRepository {
     return of(next);
   }
 
-  update(id: string, input: ColorItemInput): Observable<ColorItem> {
+  update(id: string, input: ColorItemInput, _options?: DictionaryPropagationOptions): Observable<ColorItem> {
     const hex = normalizeHex(input.hex);
     const row: ColorItem = { id, ...input, hex, rgb: rgbFromHex(hex) };
     this.itemsSubject.next(this.itemsSubject.value.map((x) => (x.id === id ? row : x)));
     return of(row);
   }
 
-  remove(id: string): Observable<void> {
+  remove(id: string, _options?: DictionaryPropagationOptions): Observable<void> {
     this.itemsSubject.next(this.itemsSubject.value.filter((x) => x.id !== id));
     return of(void 0);
   }

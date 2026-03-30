@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
+import { clearColorSnapshots, propagateColorSnapshots } from '../lib/material-characteristics-snapshots.propagate.js';
 
 export const colorsRouter = Router();
 
@@ -71,6 +72,9 @@ colorsRouter.post('/', async (req, res, next) => {
 colorsRouter.put('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
+    const raw = req.query.propagation;
+    const propagation = Array.isArray(raw) ? raw[0] : raw;
+    const mode = propagation === 'global' ? 'global' : 'local';
     const parsed = ColorInputSchema.safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: 'invalid_body', details: parsed.error.flatten() });
@@ -89,6 +93,15 @@ colorsRouter.put('/:id', async (req, res, next) => {
           rgbB: rgb.b,
         },
       });
+
+      if (mode === 'global') {
+        await propagateColorSnapshots(prisma, {
+          colorId: id,
+          colorName: row.name,
+          colorHex: row.hex,
+        });
+      }
+
       res.json(toJson(row));
     } catch (err: unknown) {
       if (typeof err === 'object' && err !== null && 'code' in err && (err as { code: string }).code === 'P2025') {
@@ -105,8 +118,18 @@ colorsRouter.put('/:id', async (req, res, next) => {
 colorsRouter.delete('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
+    const raw = req.query.propagation;
+    const propagation = Array.isArray(raw) ? raw[0] : raw;
+    const mode = propagation === 'global' ? 'global' : 'local';
     try {
-      await prisma.color.delete({ where: { id } });
+      if (mode === 'global') {
+        await prisma.$transaction(async (tx) => {
+          await clearColorSnapshots(tx, id);
+          await tx.color.delete({ where: { id } });
+        });
+      } else {
+        await prisma.color.delete({ where: { id } });
+      }
       res.status(204).send();
     } catch (err: unknown) {
       if (typeof err === 'object' && err !== null && 'code' in err && (err as { code: string }).code === 'P2025') {

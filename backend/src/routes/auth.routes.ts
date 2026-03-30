@@ -1,8 +1,9 @@
-import { Router } from 'express';
-import bcrypt from 'bcryptjs';
-import { z } from 'zod';
-import { prisma } from '../lib/prisma.js';
-import { signAccessToken } from '../lib/jwt.js';
+import { Router } from "express";
+import bcrypt from "bcryptjs";
+import { z } from "zod";
+import { prisma } from "../lib/prisma.js";
+import { signAccessToken } from "../lib/jwt.js";
+import rateLimit from "express-rate-limit";
 
 const LoginSchema = z.object({
   login: z.string().trim().min(1),
@@ -20,7 +21,7 @@ function userToJson(row: {
   return {
     id: row.id,
     login: row.login,
-    password: '',
+    password: "",
     fullName: row.fullName,
     email: row.email,
     phone: row.phone,
@@ -30,22 +31,34 @@ function userToJson(row: {
 
 export const authPublicRouter = Router();
 
-authPublicRouter.post('/login', async (req, res, next) => {
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 12,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (_req, res) => {
+    res.status(429).json({ error: "too_many_requests" });
+  },
+});
+
+authPublicRouter.post("/login", loginLimiter, async (req, res, next) => {
   try {
     const parsed = LoginSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'invalid_body', details: parsed.error.flatten() });
+      res
+        .status(400)
+        .json({ error: "invalid_body", details: parsed.error.flatten() });
       return;
     }
     const { login, password } = parsed.data;
     const row = await prisma.user.findUnique({ where: { login } });
     if (!row) {
-      res.status(401).json({ error: 'invalid_credentials' });
+      res.status(401).json({ error: "invalid_credentials" });
       return;
     }
     const ok = await bcrypt.compare(password, row.passwordHash);
     if (!ok) {
-      res.status(401).json({ error: 'invalid_credentials' });
+      res.status(401).json({ error: "invalid_credentials" });
       return;
     }
     const token = await signAccessToken({
@@ -62,12 +75,12 @@ authPublicRouter.post('/login', async (req, res, next) => {
 /** Маршруты под префиксом `/api/auth`, уже за `requireAuth`. */
 export const authAuthedRouter = Router();
 
-authAuthedRouter.get('/me', async (req, res, next) => {
+authAuthedRouter.get("/me", async (req, res, next) => {
   try {
     const id = req.auth!.userId;
     const row = await prisma.user.findUnique({ where: { id } });
     if (!row) {
-      res.status(401).json({ error: 'user_not_found' });
+      res.status(401).json({ error: "user_not_found" });
       return;
     }
     res.json({ user: userToJson(row) });

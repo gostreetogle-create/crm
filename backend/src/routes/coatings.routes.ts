@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
+import { clearCoatingSnapshots, propagateCoatingSnapshots } from '../lib/material-characteristics-snapshots.propagate.js';
 
 export const coatingsRouter = Router();
 
@@ -50,6 +51,9 @@ coatingsRouter.post('/', async (req, res, next) => {
 coatingsRouter.put('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
+    const raw = req.query.propagation;
+    const propagation = Array.isArray(raw) ? raw[0] : raw;
+    const mode = propagation === 'global' ? 'global' : 'local';
     const parsed = InputSchema.safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: 'invalid_body', details: parsed.error.flatten() });
@@ -57,6 +61,16 @@ coatingsRouter.put('/:id', async (req, res, next) => {
     }
     try {
       const row = await prisma.coating.update({ where: { id }, data: parsed.data });
+
+      if (mode === 'global') {
+        await propagateCoatingSnapshots(prisma, {
+          coatingId: id,
+          coatingType: row.coatingType,
+          coatingSpec: row.coatingSpec,
+          coatingThicknessMicron: row.thicknessMicron ?? null,
+        });
+      }
+
       res.json(toJson(row));
     } catch (err: unknown) {
       if (typeof err === 'object' && err !== null && 'code' in err && (err as { code: string }).code === 'P2025') {
@@ -73,8 +87,18 @@ coatingsRouter.put('/:id', async (req, res, next) => {
 coatingsRouter.delete('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
+    const raw = req.query.propagation;
+    const propagation = Array.isArray(raw) ? raw[0] : raw;
+    const mode = propagation === 'global' ? 'global' : 'local';
     try {
-      await prisma.coating.delete({ where: { id } });
+      if (mode === 'global') {
+        await prisma.$transaction(async (tx) => {
+          await clearCoatingSnapshots(tx, id);
+          await tx.coating.delete({ where: { id } });
+        });
+      } else {
+        await prisma.coating.delete({ where: { id } });
+      }
       res.status(204).send();
     } catch (err: unknown) {
       if (typeof err === 'object' && err !== null && 'code' in err && (err as { code: string }).code === 'P2025') {

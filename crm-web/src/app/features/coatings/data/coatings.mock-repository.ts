@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, of } from 'rxjs';
 import { CoatingItem, CoatingItemInput } from '../model/coating-item';
 import { CoatingsRepository } from './coatings.repository';
+import { DictionaryPropagationOptions } from '../../colors/data/colors.repository';
 
 function newId(): string {
   return `coat-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
@@ -42,13 +43,13 @@ export class CoatingsMockRepository implements CoatingsRepository {
     return of(row);
   }
 
-  update(id: string, input: CoatingItemInput): Observable<CoatingItem> {
+  update(id: string, input: CoatingItemInput, _options?: DictionaryPropagationOptions): Observable<CoatingItem> {
     const row: CoatingItem = { id, ...input };
     this.itemsSubject.next(this.itemsSubject.value.map((x) => (x.id === id ? row : x)));
     return of(row);
   }
 
-  remove(id: string): Observable<void> {
+  remove(id: string, _options?: DictionaryPropagationOptions): Observable<void> {
     this.itemsSubject.next(this.itemsSubject.value.filter((x) => x.id !== id));
     return of(void 0);
   }

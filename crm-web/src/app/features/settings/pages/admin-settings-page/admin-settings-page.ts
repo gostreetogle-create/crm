@@ -12,13 +12,20 @@ import { RolesStore } from '../../../roles/state/roles.store';
 import { ContentCardComponent } from '../../../../shared/ui/cards/public-api';
 import { PageShellComponent } from '../../../../shared/ui/page-shell/page-shell.component';
 import { UiButtonComponent } from '../../../../shared/ui/ui-button/ui-button.component';
+import { DbBackupsAdminCardComponent } from '../../components/db-backups-admin-card/db-backups-admin-card.component';
 import { FIELD_RULES_CATALOG } from '../../data/field-rules.catalog';
 import { FieldRuleRow } from '../../model/field-rule-row';
 
 @Component({
   selector: 'app-admin-settings-page',
   standalone: true,
-  imports: [PageShellComponent, ContentCardComponent, UiButtonComponent, RouterLink],
+  imports: [
+    PageShellComponent,
+    ContentCardComponent,
+    UiButtonComponent,
+    RouterLink,
+    DbBackupsAdminCardComponent,
+  ],
   templateUrl: './admin-settings-page.html',
   styleUrl: './admin-settings-page.scss',
 })

@@ -1,0 +1,101 @@
+.lead {
+  margin: 0 0 var(--ui-space-3);
+  line-height: 1.45;
+  max-width: 52rem;
+}
+
+.errorBanner {
+  margin: 0 0 var(--ui-space-3);
+  padding: var(--ui-space-2) var(--ui-space-3);
+  border-radius: var(--radius-md, 8px);
+  background: color-mix(in srgb, var(--danger, #c62828) 12%, transparent);
+  color: var(--text-primary);
+}
+
+.section {
+  margin-top: var(--ui-space-4);
+}
+
+.sectionTitle {
+  margin: 0 0 var(--ui-space-2);
+  font-size: var(--font-size-label);
+  font-weight: 600;
+}
+
+.scheduleRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--ui-space-3);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fieldLabel {
+  font-size: var(--font-size-small);
+  color: var(--text-muted);
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-space-2);
+  margin-bottom: var(--ui-space-2);
+}
+
+.muted {
+  color: var(--text-muted);
+}
+
+.small {
+  font-size: var(--font-size-small);
+  margin: var(--ui-space-2) 0 0;
+  max-width: 52rem;
+  line-height: 1.4;
+}
+
+.warn {
+  margin: var(--ui-space-2) 0 0;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.tableWrap {
+  overflow-x: auto;
+  margin-top: var(--ui-space-2);
+}
+
+.backupTable {
+  width: 100%;
+  min-width: 640px;
+  border-collapse: collapse;
+  font-size: var(--font-size-small);
+}
+
+.backupTable th,
+.backupTable td {
+  padding: 8px 10px;
+  text-align: start;
+  vertical-align: middle;
+  border-bottom: 1px solid color-mix(in srgb, var(--border-color) 80%, transparent);
+}
+
+.backupTable th {
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.fileName {
+  font-size: 0.8rem;
+  word-break: break-all;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

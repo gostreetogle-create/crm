@@ -33,6 +33,9 @@ services:
       CORS_ORIGIN: ${CORS_ORIGIN}
       JWT_SECRET: ${JWT_SECRET}
       DATABASE_URL: postgresql://crm:${POSTGRES_PASSWORD:-crm}@postgres:5432/crm?schema=public
+      BACKUP_DIR: /var/lib/crm/backups
+    volumes:
+      - crm_backups:/var/lib/crm/backups
     ports:
       - "${BACKEND_PORT}:3000"
     healthcheck:
@@ -63,3 +66,4 @@ services:
 
 volumes:
   crm_pgdata:
+  crm_backups:

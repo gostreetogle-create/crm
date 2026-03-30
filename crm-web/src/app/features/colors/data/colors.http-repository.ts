@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { API_CONFIG } from '../../../core/api/api-config';
 import { ColorItem, ColorItemInput } from '../model/color-item';
-import { ColorsRepository } from './colors.repository';
+import { ColorsRepository, DictionaryPropagationOptions } from './colors.repository';
 
 @Injectable()
 export class ColorsHttpRepository implements ColorsRepository {
@@ -23,11 +23,18 @@ export class ColorsHttpRepository implements ColorsRepository {
     return this.http.post<ColorItem>(this.endpoint(), input);
   }
 
-  update(id: string, input: ColorItemInput): Observable<ColorItem> {
-    return this.http.put<ColorItem>(this.endpoint(`/${id}`), input);
+  update(id: string, input: ColorItemInput, options?: DictionaryPropagationOptions): Observable<ColorItem> {
+    const url = this.endpoint(`/${id}`);
+    const propagation = options?.propagation;
+    return this.http.put<ColorItem>(
+      `${url}${propagation ? `?propagation=${encodeURIComponent(propagation)}` : ''}`,
+      input,
+    );
   }
 
-  remove(id: string): Observable<void> {
-    return this.http.delete<void>(this.endpoint(`/${id}`));
+  remove(id: string, options?: DictionaryPropagationOptions): Observable<void> {
+    const url = this.endpoint(`/${id}`);
+    const propagation = options?.propagation;
+    return this.http.delete<void>(`${url}${propagation ? `?propagation=${encodeURIComponent(propagation)}` : ''}`);
   }
 }

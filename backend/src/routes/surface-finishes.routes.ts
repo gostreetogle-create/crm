@@ -1,6 +1,10 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
+import {
+  clearSurfaceFinishSnapshots,
+  propagateSurfaceFinishSnapshots,
+} from '../lib/material-characteristics-snapshots.propagate.js';
 
 export const surfaceFinishesRouter = Router();
 
@@ -50,6 +54,9 @@ surfaceFinishesRouter.post('/', async (req, res, next) => {
 surfaceFinishesRouter.put('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
+    const raw = req.query.propagation;
+    const propagation = Array.isArray(raw) ? raw[0] : raw;
+    const mode = propagation === 'global' ? 'global' : 'local';
     const parsed = InputSchema.safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: 'invalid_body', details: parsed.error.flatten() });
@@ -57,6 +64,16 @@ surfaceFinishesRouter.put('/:id', async (req, res, next) => {
     }
     try {
       const row = await prisma.surfaceFinish.update({ where: { id }, data: parsed.data });
+
+      if (mode === 'global') {
+        await propagateSurfaceFinishSnapshots(prisma, {
+          surfaceFinishId: id,
+          finishType: row.finishType,
+          roughnessClass: row.roughnessClass,
+          raMicron: row.raMicron ?? null,
+        });
+      }
+
       res.json(toJson(row));
     } catch (err: unknown) {
       if (typeof err === 'object' && err !== null && 'code' in err && (err as { code: string }).code === 'P2025') {
@@ -73,8 +90,18 @@ surfaceFinishesRouter.put('/:id', async (req, res, next) => {
 surfaceFinishesRouter.delete('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
+    const raw = req.query.propagation;
+    const propagation = Array.isArray(raw) ? raw[0] : raw;
+    const mode = propagation === 'global' ? 'global' : 'local';
     try {
-      await prisma.surfaceFinish.delete({ where: { id } });
+      if (mode === 'global') {
+        await prisma.$transaction(async (tx) => {
+          await clearSurfaceFinishSnapshots(tx, id);
+          await tx.surfaceFinish.delete({ where: { id } });
+        });
+      } else {
+        await prisma.surfaceFinish.delete({ where: { id } });
+      }
       res.status(204).send();
     } catch (err: unknown) {
       if (typeof err === 'object' && err !== null && 'code' in err && (err as { code: string }).code === 'P2025') {

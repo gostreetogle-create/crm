@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, of } from 'rxjs';
 import { SurfaceFinishItem, SurfaceFinishItemInput } from '../model/surface-finish-item';
 import { SurfaceFinishesRepository } from './surface-finishes.repository';
+import { DictionaryPropagationOptions } from '../../colors/data/colors.repository';
 
 function newId(): string {
   return `sf-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
@@ -27,13 +28,13 @@ export class SurfaceFinishesMockRepository implements SurfaceFinishesRepository 
     return of(row);
   }
 
-  update(id: string, input: SurfaceFinishItemInput): Observable<SurfaceFinishItem> {
+  update(id: string, input: SurfaceFinishItemInput, _options?: DictionaryPropagationOptions): Observable<SurfaceFinishItem> {
     const row: SurfaceFinishItem = { id, ...input };
     this.itemsSubject.next(this.itemsSubject.value.map((x) => (x.id === id ? row : x)));
     return of(row);
   }
 
-  remove(id: string): Observable<void> {
+  remove(id: string, _options?: DictionaryPropagationOptions): Observable<void> {
     this.itemsSubject.next(this.itemsSubject.value.filter((x) => x.id !== id));
     return of(void 0);
   }

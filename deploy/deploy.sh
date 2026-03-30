@@ -17,7 +17,13 @@ require_non_empty() {
 echo "[deploy] Проверяю обязательные поля deploy/.env..."
 require_non_empty WEB_PORT
 require_non_empty BACKEND_PORT
+require_non_empty CORS_ORIGIN
 require_non_empty JWT_SECRET
+
+if [[ "${CORS_ORIGIN}" == "*" ]]; then
+  echo "[deploy] Ошибка: CORS_ORIGIN='*' запрещен в production. Укажите точный origin домена."
+  exit 1
+fi
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
