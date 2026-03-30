@@ -89,6 +89,16 @@
   outline-offset: 2px;
 }
 
+.hubCrudExpandableFullscreen__toggle--pressed,
+.hubCrudExpandableFullscreen__toggle[aria-pressed='true'] {
+  border-color: color-mix(in srgb, var(--success) 48%, var(--border-color));
+  background: color-mix(in srgb, var(--success) 24%, var(--surface-soft));
+  color: color-mix(in srgb, var(--success) 92%, var(--text-primary));
+  box-shadow:
+    inset 0 2px 6px color-mix(in srgb, var(--shadow-color) 22%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--success) 38%, transparent);
+}
+
 .hubCrudExpandableFullscreen--open {
   z-index: 40;
 }

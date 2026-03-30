@@ -58,7 +58,7 @@ import { UiCheckboxFieldComponent } from '../../../../shared/ui/ui-checkbox-fiel
 import { UiFormFieldComponent } from '../../../../shared/ui/ui-form-field/ui-form-field.component';
 import { HexRgbFieldComponent } from '../../../../shared/ui/hex-rgb-field/public-api';
 import { HubCrudExpandStateService } from '../../../../shared/ui/hub-crud-expandable/public-api';
-import { DictionaryHubTileComponent, DictionaryHubTileFullscreenComponent } from '../../../../shared/ui/cards/public-api';
+import { DictionaryHubTileFullscreenComponent } from '../../../../shared/ui/cards/public-api';
 import { LinkedDictionaryPropagationConfirmComponent } from '../../../../shared/ui/linked-dictionary-propagation-confirm/public-api';
 
 @Component({
@@ -69,7 +69,6 @@ import { LinkedDictionaryPropagationConfirmComponent } from '../../../../shared/
     NgFor,
     ReactiveFormsModule,
     PageShellComponent,
-    DictionaryHubTileComponent,
     DictionaryHubTileFullscreenComponent,
     CrudLayoutComponent,
     UiModalComponent,
@@ -230,7 +229,11 @@ export class DictionariesPage implements OnDestroy {
     { key: 'isActiveLabel', label: 'Активен' },
   ];
 
-  readonly materialCharacteristicsColumns: TableColumn[] = [
+  readonly materialCharacteristicsColumnsPreview: TableColumn[] = [
+    { key: 'hubLine', label: 'Характеристика' },
+  ];
+
+  readonly materialCharacteristicsColumnsFull: TableColumn[] = [
     { key: 'name', label: 'Название' },
     { key: 'code', label: 'Код' },
     { key: 'densityKgM3', label: 'Плотность' },
@@ -241,8 +244,10 @@ export class DictionariesPage implements OnDestroy {
     { key: 'isActiveLabel', label: 'Активен' },
   ];
 
+  readonly materialsColumnsPreview: TableColumn[] = [{ key: 'hubLine', label: 'Материал' }];
+
   /** Широкая плитка материалов: все основные поля строкой таблицы (не одна склейка hubLine). */
-  readonly materialsColumns: TableColumn[] = [
+  readonly materialsColumnsFull: TableColumn[] = [
     { key: 'name', label: 'Название' },
     { key: 'code', label: 'Код' },
     { key: 'characteristic', label: 'Характеристика' },
@@ -367,6 +372,17 @@ export class DictionariesPage implements OnDestroy {
   readonly coatingsColumnsForTile = this.columnsForTile('coatings', this.coatingsColumns, this.coatingsColumnsFull);
   readonly rolesColumnsForTile = this.columnsForTile('roles', this.rolesColumns, this.rolesColumnsFull);
   readonly usersColumnsForTile = this.columnsForTile('users', this.usersColumns, this.usersColumnsFull);
+
+  readonly materialsColumnsForTile = this.columnsForTile(
+    'materials',
+    this.materialsColumnsPreview,
+    this.materialsColumnsFull,
+  );
+  readonly materialCharacteristicsColumnsForTile = this.columnsForTile(
+    'materialCharacteristics',
+    this.materialCharacteristicsColumnsPreview,
+    this.materialCharacteristicsColumnsFull,
+  );
 
   /** Активные роли для поля «Роль» в карточке пользователя. */
   readonly roleSelectOptions = computed(() =>

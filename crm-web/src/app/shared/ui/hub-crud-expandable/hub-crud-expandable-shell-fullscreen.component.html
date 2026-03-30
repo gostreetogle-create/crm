@@ -3,11 +3,7 @@
   [class.hubCrudExpandableFullscreen--open]="isExpanded()"
 >
   @if (isExpanded()) {
-    <div
-      class="hubCrudExpandableFullscreen__backdrop"
-      (click)="expand.close(tileKey())"
-      aria-hidden="true"
-    ></div>
+    <div class="hubCrudExpandableFullscreen__backdrop" aria-hidden="true"></div>
   }
   <div
     class="hubCrudExpandableFullscreen__anchor"
@@ -22,7 +18,9 @@
       <button
         type="button"
         class="hubCrudExpandableFullscreen__toggle"
+        [class.hubCrudExpandableFullscreen__toggle--pressed]="isExpanded()"
         [attr.aria-expanded]="isExpanded()"
+        [attr.aria-pressed]="isExpanded() ? 'true' : 'false'"
         [attr.aria-label]="ariaLabel()"
         (click)="onToggleClick($event)"
       >

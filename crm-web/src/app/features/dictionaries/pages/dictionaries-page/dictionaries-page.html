@@ -13,7 +13,7 @@
   }
   <div class="dictionaryGrid">
     @if (permissions.can(hubTilePerm('materials'))) {
-    <app-dictionary-hub-tile tileKey="materials" [fullWidth]="true">
+    <app-dictionary-hub-tile-fullscreen tileKey="materials" [fullWidth]="true">
       <crud-layout
         title="Материалы"
         [showHeader]="false"
@@ -23,7 +23,7 @@
         [canCreate]="permissions.crud().canCreate"
         createAriaLabel="Добавить материал"
         createTitle="Добавить материал"
-        [columns]="materialsColumns"
+        [columns]="materialsColumnsForTile()"
         [data]="materialsStore.materialsData()"
         [loading]="materialsStore.loading()"
         [maxTableBodyRows]="hubExpand.previewMaxTableBodyRows('materials')"
@@ -45,11 +45,11 @@
         (edit)="openMaterialsEdit($event)"
         (delete)="deleteMaterial($event)"
       ></crud-layout>
-    </app-dictionary-hub-tile>
+    </app-dictionary-hub-tile-fullscreen>
     }
 
     @if (permissions.can(hubTilePerm('materialCharacteristics'))) {
-    <app-dictionary-hub-tile tileKey="materialCharacteristics" [fullWidth]="true">
+    <app-dictionary-hub-tile-fullscreen tileKey="materialCharacteristics" [fullWidth]="true">
       <crud-layout
         title="Характеристики материала"
         [showHeader]="false"
@@ -59,7 +59,7 @@
         [canCreate]="permissions.crud().canCreate"
         createAriaLabel="Добавить характеристику материала"
         createTitle="Добавить характеристику материала"
-        [columns]="materialCharacteristicsColumns"
+        [columns]="materialCharacteristicsColumnsForTile()"
         [data]="materialCharacteristicsStore.materialCharacteristicsData()"
         [loading]="materialCharacteristicsStore.loading()"
         [maxTableBodyRows]="hubExpand.previewMaxTableBodyRows('materialCharacteristics')"
@@ -81,7 +81,7 @@
         (edit)="openMaterialCharacteristicsEdit($event)"
         (delete)="deleteMaterialCharacteristic($event)"
       ></crud-layout>
-    </app-dictionary-hub-tile>
+    </app-dictionary-hub-tile-fullscreen>
     }
 
     @if (permissions.can(hubTilePerm('workTypes'))) {

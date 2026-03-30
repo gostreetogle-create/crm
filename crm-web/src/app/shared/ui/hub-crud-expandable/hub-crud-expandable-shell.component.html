@@ -15,7 +15,9 @@
       <button
         type="button"
         class="hubCrudExpandable__toggle"
+        [class.hubCrudExpandable__toggle--pressed]="isExpanded()"
         [attr.aria-expanded]="isExpanded()"
+        [attr.aria-pressed]="isExpanded() ? 'true' : 'false'"
         [attr.aria-label]="ariaLabel()"
         (click)="onToggleClick($event)"
       >

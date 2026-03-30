@@ -16,8 +16,13 @@ import { HubCrudExpandableShellFullscreenComponent } from '../../hub-crud-expand
   templateUrl: './dictionary-hub-tile-fullscreen.component.html',
   styleUrl: './dictionary-hub-tile-fullscreen.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '[class.dictionaryHubTile--fullWidth]': 'fullWidth()',
+  },
 })
 export class DictionaryHubTileFullscreenComponent {
   readonly tileKey = input.required<string>();
+  /** На всю ширину сетки (`grid-column: 1 / -1`), как у крупных плиток «Материалы» / «Характеристики». */
+  readonly fullWidth = input(false);
 }
 

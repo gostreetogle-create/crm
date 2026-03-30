@@ -10,10 +10,6 @@ export class HubCrudExpandStateService {
   /** Readonly-снимок для `computed()` в компонентах (реагирует на раскрытие). */
   readonly expandState = this._state.asReadonly();
 
-  private readonly shellHosts = new Map<string, HTMLElement>();
-  private shellRegistrationCount = 0;
-  private readonly boundDocumentClick = (event: MouseEvent) => this.onDocumentClick(event);
-
   isOpen(key: string): boolean {
     return this._state()[key] ?? false;
   }
@@ -39,21 +35,15 @@ export class HubCrudExpandStateService {
   }
 
   /**
-   * Регистрация корневого элемента плитки для одного глобального обработчика клика вне плитки.
+   * Заглушки совместимости: автозакрытие по клику вне карточки отключено.
+   * Карточки закрываются только кнопкой «меню / 3 линии».
    */
-  registerShellHost(tileKey: string, hostElement: HTMLElement): void {
-    this.shellHosts.set(tileKey, hostElement);
-    if (this.shellRegistrationCount++ === 0) {
-      document.addEventListener('click', this.boundDocumentClick, false);
-    }
+  registerShellHost(_tileKey: string, _hostElement: HTMLElement): void {
+    // no-op
   }
 
-  unregisterShellHost(tileKey: string): void {
-    this.shellHosts.delete(tileKey);
-    if (--this.shellRegistrationCount <= 0) {
-      this.shellRegistrationCount = 0;
-      document.removeEventListener('click', this.boundDocumentClick, false);
-    }
+  unregisterShellHost(_tileKey: string): void {
+    // no-op
   }
 
   toggle(key: string): void {
@@ -62,25 +52,5 @@ export class HubCrudExpandStateService {
 
   close(key: string): void {
     this._state.update((m) => ({ ...m, [key]: false }));
-  }
-
-  private onDocumentClick(event: MouseEvent): void {
-    const target = event.target;
-    if (!(target instanceof Node)) {
-      return;
-    }
-    const state = this._state();
-    for (const key of Object.keys(state)) {
-      if (!state[key]) {
-        continue;
-      }
-      const host = this.shellHosts.get(key);
-      if (!host) {
-        continue;
-      }
-      if (!host.contains(target)) {
-        this.close(key);
-      }
-    }
   }
 }

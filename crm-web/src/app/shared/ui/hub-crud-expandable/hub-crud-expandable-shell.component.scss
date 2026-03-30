@@ -75,6 +75,27 @@
   outline-offset: 2px;
 }
 
+/* Открыто: зеленоватый акцент (--success). */
+.hubCrudExpandable__toggle--pressed,
+.hubCrudExpandable__toggle[aria-pressed='true'] {
+  border-color: color-mix(in srgb, var(--success) 48%, var(--border-color));
+  background: color-mix(in srgb, var(--success) 24%, var(--surface-soft));
+  color: color-mix(in srgb, var(--success) 92%, var(--text-primary));
+  box-shadow:
+    inset 0 2px 6px color-mix(in srgb, var(--shadow-color) 22%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--success) 38%, transparent);
+}
+
 .hubCrudExpandable--open .hubCrudExpandable__toggle {
   background: color-mix(in srgb, var(--accent) 20%, var(--surface-soft));
+}
+
+.hubCrudExpandable--open .hubCrudExpandable__toggle--pressed,
+.hubCrudExpandable--open .hubCrudExpandable__toggle[aria-pressed='true'] {
+  border-color: color-mix(in srgb, var(--success) 48%, var(--border-color));
+  background: color-mix(in srgb, var(--success) 24%, var(--surface-soft));
+  color: color-mix(in srgb, var(--success) 92%, var(--text-primary));
+  box-shadow:
+    inset 0 2px 6px color-mix(in srgb, var(--shadow-color) 22%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--success) 38%, transparent);
 }
