@@ -343,6 +343,31 @@ export class DictionariesPage implements OnDestroy {
     { key: 'phone', label: 'Телефон' },
   ];
 
+  /**
+   * Узкие плитки с `app-dictionary-hub-tile-fullscreen`: в свёрнутом виде — одна колонка превью (без горизонтального скролла),
+   * после раскрытия — полный набор полей.
+   */
+  private readonly columnsForTile = <T extends TableColumn>(
+    tileKey: string,
+    shortCols: T[],
+    fullCols: T[],
+  ) =>
+    computed((): T[] => [...(this.hubExpand.isOpen(tileKey) ? fullCols : shortCols)]);
+
+  readonly workTypesColumnsForTile = this.columnsForTile('workTypes', this.workTypesColumns, this.workTypesColumnsFull);
+  readonly unitsColumnsForTile = this.columnsForTile('units', this.unitsColumns, this.unitsColumnsFull);
+  readonly clientsColumnsForTile = this.columnsForTile('clients', this.clientsColumns, this.clientsColumnsFull);
+  readonly colorsColumnsForTile = this.columnsForTile('colors', this.colorsColumns, this.colorsColumnsFull);
+  readonly surfaceFinishesColumnsForTile = this.columnsForTile(
+    'surfaceFinishes',
+    this.surfaceFinishesColumns,
+    this.surfaceFinishesColumnsFull,
+  );
+  readonly geometriesColumnsForTile = this.columnsForTile('geometries', this.geometriesColumns, this.geometriesColumnsFull);
+  readonly coatingsColumnsForTile = this.columnsForTile('coatings', this.coatingsColumns, this.coatingsColumnsFull);
+  readonly rolesColumnsForTile = this.columnsForTile('roles', this.rolesColumns, this.rolesColumnsFull);
+  readonly usersColumnsForTile = this.columnsForTile('users', this.usersColumns, this.usersColumnsFull);
+
   /** Активные роли для поля «Роль» в карточке пользователя. */
   readonly roleSelectOptions = computed(() =>
     this.rolesStore.matrixRoleColumns().map((r) => ({
