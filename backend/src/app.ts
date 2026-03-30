@@ -29,8 +29,8 @@ function materialGeometryProtected(): express.Router {
 export function createApp() {
   const app = express();
 
-  // Needed for correct client IP when deployed behind nginx (used by rate limiting).
-  app.set("trust proxy", true);
+  // One trusted proxy hop (nginx). Avoids permissive mode that breaks express-rate-limit validation.
+  app.set("trust proxy", 1);
 
   app.use(
     cors({

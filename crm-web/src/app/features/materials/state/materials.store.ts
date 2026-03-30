@@ -56,9 +56,7 @@ export const MaterialsStore = signalStore(
             return {
               id: item.id,
               name: item.name,
-              hubLine: item.code?.trim()
-                ? `${item.name} (${item.code.trim()})`
-                : item.name,
+              hubLine: item.name,
               code: item.code?.trim() || '—',
               characteristic: charLabel,
               geometry: geomLabel,

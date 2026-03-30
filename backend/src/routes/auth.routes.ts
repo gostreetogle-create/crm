@@ -4,6 +4,7 @@ import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
 import { signAccessToken } from "../lib/jwt.js";
 import rateLimit from "express-rate-limit";
+import { config } from "../config.js";
 
 const LoginSchema = z.object({
   login: z.string().trim().min(1),
@@ -33,7 +34,8 @@ export const authPublicRouter = Router();
 
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 12,
+  // В production держим строгий лимит; в локальной разработке не блокируем частые повторы входа.
+  max: config.nodeEnv === "production" ? 12 : 1000,
   standardHeaders: true,
   legacyHeaders: false,
   handler: (_req, res) => {

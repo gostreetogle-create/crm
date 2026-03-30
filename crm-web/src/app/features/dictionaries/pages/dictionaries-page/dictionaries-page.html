@@ -11,9 +11,13 @@
     {{ excelImportStatus() }}
   </p>
   }
-  <div class="dictionaryGrid">
+  <div class="dictionaryHub">
+    @if (hubSectionVisible(['materials', 'materialCharacteristics', 'workTypes', 'units', 'geometries'])) {
+    <section class="dictionaryHubSection" aria-labelledby="dictionary-hub-section-production">
+      <h2 id="dictionary-hub-section-production" class="dictionaryHubSection__title">Материалы и производство</h2>
+      <div class="dictionaryGrid">
     @if (permissions.can(hubTilePerm('materials'))) {
-    <app-dictionary-hub-tile-fullscreen tileKey="materials" [fullWidth]="true">
+    <app-dictionary-hub-tile-fullscreen tileKey="materials">
       <crud-layout
         title="Материалы"
         [showHeader]="false"
@@ -26,7 +30,7 @@
         [columns]="materialsColumnsForTile()"
         [data]="materialsStore.materialsData()"
         [loading]="materialsStore.loading()"
-        [maxTableBodyRows]="hubExpand.previewMaxTableBodyRows('materials')"
+        [maxTableBodyRows]="previewRows('materials')"
         [tableBodyMaxHeight]="hubExpand.previewTableBodyMaxHeight('materials')"
         [showExcelActions]="true"
         [canDownloadTemplate]="permissions.can('excel.template')"
@@ -49,7 +53,7 @@
     }
 
     @if (permissions.can(hubTilePerm('materialCharacteristics'))) {
-    <app-dictionary-hub-tile-fullscreen tileKey="materialCharacteristics" [fullWidth]="true">
+    <app-dictionary-hub-tile-fullscreen tileKey="materialCharacteristics">
       <crud-layout
         title="Характеристики материала"
         [showHeader]="false"
@@ -62,7 +66,7 @@
         [columns]="materialCharacteristicsColumnsForTile()"
         [data]="materialCharacteristicsStore.materialCharacteristicsData()"
         [loading]="materialCharacteristicsStore.loading()"
-        [maxTableBodyRows]="hubExpand.previewMaxTableBodyRows('materialCharacteristics')"
+        [maxTableBodyRows]="previewRows('materialCharacteristics')"
         [tableBodyMaxHeight]="hubExpand.previewTableBodyMaxHeight('materialCharacteristics')"
         [showExcelActions]="true"
         [canDownloadTemplate]="permissions.can('excel.template')"
@@ -98,7 +102,7 @@
         [columns]="workTypesColumnsForTile()"
         [data]="productionWorkTypesStore.workTypesData()"
         [loading]="productionWorkTypesStore.loading()"
-        [maxTableBodyRows]="hubExpand.previewMaxTableBodyRows('workTypes')"
+        [maxTableBodyRows]="previewRows('workTypes')"
         [tableBodyMaxHeight]="hubExpand.previewTableBodyMaxHeight('workTypes')"
         [showExcelActions]="true"
         [canDownloadTemplate]="permissions.can('excel.template')"
@@ -135,7 +139,7 @@
         [columns]="unitsColumnsForTile()"
         [data]="unitsStore.unitsData()"
         [loading]="unitsStore.loading()"
-        [maxTableBodyRows]="hubExpand.previewMaxTableBodyRows('units')"
+        [maxTableBodyRows]="previewRows('units')"
         [tableBodyMaxHeight]="hubExpand.previewTableBodyMaxHeight('units')"
         [showExcelActions]="true"
         [canDownloadTemplate]="permissions.can('excel.template')"
@@ -157,23 +161,22 @@
     </app-dictionary-hub-tile-fullscreen>
     }
 
-    @if (permissions.can(hubTilePerm('clients'))) {
-    <app-dictionary-hub-tile-fullscreen tileKey="clients">
+    @if (permissions.can(hubTilePerm('geometries'))) {
+    <app-dictionary-hub-tile-fullscreen tileKey="geometries">
       <crud-layout
-        title="Контактные лица"
+        title="Форма и габаритные размеры"
         [showHeader]="false"
         [showCardLabel]="true"
         [showNameSearch]="true"
-        nameSearchPlaceholder="Поиск по ФИО..."
         [showCreateAction]="true"
         [canCreate]="permissions.crud().canCreate"
-        createAriaLabel="Добавить контакт"
-        createTitle="Добавить контакт"
-        [columns]="clientsColumnsForTile()"
-        [data]="clientsStore.clientsData()"
-        [loading]="clientsStore.loading()"
-        [maxTableBodyRows]="hubExpand.previewMaxTableBodyRows('clients')"
-        [tableBodyMaxHeight]="hubExpand.previewTableBodyMaxHeight('clients')"
+        createAriaLabel="Добавить форму и габаритные размеры"
+        createTitle="Добавить форму и габаритные размеры"
+        [columns]="geometriesColumnsForTile()"
+        [data]="geometriesStore.geometriesData()"
+        [loading]="geometriesStore.loading()"
+        [maxTableBodyRows]="previewRows('geometries')"
+        [tableBodyMaxHeight]="hubExpand.previewTableBodyMaxHeight('geometries')"
         [showExcelActions]="true"
         [canDownloadTemplate]="permissions.can('excel.template')"
         [canImportExcel]="permissions.can('excel.import')"
@@ -182,19 +185,25 @@
         [canDuplicate]="permissions.crud().canDuplicate"
         [canEdit]="permissions.crud().canEdit"
         [canDelete]="permissions.crud().canDelete"
-        deleteConfirmMessage="Удалить контакт?"
-        (create)="openClientsCreate()"
-        (downloadTemplate)="downloadClientsTemplateExcel()"
-        (importExcel)="onClientsExcelImported($event)"
-        (exportExcel)="exportClientsExcel()"
-        (view)="openClientsView($event)"
-        (duplicate)="duplicateClient($event)"
-        (edit)="openClientsEdit($event)"
-        (delete)="deleteClient($event)"
+        (create)="openGeometriesCreate()"
+        (downloadTemplate)="downloadGeometriesTemplateExcel()"
+        (importExcel)="onGeometriesExcelImported($event)"
+        (exportExcel)="exportGeometriesExcel()"
+        (view)="openGeometriesView($event)"
+        (duplicate)="duplicateGeometry($event)"
+        (edit)="openGeometriesEdit($event)"
+        (delete)="deleteGeometry($event)"
       ></crud-layout>
     </app-dictionary-hub-tile-fullscreen>
     }
+      </div>
+    </section>
+    }
 
+    @if (hubSectionVisible(['colors', 'surfaceFinishes', 'coatings'])) {
+    <section class="dictionaryHubSection" aria-labelledby="dictionary-hub-section-surface">
+      <h2 id="dictionary-hub-section-surface" class="dictionaryHubSection__title">Цвет, отделка и покрытия</h2>
+      <div class="dictionaryGrid">
     @if (permissions.can(hubTilePerm('colors'))) {
     <app-dictionary-hub-tile-fullscreen tileKey="colors">
       <crud-layout
@@ -209,7 +218,7 @@
         [columns]="colorsColumnsForTile()"
         [data]="colorsStore.colorsData()"
         [loading]="colorsStore.loading()"
-        [maxTableBodyRows]="hubExpand.previewMaxTableBodyRows('colors')"
+        [maxTableBodyRows]="previewRows('colors')"
         [tableBodyMaxHeight]="hubExpand.previewTableBodyMaxHeight('colors')"
         [showExcelActions]="true"
         [canDownloadTemplate]="permissions.can('excel.template')"
@@ -245,7 +254,7 @@
         [columns]="surfaceFinishesColumnsForTile()"
         [data]="surfaceFinishesStore.surfaceFinishesData()"
         [loading]="surfaceFinishesStore.loading()"
-        [maxTableBodyRows]="hubExpand.previewMaxTableBodyRows('surfaceFinishes')"
+        [maxTableBodyRows]="previewRows('surfaceFinishes')"
         [tableBodyMaxHeight]="hubExpand.previewTableBodyMaxHeight('surfaceFinishes')"
         [showExcelActions]="true"
         [canDownloadTemplate]="permissions.can('excel.template')"
@@ -267,42 +276,6 @@
     </app-dictionary-hub-tile-fullscreen>
     }
 
-    @if (permissions.can(hubTilePerm('geometries'))) {
-    <app-dictionary-hub-tile-fullscreen tileKey="geometries">
-      <crud-layout
-        title="Форма и габаритные размеры"
-        [showHeader]="false"
-        [showCardLabel]="true"
-        [showNameSearch]="true"
-        [showCreateAction]="true"
-        [canCreate]="permissions.crud().canCreate"
-        createAriaLabel="Добавить форму и габаритные размеры"
-        createTitle="Добавить форму и габаритные размеры"
-        [columns]="geometriesColumnsForTile()"
-        [data]="geometriesStore.geometriesData()"
-        [loading]="geometriesStore.loading()"
-        [maxTableBodyRows]="hubExpand.previewMaxTableBodyRows('geometries')"
-        [tableBodyMaxHeight]="hubExpand.previewTableBodyMaxHeight('geometries')"
-        [showExcelActions]="true"
-        [canDownloadTemplate]="permissions.can('excel.template')"
-        [canImportExcel]="permissions.can('excel.import')"
-        [canExportExcel]="permissions.can('excel.export')"
-        [canView]="true"
-        [canDuplicate]="permissions.crud().canDuplicate"
-        [canEdit]="permissions.crud().canEdit"
-        [canDelete]="permissions.crud().canDelete"
-        (create)="openGeometriesCreate()"
-        (downloadTemplate)="downloadGeometriesTemplateExcel()"
-        (importExcel)="onGeometriesExcelImported($event)"
-        (exportExcel)="exportGeometriesExcel()"
-        (view)="openGeometriesView($event)"
-        (duplicate)="duplicateGeometry($event)"
-        (edit)="openGeometriesEdit($event)"
-        (delete)="deleteGeometry($event)"
-      ></crud-layout>
-    </app-dictionary-hub-tile-fullscreen>
-    }
-
     @if (permissions.can(hubTilePerm('coatings'))) {
     <app-dictionary-hub-tile-fullscreen tileKey="coatings">
       <crud-layout
@@ -317,7 +290,7 @@
         [columns]="coatingsColumnsForTile()"
         [data]="coatingsStore.coatingsData()"
         [loading]="coatingsStore.loading()"
-        [maxTableBodyRows]="hubExpand.previewMaxTableBodyRows('coatings')"
+        [maxTableBodyRows]="previewRows('coatings')"
         [tableBodyMaxHeight]="hubExpand.previewTableBodyMaxHeight('coatings')"
         [showExcelActions]="true"
         [canDownloadTemplate]="permissions.can('excel.template')"
@@ -338,7 +311,59 @@
       ></crud-layout>
     </app-dictionary-hub-tile-fullscreen>
     }
+      </div>
+    </section>
+    }
 
+    @if (hubSectionVisible(['clients'])) {
+    <section class="dictionaryHubSection" aria-labelledby="dictionary-hub-section-clients">
+      <h2 id="dictionary-hub-section-clients" class="dictionaryHubSection__title">Клиенты</h2>
+      <div class="dictionaryGrid">
+    @if (permissions.can(hubTilePerm('clients'))) {
+    <app-dictionary-hub-tile-fullscreen tileKey="clients">
+      <crud-layout
+        title="Контактные лица"
+        [showHeader]="false"
+        [showCardLabel]="true"
+        [showNameSearch]="true"
+        nameSearchPlaceholder="Поиск по ФИО..."
+        [showCreateAction]="true"
+        [canCreate]="permissions.crud().canCreate"
+        createAriaLabel="Добавить контакт"
+        createTitle="Добавить контакт"
+        [columns]="clientsColumnsForTile()"
+        [data]="clientsStore.clientsData()"
+        [loading]="clientsStore.loading()"
+        [maxTableBodyRows]="previewRows('clients')"
+        [tableBodyMaxHeight]="hubExpand.previewTableBodyMaxHeight('clients')"
+        [showExcelActions]="true"
+        [canDownloadTemplate]="permissions.can('excel.template')"
+        [canImportExcel]="permissions.can('excel.import')"
+        [canExportExcel]="permissions.can('excel.export')"
+        [canView]="true"
+        [canDuplicate]="permissions.crud().canDuplicate"
+        [canEdit]="permissions.crud().canEdit"
+        [canDelete]="permissions.crud().canDelete"
+        deleteConfirmMessage="Удалить контакт?"
+        (create)="openClientsCreate()"
+        (downloadTemplate)="downloadClientsTemplateExcel()"
+        (importExcel)="onClientsExcelImported($event)"
+        (exportExcel)="exportClientsExcel()"
+        (view)="openClientsView($event)"
+        (duplicate)="duplicateClient($event)"
+        (edit)="openClientsEdit($event)"
+        (delete)="deleteClient($event)"
+      ></crud-layout>
+    </app-dictionary-hub-tile-fullscreen>
+    }
+      </div>
+    </section>
+    }
+
+    @if (hubSectionVisible(['roles', 'users'])) {
+    <section class="dictionaryHubSection" aria-labelledby="dictionary-hub-section-access">
+      <h2 id="dictionary-hub-section-access" class="dictionaryHubSection__title">Пользователи и доступ</h2>
+      <div class="dictionaryGrid">
     @if (permissions.can(hubTilePerm('roles'))) {
     <app-dictionary-hub-tile-fullscreen tileKey="roles">
       <crud-layout
@@ -354,7 +379,7 @@
         [columns]="rolesColumnsForTile()"
         [data]="rolesStore.rolesData()"
         [loading]="false"
-        [maxTableBodyRows]="hubExpand.previewMaxTableBodyRows('roles')"
+        [maxTableBodyRows]="previewRows('roles')"
         [tableBodyMaxHeight]="hubExpand.previewTableBodyMaxHeight('roles')"
         [showExcelActions]="true"
         [canDownloadTemplate]="permissions.can('excel.template')"
@@ -392,7 +417,7 @@
         [columns]="usersColumnsForTile()"
         [data]="usersStore.usersData()"
         [loading]="false"
-        [maxTableBodyRows]="hubExpand.previewMaxTableBodyRows('users')"
+        [maxTableBodyRows]="previewRows('users')"
         [tableBodyMaxHeight]="hubExpand.previewTableBodyMaxHeight('users')"
         [showExcelActions]="true"
         [canDownloadTemplate]="permissions.can('excel.template')"
@@ -413,6 +438,9 @@
         (delete)="deleteUser($event)"
       ></crud-layout>
     </app-dictionary-hub-tile-fullscreen>
+    }
+      </div>
+    </section>
     }
   </div>
 </app-page-shell>

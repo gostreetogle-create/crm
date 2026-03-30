@@ -2,6 +2,27 @@
  * Оболочка плиток хаба `/dictionaries` — один источник стилей сетки.
  * Подключается в dictionaries-page и в ui-demo (эталон плитки).
  */
+.dictionaryHub {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.dictionaryHubSection {
+  margin: 0;
+  padding: 0;
+  border: none;
+  min-width: 0;
+}
+
+.dictionaryHubSection__title {
+  margin: 0 0 10px;
+  font-size: var(--font-size-small, 0.8125rem);
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+}
+
 .dictionaryGrid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

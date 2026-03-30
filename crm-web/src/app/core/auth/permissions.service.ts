@@ -190,6 +190,11 @@ export class PermissionsService {
     } catch {
       // no-op for restricted environments
     }
+    try {
+      sessionStorage.setItem(STORAGE_KEY_ROLE, roleId);
+    } catch {
+      // no-op
+    }
   }
 
   /** После выхода: сбросить сохранённую «роль интерфейса», чтобы не тянуть прошлую роль из localStorage. */
@@ -197,6 +202,11 @@ export class PermissionsService {
     this.roleSignal.set(ROLE_ID_SYSTEM_VIEWER);
     try {
       localStorage.removeItem(STORAGE_KEY_ROLE);
+    } catch {
+      // no-op
+    }
+    try {
+      sessionStorage.removeItem(STORAGE_KEY_ROLE);
     } catch {
       // no-op
     }
@@ -212,7 +222,8 @@ export class PermissionsService {
 
   private readRoleFromStorage(): RoleId {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY_ROLE);
+      const raw =
+        localStorage.getItem(STORAGE_KEY_ROLE) ?? sessionStorage.getItem(STORAGE_KEY_ROLE);
       if (!raw) {
         // Safe default: если роль ещё неизвестна (rolesStore мог не подгрузиться),
         // не выдаём лишних прав. Это предотвращает «привилегии по умолчанию».

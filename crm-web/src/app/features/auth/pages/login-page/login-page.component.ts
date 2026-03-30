@@ -69,6 +69,7 @@ export class LoginPage {
           : 'Неверная пара логин/пароль. Учётную запись создаёт администратор в «Справочники» → «Пользователи».';
         return;
       }
+      this.errorText = '';
       void this.router.navigateByUrl('/справочники');
     });
   }

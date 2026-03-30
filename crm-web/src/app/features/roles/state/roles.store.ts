@@ -5,6 +5,22 @@ import { RoleItem, RoleItemInput } from '../model/role-item';
 import { ROLES_REPOSITORY } from '../data/roles.repository';
 import { compareRolesBySortOrder } from '../utils/role-sort';
 
+const AUTH_TOKEN_STORAGE_KEY = 'crm.auth.token';
+
+function readTokenFromCookie(): string | null {
+  try {
+    const match = document.cookie
+      .split(';')
+      .map((x) => x.trim())
+      .find((x) => x.startsWith(`${AUTH_TOKEN_STORAGE_KEY}=`));
+    if (!match) return null;
+    const raw = match.slice(AUTH_TOKEN_STORAGE_KEY.length + 1);
+    return raw ? decodeURIComponent(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
 @Injectable({ providedIn: 'root' })
 export class RolesStore {
   private readonly repo = inject(ROLES_REPOSITORY);
@@ -16,18 +32,32 @@ export class RolesStore {
     if (snap?.length) {
       this.items.set(snap);
     }
+    if (!this.hasAuthToken()) {
+      return;
+    }
+    this.loadItems();
+  }
+
+  loadItems(): void {
     this.repo
       .getItems()
       .pipe(takeUntilDestroyed(inject(DestroyRef)))
       .pipe(
         catchError((err) => {
-          // На этапе логина/первого редиректа роли могут ещё быть недоступны (требуется auth/admin).
-          // Без обработчика RxJS неавторизованные запросы шумят в консоли и могут мешать отладке.
-          console.warn('[RolesStore] Failed to load roles (will use empty list):', err);
+          // До входа (без JWT) `/api/roles` ожидаемо отвечает 401 — это не ошибка приложения.
+          // Логируем только неожиданные кейсы, чтобы не пугать шумом в консоли.
+          const status = typeof err?.status === 'number' ? err.status : null;
+          if (status !== 401) {
+            console.warn('[RolesStore] Failed to load roles (will use empty list):', err);
+          }
           return of([] as RoleItem[]);
         }),
       )
       .subscribe((items) => this.items.set(items));
+  }
+
+  clearItems(): void {
+    this.items.set([]);
   }
 
   readonly rolesData = computed(() =>
@@ -94,5 +124,17 @@ export class RolesStore {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe((items) => this.items.set(items));
+  }
+
+  private hasAuthToken(): boolean {
+    try {
+      return !!(
+        localStorage.getItem(AUTH_TOKEN_STORAGE_KEY) ??
+        sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY) ??
+        readTokenFromCookie()
+      );
+    } catch {
+      return false;
+    }
   }
 }

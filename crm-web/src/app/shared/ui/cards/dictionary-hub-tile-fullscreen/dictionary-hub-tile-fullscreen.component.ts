@@ -22,7 +22,7 @@ import { HubCrudExpandableShellFullscreenComponent } from '../../hub-crud-expand
 })
 export class DictionaryHubTileFullscreenComponent {
   readonly tileKey = input.required<string>();
-  /** На всю ширину сетки (`grid-column: 1 / -1`), как у крупных плиток «Материалы» / «Характеристики». */
+  /** На всю ширину сетки (`grid-column: 1 / -1`), например для демо или крупных обзоров. */
   readonly fullWidth = input(false);
 }
 

@@ -4,7 +4,7 @@ import { HubCrudExpandableShellComponent } from '../../hub-crud-expandable/publi
 
 /**
  * Плитка справочника на хабе: `dictionaryGrid` → плитка → раскрытие → content-card → crud-layout.
- * По умолчанию — одна ячейка сетки; `[fullWidth]="true"` — на всю ширину `dictionaryGrid` (материалы, крупные обзоры).
+ * По умолчанию — одна ячейка сетки; `[fullWidth]="true"` — на всю ширину `dictionaryGrid` (крупные обзоры, демо).
  * Эталон: Demo п.1 / п.1.1; `/dictionaries`.
  */
 @Component({

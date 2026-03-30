@@ -138,6 +138,38 @@
   overflow-x: auto;
 }
 
+.crudPreviewPanel {
+  margin: 0 0 var(--ui-space-2);
+  padding: var(--ui-space-2) var(--ui-space-3);
+  border: 1px solid color-mix(in srgb, var(--border-color) 60%, transparent);
+  border-radius: var(--radius-card);
+  background: color-mix(in srgb, var(--surface-soft) 65%, var(--surface));
+}
+
+.crudPreviewPanel__hero {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.crudPreviewPanel__emoji {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.crudPreviewPanel__main {
+  margin: 0;
+  font-size: var(--font-size-small);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.crudPreviewPanel__hint {
+  margin: 4px 0 0;
+  font-size: var(--font-size-small);
+  color: var(--text-muted);
+}
+
 /* tableBodyMaxHeight → --crud-table-body-max-height (HubCrudExpandStateService на хабе). */
 .tableView.tableViewBodyMaxHeight {
   max-height: var(--crud-table-body-max-height);

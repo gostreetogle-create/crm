@@ -108,6 +108,12 @@ export class DictionariesPage implements OnDestroy {
 
   readonly permissions = inject(PermissionsService);
   readonly hubTilePerm = permissionKeyForDictionaryHubTile;
+
+  /** Заголовок раздела хаба показываем только если есть хотя бы одна плитка в разделе. */
+  hubSectionVisible(tileKeys: readonly string[]): boolean {
+    return tileKeys.some((key) => this.permissions.can(this.hubTilePerm(key)));
+  }
+
   readonly hubExpand = inject(HubCrudExpandStateService);
   readonly rolesStore = inject(RolesStore);
   readonly usersStore = inject(UsersStore);
@@ -358,6 +364,14 @@ export class DictionariesPage implements OnDestroy {
     fullCols: T[],
   ) =>
     computed((): T[] => [...(this.hubExpand.isOpen(tileKey) ? fullCols : shortCols)]);
+
+  /**
+   * В свернутой карточке скрываем строки таблицы (0),
+   * в раскрытой — штатный лимит из HubCrudExpandStateService.
+   */
+  previewRows(tileKey: string): number | null {
+    return this.hubExpand.isOpen(tileKey) ? this.hubExpand.previewMaxTableBodyRows(tileKey) : 0;
+  }
 
   readonly workTypesColumnsForTile = this.columnsForTile('workTypes', this.workTypesColumns, this.workTypesColumnsFull);
   readonly unitsColumnsForTile = this.columnsForTile('units', this.unitsColumns, this.unitsColumnsFull);

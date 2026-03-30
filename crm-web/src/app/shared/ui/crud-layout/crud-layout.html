@@ -180,35 +180,75 @@
   [class.tableViewBodyMaxHeight]="!!tableBodyMaxHeight"
   [style.--crud-table-body-max-height]="tableBodyMaxHeight || null"
 >
-  <table class="crudTable" [class.crudTableHub]="columns.length > 0 && columns.length <= 2">
-    <thead>
-      <tr>
-        @if (columns.length === 1 && hasRowActions) {
-          <th class="crudHubHeadMerged" colspan="2">
-            <div class="crudHubHeadRow">
-              <span class="crudHubHeadLabel">{{ columns[0].label }}</span>
-              <span class="crudHubHeadActions">Действия</span>
-            </div>
-          </th>
-        } @else {
-          @for (column of columns; track column.key) {
-            <th>{{ column.label }}</th>
+  @if (isTableRowsHiddenPreview) {
+    <div class="crudPreviewPanel" role="note">
+      <div class="crudPreviewPanel__hero">
+        <span class="crudPreviewPanel__emoji" aria-hidden="true">{{ previewEmoji }}</span>
+        <p class="crudPreviewPanel__main">
+          @if (loading) {
+            Загрузка…
+          } @else {
+            Записей: {{ visibleData.length }}
           }
-          @if (hasRowActions) {
-            <th class="actionsCol">Действия</th>
-          }
-        }
-      </tr>
-    </thead>
-    <tbody>
-      @for (row of crudTableBodyRows; track row['id'] ?? $index) {
+        </p>
+      </div>
+    </div>
+  }
+  @if (!isTableRowsHiddenPreview) {
+    <table class="crudTable" [class.crudTableHub]="columns.length > 0 && columns.length <= 2">
+      <thead>
         <tr>
           @if (columns.length === 1 && hasRowActions) {
-            <td class="crudHubMergedCell" [attr.colspan]="2">
-              <div class="crudHubRow">
-                <div class="crudHubRowText">
-                  @if (columns[0].swatchHexKey) {
-                    @let bg = swatchBackground(row, columns[0].swatchHexKey);
+            <th class="crudHubHeadMerged" colspan="2">
+              <div class="crudHubHeadRow">
+                <span class="crudHubHeadLabel">{{ columns[0].label }}</span>
+                <span class="crudHubHeadActions">Действия</span>
+              </div>
+            </th>
+          } @else {
+            @for (column of columns; track column.key) {
+              <th>{{ column.label }}</th>
+            }
+            @if (hasRowActions) {
+              <th class="actionsCol">Действия</th>
+            }
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of crudTableBodyRows; track row['id'] ?? $index) {
+          <tr>
+            @if (columns.length === 1 && hasRowActions) {
+              <td class="crudHubMergedCell" [attr.colspan]="2">
+                <div class="crudHubRow">
+                  <div class="crudHubRowText">
+                    @if (columns[0].swatchHexKey) {
+                      @let bg = swatchBackground(row, columns[0].swatchHexKey);
+                      <span class="crudCellLine">
+                        <span
+                          class="crudSwatch"
+                          [class.crudSwatchEmpty]="bg === 'transparent'"
+                          [style.background]="bg === 'transparent' ? 'transparent' : bg"
+                          aria-hidden="true"
+                        ></span>
+                        <span class="crudCellText">{{ row?.[columns[0].key] ?? '—' }}</span>
+                      </span>
+                    } @else {
+                      <span class="crudCellPlain">{{ row?.[columns[0].key] ?? '—' }}</span>
+                    }
+                  </div>
+                  <div class="crudHubRowActions">
+                    <ng-container
+                      *ngTemplateOutlet="crudRowActionButtons; context: { row: row, rowIndex: $index }"
+                    ></ng-container>
+                  </div>
+                </div>
+              </td>
+            } @else {
+              @for (column of columns; track column.key) {
+                <td>
+                  @if (column.swatchHexKey) {
+                    @let bg = swatchBackground(row, column.swatchHexKey);
                     <span class="crudCellLine">
                       <span
                         class="crudSwatch"
@@ -216,61 +256,37 @@
                         [style.background]="bg === 'transparent' ? 'transparent' : bg"
                         aria-hidden="true"
                       ></span>
-                      <span class="crudCellText">{{ row?.[columns[0].key] ?? '—' }}</span>
+                      <span class="crudCellText">{{ row?.[column.key] ?? '—' }}</span>
                     </span>
                   } @else {
-                    <span class="crudCellPlain">{{ row?.[columns[0].key] ?? '—' }}</span>
+                    <span class="crudCellPlain">{{ row?.[column.key] ?? '—' }}</span>
                   }
-                </div>
-                <div class="crudHubRowActions">
+                </td>
+              }
+              @if (hasRowActions) {
+                <td class="actionsCol">
                   <ng-container
                     *ngTemplateOutlet="crudRowActionButtons; context: { row: row, rowIndex: $index }"
                   ></ng-container>
-                </div>
-              </div>
+                </td>
+              }
+            }
+          </tr>
+        }
+        @if (!visibleData.length) {
+          <tr>
+            <td [attr.colspan]="columns.length + (hasRowActions ? 1 : 0)">
+              @if (loading) {
+                Загрузка…
+              } @else {
+                Нет данных.
+              }
             </td>
-          } @else {
-            @for (column of columns; track column.key) {
-              <td>
-                @if (column.swatchHexKey) {
-                  @let bg = swatchBackground(row, column.swatchHexKey);
-                  <span class="crudCellLine">
-                    <span
-                      class="crudSwatch"
-                      [class.crudSwatchEmpty]="bg === 'transparent'"
-                      [style.background]="bg === 'transparent' ? 'transparent' : bg"
-                      aria-hidden="true"
-                    ></span>
-                    <span class="crudCellText">{{ row?.[column.key] ?? '—' }}</span>
-                  </span>
-                } @else {
-                  <span class="crudCellPlain">{{ row?.[column.key] ?? '—' }}</span>
-                }
-              </td>
-            }
-            @if (hasRowActions) {
-              <td class="actionsCol">
-                <ng-container
-                  *ngTemplateOutlet="crudRowActionButtons; context: { row: row, rowIndex: $index }"
-                ></ng-container>
-              </td>
-            }
-          }
-        </tr>
-      }
-      @if (!visibleData.length) {
-        <tr>
-          <td [attr.colspan]="columns.length + (hasRowActions ? 1 : 0)">
-            @if (loading) {
-              Загрузка…
-            } @else {
-              Нет данных.
-            }
-          </td>
-        </tr>
-      }
-    </tbody>
-  </table>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
 </section>
 
 <section class="card-list">

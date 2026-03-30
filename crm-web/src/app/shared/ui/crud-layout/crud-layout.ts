@@ -148,6 +148,32 @@ export class CrudLayoutComponent {
     return rows;
   }
 
+  /**
+   * Свернутое превью на хабе (`maxTableBodyRows === 0`): таблицу не рисуем — только сводка.
+   * Раньше требовали `visibleData.length > 0`, из‑за чего при пустом списке снова появлялась шапка таблицы
+   * и «Нет данных» — визуально не совпадало с плитками, где уже есть записи.
+   */
+  get isTableRowsHiddenPreview(): boolean {
+    return this.maxTableBodyRows === 0;
+  }
+
+  /** Эмодзи-иконка для свернутой плитки (быстро понять раздел без таблицы). */
+  get previewEmoji(): string {
+    const t = this.title.toLowerCase();
+    if (t.includes('материал')) return '🧱';
+    if (t.includes('характерист')) return '🧪';
+    if (t.includes('вид работ')) return '🛠️';
+    if (t.includes('единиц')) return '📏';
+    if (t.includes('форма') || t.includes('габарит')) return '📐';
+    if (t.includes('цвет')) return '🎨';
+    if (t.includes('отделк')) return '✨';
+    if (t.includes('покрыт')) return '🧴';
+    if (t.includes('контакт') || t.includes('клиент')) return '👤';
+    if (t.includes('рол')) return '🛡️';
+    if (t.includes('пользоват')) return '👥';
+    return '📂';
+  }
+
   onNameSearchInput(event: Event): void {
     const value = (event.target as HTMLInputElement | null)?.value ?? '';
     this.nameSearchTerm = value;
