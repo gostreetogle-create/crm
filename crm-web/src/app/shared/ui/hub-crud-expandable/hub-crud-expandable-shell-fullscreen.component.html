@@ -1,6 +1,7 @@
 <div
   class="hubCrudExpandableFullscreen"
   [class.hubCrudExpandableFullscreen--open]="isExpanded()"
+  [class.hubCrudExpandableFullscreen--aboveModals]="stackAboveModals() && isExpanded()"
 >
   @if (isExpanded()) {
     <div class="hubCrudExpandableFullscreen__backdrop" aria-hidden="true"></div>

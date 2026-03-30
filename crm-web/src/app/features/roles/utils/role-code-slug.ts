@@ -45,6 +45,9 @@ const CYRILLIC_TO_LATIN: Readonly<Record<string, string>> = {
 
 const RESERVED_LOWER = new Set(['admin']);
 
+/** Коды ролей из сида/системные — учитывать при генерации, даже если список с сервера ещё не подгрузился. */
+export const SEEDED_ROLE_CODES_LOWER = new Set(['admin']);
+
 function transliterateChar(ch: string): string {
   const lo = ch.toLowerCase();
   if (CYRILLIC_TO_LATIN[lo] !== undefined) {

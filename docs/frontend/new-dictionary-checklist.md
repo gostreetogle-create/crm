@@ -55,6 +55,7 @@
 - [ ] Зафиксировать, какие Excel-кнопки активны по ролям (`template/import/export`) через `permissions.can(...)`
 - [ ] Формы на Reactive Forms
 - [ ] Поля через `UiFormFieldComponent` / `UiCheckboxFieldComponent`
+- [ ] Для полей-связей со справочниками применён единый паттерн: `select`/`multiple` + квадратная кнопка `+` quick-add рядом
 - [ ] Тексты ошибок — на русском и рядом с полем
 
 ## 4) Роли и права

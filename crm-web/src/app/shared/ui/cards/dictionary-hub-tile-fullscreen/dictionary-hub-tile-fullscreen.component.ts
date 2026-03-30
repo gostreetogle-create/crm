@@ -24,5 +24,7 @@ export class DictionaryHubTileFullscreenComponent {
   readonly tileKey = input.required<string>();
   /** На всю ширину сетки (`grid-column: 1 / -1`), например для демо или крупных обзоров. */
   readonly fullWidth = input(false);
+  /** Поднять раскрытую плитку над модалками (каскад из формы «Материал»). */
+  readonly stackAboveModals = input(false);
 }
 

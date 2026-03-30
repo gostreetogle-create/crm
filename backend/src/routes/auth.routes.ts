@@ -52,8 +52,12 @@ authPublicRouter.post("/login", loginLimiter, async (req, res, next) => {
         .json({ error: "invalid_body", details: parsed.error.flatten() });
       return;
     }
-    const { login, password } = parsed.data;
-    const row = await prisma.user.findUnique({ where: { login } });
+    const { login: loginRaw, password } = parsed.data;
+    const login = loginRaw.trim();
+    // PostgreSQL: сравнение логина без учёта регистра (Admin / admin).
+    const row = await prisma.user.findFirst({
+      where: { login: { equals: login, mode: "insensitive" } },
+    });
     if (!row) {
       res.status(401).json({ error: "invalid_credentials" });
       return;

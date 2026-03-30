@@ -1,6 +1,6 @@
 import { DOCUMENT, NgFor, NgIf } from '@angular/common';
 import { Component, OnDestroy, computed, effect, inject, signal } from '@angular/core';
-import { LucidePlus } from '@lucide/angular';
+import { LucidePlus, LucideX } from '@lucide/angular';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { Observable, Subscription, firstValueFrom, forkJoin, of } from 'rxjs';
 import { PermissionsService } from '../../../../core/auth/public-api';
@@ -21,7 +21,9 @@ import { CoatingsStore } from '../../../coatings/state/coatings.store';
 import { SurfaceFinishesStore } from '../../../surface-finishes/state/surface-finishes.store';
 import { ProductionWorkTypesStore } from '../../../production-work-types/state/production-work-types.store';
 import { ClientsStore } from '../../../clients/state/clients.store';
-import { ClientItemInput } from '../../../clients/model/client-item';
+import { ClientItemInput, formatClientFio } from '../../../clients/model/client-item';
+import { OrganizationsStore } from '../../../organizations/state/organizations.store';
+import { OrganizationItem, OrganizationItemInput } from '../../../organizations/model/organization-item';
 import {
   MATERIAL_CHARACTERISTICS_REPOSITORY,
   MaterialCharacteristicsRepository,
@@ -45,12 +47,19 @@ import { RolesStore } from '../../../roles/state/roles.store';
 import { RoleItemInput } from '../../../roles/model/role-item';
 import { ROLE_ID_SYSTEM_ADMIN } from '../../../roles/data/roles.seed';
 import { nextRoleSortOrder } from '../../../roles/utils/role-sort';
-import { allocateUniqueRoleCode, slugifyRoleCodeFromName } from '../../../roles/utils/role-code-slug';
+import {
+  allocateUniqueRoleCode,
+  SEEDED_ROLE_CODES_LOWER,
+  slugifyRoleCodeFromName,
+} from '../../../roles/utils/role-code-slug';
 import { UsersStore } from '../../../users/state/users.store';
 import { UserItemInput } from '../../../users/model/user-item';
 import { CrudLayoutComponent, TableColumn } from '../../../../shared/ui/crud-layout/public-api';
 import { UiFormGridComponent } from '../../../../shared/ui/form-grid/public-api';
-import { UiModal as UiModalComponent } from '../../../../shared/ui/modal/public-api';
+import {
+  UI_MODAL_Z_INDEX_ABOVE_CASCADE_HUB,
+  UiModal as UiModalComponent,
+} from '../../../../shared/ui/modal/public-api';
 import { UiModalFormActionsComponent } from '../../../../shared/ui/modal-form-actions/public-api';
 import { PageShellComponent } from '../../../../shared/ui/page-shell/page-shell.component';
 import { UiButtonComponent } from '../../../../shared/ui/ui-button/ui-button.component';
@@ -79,6 +88,7 @@ import { LinkedDictionaryPropagationConfirmComponent } from '../../../../shared/
     UiFormFieldComponent,
     HexRgbFieldComponent,
     LucidePlus,
+    LucideX,
     LinkedDictionaryPropagationConfirmComponent,
   ],
   templateUrl: './dictionaries-page.html',
@@ -100,6 +110,9 @@ export class DictionariesPage implements OnDestroy {
    * Важно: это обычные поля, не сигналы. Поэтому смена гейта не перезапускает effect,
    * а эффект срабатывает только на изменениях стор/опций.
    */
+  /** При дублировании контакта переносим наценку в создаваемую запись (поле убрано из формы). */
+  private clientsMarkupOnCreate: number | null = null;
+
   private readonly materialsSnapshotSyncGate: {
     color: 'local' | 'global' | null;
     surfaceFinish: 'local' | 'global' | null;
@@ -125,6 +138,7 @@ export class DictionariesPage implements OnDestroy {
   readonly surfaceFinishesStore = inject(SurfaceFinishesStore);
   readonly productionWorkTypesStore = inject(ProductionWorkTypesStore);
   readonly clientsStore = inject(ClientsStore);
+  readonly organizationsStore = inject(OrganizationsStore);
   readonly materialCharacteristicsStore = inject(MaterialCharacteristicsStore);
   private readonly colorsRepository = inject(COLORS_REPOSITORY);
   private readonly surfaceFinishesRepository = inject(SURFACE_FINISHES_REPOSITORY);
@@ -182,6 +196,7 @@ export class DictionariesPage implements OnDestroy {
     { surfaceFinishId: string; relatedCount: number } | null
   >(null);
   readonly isClientsModalOpen = signal(false);
+  readonly isOrganizationsModalOpen = signal(false);
   readonly isSurfaceFinishesModalOpen = signal(false);
   readonly isMaterialsViewMode = signal(false);
   readonly isGeometriesViewMode = signal(false);
@@ -189,6 +204,7 @@ export class DictionariesPage implements OnDestroy {
   readonly isColorsViewMode = signal(false);
   readonly isCoatingsViewMode = signal(false);
   readonly isClientsViewMode = signal(false);
+  readonly isOrganizationsViewMode = signal(false);
   readonly isSurfaceFinishesViewMode = signal(false);
   readonly isWorkTypesViewMode = signal(false);
   readonly isRolesModalOpen = signal(false);
@@ -199,11 +215,36 @@ export class DictionariesPage implements OnDestroy {
   readonly usersEditingId = signal<string | null>(null);
   readonly colorQuickAddForMaterialCharacteristics = signal(false);
   readonly unitQuickAddForMaterials = signal(false);
+  /** Каскад: модалка «Материал» открыта, плитка справочника — поверх (z-index). */
+  readonly materialCharacteristicsHubStackAboveModal = signal(false);
+  readonly geometriesHubStackAboveModal = signal(false);
   readonly coatingQuickAddForMaterialCharacteristics = signal(false);
   readonly surfaceQuickAddForMaterialCharacteristics = signal(false);
   readonly excelImportStatus = signal('');
 
   /** Подсказка для раскраски баннера Excel на хабе. */
+  /**
+   * Модалка формы характеристик выше каскадной плитки на body (z-index 1700), иначе «+» открывает форму сзади.
+   */
+  readonly materialCharacteristicsFormModalBackdropZIndex = computed((): number | null => {
+    const st = this.hubExpand.expandState();
+    const hubOpen = st['materialCharacteristics'] ?? false;
+    if (!this.materialCharacteristicsHubStackAboveModal() || !hubOpen) {
+      return null;
+    }
+    return UI_MODAL_Z_INDEX_ABOVE_CASCADE_HUB;
+  });
+
+  /** Аналогично для геометрий при каскаде из модалки «Материал». */
+  readonly geometriesFormModalBackdropZIndex = computed((): number | null => {
+    const st = this.hubExpand.expandState();
+    const hubOpen = st['geometries'] ?? false;
+    if (!this.geometriesHubStackAboveModal() || !hubOpen) {
+      return null;
+    }
+    return UI_MODAL_Z_INDEX_ABOVE_CASCADE_HUB;
+  });
+
   readonly excelImportTone = computed((): 'info' | 'success' | 'error' => {
     const s = this.excelImportStatus();
     if (!s) return 'info';
@@ -325,10 +366,19 @@ export class DictionariesPage implements OnDestroy {
   /** Full-view для раскрытия clients. */
   readonly clientsColumnsFull: TableColumn[] = [
     { key: 'fio', label: 'ФИО' },
-    { key: 'clientMarkupPercent', label: 'Наценка' },
     { key: 'email', label: 'Email' },
     { key: 'phone', label: 'Телефон' },
     { key: 'isActive', label: 'Активен' },
+  ];
+
+  readonly organizationsColumns: TableColumn[] = [{ key: 'hubLine', label: 'Организация' }];
+
+  readonly organizationsColumnsFull: TableColumn[] = [
+    { key: 'name', label: 'Название' },
+    { key: 'inn', label: 'ИНН' },
+    { key: 'legalForm', label: 'Вид' },
+    { key: 'contacts', label: 'Контакты' },
+    { key: 'isActive', label: 'Активна' },
   ];
 
   /** Как у остальных узких плиток хаба: одна колонка превью, раскрытие — полная таблица. */
@@ -376,6 +426,11 @@ export class DictionariesPage implements OnDestroy {
   readonly workTypesColumnsForTile = this.columnsForTile('workTypes', this.workTypesColumns, this.workTypesColumnsFull);
   readonly unitsColumnsForTile = this.columnsForTile('units', this.unitsColumns, this.unitsColumnsFull);
   readonly clientsColumnsForTile = this.columnsForTile('clients', this.clientsColumns, this.clientsColumnsFull);
+  readonly organizationsColumnsForTile = this.columnsForTile(
+    'organizations',
+    this.organizationsColumns,
+    this.organizationsColumnsFull,
+  );
   readonly colorsColumnsForTile = this.columnsForTile('colors', this.colorsColumns, this.colorsColumnsFull);
   readonly surfaceFinishesColumnsForTile = this.columnsForTile(
     'surfaceFinishes',
@@ -405,6 +460,8 @@ export class DictionariesPage implements OnDestroy {
       label: r.name,
     })),
   );
+
+  readonly organizationContactSelectOptions = computed(() => this.clientsStore.options());
 
   readonly materialCharacteristicSelectOptions = computed(() =>
     [...this.materialCharacteristicsStore.items()]
@@ -534,12 +591,36 @@ export class DictionariesPage implements OnDestroy {
     phone: [''],
     email: [''],
     notes: [''],
-    /** Пусто в UI = null; диапазон проверяем при отправке. */
-    clientMarkupPercent: [null as number | null],
     passportSeries: [''],
     passportNumber: [''],
     passportIssuedBy: [''],
     passportIssuedDate: [''],
+    isActive: [true],
+  });
+
+  readonly organizationsForm = this.fb.nonNullable.group({
+    organizationKind: this.fb.nonNullable.control<'OOO' | 'IP'>('OOO'),
+    name: ['', [Validators.required, Validators.minLength(2)]],
+    shortName: [''],
+    inn: [''],
+    kpp: [''],
+    ogrn: [''],
+    okpo: [''],
+    phone: [''],
+    email: [''],
+    website: [''],
+    legalAddress: [''],
+    postalAddress: [''],
+    bankName: [''],
+    bankBik: [''],
+    bankAccount: [''],
+    bankCorrAccount: [''],
+    signerName: [''],
+    signerPosition: [''],
+    notes: [''],
+    contactIds: this.fb.nonNullable.control<string[]>([]),
+    /** Одноразовый выбор из выпадающего списка — добавляет id в `contactIds`, затем сбрасывается. */
+    contactPicker: [''],
     isActive: [true],
   });
 
@@ -602,6 +683,7 @@ export class DictionariesPage implements OnDestroy {
     this.surfaceFinishesStore.loadItems();
     this.productionWorkTypesStore.loadItems();
     this.clientsStore.loadItems();
+    this.organizationsStore.loadItems();
 
     this.sub.add(
       this.workTypesForm.controls.name.valueChanges.subscribe(() => {
@@ -635,6 +717,23 @@ export class DictionariesPage implements OnDestroy {
         this.syncMaterialCharacteristicCoatingFromReference(id ?? '');
       })
     );
+    this.sub.add(
+      this.organizationsForm.controls.organizationKind.valueChanges.subscribe((k) => {
+        if (k === 'IP') {
+          this.organizationsForm.controls.kpp.setValue('', { emitEvent: false });
+        }
+      })
+    );
+
+    effect(() => {
+      const st = this.hubExpand.expandState();
+      if (!st['materialCharacteristics']) {
+        this.materialCharacteristicsHubStackAboveModal.set(false);
+      }
+      if (!st['geometries']) {
+        this.geometriesHubStackAboveModal.set(false);
+      }
+    });
   }
 
   ngOnDestroy(): void {
@@ -913,6 +1012,22 @@ export class DictionariesPage implements OnDestroy {
     this.syncMaterialCharacteristicFinishFromReference('');
     this.syncMaterialCharacteristicCoatingFromReference('');
     this.isMaterialCharacteristicsModalOpen.set(true);
+  }
+
+  /** Плитка «Характеристики материала» поверх модалки «Материал» (модалка не закрывается). */
+  openMaterialCharacteristicsHubFromMaterials(): void {
+    if (!this.isMaterialsModalOpen()) return;
+    if (!this.permissions.can(this.hubTilePerm('materialCharacteristics'))) return;
+    this.materialCharacteristicsHubStackAboveModal.set(true);
+    this.hubExpand.open('materialCharacteristics');
+  }
+
+  /** Плитка «Форма и габариты» поверх модалки «Материал». */
+  openGeometriesHubFromMaterials(): void {
+    if (!this.isMaterialsModalOpen()) return;
+    if (!this.permissions.can(this.hubTilePerm('geometries'))) return;
+    this.geometriesHubStackAboveModal.set(true);
+    this.hubExpand.open('geometries');
   }
 
   openMaterialCharacteristicsEdit(id: string): void {
@@ -1315,7 +1430,10 @@ export class DictionariesPage implements OnDestroy {
         code = allocateUniqueRoleCode(slugifyRoleCodeFromName(name), taken);
       }
     } else {
-      const taken = new Set(this.rolesStore.items().map((x) => x.code.trim().toLowerCase()));
+      const taken = new Set<string>([
+        ...SEEDED_ROLE_CODES_LOWER,
+        ...this.rolesStore.items().map((x) => x.code.trim().toLowerCase()),
+      ]);
       const base = slugifyRoleCodeFromName(name);
       code = allocateUniqueRoleCode(base, taken);
     }
@@ -2106,6 +2224,7 @@ export class DictionariesPage implements OnDestroy {
 
   openClientsCreate(): void {
     if (!this.permissions.crud().canCreate) return;
+    this.clientsMarkupOnCreate = null;
     this.isClientsViewMode.set(false);
     this.clientsForm.enable({ emitEvent: false });
     this.clientsStore.startCreate();
@@ -2117,7 +2236,6 @@ export class DictionariesPage implements OnDestroy {
       phone: '',
       email: '',
       notes: '',
-      clientMarkupPercent: null,
       passportSeries: '',
       passportNumber: '',
       passportIssuedBy: '',
@@ -2142,7 +2260,6 @@ export class DictionariesPage implements OnDestroy {
       phone: item.phone ?? '',
       email: item.email ?? '',
       notes: item.notes ?? '',
-      clientMarkupPercent: item.clientMarkupPercent ?? null,
       passportSeries: item.passportSeries ?? '',
       passportNumber: item.passportNumber ?? '',
       passportIssuedBy: item.passportIssuedBy ?? '',
@@ -2153,23 +2270,13 @@ export class DictionariesPage implements OnDestroy {
   }
 
   closeClientsModal(): void {
+    this.clientsMarkupOnCreate = null;
     this.clientsStore.resetForm();
     this.isClientsViewMode.set(false);
     this.isClientsModalOpen.set(false);
   }
 
   submitClients(): void {
-    const markup = this.clientsForm.controls.clientMarkupPercent.value;
-    const cMarkup = this.clientsForm.controls.clientMarkupPercent;
-    if (markup !== null && markup !== undefined && (markup < 0 || markup > 1000)) {
-      cMarkup.setErrors({ range: true });
-      this.clientsStore.submit({ value: this.buildClientPayload(), isValid: false });
-      this.clientsForm.markAllAsTouched();
-      return;
-    }
-    if (cMarkup.hasError('range')) {
-      cMarkup.setErrors(null);
-    }
     const payload = this.buildClientPayload();
     if (this.clientsForm.invalid) {
       this.clientsStore.submit({ value: payload, isValid: false });
@@ -2189,6 +2296,7 @@ export class DictionariesPage implements OnDestroy {
     if (!this.permissions.can('crud.duplicate')) return;
     const item = this.clientsStore.items().find((x) => x.id === id);
     if (!item) return;
+    this.clientsMarkupOnCreate = item.clientMarkupPercent ?? null;
     this.isClientsViewMode.set(false);
     this.clientsForm.enable({ emitEvent: false });
     this.clientsStore.startCreate();
@@ -2200,7 +2308,6 @@ export class DictionariesPage implements OnDestroy {
       phone: item.phone ?? '',
       email: item.email ?? '',
       notes: item.notes ?? '',
-      clientMarkupPercent: item.clientMarkupPercent ?? null,
       passportSeries: item.passportSeries ?? '',
       passportNumber: item.passportNumber ?? '',
       passportIssuedBy: item.passportIssuedBy ?? '',
@@ -2222,7 +2329,6 @@ export class DictionariesPage implements OnDestroy {
       phone: item.phone ?? '',
       email: item.email ?? '',
       notes: item.notes ?? '',
-      clientMarkupPercent: item.clientMarkupPercent ?? null,
       passportSeries: item.passportSeries ?? '',
       passportNumber: item.passportNumber ?? '',
       passportIssuedBy: item.passportIssuedBy ?? '',
@@ -2232,6 +2338,211 @@ export class DictionariesPage implements OnDestroy {
     this.clientsForm.disable({ emitEvent: false });
     this.isClientsViewMode.set(true);
     this.isClientsModalOpen.set(true);
+  }
+
+  openOrganizationsCreate(): void {
+    if (!this.permissions.crud().canCreate) return;
+    this.isOrganizationsViewMode.set(false);
+    this.organizationsForm.enable({ emitEvent: false });
+    this.organizationsStore.startCreate();
+    this.organizationsForm.reset({
+      organizationKind: 'OOO',
+      name: '',
+      shortName: '',
+      inn: '',
+      kpp: '',
+      ogrn: '',
+      okpo: '',
+      phone: '',
+      email: '',
+      website: '',
+      legalAddress: '',
+      postalAddress: '',
+      bankName: '',
+      bankBik: '',
+      bankAccount: '',
+      bankCorrAccount: '',
+      signerName: '',
+      signerPosition: '',
+      notes: '',
+      contactIds: [],
+      contactPicker: '',
+      isActive: true,
+    });
+    this.isOrganizationsModalOpen.set(true);
+  }
+
+  openOrganizationsEdit(id: string): void {
+    if (!this.permissions.crud().canEdit) return;
+    this.isOrganizationsViewMode.set(false);
+    this.organizationsForm.enable({ emitEvent: false });
+    const item = this.organizationsStore.items().find((x) => x.id === id);
+    if (!item) return;
+    this.organizationsStore.startEdit(item.id);
+    this.organizationsForm.reset({
+      organizationKind: this.mapLegalFormToOrganizationKind(item.legalForm),
+      name: item.name ?? '',
+      shortName: item.shortName ?? '',
+      inn: item.inn ?? '',
+      kpp: item.kpp ?? '',
+      ogrn: item.ogrn ?? '',
+      okpo: item.okpo ?? '',
+      phone: item.phone ?? '',
+      email: item.email ?? '',
+      website: item.website ?? '',
+      legalAddress: item.legalAddress ?? '',
+      postalAddress: item.postalAddress ?? '',
+      bankName: item.bankName ?? '',
+      bankBik: item.bankBik ?? '',
+      bankAccount: item.bankAccount ?? '',
+      bankCorrAccount: item.bankCorrAccount ?? '',
+      signerName: item.signerName ?? '',
+      signerPosition: item.signerPosition ?? '',
+      notes: item.notes ?? '',
+      contactIds: item.contactIds ?? [],
+      contactPicker: '',
+      isActive: item.isActive,
+    });
+    this.isOrganizationsModalOpen.set(true);
+  }
+
+  closeOrganizationsModal(): void {
+    this.organizationsStore.resetForm();
+    this.isOrganizationsViewMode.set(false);
+    this.isOrganizationsModalOpen.set(false);
+  }
+
+  submitOrganizations(): void {
+    const payload = this.buildOrganizationsPayload();
+    if (this.organizationsForm.invalid) {
+      this.organizationsStore.submit({ value: payload, isValid: false });
+      this.organizationsForm.markAllAsTouched();
+      return;
+    }
+    this.organizationsStore.submit({ value: payload, isValid: true });
+    this.closeOrganizationsModal();
+  }
+
+  deleteOrganization(id: string): void {
+    if (!this.permissions.crud().canDelete) return;
+    this.organizationsStore.delete(id);
+  }
+
+  duplicateOrganization(id: string): void {
+    if (!this.permissions.can('crud.duplicate')) return;
+    const item = this.organizationsStore.items().find((x) => x.id === id);
+    if (!item) return;
+    this.isOrganizationsViewMode.set(false);
+    this.organizationsForm.enable({ emitEvent: false });
+    this.organizationsStore.startCreate();
+    this.organizationsForm.reset({
+      organizationKind: this.mapLegalFormToOrganizationKind(item.legalForm),
+      name: `${item.name} (копия)`,
+      shortName: item.shortName ?? '',
+      inn: item.inn ?? '',
+      kpp: item.kpp ?? '',
+      ogrn: item.ogrn ?? '',
+      okpo: item.okpo ?? '',
+      phone: item.phone ?? '',
+      email: item.email ?? '',
+      website: item.website ?? '',
+      legalAddress: item.legalAddress ?? '',
+      postalAddress: item.postalAddress ?? '',
+      bankName: item.bankName ?? '',
+      bankBik: item.bankBik ?? '',
+      bankAccount: item.bankAccount ?? '',
+      bankCorrAccount: item.bankCorrAccount ?? '',
+      signerName: item.signerName ?? '',
+      signerPosition: item.signerPosition ?? '',
+      notes: item.notes ?? '',
+      contactIds: item.contactIds ?? [],
+      contactPicker: '',
+      isActive: item.isActive,
+    });
+    this.isOrganizationsModalOpen.set(true);
+  }
+
+  openOrganizationsView(id: string): void {
+    const item = this.organizationsStore.items().find((x) => x.id === id);
+    if (!item) return;
+    this.organizationsStore.resetForm();
+    this.organizationsForm.reset({
+      organizationKind: this.mapLegalFormToOrganizationKind(item.legalForm),
+      name: item.name ?? '',
+      shortName: item.shortName ?? '',
+      inn: item.inn ?? '',
+      kpp: item.kpp ?? '',
+      ogrn: item.ogrn ?? '',
+      okpo: item.okpo ?? '',
+      phone: item.phone ?? '',
+      email: item.email ?? '',
+      website: item.website ?? '',
+      legalAddress: item.legalAddress ?? '',
+      postalAddress: item.postalAddress ?? '',
+      bankName: item.bankName ?? '',
+      bankBik: item.bankBik ?? '',
+      bankAccount: item.bankAccount ?? '',
+      bankCorrAccount: item.bankCorrAccount ?? '',
+      signerName: item.signerName ?? '',
+      signerPosition: item.signerPosition ?? '',
+      notes: item.notes ?? '',
+      contactIds: item.contactIds ?? [],
+      contactPicker: '',
+      isActive: item.isActive,
+    });
+    this.organizationsForm.disable({ emitEvent: false });
+    this.isOrganizationsViewMode.set(true);
+    this.isOrganizationsModalOpen.set(true);
+  }
+
+  /** Контакты, ещё не добавленные в организацию — для выпадающего списка. */
+  organizationContactPickerOptions(): { id: string; label: string }[] {
+    const selected = new Set(this.organizationsForm.controls.contactIds.value ?? []);
+    return this.organizationContactSelectOptions().filter((o) => !selected.has(o.id));
+  }
+
+  organizationContactLabel(contactId: string): string {
+    const o = this.organizationContactSelectOptions().find((x) => x.id === contactId);
+    return o?.label ?? contactId;
+  }
+
+  /** Строка в списке выбранных контактов организации: ФИО, телефон, email из справочника. */
+  organizationContactRow(contactId: string): { fio: string; phone: string; email: string } {
+    const item = this.clientsStore.items().find((x) => x.id === contactId);
+    if (!item) {
+      return {
+        fio: this.organizationContactLabel(contactId),
+        phone: '—',
+        email: '—',
+      };
+    }
+    return {
+      fio: formatClientFio(item),
+      phone: item.phone?.trim() || '—',
+      email: item.email?.trim() || '—',
+    };
+  }
+
+  addOrganizationContactFromPicker(): void {
+    const id = this.organizationsForm.controls.contactPicker.value?.trim();
+    if (!id) {
+      return;
+    }
+    const cur = this.organizationsForm.controls.contactIds.value ?? [];
+    if (cur.includes(id)) {
+      this.organizationsForm.controls.contactPicker.setValue('');
+      return;
+    }
+    this.organizationsForm.controls.contactIds.setValue([...cur, id]);
+    this.organizationsForm.controls.contactPicker.setValue('');
+  }
+
+  removeOrganizationContact(contactId: string): void {
+    if (this.isOrganizationsViewMode()) {
+      return;
+    }
+    const cur = this.organizationsForm.controls.contactIds.value ?? [];
+    this.organizationsForm.controls.contactIds.setValue(cur.filter((x) => x !== contactId));
   }
 
   materialCharacteristicPreviewForMaterials(): MaterialCharacteristicItem | null {
@@ -2685,6 +2996,24 @@ export class DictionariesPage implements OnDestroy {
     }
   }
 
+  async onOrganizationsExcelImported(file: File): Promise<void> {
+    this.excelImportBegin();
+    try {
+      const rows = await this.excelRowsFromFile(file);
+      const parsed = this.validateAndMapOrganizationsRows(rows);
+      if (!parsed.ok) {
+        this.excelImportStatus.set(`Импорт отклонен: ${parsed.errors.join(' | ')}`);
+        return;
+      }
+      this.organizationsStore.createMany(parsed.rows);
+      this.excelImportStatus.set(
+        `Импортировано: ${parsed.rows.length} строк. Данные обновлены в справочнике.`,
+      );
+    } catch {
+      this.excelImportStatus.set('Импорт отклонен: не удалось прочитать файл.');
+    }
+  }
+
   async exportMaterialsExcel(): Promise<void> {
     const headers = this.materialsExcelHeaders();
     const rows = this.materialsStore.items().map((item) => this.buildMaterialsExcelRow(item));
@@ -3119,7 +3448,6 @@ export class DictionariesPage implements OnDestroy {
       'Адрес',
       'Телефон',
       'Email',
-      'Наценка %',
       'Активен',
       'Заметки',
       'Паспорт серия',
@@ -3134,7 +3462,6 @@ export class DictionariesPage implements OnDestroy {
       Адрес: item.address,
       Телефон: item.phone,
       Email: item.email,
-      'Наценка %': item.clientMarkupPercent ?? '',
       Активен: item.isActive ? 'да' : 'нет',
       Заметки: item.notes,
       'Паспорт серия': item.passportSeries,
@@ -3155,7 +3482,6 @@ export class DictionariesPage implements OnDestroy {
       'Адрес',
       'Телефон',
       'Email',
-      'Наценка %',
       'Активен',
       'Заметки',
       'Паспорт серия',
@@ -3175,7 +3501,6 @@ export class DictionariesPage implements OnDestroy {
             Адрес: 'Москва, ул. Примерная, д. 1',
             Телефон: '+7 900 000-00-00',
             Email: 'contact@example.test',
-            'Наценка %': 10,
             Активен: 'да',
             Заметки: 'Предоплата 30%',
             'Паспорт серия': '',
@@ -3189,6 +3514,96 @@ export class DictionariesPage implements OnDestroy {
     ) {
       this.excelImportStatus.set('Шаблон Excel скачан. Файл в папке загрузок.');
     }
+  }
+
+  async exportOrganizationsExcel(): Promise<void> {
+    const headers = this.organizationsExcelHeaders();
+    const rows = this.organizationsStore.items().map((item) => this.buildOrganizationsExcelRow(item));
+    if (await this.exportRowsToExcel('organizations.xlsx', 'Organizations', rows, headers)) {
+      this.excelImportStatus.set(`Экспортировано: ${rows.length} строк. Файл в папке загрузок.`);
+    }
+  }
+
+  async downloadOrganizationsTemplateExcel(): Promise<void> {
+    const headers = this.organizationsExcelHeaders();
+    const sample: Record<string, string | number> = {
+      'Вид организации': 'ООО',
+      'Полное наименование': 'ООО «Пример Производство»',
+      'Короткое наименование': 'ООО «Пример»',
+      ИНН: '7701234567',
+      КПП: '770101001',
+      ОГРН: '1237700001112',
+      ОКПО: '12345678',
+      Телефон: '+7 495 111-22-33',
+      Email: 'office@example.test',
+      Сайт: 'https://example.test',
+      'Юридический адрес': 'г. Москва, ул. Производственная, д. 10',
+      'Почтовый адрес': 'г. Москва, а/я 15',
+      Банк: 'ПАО Сбербанк',
+      БИК: '044525225',
+      'Расчётный счёт': '40702810900000000001',
+      'Корр. счёт': '30101810400000000225',
+      Подписант: 'Иванов Пётр Сергеевич',
+      'Должность подписанта': 'Генеральный директор',
+      Заметки: 'Базовая организация для КП',
+      Активен: 'да',
+    };
+    if (
+      await this.exportRowsToExcel('organizations-template.xlsx', 'Organizations_TEMPLATE', [sample], headers)
+    ) {
+      this.excelImportStatus.set('Шаблон Excel скачан. Файл в папке загрузок.');
+    }
+  }
+
+  private organizationsExcelHeaders(): string[] {
+    return [
+      'Вид организации',
+      'Полное наименование',
+      'Короткое наименование',
+      'ИНН',
+      'КПП',
+      'ОГРН',
+      'ОКПО',
+      'Телефон',
+      'Email',
+      'Сайт',
+      'Юридический адрес',
+      'Почтовый адрес',
+      'Банк',
+      'БИК',
+      'Расчётный счёт',
+      'Корр. счёт',
+      'Подписант',
+      'Должность подписанта',
+      'Заметки',
+      'Активен',
+    ];
+  }
+
+  private buildOrganizationsExcelRow(item: OrganizationItem): Record<string, string | number> {
+    const kind = this.mapLegalFormToOrganizationKind(item.legalForm);
+    return {
+      'Вид организации': this.organizationKindToLegalForm(kind),
+      'Полное наименование': item.name,
+      'Короткое наименование': item.shortName ?? '',
+      ИНН: item.inn ?? '',
+      КПП: kind === 'IP' ? '' : (item.kpp ?? ''),
+      ОГРН: item.ogrn ?? '',
+      ОКПО: item.okpo ?? '',
+      Телефон: item.phone ?? '',
+      Email: item.email ?? '',
+      Сайт: item.website ?? '',
+      'Юридический адрес': item.legalAddress ?? '',
+      'Почтовый адрес': item.postalAddress ?? '',
+      Банк: item.bankName ?? '',
+      БИК: item.bankBik ?? '',
+      'Расчётный счёт': item.bankAccount ?? '',
+      'Корр. счёт': item.bankCorrAccount ?? '',
+      Подписант: item.signerName ?? '',
+      'Должность подписанта': item.signerPosition ?? '',
+      Заметки: item.notes ?? '',
+      Активен: item.isActive ? 'да' : 'нет',
+    };
   }
 
   private syncMaterialCharacteristicColorFromReference(colorId: string): void {
@@ -3332,6 +3747,22 @@ export class DictionariesPage implements OnDestroy {
     );
   }
 
+  isOrganizationsInvalid(controlName: keyof typeof this.organizationsForm.controls): boolean {
+    const control = this.organizationsForm.controls[controlName];
+    return (
+      control.invalid &&
+      (control.touched || control.dirty || this.organizationsStore.formSubmitAttempted())
+    );
+  }
+
+  organizationInnPlaceholder(): string {
+    return this.organizationsForm.controls.organizationKind.value === 'IP' ? '12 цифр' : '10 цифр';
+  }
+
+  organizationOgrnLabel(): string {
+    return this.organizationsForm.controls.organizationKind.value === 'IP' ? 'ОГРНИП' : 'ОГРН';
+  }
+
   materialsPurchasePriceErrorText(): string {
     const c = this.materialsForm.controls.purchasePriceRub;
     if (
@@ -3448,10 +3879,13 @@ export class DictionariesPage implements OnDestroy {
   }
 
   private buildClientPayload(): ClientItemInput {
-    const raw = this.clientsForm.controls.clientMarkupPercent.value;
+    const editId = this.clientsStore.editId();
     let clientMarkupPercent: number | null = null;
-    if (raw !== null && raw !== undefined && !Number.isNaN(Number(raw))) {
-      clientMarkupPercent = Math.round(Number(raw));
+    if (editId) {
+      clientMarkupPercent =
+        this.clientsStore.items().find((x) => x.id === editId)?.clientMarkupPercent ?? null;
+    } else if (this.clientsMarkupOnCreate !== null) {
+      clientMarkupPercent = this.clientsMarkupOnCreate;
     }
     return {
       lastName: this.clientsForm.controls.lastName.value.trim(),
@@ -3467,6 +3901,52 @@ export class DictionariesPage implements OnDestroy {
       passportIssuedBy: this.clientsForm.controls.passportIssuedBy.value.trim(),
       passportIssuedDate: this.clientsForm.controls.passportIssuedDate.value.trim(),
       isActive: this.clientsForm.controls.isActive.value,
+    };
+  }
+
+  private mapLegalFormToOrganizationKind(legalForm: string | undefined | null): 'OOO' | 'IP' {
+    const s = String(legalForm ?? '')
+      .trim()
+      .toUpperCase();
+    if (!s) return 'OOO';
+    if (s === 'IP' || s.includes('ИП')) return 'IP';
+    return 'OOO';
+  }
+
+  private organizationKindToLegalForm(kind: 'OOO' | 'IP'): string {
+    return kind === 'IP' ? 'ИП' : 'ООО';
+  }
+
+  private buildOrganizationsPayload(): OrganizationItemInput {
+    const selectedContactIds = (this.organizationsForm.controls.contactIds.value ?? [])
+      .map((x) => String(x))
+      .filter(Boolean);
+    const labelsMap = new Map(this.organizationContactSelectOptions().map((x) => [x.id, x.label]));
+    const kind = this.organizationsForm.controls.organizationKind.value;
+    const legalForm = this.organizationKindToLegalForm(kind);
+    return {
+      name: this.organizationsForm.controls.name.value.trim(),
+      shortName: this.organizationsForm.controls.shortName.value.trim() || undefined,
+      legalForm,
+      inn: this.organizationsForm.controls.inn.value.trim() || undefined,
+      kpp: kind === 'IP' ? undefined : this.organizationsForm.controls.kpp.value.trim() || undefined,
+      ogrn: this.organizationsForm.controls.ogrn.value.trim() || undefined,
+      okpo: this.organizationsForm.controls.okpo.value.trim() || undefined,
+      phone: this.organizationsForm.controls.phone.value.trim() || undefined,
+      email: this.organizationsForm.controls.email.value.trim() || undefined,
+      website: this.organizationsForm.controls.website.value.trim() || undefined,
+      legalAddress: this.organizationsForm.controls.legalAddress.value.trim() || undefined,
+      postalAddress: this.organizationsForm.controls.postalAddress.value.trim() || undefined,
+      bankName: this.organizationsForm.controls.bankName.value.trim() || undefined,
+      bankBik: this.organizationsForm.controls.bankBik.value.trim() || undefined,
+      bankAccount: this.organizationsForm.controls.bankAccount.value.trim() || undefined,
+      bankCorrAccount: this.organizationsForm.controls.bankCorrAccount.value.trim() || undefined,
+      signerName: this.organizationsForm.controls.signerName.value.trim() || undefined,
+      signerPosition: this.organizationsForm.controls.signerPosition.value.trim() || undefined,
+      notes: this.organizationsForm.controls.notes.value.trim() || undefined,
+      isActive: this.organizationsForm.controls.isActive.value,
+      contactIds: selectedContactIds,
+      contactLabels: selectedContactIds.map((id) => labelsMap.get(id) ?? id),
     };
   }
 
@@ -4552,7 +5032,6 @@ export class DictionariesPage implements OnDestroy {
       'Адрес',
       'Телефон',
       'Email',
-      'Наценка %',
       'Активен',
       'Заметки',
       'Паспорт серия',
@@ -4633,6 +5112,101 @@ export class DictionariesPage implements OnDestroy {
         passportIssuedBy,
         passportIssuedDate,
         isActive: isActiveRow,
+      });
+    });
+
+    if (errors.length) return { ok: false, rows: mapped, errors: errors.slice(0, 6) };
+    return { ok: true, rows: mapped, errors: [] };
+  }
+
+  private validateAndMapOrganizationsRows(rows: ReadonlyArray<Record<string, unknown>>): {
+    ok: boolean;
+    rows: OrganizationItemInput[];
+    errors: string[];
+  } {
+    const errors: string[] = [];
+    const mapped: OrganizationItemInput[] = [];
+
+    if (!rows.length) return { ok: false, rows: mapped, errors: ['Пустой файл.'] };
+
+    const requiredHeaders = this.organizationsExcelHeaders();
+    const firstKeys = Object.keys(rows[0] ?? {});
+    const missingHeaders = requiredHeaders.filter((h) => !firstKeys.includes(h));
+    if (missingHeaders.length) {
+      return { ok: false, rows: mapped, errors: [`Нет колонок: ${missingHeaders.join(', ')}`] };
+    }
+
+    rows.forEach((row, idx) => {
+      const rowNo = idx + 2;
+      const kindRaw = String(row['Вид организации'] ?? '').trim();
+      const kind = this.mapLegalFormToOrganizationKind(kindRaw);
+      const name = String(row['Полное наименование'] ?? '').trim();
+      const shortName = String(row['Короткое наименование'] ?? '').trim();
+      const inn = String(row['ИНН'] ?? '').trim();
+      const kpp = String(row['КПП'] ?? '').trim();
+      const ogrn = String(row['ОГРН'] ?? '').trim();
+      const okpo = String(row['ОКПО'] ?? '').trim();
+      const phone = String(row['Телефон'] ?? '').trim();
+      const email = String(row['Email'] ?? '').trim();
+      const website = String(row['Сайт'] ?? '').trim();
+      const legalAddress = String(row['Юридический адрес'] ?? '').trim();
+      const postalAddress = String(row['Почтовый адрес'] ?? '').trim();
+      const bankName = String(row['Банк'] ?? '').trim();
+      const bankBik = String(row['БИК'] ?? '').trim();
+      const bankAccount = String(row['Расчётный счёт'] ?? '').trim();
+      const bankCorrAccount = String(row['Корр. счёт'] ?? '').trim();
+      const signerName = String(row['Подписант'] ?? '').trim();
+      const signerPosition = String(row['Должность подписанта'] ?? '').trim();
+      const notes = String(row['Заметки'] ?? '').trim();
+      const activeRaw = String(row['Активен'] ?? '')
+        .trim()
+        .toLowerCase();
+
+      if (!name || name.length < 2) {
+        errors.push(`Строка ${rowNo}: укажите полное наименование (минимум 2 символа).`);
+        return;
+      }
+
+      let isActiveRow = true;
+      if (!activeRaw) {
+        isActiveRow = true;
+      } else if (['да', 'yes', 'true', '1'].includes(activeRaw)) {
+        isActiveRow = true;
+      } else if (['нет', 'no', 'false', '0'].includes(activeRaw)) {
+        isActiveRow = false;
+      } else {
+        errors.push(`Строка ${rowNo}: в «Активен» укажите да или нет.`);
+        return;
+      }
+
+      if (!kindRaw) {
+        errors.push(`Строка ${rowNo}: укажите вид организации (ООО или ИП).`);
+        return;
+      }
+
+      mapped.push({
+        name,
+        shortName: shortName || undefined,
+        legalForm: this.organizationKindToLegalForm(kind),
+        inn: inn || undefined,
+        kpp: kind === 'IP' ? undefined : kpp || undefined,
+        ogrn: ogrn || undefined,
+        okpo: okpo || undefined,
+        phone: phone || undefined,
+        email: email || undefined,
+        website: website || undefined,
+        legalAddress: legalAddress || undefined,
+        postalAddress: postalAddress || undefined,
+        bankName: bankName || undefined,
+        bankBik: bankBik || undefined,
+        bankAccount: bankAccount || undefined,
+        bankCorrAccount: bankCorrAccount || undefined,
+        signerName: signerName || undefined,
+        signerPosition: signerPosition || undefined,
+        notes: notes || undefined,
+        isActive: isActiveRow,
+        contactIds: [],
+        contactLabels: [],
       });
     });
 

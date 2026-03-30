@@ -3,7 +3,39 @@ import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
+/** Роль + пользователь `admin` / `admin` — всегда (идемпотентно), без привязки к «первому» прогону сида. */
+async function ensureSeedAdminRoleAndUser(): Promise<void> {
+  await prisma.role.upsert({
+    where: { id: 'role-sys-admin' },
+    create: {
+      id: 'role-sys-admin',
+      code: 'admin',
+      name: 'Администратор',
+      sortOrder: 1,
+      isActive: true,
+      isSystem: true,
+    },
+    update: {},
+  });
+  const adminHash = await bcrypt.hash('admin', 10);
+  await prisma.user.upsert({
+    where: { login: 'admin' },
+    create: {
+      id: 'user-seed-admin',
+      login: 'admin',
+      passwordHash: adminHash,
+      fullName: 'Администратор',
+      email: 'admin@example.local',
+      phone: '',
+      roleId: 'role-sys-admin',
+    },
+    update: { passwordHash: adminHash, roleId: 'role-sys-admin' },
+  });
+}
+
 async function main(): Promise<void> {
+  await ensureSeedAdminRoleAndUser();
+
   if ((await prisma.unit.count()) === 0) {
     await prisma.unit.createMany({
       data: [
@@ -14,71 +46,10 @@ async function main(): Promise<void> {
     });
   }
 
-  if ((await prisma.role.count()) > 0) {
+  // Демо-данные справочников — один раз; роли уже могли появиться раньше без остального сида.
+  if ((await prisma.color.count()) > 0) {
     return;
   }
-
-  await prisma.role.createMany({
-    data: [
-      {
-        id: 'role-sys-admin',
-        code: 'admin',
-        name: 'Администратор',
-        sortOrder: 1,
-        isActive: true,
-        isSystem: true,
-      },
-      {
-        id: 'role-seed-director',
-        code: 'director',
-        name: 'Директор',
-        sortOrder: 2,
-        notes: 'Пример: задайте права в «Админ-настройках».',
-        isActive: true,
-        isSystem: false,
-      },
-      {
-        id: 'role-seed-accountant',
-        code: 'accountant',
-        name: 'Бухгалтер',
-        sortOrder: 3,
-        notes: 'Пример: задайте права в «Админ-настройках».',
-        isActive: true,
-        isSystem: false,
-      },
-      {
-        id: 'role-sys-editor',
-        code: 'editor',
-        name: 'Редактор',
-        sortOrder: 4,
-        notes: 'Пример: права задаются в «Админ-настройках» (как у любой роли).',
-        isActive: true,
-        isSystem: false,
-      },
-      {
-        id: 'role-sys-viewer',
-        code: 'viewer',
-        name: 'Только просмотр',
-        sortOrder: 5,
-        notes: 'Пример: можно удалить или переименовать — не зашито в систему.',
-        isActive: true,
-        isSystem: false,
-      },
-    ],
-  });
-
-  const demoHash = await bcrypt.hash('demo', 10);
-  await prisma.user.create({
-    data: {
-      id: 'user-seed-demo',
-      login: 'demo',
-      passwordHash: demoHash,
-      fullName: 'Демо пользователь',
-      email: 'demo@example.local',
-      phone: '',
-      roleId: 'role-sys-admin',
-    },
-  });
 
   await prisma.color.createMany({
     data: [

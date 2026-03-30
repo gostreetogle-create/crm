@@ -50,6 +50,11 @@ export class HubCrudExpandStateService {
     this._state.update((m) => ({ ...m, [key]: !m[key] }));
   }
 
+  /** Раскрыть плитку без переключения (для перехода из модалки). */
+  open(key: string): void {
+    this._state.update((m) => ({ ...m, [key]: true }));
+  }
+
   close(key: string): void {
     this._state.update((m) => ({ ...m, [key]: false }));
   }

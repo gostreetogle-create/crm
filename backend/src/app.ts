@@ -3,6 +3,8 @@ import cors from "cors";
 import { config } from "./config.js";
 import helmet from "helmet";
 import { clientsRouter } from "./routes/clients.routes.js";
+import { organizationsRouter } from "./routes/organizations.routes.js";
+import { commercialOffersRouter } from "./routes/commercial-offers.routes.js";
 import { coatingsRouter } from "./routes/coatings.routes.js";
 import { colorsRouter } from "./routes/colors.routes.js";
 import { geometriesRouter } from "./routes/geometries.routes.js";
@@ -58,6 +60,8 @@ export function createApp() {
   authed.use("/geometries", geometriesRouter);
   authed.use("/production-work-types", productionWorkTypesRouter);
   authed.use("/clients", clientsRouter);
+  authed.use("/organizations", organizationsRouter);
+  authed.use("/commercial-offers", commercialOffersRouter);
   authed.use("/material-characteristics", materialCharacteristicsRouter);
   authed.use("/materials", materialsRouter);
 

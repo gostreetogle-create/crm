@@ -37,6 +37,10 @@ import { CLIENTS_REPOSITORY } from './features/clients/data/clients.repository';
 import { ClientsMockRepository } from './features/clients/data/clients.mock-repository';
 import { ClientsHttpRepository } from './features/clients/data/clients.http-repository';
 import { ClientsStore } from './features/clients/state/clients.store';
+import { ORGANIZATIONS_REPOSITORY } from './features/organizations/data/organizations.repository';
+import { OrganizationsMockRepository } from './features/organizations/data/organizations.mock-repository';
+import { OrganizationsHttpRepository } from './features/organizations/data/organizations.http-repository';
+import { OrganizationsStore } from './features/organizations/state/organizations.store';
 
 export const appRoutes: Route[] = [
   {
@@ -148,6 +152,18 @@ export const appRoutes: Route[] = [
         useFactory: (apiConfig: ApiConfig, mockRepo: ClientsMockRepository, httpRepo: ClientsHttpRepository) =>
           apiConfig.useMockRepositories ? mockRepo : httpRepo,
         deps: [API_CONFIG, ClientsMockRepository, ClientsHttpRepository],
+      },
+      OrganizationsMockRepository,
+      OrganizationsHttpRepository,
+      OrganizationsStore,
+      {
+        provide: ORGANIZATIONS_REPOSITORY,
+        useFactory: (
+          apiConfig: ApiConfig,
+          mockRepo: OrganizationsMockRepository,
+          httpRepo: OrganizationsHttpRepository,
+        ) => (apiConfig.useMockRepositories ? mockRepo : httpRepo),
+        deps: [API_CONFIG, OrganizationsMockRepository, OrganizationsHttpRepository],
       },
     ],
   },

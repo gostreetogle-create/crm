@@ -1,7 +1,8 @@
+/* Выше hub fullscreen (.hubCrudExpandableFullscreen__panel--open z-index: 1401), иначе модалки уходят под раскрытую плитку справочника. */
 .modalBackdrop {
   position: fixed;
   inset: 0;
-  z-index: 1400;
+  z-index: 1500;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -12,10 +13,11 @@
 
 .modalDialog {
   width: 100%;
-  max-height: calc(100dvh - 2rem);
+  max-height: calc(100dvh - (2 * var(--ui-modal-backdrop-padding)));
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  min-height: 0;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-card);
   background: var(--surface);

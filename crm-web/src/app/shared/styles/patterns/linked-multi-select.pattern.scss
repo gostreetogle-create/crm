@@ -1,0 +1,124 @@
+/**
+ * Паттерн «множественная связь»: одиночный select + кнопка + накопленный список с удалением.
+ * См. UI демо — карточка «Связь справочников: select + список выбранных»; в продукте — «Контактные лица» в организации.
+ * Код для запросов в чате: **organization-linked-contacts** (или «паттерн select+список связей»).
+ */
+
+.colorRefRow,
+.colorHexPreviewRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--ui-space-1);
+  align-items: center;
+}
+
+.orgContactPick {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-2);
+  width: 100%;
+}
+
+.orgContactPick .colorRefRow select {
+  min-height: var(--ui-control-min-height);
+  height: var(--ui-control-min-height);
+  max-height: var(--ui-control-min-height);
+  box-sizing: border-box;
+}
+
+.orgContactPickList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.orgContactPickList__item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ui-space-2);
+  padding: var(--ui-space-2) var(--ui-space-3);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-card);
+  background: var(--surface-soft);
+  animation: orgContactPickIn 0.2s ease-out;
+}
+
+.orgContactPickList__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.orgContactPickList__fio {
+  font-weight: 600;
+  font-size: var(--font-size-small);
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.orgContactPickList__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--font-size-small);
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
+.orgContactPickList__metaLine {
+  word-break: break-word;
+}
+
+.orgContactPickList__k {
+  margin-right: 4px;
+  color: var(--text-muted);
+}
+
+.orgContactPickList__label {
+  font-size: var(--font-size-small);
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.orgContactPickList__remove {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-card);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.orgContactPickList__remove:hover {
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+}
+
+.orgContactPickList__remove:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+@keyframes orgContactPickIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

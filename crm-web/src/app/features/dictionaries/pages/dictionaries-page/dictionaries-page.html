@@ -53,7 +53,10 @@
     }
 
     @if (permissions.can(hubTilePerm('materialCharacteristics'))) {
-    <app-dictionary-hub-tile-fullscreen tileKey="materialCharacteristics">
+    <app-dictionary-hub-tile-fullscreen
+      tileKey="materialCharacteristics"
+      [stackAboveModals]="materialCharacteristicsHubStackAboveModal()"
+    >
       <crud-layout
         title="Характеристики материала"
         [showHeader]="false"
@@ -162,7 +165,10 @@
     }
 
     @if (permissions.can(hubTilePerm('geometries'))) {
-    <app-dictionary-hub-tile-fullscreen tileKey="geometries">
+    <app-dictionary-hub-tile-fullscreen
+      tileKey="geometries"
+      [stackAboveModals]="geometriesHubStackAboveModal()"
+    >
       <crud-layout
         title="Форма и габаритные размеры"
         [showHeader]="false"
@@ -315,10 +321,48 @@
     </section>
     }
 
-    @if (hubSectionVisible(['clients'])) {
+    @if (hubSectionVisible(['organizations', 'clients'])) {
     <section class="dictionaryHubSection" aria-labelledby="dictionary-hub-section-clients">
       <h2 id="dictionary-hub-section-clients" class="dictionaryHubSection__title">Клиенты</h2>
       <div class="dictionaryGrid">
+    @if (permissions.can(hubTilePerm('organizations'))) {
+    <app-dictionary-hub-tile-fullscreen tileKey="organizations">
+      <crud-layout
+        title="Организации"
+        [showHeader]="false"
+        [showCardLabel]="true"
+        [showNameSearch]="true"
+        nameSearchPlaceholder="Поиск по названию, ИНН..."
+        [showCreateAction]="true"
+        [canCreate]="permissions.crud().canCreate"
+        createAriaLabel="Добавить организацию"
+        createTitle="Добавить организацию"
+        [columns]="organizationsColumnsForTile()"
+        [data]="organizationsStore.organizationsData()"
+        [loading]="organizationsStore.loading()"
+        [maxTableBodyRows]="previewRows('organizations')"
+        [tableBodyMaxHeight]="hubExpand.previewTableBodyMaxHeight('organizations')"
+        [showExcelActions]="true"
+        [canDownloadTemplate]="permissions.can('excel.template')"
+        [canImportExcel]="permissions.can('excel.import')"
+        [canExportExcel]="permissions.can('excel.export')"
+        [canView]="true"
+        [canDuplicate]="permissions.crud().canDuplicate"
+        [canEdit]="permissions.crud().canEdit"
+        [canDelete]="permissions.crud().canDelete"
+        deleteConfirmMessage="Удалить организацию?"
+        (create)="openOrganizationsCreate()"
+        (downloadTemplate)="downloadOrganizationsTemplateExcel()"
+        (importExcel)="onOrganizationsExcelImported($event)"
+        (exportExcel)="exportOrganizationsExcel()"
+        (view)="openOrganizationsView($event)"
+        (duplicate)="duplicateOrganization($event)"
+        (edit)="openOrganizationsEdit($event)"
+        (delete)="deleteOrganization($event)"
+      ></crud-layout>
+    </app-dictionary-hub-tile-fullscreen>
+    }
+
     @if (permissions.can(hubTilePerm('clients'))) {
     <app-dictionary-hub-tile-fullscreen tileKey="clients">
       <crud-layout
@@ -776,12 +820,25 @@
             isMaterialsInvalid('materialCharacteristicId') ? 'Выберите профиль из справочника' : ''
           "
         >
-          <select formControlName="materialCharacteristicId">
-            <option value="">— Не выбрана —</option>
-            @for (option of materialCharacteristicSelectOptions(); track option.id) {
-              <option [value]="option.id">{{ option.label }}</option>
+          <div class="colorRefRow">
+            <select formControlName="materialCharacteristicId">
+              <option value="">— Не выбрана —</option>
+              @for (option of materialCharacteristicSelectOptions(); track option.id) {
+                <option [value]="option.id">{{ option.label }}</option>
+              }
+            </select>
+            @if (permissions.can(hubTilePerm('materialCharacteristics'))) {
+              <app-ui-button
+                type="button"
+                [square]="true"
+                ariaLabel="Открыть справочник характеристик материала"
+                title="Открыть справочник характеристик материала"
+                (clicked)="openMaterialCharacteristicsHubFromMaterials()"
+              >
+                <span class="squareIconTone squareIconTone--affirm"><svg lucidePlus [size]="18"></svg></span>
+              </app-ui-button>
             }
-          </select>
+          </div>
         </app-ui-form-field>
 
         <app-ui-form-field
@@ -791,12 +848,25 @@
           [invalid]="isMaterialsInvalid('geometryId')"
           [errorText]="isMaterialsInvalid('geometryId') ? 'Выберите геометрию из справочника' : ''"
         >
-          <select formControlName="geometryId">
-            <option value="">— Не выбрана —</option>
-            @for (option of geometrySelectOptions(); track option.id) {
-              <option [value]="option.id">{{ option.label }}</option>
+          <div class="colorRefRow">
+            <select formControlName="geometryId">
+              <option value="">— Не выбрана —</option>
+              @for (option of geometrySelectOptions(); track option.id) {
+                <option [value]="option.id">{{ option.label }}</option>
+              }
+            </select>
+            @if (permissions.can(hubTilePerm('geometries'))) {
+              <app-ui-button
+                type="button"
+                [square]="true"
+                ariaLabel="Открыть справочник форм и габаритов"
+                title="Открыть справочник форм и габаритов"
+                (clicked)="openGeometriesHubFromMaterials()"
+              >
+                <span class="squareIconTone squareIconTone--affirm"><svg lucidePlus [size]="18"></svg></span>
+              </app-ui-button>
             }
-          </select>
+          </div>
         </app-ui-form-field>
 
         <app-ui-form-field
@@ -1040,23 +1110,6 @@
     </fieldset>
 
     <fieldset class="dictionaryFormSection">
-      <legend>Ценообразование (КП)</legend>
-      <ui-form-grid [columns]="3">
-        <app-ui-form-field
-          label="Наценка клиента, %"
-          [invalid]="isClientsInvalid('clientMarkupPercent')"
-          [errorText]="
-            clientsForm.controls.clientMarkupPercent.hasError('range')
-              ? 'Диапазон 0…1000 %'
-              : ''
-          "
-        >
-          <input type="number" formControlName="clientMarkupPercent" min="0" max="1000" step="1" placeholder="Пусто — не задано" />
-        </app-ui-form-field>
-      </ui-form-grid>
-    </fieldset>
-
-    <fieldset class="dictionaryFormSection">
       <legend>Заметки</legend>
       <div class="dictionaryFormSectionBody">
         <app-ui-form-field label="Текст" [wide]="true">
@@ -1107,6 +1160,199 @@
     [formId]="'clients-form'"
     [submitLabel]="clientsStore.isEditMode() ? 'Сохранить изменения' : 'Создать контакт'"
     (dismiss)="closeClientsModal()"
+  />
+</ng-template>
+
+<ui-modal
+  *ngIf="isOrganizationsModalOpen()"
+  [title]="
+    isOrganizationsViewMode()
+      ? (organizationsForm.controls.organizationKind.value === 'IP'
+          ? 'Просмотр организации — ИП'
+          : 'Просмотр организации — ООО')
+      : organizationsStore.isEditMode()
+        ? 'Редактирование организации'
+        : 'Новая организация'
+  "
+  [content]="organizationsContentTpl"
+  [actions]="organizationsActionsTpl"
+  (close)="closeOrganizationsModal()"
+  [closeOnBackdrop]="isOrganizationsViewMode()"
+  size="xl"
+></ui-modal>
+
+<ng-template #organizationsContentTpl>
+  <form id="organizations-form" [formGroup]="organizationsForm" (ngSubmit)="submitOrganizations()" class="formGrid">
+    <fieldset class="dictionaryFormSection">
+      <legend>Карточка организации</legend>
+      <ui-form-grid [columns]="3">
+        <app-ui-form-field label="Вид организации" [invalid]="false" [errorText]="''">
+          <select formControlName="organizationKind">
+            <option value="OOO">ООО</option>
+            <option value="IP">ИП</option>
+          </select>
+        </app-ui-form-field>
+        <app-ui-form-field
+          class="uiFormGrid__full"
+          label="Полное наименование"
+          [required]="true"
+          [wide]="true"
+          [invalid]="isOrganizationsInvalid('name')"
+          [errorText]="isOrganizationsInvalid('name') ? 'Минимум 2 символа' : ''"
+        >
+          <input type="text" formControlName="name" placeholder="ООО &quot;Пример&quot;" />
+        </app-ui-form-field>
+
+        <app-ui-form-field label="Короткое наименование" [invalid]="false" [errorText]="''">
+          <input type="text" formControlName="shortName" placeholder="ООО &quot;Пример&quot;" />
+        </app-ui-form-field>
+      </ui-form-grid>
+    </fieldset>
+
+    <fieldset class="dictionaryFormSection">
+      <legend>Реквизиты</legend>
+      <ui-form-grid [columns]="3">
+        <app-ui-form-field label="ИНН" [invalid]="false" [errorText]="''">
+          <input type="text" formControlName="inn" inputmode="numeric" [attr.placeholder]="organizationInnPlaceholder()" />
+        </app-ui-form-field>
+        @if (organizationsForm.controls.organizationKind.value !== 'IP') {
+          <app-ui-form-field label="КПП" [invalid]="false" [errorText]="''">
+            <input type="text" formControlName="kpp" inputmode="numeric" />
+          </app-ui-form-field>
+        }
+        <app-ui-form-field [label]="organizationOgrnLabel()" [invalid]="false" [errorText]="''">
+          <input type="text" formControlName="ogrn" inputmode="numeric" />
+        </app-ui-form-field>
+        <app-ui-form-field label="ОКПО" [invalid]="false" [errorText]="''">
+          <input type="text" formControlName="okpo" inputmode="numeric" />
+        </app-ui-form-field>
+      </ui-form-grid>
+    </fieldset>
+
+    <fieldset class="dictionaryFormSection">
+      <legend>Контакты</legend>
+      <ui-form-grid [columns]="3">
+        <app-ui-form-field label="Телефон" [invalid]="false" [errorText]="''">
+          <input type="tel" formControlName="phone" autocomplete="tel" />
+        </app-ui-form-field>
+        <app-ui-form-field label="Email" [invalid]="false" [errorText]="''">
+          <input type="email" formControlName="email" autocomplete="email" />
+        </app-ui-form-field>
+        <app-ui-form-field label="Сайт" [invalid]="false" [errorText]="''">
+          <input type="url" formControlName="website" placeholder="https://example.com" />
+        </app-ui-form-field>
+        <app-ui-form-field class="uiFormGrid__full" label="Контактные лица" [wide]="true" [invalid]="false" [errorText]="''">
+          <div class="orgContactPick">
+            <div class="colorRefRow">
+              <select
+                formControlName="contactPicker"
+                (change)="addOrganizationContactFromPicker()"
+                [attr.aria-label]="'Выберите контакт для добавления'"
+              >
+                <option value="">— Выберите контакт —</option>
+                @for (opt of organizationContactPickerOptions(); track opt.id) {
+                  <option [value]="opt.id">{{ opt.label }}</option>
+                }
+              </select>
+              <app-ui-button
+                type="button"
+                [square]="true"
+                ariaLabel="Добавить контактное лицо"
+                title="Добавить контактное лицо"
+                (clicked)="openClientsCreate()"
+              >
+                <span class="squareIconTone squareIconTone--affirm"><svg lucidePlus [size]="18"></svg></span>
+              </app-ui-button>
+            </div>
+            @if (organizationsForm.controls.contactIds.value.length > 0) {
+              <ul class="orgContactPickList" aria-label="Выбранные контактные лица">
+                @for (cid of organizationsForm.controls.contactIds.value; track cid) {
+                  @let row = organizationContactRow(cid);
+                  <li class="orgContactPickList__item">
+                    <div class="orgContactPickList__body">
+                      <div class="orgContactPickList__fio">{{ row.fio }}</div>
+                      <div class="orgContactPickList__meta">
+                        <span class="orgContactPickList__metaLine"
+                          ><span class="orgContactPickList__k">Тел.</span> {{ row.phone }}</span
+                        >
+                        <span class="orgContactPickList__metaLine"
+                          ><span class="orgContactPickList__k">Email</span> {{ row.email }}</span
+                        >
+                      </div>
+                    </div>
+                    @if (!isOrganizationsViewMode()) {
+                      <button
+                        type="button"
+                        class="orgContactPickList__remove"
+                        [attr.aria-label]="'Удалить контакт из списка'"
+                        (click)="removeOrganizationContact(cid)"
+                      >
+                        <svg lucideX [size]="16" aria-hidden="true"></svg>
+                      </button>
+                    }
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+        </app-ui-form-field>
+      </ui-form-grid>
+    </fieldset>
+
+    <fieldset class="dictionaryFormSection">
+      <legend>Адреса</legend>
+      <ui-form-grid [columns]="3">
+        <app-ui-form-field class="uiFormGrid__full" label="Юридический адрес" [wide]="true" [invalid]="false" [errorText]="''">
+          <input type="text" formControlName="legalAddress" />
+        </app-ui-form-field>
+        <app-ui-form-field class="uiFormGrid__full" label="Почтовый адрес" [wide]="true" [invalid]="false" [errorText]="''">
+          <input type="text" formControlName="postalAddress" />
+        </app-ui-form-field>
+      </ui-form-grid>
+    </fieldset>
+
+    <fieldset class="dictionaryFormSection">
+      <legend>Банк и подписант</legend>
+      <ui-form-grid [columns]="3">
+        <app-ui-form-field class="uiFormGrid__full" label="Банк" [wide]="true" [invalid]="false" [errorText]="''">
+          <input type="text" formControlName="bankName" />
+        </app-ui-form-field>
+        <app-ui-form-field label="БИК" [invalid]="false" [errorText]="''">
+          <input type="text" formControlName="bankBik" inputmode="numeric" />
+        </app-ui-form-field>
+        <app-ui-form-field label="Расчётный счёт" [invalid]="false" [errorText]="''">
+          <input type="text" formControlName="bankAccount" inputmode="numeric" />
+        </app-ui-form-field>
+        <app-ui-form-field label="Корр. счёт" [invalid]="false" [errorText]="''">
+          <input type="text" formControlName="bankCorrAccount" inputmode="numeric" />
+        </app-ui-form-field>
+        <app-ui-form-field label="Подписант" [invalid]="false" [errorText]="''">
+          <input type="text" formControlName="signerName" />
+        </app-ui-form-field>
+        <app-ui-form-field label="Должность подписанта" [invalid]="false" [errorText]="''">
+          <input type="text" formControlName="signerPosition" />
+        </app-ui-form-field>
+      </ui-form-grid>
+    </fieldset>
+
+    <fieldset class="dictionaryFormSection">
+      <legend>Дополнительно</legend>
+      <div class="dictionaryFormSectionBody">
+        <app-ui-form-field label="Заметки" [wide]="true">
+          <textarea rows="2" formControlName="notes"></textarea>
+        </app-ui-form-field>
+        <app-ui-checkbox-field class="checkbox" label="Активна" formControlName="isActive"></app-ui-checkbox-field>
+      </div>
+    </fieldset>
+  </form>
+</ng-template>
+
+<ng-template #organizationsActionsTpl>
+  <app-ui-modal-form-actions
+    [viewMode]="isOrganizationsViewMode()"
+    [formId]="'organizations-form'"
+    [submitLabel]="organizationsStore.isEditMode() ? 'Сохранить изменения' : 'Создать организацию'"
+    (dismiss)="closeOrganizationsModal()"
   />
 </ng-template>
 
@@ -1319,6 +1565,7 @@
   "
   [content]="materialCharacteristicsContentTpl"
   [actions]="materialCharacteristicsActionsTpl"
+  [backdropZIndex]="materialCharacteristicsFormModalBackdropZIndex()"
   (close)="closeMaterialCharacteristicsModal()"
   [closeOnBackdrop]="isMaterialCharacteristicsViewMode()"
   size="xl"
@@ -1536,6 +1783,7 @@
   "
   [content]="geometriesContentTpl"
   [actions]="geometriesActionsTpl"
+  [backdropZIndex]="geometriesFormModalBackdropZIndex()"
   (close)="closeGeometriesModal()"
   [closeOnBackdrop]="isGeometriesViewMode()"
   size="lg"

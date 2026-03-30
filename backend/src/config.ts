@@ -1,14 +1,18 @@
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { config as dotenvConfig } from "dotenv";
 import { z } from "zod";
+
+/** Корень пакета `backend` (не `process.cwd()`), чтобы `.env` находился при запуске из корня монорепо. */
+const backendRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 const nodeEnvForEnvFile = process.env.NODE_ENV ?? "development";
 const envFileFromVar = process.env.ENV_FILE;
 const candidate = envFileFromVar ? envFileFromVar : `.env.${nodeEnvForEnvFile}`;
 
-const envPath = path.resolve(process.cwd(), candidate);
-const fallbackPath = path.resolve(process.cwd(), ".env");
+const envPath = path.resolve(backendRoot, candidate);
+const fallbackPath = path.resolve(backendRoot, ".env");
 
 const resolvedEnvPath = fs.existsSync(envPath) ? envPath : fallbackPath;
 dotenvConfig({ path: resolvedEnvPath, override: true });
@@ -41,8 +45,8 @@ const backupDirRaw = env.BACKUP_DIR?.trim();
 const backupDirResolved = backupDirRaw
   ? path.isAbsolute(backupDirRaw)
     ? backupDirRaw
-    : path.resolve(process.cwd(), backupDirRaw)
-  : path.resolve(process.cwd(), "backups");
+    : path.resolve(backendRoot, backupDirRaw)
+  : path.resolve(backendRoot, "backups");
 
 export const config = {
   port: env.PORT ?? 3000,

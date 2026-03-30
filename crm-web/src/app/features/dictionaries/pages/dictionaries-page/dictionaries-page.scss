@@ -1,5 +1,6 @@
 @use '../../../../shared/styles/dictionary-hub-shell';
 @use '../../../../shared/styles/form-stack';
+@use '../../../../shared/styles/patterns/linked-multi-select.pattern';
 
 /* Длинные формы (>6 полей): класс formGridWide — две колонки. См. docs/frontend/dictionary-field-behavior-guide.md */
 
@@ -10,14 +11,6 @@
 
 .formGridWide .formWide {
   grid-column: 1 / -1;
-}
-
-.colorRefRow,
-.colorHexPreviewRow {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: var(--ui-space-1);
-  align-items: center;
 }
 
 .colorHexPreviewRowLeadSwatch {

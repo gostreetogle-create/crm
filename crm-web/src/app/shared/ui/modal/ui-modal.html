@@ -1,5 +1,6 @@
 <div
   class="modalBackdrop"
+  [style.z-index]="backdropZIndex"
   tabindex="0"
   (click)="onBackdropClick($event)"
   (keydown.enter)="onBackdropClick($event)"

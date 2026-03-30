@@ -98,6 +98,81 @@ model Client {
   passportIssuedDate   String   @default("")
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
+
+  organizationLinks OrganizationContact[]
+  commercialOffers  CommercialOffer[]
+}
+
+model Organization {
+  id                 String   @id @default(uuid())
+  name               String
+  shortName          String?
+  legalForm          String?
+  inn                String?
+  kpp                String?
+  ogrn               String?
+  okpo               String?
+  phone              String?
+  email              String?
+  website            String?
+  legalAddress       String?
+  postalAddress      String?
+  bankName           String?
+  bankBik            String?
+  bankAccount        String?
+  bankCorrAccount    String?
+  signerName         String?
+  signerPosition     String?
+  notes              String?
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  contacts OrganizationContact[]
+  commercialOffers CommercialOffer[]
+}
+
+enum CommercialOfferStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  CANCELLED
+}
+
+/// Шапка коммерческого предложения (строки позиций — отдельный шаг).
+model CommercialOffer {
+  id               String                 @id @default(uuid())
+  number           String?
+  title            String?
+  status           CommercialOfferStatus  @default(DRAFT)
+  organizationId String?
+  clientId         String?
+  validUntil       DateTime?
+  currency         String                 @default("RUB")
+  notes            String?
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  client       Client?       @relation(fields: [clientId], references: [id], onDelete: Restrict)
+
+  @@index([organizationId])
+  @@index([clientId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model OrganizationContact {
+  organizationId String
+  clientId       String
+  isPrimary      Boolean @default(false)
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  client       Client       @relation(fields: [clientId], references: [id], onDelete: Restrict)
+
+  @@id([organizationId, clientId])
+  @@index([clientId])
 }
 
 model Role {

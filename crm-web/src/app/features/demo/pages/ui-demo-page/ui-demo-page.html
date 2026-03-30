@@ -337,6 +337,72 @@
     </div>
   </app-content-card>
 
+  <app-content-card title="Связь справочников: select + список выбранных">
+    <p class="demoPatternCode">
+      <strong>Код паттерна для чата / задач:</strong>
+      <code>organization-linked-contacts</code>
+      — или фраза «как на UI демо — <strong>связь select+список</strong>» (как поле «Контактные лица» у организации).
+    </p>
+    <p class="demoHint">
+      Одиночный выпадающий список добавляет элемент в список ниже; у строки — удаление; кнопка «+» имитирует quick-add в связанный справочник.
+    </p>
+    <div class="formGrid" [formGroup]="linkedContactsDemoForm">
+      <app-ui-form-field label="Контактные лица (демо)" [wide]="true">
+        <div class="orgContactPick">
+          <div class="colorRefRow">
+            <select
+              formControlName="contactPicker"
+              (change)="addLinkedContactFromPicker()"
+              aria-label="Выберите контакт для добавления в список"
+            >
+              <option value="">— Выберите контакт —</option>
+              @for (opt of linkedContactPickerOptions(); track opt.id) {
+                <option [value]="opt.id">{{ opt.label }}</option>
+              }
+            </select>
+            <app-ui-button
+              type="button"
+              [square]="true"
+              ariaLabel="Добавить запись в демо-справочник контактов"
+              title="Добавить запись в демо-справочник контактов"
+              (clicked)="demoQuickAddLinkedPerson()"
+            >
+              <span class="squareIconTone squareIconTone--affirm"><svg lucidePlus [size]="18"></svg></span>
+            </app-ui-button>
+          </div>
+          @if (linkedContactsDemoForm.controls.contactIds.value.length > 0) {
+            <ul class="orgContactPickList" aria-label="Выбранные контакты (демо)">
+              @for (cid of linkedContactsDemoForm.controls.contactIds.value; track cid) {
+                @let row = linkedContactRow(cid);
+                <li class="orgContactPickList__item">
+                  <div class="orgContactPickList__body">
+                    <div class="orgContactPickList__fio">{{ row.fio }}</div>
+                    <div class="orgContactPickList__meta">
+                      <span class="orgContactPickList__metaLine"
+                        ><span class="orgContactPickList__k">Тел.</span> {{ row.phone }}</span
+                      >
+                      <span class="orgContactPickList__metaLine"
+                        ><span class="orgContactPickList__k">Email</span> {{ row.email }}</span
+                      >
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    class="orgContactPickList__remove"
+                    aria-label="Удалить из списка"
+                    (click)="removeLinkedContact(cid)"
+                  >
+                    <svg lucideX [size]="16" aria-hidden="true"></svg>
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      </app-ui-form-field>
+    </div>
+  </app-content-card>
+
   <app-content-card title="Карточки товаров (витрина)">
     <div class="productShowcaseTop">
       <app-filters-bar

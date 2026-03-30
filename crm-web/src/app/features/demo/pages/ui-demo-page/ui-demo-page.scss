@@ -1,5 +1,6 @@
 @use '../../../../shared/styles/dictionary-hub-shell';
 @use '../../../../shared/styles/form-stack';
+@use '../../../../shared/styles/patterns/linked-multi-select.pattern';
 
 .intro {
   margin: 0 0 8px;
@@ -31,6 +32,22 @@
   font-size: var(--font-size-small);
   color: var(--text-muted);
   line-height: 1.45;
+}
+
+.demoPatternCode {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius-card);
+  border: 1px dashed color-mix(in srgb, var(--border-color) 70%, transparent);
+  background: var(--surface-soft);
+  font-size: var(--font-size-small);
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.demoPatternCode code {
+  font-size: 0.95em;
+  color: var(--text-primary);
 }
 
 .importStatus--dictionaryDemo {

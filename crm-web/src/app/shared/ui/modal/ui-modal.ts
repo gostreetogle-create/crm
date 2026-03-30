@@ -18,6 +18,12 @@ import {
 export const MODAL_AUTO_CAPTURE = true;
 
 /**
+ * z-index backdrop по умолчанию — 1500 (ui-modal.scss).
+ * Каскадная плитка хаба на `document.body` использует 1700 — вложенная модалка должна быть выше.
+ */
+export const UI_MODAL_Z_INDEX_ABOVE_CASCADE_HUB = 1800;
+
+/**
  * Reusable modal dialog with CDK focus trap.
  * Используй [cdkTrapFocusAutoCapture]="true" для авто-фокуса.
  * cdkFocusInitial deprecated — не добавляй!
@@ -43,6 +49,11 @@ export class UiModal implements AfterViewInit, OnDestroy {
   /** `lg` / `xl` — шире окно; высота контента везде до `100dvh` без искусственного усечения. */
   @Input() size: 'sm' | 'md' | 'lg' | 'xl' = 'md';
   @Input() closeOnBackdrop = true;
+  /**
+   * Поднять слой модалки над каскадной плиткой (см. `UI_MODAL_Z_INDEX_ABOVE_CASCADE_HUB`).
+   * Если не задано — используется z-index из стилей (1500).
+   */
+  @Input() backdropZIndex: number | null = null;
 
   @Output('close') readonly closed = new EventEmitter<void>();
 

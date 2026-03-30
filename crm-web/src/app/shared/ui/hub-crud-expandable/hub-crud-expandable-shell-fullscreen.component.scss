@@ -103,6 +103,24 @@
   z-index: 40;
 }
 
+/*
+ * Каскад из модалки: дополнительный z-index на корне (хост при каскаде также переносится
+ * в document.body — см. HubCrudExpandableShellFullscreenComponent — иначе сосед ui-modal на body
+ * перекрывает весь app-root независимо от чисел здесь).
+ */
+.hubCrudExpandableFullscreen--aboveModals.hubCrudExpandableFullscreen--open {
+  z-index: 1600;
+}
+
+/* Внутри слоя: backdrop и панель как раньше (выше обычного hub 1400/1401). */
+.hubCrudExpandableFullscreen--aboveModals.hubCrudExpandableFullscreen--open .hubCrudExpandableFullscreen__backdrop {
+  z-index: 1600;
+}
+
+.hubCrudExpandableFullscreen--aboveModals.hubCrudExpandableFullscreen--open .hubCrudExpandableFullscreen__panel--open {
+  z-index: 1601;
+}
+
 /* Full-screen: не используем горизонтальный «clip» у хаба (иначе часть полей визуально теряется). */
 .hubCrudExpandableFullscreen--open .tableView.tableViewHubClip {
   overflow-x: auto !important;

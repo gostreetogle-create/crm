@@ -18,6 +18,7 @@ export const PERMISSION_CATALOG: Record<
   'dict.hub.work_types': { labelRu: 'Плитка «Вид работ»', group: 'dict' },
   'dict.hub.units': { labelRu: 'Плитка «Единицы измерения»', group: 'dict' },
   'dict.hub.clients': { labelRu: 'Плитка «Контактные лица»', group: 'dict' },
+  'dict.hub.organizations': { labelRu: 'Плитка «Организации»', group: 'dict' },
   'dict.hub.colors': { labelRu: 'Плитка «Цвета (RAL)»', group: 'dict' },
   'dict.hub.surface_finishes': { labelRu: 'Плитка «Тип отделки»', group: 'dict' },
   'dict.hub.geometries': { labelRu: 'Плитка «Форма и габариты»', group: 'dict' },

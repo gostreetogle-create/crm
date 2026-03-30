@@ -12,6 +12,7 @@ export type PermissionKey =
   | 'dict.hub.work_types'
   | 'dict.hub.units'
   | 'dict.hub.clients'
+  | 'dict.hub.organizations'
   | 'dict.hub.colors'
   | 'dict.hub.surface_finishes'
   | 'dict.hub.geometries'

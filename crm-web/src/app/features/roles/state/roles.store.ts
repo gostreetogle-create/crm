@@ -1,6 +1,7 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { catchError, concatMap, from, of, switchMap, take } from 'rxjs';
+import { catchError, concatMap, from, of, switchMap, take, throwError } from 'rxjs';
 import { RoleItem, RoleItemInput } from '../model/role-item';
 import { ROLES_REPOSITORY } from '../data/roles.repository';
 import { compareRolesBySortOrder } from '../utils/role-sort';
@@ -90,6 +91,13 @@ export class RolesStore {
     this.repo
       .create(input)
       .pipe(
+        catchError((err: unknown) => {
+          // Код роли уже есть в БД (например admin из сида), а локальный список ещё пустой — подтягиваем с сервера.
+          if (err instanceof HttpErrorResponse && err.status === 409) {
+            return of(null);
+          }
+          return throwError(() => err);
+        }),
         switchMap(() => this.repo.getItems().pipe(take(1))),
         takeUntilDestroyed(this.destroyRef),
       )
@@ -100,6 +108,12 @@ export class RolesStore {
     this.repo
       .update(id, input)
       .pipe(
+        catchError((err: unknown) => {
+          if (err instanceof HttpErrorResponse && err.status === 409) {
+            return of(null);
+          }
+          return throwError(() => err);
+        }),
         switchMap(() => this.repo.getItems().pipe(take(1))),
         takeUntilDestroyed(this.destroyRef),
       )
@@ -119,7 +133,16 @@ export class RolesStore {
   createMany(rows: readonly RoleItemInput[]): void {
     from(rows)
       .pipe(
-        concatMap((row) => this.repo.create(row)),
+        concatMap((row) =>
+          this.repo.create(row).pipe(
+            catchError((err: unknown) => {
+              if (err instanceof HttpErrorResponse && err.status === 409) {
+                return of(null);
+              }
+              return throwError(() => err);
+            }),
+          ),
+        ),
         switchMap(() => this.repo.getItems().pipe(take(1))),
         takeUntilDestroyed(this.destroyRef),
       )

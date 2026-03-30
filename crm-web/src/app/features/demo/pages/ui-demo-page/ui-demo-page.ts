@@ -325,6 +325,38 @@ export class UiDemoPage {
     name: ['', [Validators.required, Validators.minLength(2)]],
   });
 
+  /**
+   * Эталон паттерна «organization-linked-contacts» (см. карточку на /ui-demo).
+   * В продукте: «Контактные лица» в карточке организации.
+   */
+  readonly linkedContactsDemoOptions = signal<
+    { id: string; label: string; phone: string; email: string }[]
+  >([
+    {
+      id: 'demo-c1',
+      label: 'Иванов Иван Иванович',
+      phone: '+7 900 111-22-33',
+      email: 'ivanov@example.test',
+    },
+    {
+      id: 'demo-c2',
+      label: 'Петрова Мария Сергеевна',
+      phone: '+7 900 222-44-55',
+      email: 'petrova@example.test',
+    },
+    {
+      id: 'demo-c3',
+      label: 'Сидоров Пётр Алексеевич',
+      phone: '+7 900 333-66-77',
+      email: 'sidorov@example.test',
+    },
+  ]);
+
+  readonly linkedContactsDemoForm = this.fb.nonNullable.group({
+    contactPicker: [''],
+    contactIds: this.fb.nonNullable.control<string[]>([]),
+  });
+
   openQuickAdd(): void {
     this.quickAddOpen.set(true);
     this.quickAddFormSubmitAttempted.set(false);
@@ -333,6 +365,61 @@ export class UiDemoPage {
 
   closeQuickAdd(): void {
     this.quickAddOpen.set(false);
+  }
+
+  linkedContactPickerOptions(): { id: string; label: string }[] {
+    const selected = new Set(this.linkedContactsDemoForm.controls.contactIds.value ?? []);
+    return this.linkedContactsDemoOptions().filter((o) => !selected.has(o.id));
+  }
+
+  linkedContactLabel(id: string): string {
+    return this.linkedContactsDemoOptions().find((x) => x.id === id)?.label ?? id;
+  }
+
+  linkedContactRow(id: string): { fio: string; phone: string; email: string } {
+    const o = this.linkedContactsDemoOptions().find((x) => x.id === id);
+    if (!o) {
+      return { fio: id, phone: '—', email: '—' };
+    }
+    return { fio: o.label, phone: o.phone, email: o.email };
+  }
+
+  addLinkedContactFromPicker(): void {
+    const id = this.linkedContactsDemoForm.controls.contactPicker.value?.trim();
+    if (!id) {
+      return;
+    }
+    const cur = this.linkedContactsDemoForm.controls.contactIds.value ?? [];
+    if (cur.includes(id)) {
+      this.linkedContactsDemoForm.controls.contactPicker.setValue('');
+      return;
+    }
+    this.linkedContactsDemoForm.controls.contactIds.setValue([...cur, id]);
+    this.linkedContactsDemoForm.controls.contactPicker.setValue('');
+    this.lastAction.set(`Демо связей: добавлен «${this.linkedContactLabel(id)}»`);
+  }
+
+  removeLinkedContact(id: string): void {
+    const cur = this.linkedContactsDemoForm.controls.contactIds.value ?? [];
+    this.linkedContactsDemoForm.controls.contactIds.setValue(cur.filter((x) => x !== id));
+    this.lastAction.set('Демо связей: строка удалена из списка');
+  }
+
+  /** Имитация quick-add в связанный справочник (новая строка в «пуле» опций). */
+  demoQuickAddLinkedPerson(): void {
+    const n = this.linkedContactsDemoOptions().length + 1;
+    const id = `demo-c-${Date.now()}`;
+    const label = `Новый контакт ${n} (из демо +)`;
+    this.linkedContactsDemoOptions.set([
+      ...this.linkedContactsDemoOptions(),
+      {
+        id,
+        label,
+        phone: '+7 900 000-00-00',
+        email: `demo${n}@example.test`,
+      },
+    ]);
+    this.lastAction.set(`Демо: в пул опций добавлен «${label}»`);
   }
 
   confirmQuickAdd(): void {

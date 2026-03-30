@@ -1,8 +1,10 @@
+import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import {
   AfterViewInit,
   ChangeDetectionStrategy,
   Component,
   ElementRef,
+  PLATFORM_ID,
   computed,
   effect,
   inject,
@@ -13,6 +15,9 @@ import {
 } from '@angular/core';
 import { LucideMenu } from '@lucide/angular';
 import { HubCrudExpandStateService } from './hub-crud-expand-state.service';
+
+/** Выше `.modalBackdrop` (1500 в ui-modal.scss), хост на body соревнуется с модалкой как сосед. */
+const CASCADE_PORTAL_Z_INDEX = '1700';
 
 @Component({
   selector: 'app-hub-crud-expandable-shell-fullscreen',
@@ -29,6 +34,12 @@ export class HubCrudExpandableShellFullscreenComponent implements AfterViewInit,
   readonly ariaLabel = input('Показать или скрыть полный список строк таблицы');
 
   /**
+   * Поднять слой fullscreen выше модалок (z-index 1500), чтобы каскад из модалки «Материал»
+   * оставлял форму открытой под плиткой справочника.
+   */
+  readonly stackAboveModals = input(false);
+
+  /**
    * Fallback min-height якоря при открытии, если измерение дало 0 (ещё не отрисовалось).
    * В full-screen режиме якорь всё равно держит страницу в стабильном layout (без «прыжка вниз»).
    */
@@ -37,9 +48,19 @@ export class HubCrudExpandableShellFullscreenComponent implements AfterViewInit,
   readonly expand = inject(HubCrudExpandStateService);
   private readonly host = inject(ElementRef<HTMLElement>);
   private readonly ngZone = inject(NgZone);
+  private readonly doc = inject(DOCUMENT);
+  private readonly platformId = inject(PLATFORM_ID);
 
   private resizeObserver: ResizeObserver | null = null;
   private shellHostRegistered = false;
+
+  /**
+   * Каскад: `ui-modal` переносится в document.body (см. UiModal), поэтому весь слой приложения
+   * оказывается «ниже» соседа-body независимо от z-index внутри. Здесь — тот же приём:
+   * пока открыта плитка поверх модалки, хост переносим на body с z-index выше модалки.
+   */
+  private portalPlaceholder: HTMLElement | null = null;
+  private portalRestoreParent: HTMLElement | null = null;
 
   /** Высота якоря в свёрнутом потоке, px. */
   private readonly collapsedFlowHeightPx = signal<number | null>(null);
@@ -64,6 +85,21 @@ export class HubCrudExpandableShellFullscreenComponent implements AfterViewInit,
         this.originalBodyOverflow = null;
       }
     }
+  });
+
+  private readonly cascadePortalToBody = effect(() => {
+    const shouldPortal = this.stackAboveModals() && this.isExpanded();
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+    queueMicrotask(() => {
+      const still = this.stackAboveModals() && this.isExpanded();
+      if (still) {
+        this.attachCascadePortalIfNeeded();
+      } else {
+        this.detachCascadePortalIfNeeded();
+      }
+    });
   });
 
   readonly anchorMinHeightWhenOpen = computed(() => {
@@ -107,6 +143,9 @@ export class HubCrudExpandableShellFullscreenComponent implements AfterViewInit,
   }
 
   ngOnDestroy(): void {
+    if (isPlatformBrowser(this.platformId)) {
+      this.detachCascadePortalIfNeeded();
+    }
     if (this.shellHostRegistered) {
       this.expand.unregisterShellHost(this.tileKey());
       this.shellHostRegistered = false;
@@ -117,6 +156,56 @@ export class HubCrudExpandableShellFullscreenComponent implements AfterViewInit,
     }
     this.resizeObserver?.disconnect();
     this.resizeObserver = null;
+  }
+
+  private attachCascadePortalIfNeeded(): void {
+    const host = this.host.nativeElement;
+    if (host.parentElement === this.doc.body) {
+      return;
+    }
+    const parent = host.parentElement;
+    if (!parent) {
+      return;
+    }
+
+    const ph = this.doc.createElement('div');
+    ph.setAttribute('aria-hidden', 'true');
+    ph.style.boxSizing = 'border-box';
+    ph.style.minWidth = '0';
+    ph.style.minHeight = `${Math.max(host.offsetHeight, 1)}px`;
+
+    this.portalRestoreParent = parent;
+    parent.insertBefore(ph, host);
+    this.doc.body.appendChild(host);
+    host.style.setProperty('position', 'relative');
+    host.style.setProperty('z-index', CASCADE_PORTAL_Z_INDEX);
+    this.portalPlaceholder = ph;
+  }
+
+  private detachCascadePortalIfNeeded(): void {
+    const host = this.host.nativeElement;
+    if (host.parentElement !== this.doc.body) {
+      this.portalPlaceholder = null;
+      this.portalRestoreParent = null;
+      return;
+    }
+
+    host.style.removeProperty('position');
+    host.style.removeProperty('z-index');
+
+    const ph = this.portalPlaceholder;
+    const restoreParent = this.portalRestoreParent;
+
+    if (ph?.parentElement) {
+      ph.parentElement.replaceChild(host, ph);
+    } else if (restoreParent) {
+      restoreParent.appendChild(host);
+    } else {
+      this.doc.body.removeChild(host);
+    }
+
+    this.portalPlaceholder = null;
+    this.portalRestoreParent = null;
   }
 
   private applyMeasuredHeight(h: number): void {
