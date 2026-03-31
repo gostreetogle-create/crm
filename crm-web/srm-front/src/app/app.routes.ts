@@ -3,6 +3,7 @@ import { authGuard, permissionGuard } from '@srm/authz-runtime';
 import {
   buildStandaloneDictionaryCreateChildRoutes,
   DICTIONARIES_ROUTE_PROVIDERS,
+  DICTIONARIES_PUBLIC_REDIRECT_SEGMENTS,
 } from '@srm/dictionaries-hub-feature';
 
 export const appRoutes: Route[] = [
@@ -38,11 +39,11 @@ export const appRoutes: Route[] = [
       ...buildStandaloneDictionaryCreateChildRoutes(),
     ],
   },
-  {
-    path: 'dictionaries',
+  ...DICTIONARIES_PUBLIC_REDIRECT_SEGMENTS.map((path) => ({
+    path,
     redirectTo: '/справочники',
-    pathMatch: 'full',
-  },
+    pathMatch: 'full' as const,
+  })),
   {
     path: 'demo',
     canActivate: [authGuard, permissionGuard],

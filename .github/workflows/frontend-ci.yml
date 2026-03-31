@@ -31,29 +31,20 @@ jobs:
       - name: Install
         run: npm ci
 
+      - name: Fail-fast workspace prerequisites
+        run: npm run check:workspace-prereqs
+
+      - name: Fail-fast route parity contract
+        run: npm run check:route-parity
+
       - name: Check dictionaries-page size limit
         run: npm run check:dictionaries-page-size
 
-      - name: Lint srm-front
-        run: npx nx lint srm-front
+      - name: Lint affected
+        run: npx nx affected -t lint --base=origin/main --head=HEAD --parallel=2
 
-      - name: Lint ui-kit
-        run: npx nx lint ui-kit
+      - name: Test affected
+        run: npx nx affected -t test --base=origin/main --head=HEAD --parallel=2
 
-      - name: Lint feature libs
-        run: npx nx run-many -t lint -p login-feature,dictionaries-hub-feature,settings-feature,ui-demo-feature --parallel=2
-
-      - name: Test crm-web
-        run: npx nx test crm-web
-
-      - name: Test srm-front
-        run: npx nx test srm-front
-
-      - name: Build srm-front (production)
-        run: npx nx build srm-front --configuration=production
-
-      - name: Build crm-web (development)
-        run: npx nx build crm-web --configuration=development
-
-      - name: Build crm-web (production)
-        run: npx nx build crm-web --configuration=production
+      - name: Build affected
+        run: npx nx affected -t build --base=origin/main --head=HEAD --parallel=2

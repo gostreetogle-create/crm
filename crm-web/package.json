@@ -6,7 +6,9 @@
     "start": "nx serve",
     "build": "nx build",
     "test": "nx test",
-    "check:dictionaries-page-size": "node scripts/check-dictionaries-page-size.cjs"
+    "check:dictionaries-page-size": "node scripts/check-dictionaries-page-size.cjs",
+    "check:workspace-prereqs": "node scripts/check-workspace-prereqs.cjs",
+    "check:route-parity": "node scripts/check-route-parity.cjs"
   },
   "private": true,
   "dependencies": {

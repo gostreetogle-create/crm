@@ -1,38 +1,47 @@
-# Feature structure (Nx/Angular)
+# Feature Structure (Nx/Angular)
 
-Цель: в фронтенде держать код консистентным и переиспользуемым, без копирования верстки между фичами.
+Цель: сохранять предсказуемую архитектуру, где route-контракты, CRUD-паттерны и shared-UI не расходятся между `crm-web` и `srm-front`.
 
-## Как раскладываем по папкам (crm-web)
+## 1. Слои и ответственность
 
-1. **Фичи Nx** — `crm-web/libs/<name>-feature/src/lib/...`
-   - Пример: хаб справочников — `crm-web/libs/dictionaries-hub-feature/` (страница `DictionariesPage`, shell, провайдеры `dictionaries-route.providers.ts`).
-   - Page = контейнер с данными и компоновка из **`@srm/ui-kit`**.
+- `libs/*-feature` — orchestration слой: маршруты, контейнеры страниц, композиция shared-компонентов.
+- `libs/*-data-access` — репозитории и API-контракты.
+- `libs/*-state` — stores/signals, производные селекторы и UI-ready данные.
+- `libs/ui-kit` — только переиспользуемые UI-шаблоны и primitives.
+- `src/app` и `srm-front/src/app` — только app-shell/route wiring и app-specific страницы (`404`, `forbidden`).
 
-2. **Локальные компоненты фичи** — `libs/<feature>-feature/src/lib/components/...`
-   - То, что не должно переиспользоваться вне этой фичи (оболочка standalone create, new material page и т.д.).
+## 2. Правила роутинга
 
-3. **`crm-web/libs/shared-types`** (`@srm/shared-types`)
-   - Общие типы и контракты между фичами. Папку `src/app/shared/model` не наращивать: новые общие типы — в библиотеке.
+- Канонический путь словарного хаба: `/справочники`.
+- Legacy redirects (латиница) задаются одним shared контрактом, не копипастой в каждом app.
+- Child routes под `/справочники` строятся через фабрики из `dictionaries-hub-feature`, чтобы path/data не дрейфовали.
+- Любой новый публичный path должен быть одновременно отражен в:
+  - shared route-contract (lib),
+  - `crm-web` app routes,
+  - `srm-front` app routes,
+  - контрактных тестах маршрутов.
 
-4. **Общий UI** — **`crm-web/libs/ui-kit`** (`@srm/ui-kit`). Переиспользуемые примитивы без доменной привязки.
+## 3. Формы и таблицы
 
-5. **Тема** — **`crm-web/libs/theme-core`** (`@srm/theme-core`): токены, пресеты, `ThemeStore`.
+- Общий CRUD-каркас (`таблица`, `toolbar`, `действия`) меняется только в shared-слое.
+- Доменный слой фичи хранит только:
+  - field contracts,
+  - payload mapping,
+  - доменную валидацию.
+- Вынесение доменных helper-функций обязательно, если файл страницы растет и начинает смешивать:
+  - route orchestration,
+  - form mapping,
+  - table rendering,
+  - side effects.
 
-6. **Остаточные shared-стили** — `crm-web/src/app/shared/styles/` (мост; цель — сократить в пользу `ui-kit`/токенов).
+## 4. Анти-риски структуры
 
-## Роутинг
+- Не создавать неподключенные `*.routes.ts` и "теневые" CRUD-страницы.
+- Не дублировать одинаковые route segments в двух app-файлах вручную.
+- Не хранить доменные field contracts в шаблонах или inline-объектах без typed helpers.
 
-- Корневые маршруты: `crm-web/src/app/app.routes.ts` (и отдельно `srm-front` при необходимости).
-- Провайдеры хаба справочников: `crm-web/libs/dictionaries-hub-feature/src/lib/dictionaries-route.providers.ts` — подключаются на маршруте `/справочники`, чтобы не тащить store/repository в initial bundle без нужды.
-- Feature-level `*.routes.ts` — только если реально подключён в `app.routes.ts` (`loadChildren`). См. [`dictionaries-crud-playbook.md`](./dictionaries-crud-playbook.md).
+## 5. Проверяемость (минимум)
 
-## SCSS
-
-- В компонентах `ui-kit` стили рядом с компонентом.
-- Стили страницы фичи — в `.scss` страницы.
-- Таблицы/карточки общего вида — в **`@srm/ui-kit`**, не дублировать на уровне страницы.
-- Только theme tokens (`var(--...)`), без локальных палитр в фичах.
-
-## Обязательный рабочий порядок
-
-[`development-workflow.md`](./development-workflow.md).
+- Contract tests на маршруты (child segments + public redirects).
+- CI fail-fast на целостность workspace перед запуском Nx.
+- Guard на размер mega-file для `dictionaries-page.ts` до полного распила.

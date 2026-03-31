@@ -14,4 +14,5 @@ export {
   canonicalDictionariesChildSegments,
   canonicalDictionariesUrls,
 } from './lib/dictionaries-canonical-paths';
+export { DICTIONARIES_PUBLIC_REDIRECT_SEGMENTS } from './lib/dictionaries-public-redirects';
 export { scrollToFirstInvalidControlInForm } from './lib/dictionaries-form-a11y';
