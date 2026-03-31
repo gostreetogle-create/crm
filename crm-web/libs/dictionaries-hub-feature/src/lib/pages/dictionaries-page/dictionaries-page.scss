@@ -70,9 +70,19 @@
   gap: 5px;
 }
 
+.dictionaryHubBoardPickerRow {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+  min-width: 0;
+  width: 100%;
+}
+
 .dictionaryHubBoardPickerBtn {
   display: block;
-  width: 100%;
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto;
   text-align: left;
   margin: 0;
   padding: 6px 10px;
@@ -105,6 +115,40 @@
   background: color-mix(in srgb, var(--accent) 12%, var(--surface));
   border-color: color-mix(in srgb, var(--accent) 35%, var(--border-color));
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+/* Как у `app-ui-button` primary + square в тулбаре CRUD: жёлтый фон из темы, зелёный плюс */
+.dictionaryHubBoardPickerAddBtn {
+  flex: 0 0 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  padding: 0;
+  margin: 0;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--ui-button-primary-border-color);
+  background: var(--ui-button-primary-bg);
+  color: var(--ui-button-primary-text);
+  cursor: pointer;
+  line-height: 0;
+  transition:
+    background 0.1s ease,
+    border-color 0.1s ease;
+}
+
+.dictionaryHubBoardPickerAddBtn svg {
+  color: var(--icon-affirm);
+}
+
+.dictionaryHubBoardPickerAddBtn:hover {
+  background: color-mix(in srgb, var(--ui-button-primary-bg) 90%, #000000);
+  border-color: color-mix(in srgb, var(--ui-button-primary-border-color) 85%, #000000);
+}
+
+.dictionaryHubBoardPickerAddBtn:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  outline-offset: 1px;
 }
 
 .dictionaryHubDetailCard {

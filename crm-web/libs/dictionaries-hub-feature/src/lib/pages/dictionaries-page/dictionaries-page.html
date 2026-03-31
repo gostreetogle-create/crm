@@ -27,14 +27,27 @@
                   <div class="dictionaryHubBoardColumnTitle" [attr.id]="col.sectionId">{{ col.section }}</div>
                   <div class="dictionaryHubBoardColumnButtons" role="group" [attr.aria-labelledby]="col.sectionId">
                     @for (item of col.items; track item.key) {
-                      <button
-                        type="button"
-                        class="dictionaryHubBoardPickerBtn"
-                        [class.dictionaryHubBoardPickerBtn--active]="isHubBoardRowSelected(item.key)"
-                        (click)="selectHubBoardRow(item.key, $event)"
-                      >
-                        {{ item.title }}
-                      </button>
+                      <div class="dictionaryHubBoardPickerRow">
+                        <button
+                          type="button"
+                          class="dictionaryHubBoardPickerBtn"
+                          [class.dictionaryHubBoardPickerBtn--active]="isHubBoardRowSelected(item.key)"
+                          (click)="selectHubBoardRow(item.key, $event)"
+                        >
+                          {{ item.title }}
+                        </button>
+                        @if (permissions.crud().canCreate) {
+                          <button
+                            type="button"
+                            class="dictionaryHubBoardPickerAddBtn"
+                            [attr.aria-label]="'Добавить запись: ' + item.title"
+                            [title]="'Добавить: ' + item.title"
+                            (click)="onHubBoardQuickCreate(item.key, $event)"
+                          >
+                            <svg lucidePlus [size]="16"></svg>
+                          </button>
+                        }
+                      </div>
                     }
                   </div>
                 </div>
@@ -53,7 +66,7 @@
         [showHeader]="false"
         [showCardLabel]="false"
         [showNameSearch]="true"
-        [showCreateAction]="true"
+        [showCreateAction]="false"
         [canCreate]="permissions.crud().canCreate"
         createAriaLabel="Добавить материал"
         createTitle="Добавить материал"
@@ -87,7 +100,7 @@
         [showHeader]="false"
         [showCardLabel]="false"
         [showNameSearch]="true"
-        [showCreateAction]="true"
+        [showCreateAction]="false"
         [canCreate]="permissions.crud().canCreate"
         createAriaLabel="Добавить характеристику материала"
         createTitle="Добавить характеристику материала"
@@ -121,7 +134,7 @@
         [showHeader]="false"
         [showCardLabel]="false"
         [showNameSearch]="true"
-        [showCreateAction]="true"
+        [showCreateAction]="false"
         [canCreate]="permissions.crud().canCreate"
         createAriaLabel="Добавить вид работ"
         createTitle="Добавить вид работ"
@@ -156,7 +169,7 @@
         [showHeader]="false"
         [showCardLabel]="false"
         [showNameSearch]="true"
-        [showCreateAction]="true"
+        [showCreateAction]="false"
         [canCreate]="permissions.crud().canCreate"
         createAriaLabel="Добавить единицу измерения"
         createTitle="Добавить единицу измерения"
@@ -190,7 +203,7 @@
         [showHeader]="false"
         [showCardLabel]="false"
         [showNameSearch]="true"
-        [showCreateAction]="true"
+        [showCreateAction]="false"
         [canCreate]="permissions.crud().canCreate"
         createAriaLabel="Добавить форму и габаритные размеры"
         createTitle="Добавить форму и габаритные размеры"
@@ -224,7 +237,7 @@
         [showHeader]="false"
         [showCardLabel]="false"
         [showNameSearch]="true"
-        [showCreateAction]="true"
+        [showCreateAction]="false"
         [canCreate]="permissions.crud().canCreate"
         createAriaLabel="Добавить цвет RAL"
         createTitle="Добавить цвет RAL"
@@ -258,7 +271,7 @@
         [showHeader]="false"
         [showCardLabel]="false"
         [showNameSearch]="true"
-        [showCreateAction]="true"
+        [showCreateAction]="false"
         [canCreate]="permissions.crud().canCreate"
         createAriaLabel="Добавить финиш"
         createTitle="Добавить финиш"
@@ -292,7 +305,7 @@
         [showHeader]="false"
         [showCardLabel]="false"
         [showNameSearch]="true"
-        [showCreateAction]="true"
+        [showCreateAction]="false"
         [canCreate]="permissions.crud().canCreate"
         createAriaLabel="Добавить покрытие"
         createTitle="Добавить покрытие"
@@ -327,7 +340,7 @@
         [showCardLabel]="false"
         [showNameSearch]="true"
         nameSearchPlaceholder="Поиск по названию, ИНН..."
-        [showCreateAction]="true"
+        [showCreateAction]="false"
         [canCreate]="permissions.crud().canCreate"
         createAriaLabel="Добавить организацию"
         createTitle="Добавить организацию"
@@ -363,7 +376,7 @@
         [showCardLabel]="false"
         [showNameSearch]="true"
         nameSearchPlaceholder="Поиск по ФИО..."
-        [showCreateAction]="true"
+        [showCreateAction]="false"
         [canCreate]="permissions.crud().canCreate"
         createAriaLabel="Добавить контакт"
         createTitle="Добавить контакт"
@@ -399,7 +412,7 @@
         [showCardLabel]="false"
         [showNameSearch]="true"
         nameSearchPlaceholder="Поиск по названию…"
-        [showCreateAction]="true"
+        [showCreateAction]="false"
         [canCreate]="permissions.crud().canCreate"
         createAriaLabel="Добавить роль"
         createTitle="Добавить роль"
@@ -435,7 +448,7 @@
         [showCardLabel]="false"
         [showNameSearch]="true"
         nameSearchPlaceholder="Поиск по логину или ФИО..."
-        [showCreateAction]="true"
+        [showCreateAction]="false"
         [canCreate]="permissions.crud().canCreate"
         createAriaLabel="Добавить пользователя"
         createTitle="Добавить пользователя"

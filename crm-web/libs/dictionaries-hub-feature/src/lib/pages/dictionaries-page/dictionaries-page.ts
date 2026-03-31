@@ -237,6 +237,54 @@ export class DictionariesPage implements OnDestroy {
   isHubBoardRowSelected(key: string): boolean {
     return this.hubBoardSelectedKey() === key;
   }
+
+  /** «+» у строки быстрого выбора: переключает плитку и открывает создание для этого справочника. */
+  onHubBoardQuickCreate(key: string, event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!this.permissions.crud().canCreate) return;
+    this.hubBoardSelectedKey.set(key);
+    switch (key) {
+      case 'materials':
+        this.openMaterialsCreate();
+        break;
+      case 'materialCharacteristics':
+        this.openMaterialCharacteristicsCreate();
+        break;
+      case 'workTypes':
+        this.openWorkTypesCreate();
+        break;
+      case 'units':
+        this.openUnitsCreate(false);
+        break;
+      case 'geometries':
+        this.openGeometriesCreate();
+        break;
+      case 'colors':
+        this.openColorsCreate(false);
+        break;
+      case 'surfaceFinishes':
+        this.openSurfaceFinishesCreate(false);
+        break;
+      case 'coatings':
+        this.openCoatingsCreate(false);
+        break;
+      case 'organizations':
+        this.openOrganizationsCreate();
+        break;
+      case 'clients':
+        this.openClientsCreate();
+        break;
+      case 'roles':
+        this.openRolesCreate();
+        break;
+      case 'users':
+        this.openUsersCreate();
+        break;
+      default:
+        break;
+    }
+  }
   readonly rolesStore = inject(RolesStore);
   readonly usersStore = inject(UsersStore);
   readonly materialsStore = inject(MaterialsStore);
