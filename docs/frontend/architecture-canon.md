@@ -41,3 +41,9 @@
 
 - Временные исключения допускаются только через `temporary-deviations-log.md`.
 - Исключение без записи = нарушение канона.
+
+## 7. Canon references
+
+- Field contracts canon: `docs/frontend/field-contracts-canon.md`.
+- CRM/SRM parity canon: `docs/frontend/parity-policy-crm-vs-srm.md`.
+- Master audit source: `docs/frontend/architecture-audit-master.md`.
