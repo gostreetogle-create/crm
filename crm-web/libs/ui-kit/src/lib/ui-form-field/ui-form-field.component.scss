@@ -26,12 +26,16 @@
   border-radius: var(--radius-card);
   background: var(--surface-soft);
   color: var(--text-primary);
-  padding: 4px var(--ui-input-padding-x);
+  padding: var(--ui-space-1) var(--ui-input-padding-x);
   font-family: var(--font-family-base);
   font-size: var(--font-size-control);
   font-weight: 400;
   line-height: var(--line-height-control);
-  min-height: 30px;
+  min-height: var(--ui-control-compact-height);
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease,
+    box-shadow 120ms ease;
 }
 
 .ui-form-field textarea {
@@ -39,11 +43,23 @@
   border-radius: var(--radius-card);
   background: var(--surface-soft);
   color: var(--text-primary);
-  padding: 6px var(--ui-input-padding-x);
+  padding: var(--ui-space-1) var(--ui-input-padding-x);
   font-family: var(--font-family-base);
   font-size: var(--font-size-control);
   font-weight: 400;
   line-height: var(--line-height-control);
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.ui-form-field input:focus,
+.ui-form-field select:focus,
+.ui-form-field textarea:focus {
+  border-color: color-mix(in srgb, var(--border-color) 65%, var(--accent) 35%);
+  outline: 2px solid color-mix(in srgb, var(--accent) 38%, transparent);
+  outline-offset: 1px;
 }
 
 .ui-form-field.invalid input,

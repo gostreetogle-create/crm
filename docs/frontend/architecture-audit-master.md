@@ -203,4 +203,20 @@
   4. Mega-file `dictionaries-page.ts` остается зоной техдолга (лимит соблюден).
   5. Smoke проверка выполнена на HTTP-уровне; browser-level сценарии (UI click-flow) требуют отдельного e2e/ручного прогона.
 
+## UX standardization batch #1 (compact CRM controls)
+
+Статус: `Done` (safe UI-only update, без изменения доменной логики/API/роутинга).
+
+- Единые компактные токены:
+  - `--ui-control-compact-height: 32px`
+  - `--ui-row-action-size: 28px`
+- Применено в shared UI:
+  - `ui-button`: единая высота, hover/focus-visible.
+  - `ui-form-field`: единая компактная высота input/select/textarea, мягкий focus.
+  - `crud-layout`: компактный search input и row-action кнопки, единые hover/focus.
+- Ожидаемый UX-эффект:
+  - меньше визуального шума в таблицах и формах;
+  - выше плотность данных в стиле CRM;
+  - более предсказуемые состояния фокуса и навигации с клавиатуры.
+
 

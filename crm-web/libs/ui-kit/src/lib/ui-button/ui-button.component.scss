@@ -4,7 +4,25 @@
   color: var(--ui-button-primary-text);
   border-radius: var(--radius-card);
   padding: var(--ui-button-padding-y) var(--ui-button-padding-x);
+  min-height: var(--ui-control-compact-height);
+  font-size: var(--font-size-control);
+  line-height: 1.2;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    box-shadow 120ms ease,
+    color 120ms ease;
   cursor: pointer;
+}
+
+.uiButton:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ui-button-primary-bg) 88%, var(--accent) 12%);
+  border-color: color-mix(in srgb, var(--ui-button-primary-border-color) 75%, var(--accent) 25%);
+}
+
+.uiButton:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  outline-offset: 1px;
 }
 
 .uiButton:disabled {
@@ -25,8 +43,8 @@
 
 .uiButtonSquare {
   padding: 0;
-  width: var(--ui-control-min-height);
-  height: var(--ui-control-min-height);
+  width: var(--ui-control-compact-height);
+  height: var(--ui-control-compact-height);
   display: inline-flex;
   align-items: center;
   justify-content: center;
