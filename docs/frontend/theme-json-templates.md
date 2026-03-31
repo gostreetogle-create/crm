@@ -1,6 +1,6 @@
 # Theme JSON templates
 
-Формат JSON для темы (вставляется в `crm-web/src/app/shared/theme/theme-json-entry.ts`):
+Формат JSON для темы (вставляется в `crm-web/libs/theme-core/src/lib/theme-json-entry.ts`):
 
 ```json
 {
@@ -33,9 +33,9 @@
 
 ## Поток работы с дизайнером
 
-1. Скопировать текущий JSON из `theme-json-entry.ts` и отдать дизайнеру.
+1. Скопировать текущий JSON из `crm-web/libs/theme-core/src/lib/theme-json-entry.ts` и отдать дизайнеру.
 2. Получить правки JSON.
-3. Вставить JSON в `theme-json-entry.ts`.
+3. Вставить JSON в `crm-web/libs/theme-core/src/lib/theme-json-entry.ts`.
 4. Пересобрать фронт (`nx build crm-web`) и проверить UI.
 5. Зафиксировать изменения в docs/коде.
 

@@ -8,6 +8,8 @@
 
 Роли, ключи `page.*` / `dict.hub.*` / `crud.*` / `excel.*`, guard маршрутов, `/settings`, справочники «Роли» и «Пользователи»: [`rbac-and-admin-settings.md`](./rbac-and-admin-settings.md), [`users-dictionary.md`](./users-dictionary.md).
 
+Визуальное единообразие UI (пиксель-чеклист): [`visual-consistency-checklist.md`](./visual-consistency-checklist.md).
+
 ### Именование задачи: «карточка цветов» ≠ только цвета
 
 Все плитки на хабе рисуются **одним** `CrudLayout`. Если в задаче сказано «на карточке цветов поправь кнопку/таблицу/отступ» без уточнения **«только эта плитка»**, исполнитель делает правку в **`CrudLayout` (shared)**, чтобы одинаково обновились **все** справочники и эталон на `/demo`. Упоминание конкретного справочника в такой формулировке — обычно **указание места, где заметили проблему**, а не разрешение менять один feature.
@@ -17,7 +19,7 @@
 ## Канон (что обязательно)
 
 1. Базовый экран справочников: `src/app/features/dictionaries/pages/dictionaries-page/`.
-2. Визуальный эталон плитки хаба: на `/demo` секция **«Плитка справочника: варианты (визуальный эталон)»** — сравнение вариантов композиции (хаб с раскрытием, полный список без кнопки, превью без раскрытия, узкая карточка) и та же базовая цепочка `dictionaryGrid` → `app-dictionary-hub-tile` (опционально `[fullWidth]="true"` для плитки на всю ширину сетки) → `app-hub-crud-expandable-shell` → `content-card` → `CrudLayout`, что на `/dictionaries`. Сами плитки витрины рендерятся **вне** внешней `content-card` intro, в том же `dictionaryGrid`, что и хаб, чтобы ширина колонки (≈ одна четверть `.page`) совпадала с `/dictionaries`. Превью **одной строки** и кнопка раскрытия на продуктовом хабе: обёртка `app-hub-crud-expandable-shell` (`shared/ui/hub-crud-expandable/`), состояние по ключу плитки в `HubCrudExpandStateService`, привязка к `CrudLayout` через `maxTableBodyRows` / `tableBodyMaxHeight` (как в `dictionaries-page` и вариант 1 на demo). Раскрытый список рисуется **поверх** контента ниже плитки (без проталкивания страницы); резерв высоты в потоке при открытии = **высота всего** `app-hub-crud-expandable-shell` в свёрнутом виде (синхронно при клике на раскрытие + `ResizeObserver` при изменении данных); иначе fallback `layoutReserveWhenOpen`. У хоста компонента задан `display: block`, у панели `flow-root`, чтобы margin дочерней карточки не ломал измерение. Клик **вне** плитки сворачивает её; кнопка с тремя линиями остаётся внизу раскрытой панели.
+2. Визуальный эталон плитки хаба: на `/demo` секция **«Плитка справочника: варианты (визуальный эталон)»** — сравнение вариантов композиции (хаб с раскрытием, полный список без кнопки, превью без раскрытия, узкая карточка) и та же базовая цепочка `dictionaryGrid` → `app-dictionary-hub-tile` (опционально `[fullWidth]="true"` для плитки на всю ширину сетки) → `app-hub-crud-expandable-shell` → `content-card` → `CrudLayout`, что на `/dictionaries`. Сами плитки витрины рендерятся **вне** внешней `content-card` intro, в том же `dictionaryGrid`, что и хаб, чтобы ширина колонки (≈ одна четверть `.page`) совпадала с `/dictionaries`. Превью **одной строки** и кнопка раскрытия на продуктовом хабе: обёртка `app-hub-crud-expandable-shell` (`crm-web/libs/ui-kit/src/lib/hub-crud-expandable/`, импорт сервисов/компонентов из `@srm/ui-kit`), состояние по ключу плитки в `HubCrudExpandStateService`, привязка к `CrudLayout` через `maxTableBodyRows` / `tableBodyMaxHeight` (как в `dictionaries-page` и вариант 1 на demo). Раскрытый список рисуется **поверх** контента ниже плитки (без проталкивания страницы); резерв высоты в потоке при открытии = **высота всего** `app-hub-crud-expandable-shell` в свёрнутом виде (синхронно при клике на раскрытие + `ResizeObserver` при изменении данных); иначе fallback `layoutReserveWhenOpen`. У хоста компонента задан `display: block`, у панели `flow-root`, чтобы margin дочерней карточки не ломал измерение. Клик **вне** плитки сворачивает её; кнопка с тремя линиями остаётся внизу раскрытой панели.
 3. Для таблиц в справочниках используем `CrudLayout` в "чистом" режиме:
    - только `title + columns + data + actions`,
    - без `subtitle` и `facts` (если не согласовано отдельно).
@@ -100,6 +102,77 @@
 - Если в форме больше 5 полей, прокрутка идет внутри модалки (контентная зона), без роста окна.
 - Ошибки валидации: на русском, рядом с полем.
 - Стили: только theme tokens, без локальных палитр.
+
+### Полноэкранное создание (дочерние маршруты под `/справочники`)
+
+При **разных** child-маршрутах (`''`, `новый-материал`, `новая-характеристика-материала`) Angular подгружает **отдельный** экземпляр `DictionariesPage`. Состояние «цепочки» между экранами (флаг «пришли с формы материала», отложенный `id` для подстановки) **нельзя** держать в сигналах компонента — при смене маршрута экземпляр уничтожается. Канон: сервис в `DICTIONARIES_ROUTE_PROVIDERS` (например `DictionariesMaterialStandaloneFlowService`).
+
+Когда create вынесен на отдельный маршрут (полноэкранная форма под тем же shell, что и хаб), **канон завершения** совпадает с кнопкой «Назад»:
+
+1. **Не** делать жёсткий `router.navigate` на корень хаба после успешного «Сохранить» — возврат на **предыдущий шаг истории** через **`Location.back()`** (или эквивалент одного шага назад), чтобы пользователь оказался там, откуда открыл форму (хаб, другой экран, предыдущая полноэкранная форма).
+2. После сохранения список в store обновляется асинхронно: при необходимости **дождаться появления** созданной записи в store (короткий опрос по «снимку» полей payload) и только затем вызывать `back()`.
+3. Если цепочка явно предполагает возврат **в родительскую форму** с подстановкой новой ссылки (пример: с «Новый материал» открыли «Новая характеристика материала» — после сохранения характеристики в поле материала должна подставиться только что созданная характеристика), сохранить `id` новой сущности и применить к полю **после** навигации назад: при повторном входе на маршрут родителя `effect`/инициализация может **полностью сбросить** форму — тогда подстановку делают **после** этого сброса (отложенный `id` в сигнале/сервисе), а не только `setValue` до `back()`. Флаги «нужна подстановка» / отложенный `id` сбрасывать при «Назад» без сохранения и после успешной подстановки.
+4. Тот же паттерн (**`back` + при необходимости patch родителя**) применять к **похожим сценариям** (вложенное создание справочника с возвратом в форму выше по потоку), если не согласовано иное.
+
+#### Эталон в коде (материал ↔ характеристика)
+
+| Что | Где |
+|-----|-----|
+| Shell с `router-outlet` | `crm-web/libs/dictionaries-hub-feature/src/lib/pages/dictionaries-shell/dictionaries-shell.ts` |
+| Дочерние маршруты + `data` | `crm-web/srm-front/src/app/app.routes.ts` (и при необходимости `crm-web/src/app/app.routes.ts`) — `path: 'новый-материал'`, `новая-характеристика-материала` |
+| Сервис цепочки + отложенный `id` | `crm-web/libs/dictionaries-hub-feature/src/lib/dictionaries-material-standalone-flow.service.ts` |
+| Регистрация сервиса | `crm-web/libs/dictionaries-hub-feature/src/lib/dictionaries-route.providers.ts` → `DICTIONARIES_ROUTE_PROVIDERS` |
+| Логика форм, Save/Back, polling store, `afterNextRender` для standalone | `crm-web/libs/dictionaries-hub-feature/src/lib/pages/dictionaries-page/dictionaries-page.ts` |
+| Единый список ключей/URL/title для create «как у материалов» (все плитки кроме материала/характеристики) | `crm-web/libs/dictionaries-hub-feature/src/lib/standalone-dictionary-create.meta.ts` (`STANDALONE_DICTIONARY_CREATE`) |
+| Фабрика child-маршрутов (тот же список — без дублирования в `app.routes`) | `buildStandaloneDictionaryCreateChildRoutes()` в `standalone-dictionary-create.routes.ts`, подключение: `...buildStandaloneDictionaryCreateChildRoutes()` |
+| Канонические сегменты URL + контракт с `app.routes` | `dictionaries-canonical-paths.ts` (`canonicalDictionariesChildSegments`, `canonicalDictionariesUrls`); тесты `dictionaries-canonical-paths.spec.ts`, `app.routes.dictionaries.contract.spec.ts` (`crm-web/src/app/`, `srm-front/src/app/`) |
+| Оболочка «назад + заголовок + контент + действия» | `crm-web/libs/dictionaries-hub-feature/src/lib/components/dictionary-standalone-create-shell/` (`app-dictionary-standalone-create-shell`) |
+| Бэклог полировки (50 пунктов, статусы) | [`dictionaries-polish-backlog.md`](./dictionaries-polish-backlog.md) |
+
+#### Канонические URL под `/справочники` (deep link / smoke)
+
+Пользовательский вход: **`/справочники`** (кириллица). Редиректы с латиницы (`/dictionaries`, `/materials`, `/geometries` → `/справочники`) — только для старых закладок.
+
+Полный список дочерних путей не дублируйте вручную: в коде — `canonicalDictionariesUrls()` / `STANDALONE_DICTIONARY_CREATE`; ниже — снимок для документации.
+
+| Полный URL | `route.data` / назначение |
+|------------|-------------------------|
+| `/справочники` | Хаб (пустой сегмент `''`) |
+| `/справочники/новый-материал` | `newMaterialPage: true` |
+| `/справочники/новая-характеристика-материала` | `newMaterialCharacteristicPage: true` |
+| `/справочники/новый-вид-работ` | `standaloneCreate: 'workTypes'` |
+| `/справочники/новая-единица-измерения` | `standaloneCreate: 'units'` |
+| `/справочники/новая-геометрия` | `standaloneCreate: 'geometries'` |
+| `/справочники/новый-цвет-ral` | `standaloneCreate: 'colors'` |
+| `/справочники/новая-отделка` | `standaloneCreate: 'surfaceFinishes'` |
+| `/справочники/новое-покрытие` | `standaloneCreate: 'coatings'` |
+| `/справочники/новая-организация` | `standaloneCreate: 'organizations'` |
+| `/справочники/новый-контакт` | `standaloneCreate: 'clients'` |
+| `/справочники/новая-роль` | `standaloneCreate: 'roles'` |
+| `/справочники/новый-пользователь` | `standaloneCreate: 'users'` |
+
+Guards: родительский маршрут `path: 'справочники'` задаёт `canActivate: [authGuard, permissionGuard]` и `data: { permission: 'page.dictionaries' }`; дочерние маршруты не повторяют guard — проверка выполняется при навигации на любой из URL выше.
+
+Smoke без браузера: `nx test dictionaries-hub-feature`, `nx test crm-web --testPathPattern=app.routes.dictionaries`, `nx test srm-front --testPathPattern=app.routes.dictionaries`.
+
+Ручной прогон Save/таблица по каждому standalone: [`dictionaries-standalone-manual-checklist.md`](./dictionaries-standalone-manual-checklist.md).
+
+Регресс материал ↔ справочники, propagation: [`dictionaries-regression-scenarios.md`](./dictionaries-regression-scenarios.md).
+
+Роли / ручные сценарии: [`dictionaries-rbac-manual-checklist.md`](./dictionaries-rbac-manual-checklist.md). Рантайм, toast, E2E-ограничения: [`dictionaries-runtime-notes.md`](./dictionaries-runtime-notes.md).
+
+#### Чеклист: следующая полноэкранная таблица или цепочка A → B
+
+Использовать тот же подход, что и для «Новый материал» / «Новая характеристика материала»:
+
+1. **Маршрут** — отдельный `path` под `справочники`, свой `loadComponent: DictionariesPage`, в `data` либо специализированный флаг (`newMaterialPage`), либо **`standaloneCreate: '<key>'`** по канону `STANDALONE_DICTIONARY_CREATE`; добавить строку в meta-файл и дочерний маршрут в `app.routes.ts` (srm-front + при необходимости `crm-web/src/app`).
+2. **Не хранить** «цепочку» и `pendingId` в сигналах **`DictionariesPage`** — при смене child-маршрута экземпляр страницы пересоздаётся. Расширить существующий flow-сервис **или** завести новый `@Injectable()` и добавить в `DICTIONARIES_ROUTE_PROVIDERS`.
+3. **Инициализация** полноэкранной формы при входе на маршрут — через **`afterNextRender`** в конструкторе по `route.snapshot.data[...]` (как сейчас), а не через `effect` на флаг маршрута, чтобы не получить повторный сброс формы и потерю подставленных значений.
+4. **Переход** с родительской полноэкранной формы A на дочернюю B — перед `router.navigate` на B вызвать на сервисе что-то вроде `markChainFromParentStandalone()` (условно: только если `isNewParentPageRoute()`).
+5. **Сохранение** на B (standalone): дождаться строки в store → на сервисе `afterChildSaved(created.id)` (кладёт `pendingId`, снимает флаг цепочки) → `Location.back()`; при таймауте поиска — `cancelFlow()` и всё равно `back()` по продуктовому решению.
+6. **Вход обратно на A**: в `init...StandaloneForm` — **сначала** `consumePending...Id()` из сервиса, **потом** сброс формы, **потом** `setValue` в поле ссылки на созданную сущность.
+7. **«Назад» без сохранения** с B — `cancelFlow()` на сервисе, затем `back()`.
+8. После изменений — `nx build crm-web` и ручная проверка: A → B → Сохранить → поле на A заполнено; A → B → Назад — без подстановки.
 
 ## Чеклист перед merge
 

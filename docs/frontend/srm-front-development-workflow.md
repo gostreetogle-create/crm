@@ -102,8 +102,8 @@
 
 ## 8.5) Итерация B.5 (выполнено): волна `1..5` по выносу UI/theme/state/utils/settings
 
-- **1) UI:** в `@srm/ui-kit` добавлены `HubCrudExpandStateService` и `LinkedDictionaryPropagationConfirmComponent`; в старых путях `shared/ui/*` оставлены shim-реэкспорты.
-- **2) Theme:** создан `@srm/theme-core`, перенесены `ThemeStore`, `ThemeService`, `theme-*` контракты/пресеты/json-entry; в `core/theme` и `shared/theme` оставлены shim-реэкспорты.
+- **1) UI:** в `@srm/ui-kit` — канон CRUD, модалки, кнопки, хаб-раскрытие (`HubCrudExpandStateService`, `LinkedDictionaryPropagationConfirmComponent` и др.). Импорт в фичах: **`@srm/ui-kit`** (исходники `crm-web/libs/ui-kit/`).
+- **2) Theme:** пакет **`@srm/theme-core`** (`crm-web/libs/theme-core/`): `ThemeStore`, `ThemeService` (совместимость), схема токенов, пресеты, `theme-json-entry.ts`.
 - **3) State:** создан `@srm/dictionaries-state`, перенесены `*.store.ts` для всех словарных сущностей; в `features/*/state/*.store.ts` оставлены shim-реэкспорты.
 - **4) Utils:** создан `@srm/dictionaries-utils`, перенесены `role-sort`, `format-geometry-params-display`, `material-characteristics-excel-import`; в старых `features/*/utils` оставлены shim-реэкспорты.
 - **5) Settings data/domain:** создан `@srm/settings-core`, перенесены `DbBackupsAdminService`, `FIELD_RULES_CATALOG`, `FieldRuleRow`; в `features/settings` оставлены shim-реэкспорты.
@@ -128,13 +128,7 @@
 
 **Экспорт из библиотеки:** `crm-web/libs/ui-kit/src/index.ts` (`CrudLayoutComponent`, `TableColumn`, `CrudTableRow`, `FactRow`, `UiModal`, `UiButtonComponent`).
 
-**Совместимость с `crm-web` без массового рефактора импортов:** в приложении оставлены тонкие реэкспорты:
-
-- `crm-web/src/app/shared/ui/crud-layout/public-api.ts`
-- `crm-web/src/app/shared/ui/modal/public-api.ts`
-- `crm-web/src/app/shared/ui/ui-button/ui-button.component.ts`
-
-Они проксируют на `@srm/ui-kit`. Постепенно можно переводить импорты в фичах напрямую на `@srm/ui-kit` и удалять прокси.
+**Импорты:** новый код подключает компоненты **напрямую** из `@srm/ui-kit`. Исторические shim-реэкспорты под `src/app/shared/ui/*` для `crud-layout` / modal / button **сняты** — при чтении старых заметок трактовать как «перейти на `@srm/ui-kit`».
 
 **Демо в новом приложении:** страница `CrudSmokePage` (`crm-web/srm-front/src/app/pages/crud-smoke/`), роут по умолчанию `/`. В `srm-front/project.json` в `styles` подключён общий `src/styles.scss`, чтобы токены и внешний вид совпадали с `crm-web`.
 

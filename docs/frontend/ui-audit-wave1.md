@@ -32,15 +32,15 @@
 ### D. Фильтр-компонент как reusable
 
 - Фильтр-панели сейчас повторяются вручную в шаблонах.
-- Статус: **исправлено** (используется общий `shared/ui/filters-bar`).
+- Статус: **исправлено** (используется общий `@srm/ui-kit (FiltersBarComponent)`).
 - Приоритет: **P1**.
-- Рекомендация: использовать `shared/ui/filters-bar` (inputs: search/sort/filter configs, outputs: change events).
+- Рекомендация: использовать `@srm/ui-kit (FiltersBarComponent)` (inputs: search/sort/filter configs, outputs: change events).
 
 ## Приоритетный план исправлений
 
 ### P1 (сейчас)
 
-1. Вынести единый фильтр-блок в `shared/ui`.
+1. Вынести единый фильтр-блок в `@srm/ui-kit` (`FiltersBarComponent`).
 2. Закрепить единый confirm-delete сценарий.
 
 ### P2 (следом)

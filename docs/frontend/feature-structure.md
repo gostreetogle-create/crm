@@ -1,41 +1,38 @@
 # Feature structure (Nx/Angular)
 
-Цель: в новом фронтенде держать код консистентным и переиспользуемым, чтобы дальше “внедрять правильно”, а не копировать верстку.
+Цель: в фронтенде держать код консистентным и переиспользуемым, без копирования верстки между фичами.
 
-## Как раскладываем по папкам
+## Как раскладываем по папкам (crm-web)
 
-1. `src/app/features/<feature-name>/pages/<page-name>/...`
-   - Page = контейнер с данными (массивы, конфиги) и компоновка shared-компонентов.
-   - Например: `dictionaries/pages/dictionaries-page/`.
+1. **Фичи Nx** — `crm-web/libs/<name>-feature/src/lib/...`
+   - Пример: хаб справочников — `crm-web/libs/dictionaries-hub-feature/` (страница `DictionariesPage`, shell, провайдеры `dictionaries-route.providers.ts`).
+   - Page = контейнер с данными и компоновка из **`@srm/ui-kit`**.
 
-2. `src/app/features/<feature-name>/components/...` (по мере роста)
-   - Локальные компоненты, которые не хочется переиспользовать в других фичах.
-   - **Справочники в хабе `/dictionaries`:** UI-блок каждого справочника — в `features/dictionaries/components/<...>/`, доменные типы/репозиторий/store остаются в `features/<entity>/`. Так страница-хаб не превращается в один неограниченно растущий файл. Уже вынесено: оболочка секции хаба (`dictionary-hub-section` — заголовок + сетка плиток).
+2. **Локальные компоненты фичи** — `libs/<feature>-feature/src/lib/components/...`
+   - То, что не должно переиспользоваться вне этой фичи (оболочка standalone create, new material page и т.д.).
 
-3. `crm-web/libs/shared-types` (`@srm/shared-types`)
-   - Общие типы и контракты, которыми пользуются несколько фич или и `crm-web`, и `srm-front` (например `FieldRow`, `DictionaryPropagationOptions`).
-   - Папку `src/app/shared/model` не наращивать: новые общие типы добавлять в библиотеку и импортировать как `@srm/shared-types`.
+3. **`crm-web/libs/shared-types`** (`@srm/shared-types`)
+   - Общие типы и контракты между фичами. Папку `src/app/shared/model` не наращивать: новые общие типы — в библиотеке.
 
-4. `src/app/shared/ui/...`
-   - Переиспользуемые UI-компоненты (таблицы, бейджи, карточки, формы и т.п.).
-   - Компоненты должны быть “без привязки к домену” или очень слабо: через `@Input()` данные передаются извне.
+4. **Общий UI** — **`crm-web/libs/ui-kit`** (`@srm/ui-kit`). Переиспользуемые примитивы без доменной привязки.
+
+5. **Тема** — **`crm-web/libs/theme-core`** (`@srm/theme-core`): токены, пресеты, `ThemeStore`.
+
+6. **Остаточные shared-стили** — `crm-web/src/app/shared/styles/` (мост; цель — сократить в пользу `ui-kit`/токенов).
 
 ## Роутинг
 
-- Страницы подключаются в `src/app/app.routes.ts`.
-- Провайдеры единого хаба справочников (`/справочники`) собраны в `src/app/features/dictionaries/dictionaries-route.providers.ts` и подключены на **компоненте** `DictionariesPage` (не в `app.routes.ts`), чтобы не тащить mock/http репозитории и сторы справочников в initial bundle.
-- Feature-level `*.routes.ts` — только если файл **реально импортируется** в `app.routes.ts` (или в дочерний `loadChildren`). Не держать «висячие» `*.routes.ts` и неподключённые `*-crud-page`, дублирующие хаб справочников — см. `docs/frontend/dictionaries-crud-playbook.md`, раздел «Порядок: единый хаб».
+- Корневые маршруты: `crm-web/src/app/app.routes.ts` (и отдельно `srm-front` при необходимости).
+- Провайдеры хаба справочников: `crm-web/libs/dictionaries-hub-feature/src/lib/dictionaries-route.providers.ts` — подключаются на маршруте `/справочники`, чтобы не тащить store/repository в initial bundle без нужды.
+- Feature-level `*.routes.ts` — только если реально подключён в `app.routes.ts` (`loadChildren`). См. [`dictionaries-crud-playbook.md`](./dictionaries-crud-playbook.md).
 
 ## SCSS
 
-- В shared-компонентах стили держим в их `.scss`.
-- Пейдж-стили держим в `.scss` страницы (фон/раскладка).
-- По возможности не дублируем CSS для таблиц/карточек на уровне страниц — эти стили должны жить внутри `src/app/shared/ui/...`.
-- Не использовать “левые” локальные палитры/типографику в feature-компонентах; использовать только theme tokens (`var(--...)`).
-- По умолчанию используем локальные стили компонента (Angular ViewEncapsulation по умолчанию), без глобального CSS.
+- В компонентах `ui-kit` стили рядом с компонентом.
+- Стили страницы фичи — в `.scss` страницы.
+- Таблицы/карточки общего вида — в **`@srm/ui-kit`**, не дублировать на уровне страницы.
+- Только theme tokens (`var(--...)`), без локальных палитр в фичах.
 
 ## Обязательный рабочий порядок
 
-Для всех следующих задач применять единый workflow:
-`docs/frontend/development-workflow.md`.
-
+[`development-workflow.md`](./development-workflow.md).

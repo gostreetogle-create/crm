@@ -31,12 +31,12 @@
 
 1. `libs/ui-kit`
    - таблицы, карточки, модалки, кнопки, form primitives.
-   - кандидаты из `crm-web/src/app/shared/ui/*`.
+   - исходный код переносился из устаревшего `crm-web/src/app/shared/ui/*`; канон сейчас — **`crm-web/libs/ui-kit/`** (`@srm/ui-kit`).
    - **Инкремент уже сделан:** вынесены также `HubCrudExpandStateService` и `LinkedDictionaryPropagationConfirmComponent`.
 
 2. `libs/theme`
    - theme store, токены, shared theme helpers.
-   - кандидаты из `crm-web/src/app/core/theme/*` и `crm-web/src/app/shared/theme/*`.
+   - канон: **`crm-web/libs/theme-core/`** (`@srm/theme-core`).
    - **Инкремент уже сделан:** `libs/theme-core` (`ThemeStore`, `ThemeService`, `theme-*` контракты).
 
 3. `libs/authz`
@@ -135,5 +135,5 @@
 
 1. Зафиксировать имя нового app: `srm-front`.
 2. Создать app и базовые libs (`ui-kit`, `shared-types`).
-3. Перенести первый маленький блок из `shared/ui` (без затрагивания бизнес-логики).
+3. Перенести первый маленький блок в `libs/ui-kit` (без затрагивания бизнес-логики), если ещё не вынесен.
 4. Прогнать роботов и открыть первый миграционный PR.

@@ -12,7 +12,7 @@ alwaysApply: true
 
 Далее укажи 3–5 путей (папки или конкретные файлы), которые реально нужны для текущей задачи, например:
 - `crm-web/src/app/features/**`
-- `crm-web/src/app/shared/**`
+- `crm-web/libs/ui-kit/**`, `crm-web/libs/*-feature/**`, `crm-web/src/app/shared/**`
 - `docs/frontend/**`
 - `docs/backend-map/**`
 - `.cursor/rules/**`

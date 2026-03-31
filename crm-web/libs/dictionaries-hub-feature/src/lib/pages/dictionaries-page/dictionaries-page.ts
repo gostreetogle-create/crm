@@ -1,10 +1,83 @@
-import { DOCUMENT, NgFor, NgIf, NgTemplateOutlet } from '@angular/common';
-import { Component, OnDestroy, computed, effect, inject, signal } from '@angular/core';
+import { DOCUMENT, Location, NgFor, NgIf, NgTemplateOutlet } from '@angular/common';
+import {
+  Component,
+  OnDestroy,
+  afterNextRender,
+  computed,
+  effect,
+  inject,
+  isDevMode,
+  signal,
+} from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { LucidePlus, LucideX } from '@lucide/angular';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
-import { Observable, Subscription, firstValueFrom, forkJoin, of } from 'rxjs';
+import { Observable, Subscription, filter, firstValueFrom, forkJoin, map, of, startWith } from 'rxjs';
 import { PermissionsService } from '@srm/authz-runtime';
 import { permissionKeyForDictionaryHubTile } from '@srm/authz-core';
+import { DictionaryStandaloneCreateShellComponent } from '../../components/dictionary-standalone-create-shell/dictionary-standalone-create-shell.component';
+import { DictionariesMaterialStandaloneFlowService } from '../../dictionaries-material-standalone-flow.service';
+import {
+  STANDALONE_DICTIONARY_CREATE,
+  isStandaloneDictionaryCreateKey,
+  type StandaloneDictionaryCreateKey,
+} from '../../standalone-dictionary-create.meta';
+import { callStandaloneCloseForKey } from '../../standalone-dictionary-create.back';
+import { NewMaterialFullscreenPageComponent } from '../../components/new-material-fullscreen-page/new-material-fullscreen-page.component';
+import { HUB_BOARD_DICTIONARY_ROW_DEFS } from '../../dictionaries-hub/dictionaries-hub-board.config';
+import {
+  buildHubBoardSectionColumns,
+  filterHubBoardRowsByPermission,
+  splitHubBoardPickerHalves,
+} from '../../dictionaries-hub/dictionaries-hub-board';
+import { resolveHubBoardQuickCreate } from '../../dictionaries-hub/dictionaries-hub-quick-create.registry';
+import { scrollToFirstInvalidControlInForm } from '../../dictionaries-form-a11y';
+import {
+  CLIENTS_COLUMNS,
+  CLIENTS_COLUMNS_FULL,
+  COATINGS_COLUMNS,
+  COATINGS_COLUMNS_FULL,
+  COLORS_COLUMNS,
+  COLORS_COLUMNS_FULL,
+  GEOMETRIES_COLUMNS,
+  GEOMETRIES_COLUMNS_FULL,
+  MATERIAL_CHARACTERISTICS_COLUMNS_FULL,
+  MATERIAL_CHARACTERISTICS_COLUMNS_PREVIEW,
+  MATERIALS_COLUMNS_FULL,
+  MATERIALS_COLUMNS_PREVIEW,
+  ORGANIZATIONS_COLUMNS,
+  ORGANIZATIONS_COLUMNS_FULL,
+  ROLES_COLUMNS,
+  ROLES_COLUMNS_FULL,
+  SURFACE_FINISHES_COLUMNS,
+  SURFACE_FINISHES_COLUMNS_FULL,
+  UNITS_COLUMNS,
+  UNITS_COLUMNS_FULL,
+  USERS_COLUMNS,
+  USERS_COLUMNS_FULL,
+  WORK_TYPES_COLUMNS,
+  WORK_TYPES_COLUMNS_FULL,
+} from './dictionaries-page-table-columns';
+import {
+  mapLegalFormToOrganizationKind,
+  normalizeRalCode,
+  normalizeWorkTypeName,
+  organizationKindToLegalForm,
+  parseNumberOrNull,
+} from './dictionaries-page-form-utils';
+import {
+  clientPayloadFromForm,
+  coatingPayloadFromValues,
+  colorsPayloadFromFormRaw,
+  geometriesPayloadFromValues,
+  materialCharacteristicsPayloadFromValues,
+  materialsPayloadFromValues,
+  organizationsPayloadFromFields,
+  surfaceFinishPayloadFromValues,
+  unitsPayloadFromValues,
+  workTypesPayloadFromValues,
+} from './dictionaries-page-payload-builders';
 import {
   ClientsStore,
   CoatingsStore,
@@ -66,12 +139,9 @@ import {
   UiModal as UiModalComponent,
   UiModalFormActionsComponent,
 } from '@srm/ui-kit';
-import { DICTIONARIES_ROUTE_PROVIDERS } from '../../dictionaries-route.providers';
-
 @Component({
   selector: 'app-dictionaries-page',
   standalone: true,
-  providers: DICTIONARIES_ROUTE_PROVIDERS,
   imports: [
     NgIf,
     NgFor,
@@ -90,6 +160,8 @@ import { DICTIONARIES_ROUTE_PROVIDERS } from '../../dictionaries-route.providers
     LucidePlus,
     LucideX,
     LinkedDictionaryPropagationConfirmComponent,
+    DictionaryStandaloneCreateShellComponent,
+    NewMaterialFullscreenPageComponent,
   ],
   templateUrl: './dictionaries-page.html',
   styleUrl: './dictionaries-page.scss',
@@ -128,90 +200,20 @@ export class DictionariesPage implements OnDestroy {
   readonly hubBoardSelectedKey = signal<string | null>(null);
 
   /** Строки мастер-таблицы: раздел и справочник (с учётом прав). */
-  readonly hubBoardRows = computed(() => {
-    type Row = { section: string; sectionId: string; key: string; title: string };
-    const rows: Row[] = [];
-    const add = (section: string, sectionId: string, key: string, title: string) => {
-      if (this.permissions.can(this.hubTilePerm(key))) {
-        rows.push({ section, sectionId, key, title });
-      }
-    };
-    add('Материалы и производство', 'dictionary-hub-section-production', 'materials', 'Материалы');
-    add(
-      'Материалы и производство',
-      'dictionary-hub-section-production',
-      'materialCharacteristics',
-      'Характеристики материала',
-    );
-    add('Материалы и производство', 'dictionary-hub-section-production', 'workTypes', 'Вид работ');
-    add('Материалы и производство', 'dictionary-hub-section-production', 'units', 'Единицы измерения');
-    add(
-      'Материалы и производство',
-      'dictionary-hub-section-production',
-      'geometries',
-      'Форма и габаритные размеры',
-    );
-    add('Цвет, отделка и покрытия', 'dictionary-hub-section-surface', 'colors', 'Цвета (RAL)');
-    add('Цвет, отделка и покрытия', 'dictionary-hub-section-surface', 'surfaceFinishes', 'Тип отделки / шероховатость');
-    add('Цвет, отделка и покрытия', 'dictionary-hub-section-surface', 'coatings', 'Покрытие');
-    add('Клиенты', 'dictionary-hub-section-clients', 'organizations', 'Организации');
-    add('Клиенты', 'dictionary-hub-section-clients', 'clients', 'Контактные лица');
-    add('Пользователи и доступ', 'dictionary-hub-section-access', 'roles', 'Роли');
-    add('Пользователи и доступ', 'dictionary-hub-section-access', 'users', 'Пользователи');
-    return rows;
-  });
-
-  private static readonly hubBoardSectionOrder: readonly string[] = [
-    'dictionary-hub-section-production',
-    'dictionary-hub-section-surface',
-    'dictionary-hub-section-clients',
-    'dictionary-hub-section-access',
-  ];
+  readonly hubBoardRows = computed(() =>
+    filterHubBoardRowsByPermission(HUB_BOARD_DICTIONARY_ROW_DEFS, (tileKey) =>
+      this.permissions.can(this.hubTilePerm(tileKey)),
+    ),
+  );
 
   /** Колонки быстрого выбора: секция сверху, ниже — компактные кнопки справочников. */
-  readonly hubBoardSectionColumns = computed(() => {
-    const rows = this.hubBoardRows();
-    type Col = { sectionId: string; section: string; items: { key: string; title: string }[] };
-    const map = new Map<string, Col>();
-    for (const r of rows) {
-      const item = { key: r.key, title: r.title };
-      const cur = map.get(r.sectionId);
-      if (cur) {
-        cur.items.push(item);
-      } else {
-        map.set(r.sectionId, { sectionId: r.sectionId, section: r.section, items: [item] });
-      }
-    }
-    const ordered: Col[] = [];
-    const seen = new Set<string>();
-    for (const id of DictionariesPage.hubBoardSectionOrder) {
-      const c = map.get(id);
-      if (c) {
-        ordered.push(c);
-        seen.add(id);
-      }
-    }
-    for (const c of map.values()) {
-      if (!seen.has(c.sectionId)) {
-        ordered.push(c);
-      }
-    }
-    return ordered;
-  });
+  readonly hubBoardSectionColumns = computed(() => buildHubBoardSectionColumns(this.hubBoardRows()));
 
   /**
    * Две половины верхнего блока (пополам по ширине); в каждой — до двух колонок секций.
    * Итог на широком экране: 2×2 относительно четырёх секций.
    */
-  readonly hubBoardPickerHalves = computed(() => {
-    const cols = this.hubBoardSectionColumns();
-    if (!cols.length) {
-      return [];
-    }
-    const mid = Math.ceil(cols.length / 2);
-    const halves = [cols.slice(0, mid), cols.slice(mid)];
-    return halves.filter((h) => h.length > 0);
-  });
+  readonly hubBoardPickerHalves = computed(() => splitHubBoardPickerHalves(this.hubBoardSectionColumns()));
 
   /** Высота тела таблицы в панели деталей (как у развёрнутой плитки). */
   readonly hubBoardDetailTableMaxHeight = this.hubExpand.expandedTableBodyMaxHeight;
@@ -245,44 +247,19 @@ export class DictionariesPage implements OnDestroy {
     event.stopPropagation();
     if (!this.permissions.crud().canCreate) return;
     this.hubBoardSelectedKey.set(key);
-    switch (key) {
-      case 'materials':
-        this.openMaterialsCreate();
+    const target = resolveHubBoardQuickCreate(key);
+    if (!target) {
+      return;
+    }
+    switch (target.kind) {
+      case 'newMaterialPage':
+        this.navigateToNewMaterialPage();
         break;
-      case 'materialCharacteristics':
-        this.openMaterialCharacteristicsCreate();
+      case 'newMaterialCharacteristicPage':
+        this.navigateToNewMaterialCharacteristicPage();
         break;
-      case 'workTypes':
-        this.openWorkTypesCreate();
-        break;
-      case 'units':
-        this.openUnitsCreate(false);
-        break;
-      case 'geometries':
-        this.openGeometriesCreate();
-        break;
-      case 'colors':
-        this.openColorsCreate(false);
-        break;
-      case 'surfaceFinishes':
-        this.openSurfaceFinishesCreate(false);
-        break;
-      case 'coatings':
-        this.openCoatingsCreate(false);
-        break;
-      case 'organizations':
-        this.openOrganizationsCreate();
-        break;
-      case 'clients':
-        this.openClientsCreate();
-        break;
-      case 'roles':
-        this.openRolesCreate();
-        break;
-      case 'users':
-        this.openUsersCreate();
-        break;
-      default:
+      case 'standalone':
+        this.navigateToStandaloneDictionaryCreate(target.key);
         break;
     }
   }
@@ -381,6 +358,69 @@ export class DictionariesPage implements OnDestroy {
   readonly surfaceQuickAddForMaterialCharacteristics = signal(false);
   readonly excelImportStatus = signal('');
 
+  private readonly router = inject(Router);
+  private readonly location = inject(Location);
+  private readonly route = inject(ActivatedRoute);
+  /** Цепочка «Новый материал» → характеристика: состояние вне экземпляра страницы (см. сервис). */
+  private readonly materialStandaloneFlow = inject(DictionariesMaterialStandaloneFlowService);
+  /** Полноэкранный маршрут `/справочники/новый-материал` (форма материала без модалки). */
+  readonly isNewMaterialPageRoute = toSignal(
+    this.router.events.pipe(
+      filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+      startWith(null),
+      map(() => this.route.snapshot.data['newMaterialPage'] === true),
+    ),
+    { initialValue: this.route.snapshot.data['newMaterialPage'] === true },
+  );
+
+  /** Полноэкранный маршрут `/справочники/новая-характеристика-материала`. */
+  readonly isNewMaterialCharacteristicPageRoute = toSignal(
+    this.router.events.pipe(
+      filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+      startWith(null),
+      map(() => this.route.snapshot.data['newMaterialCharacteristicPage'] === true),
+    ),
+    { initialValue: this.route.snapshot.data['newMaterialCharacteristicPage'] === true },
+  );
+
+  /** Полноэкранное создание (`data.standaloneCreate`) — см. `STANDALONE_DICTIONARY_CREATE`. */
+  readonly standaloneCreateKey = toSignal(
+    this.router.events.pipe(
+      filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+      startWith(null),
+      map((): StandaloneDictionaryCreateKey | null => {
+        const raw = this.route.snapshot.data['standaloneCreate'];
+        return isStandaloneDictionaryCreateKey(raw) ? raw : null;
+      }),
+    ),
+    {
+      initialValue: isStandaloneDictionaryCreateKey(this.route.snapshot.data['standaloneCreate'])
+        ? this.route.snapshot.data['standaloneCreate']
+        : null,
+    },
+  );
+
+  standaloneDictionaryTitle(key: StandaloneDictionaryCreateKey): string {
+    return STANDALONE_DICTIONARY_CREATE.find((x) => x.key === key)?.title ?? '';
+  }
+
+  /** После успешного submit на полноэкранном create — шаг назад по истории (канон playbook). */
+  private finishStandaloneDictionaryCreateIfMatch(key: StandaloneDictionaryCreateKey): void {
+    if (this.standaloneCreateKey() !== key) return;
+    this.location.back();
+  }
+
+  /**
+   * Роли / пользователи: на standalone открыт только create; submit редактирования идёт из модалки на хабе.
+   */
+  private finishStandaloneDictionaryCreateIfMatchCreateOnly(
+    key: 'roles' | 'users',
+    editId: string | null,
+  ): void {
+    if (this.standaloneCreateKey() !== key || editId != null) return;
+    this.location.back();
+  }
+
   /** Подсказка для раскраски баннера Excel на хабе. */
   /**
    * Модалка формы характеристик выше каскадной плитки на body (z-index 1700), иначе «+» открывает форму сзади.
@@ -393,49 +433,18 @@ export class DictionariesPage implements OnDestroy {
     return UI_MODAL_Z_INDEX_ABOVE_CASCADE_HUB;
   });
 
-  /** Вкладка в объединённой модалке «Материал / Характеристика» (только режим создания с двумя вкладками). */
-  readonly materialBundleTab = signal<'material' | 'characteristic'>('material');
-
-  readonly showMaterialBundleTabs = computed(() => {
-    const matCreate =
-      this.isMaterialsModalOpen() &&
-      !this.isMaterialsViewMode() &&
-      !this.materialsStore.isEditMode();
-    const charCreate =
-      this.isMaterialCharacteristicsModalOpen() &&
-      !this.isMaterialCharacteristicsViewMode() &&
-      !this.materialCharacteristicsStore.isEditMode();
-    return matCreate || charCreate;
+  readonly materialsModalTitle = computed(() => {
+    if (!this.isMaterialsModalOpen()) return '';
+    if (this.isMaterialsViewMode()) return 'Просмотр материала — Мат.';
+    if (this.materialsStore.isEditMode()) return 'Редактирование материала';
+    return 'Новый материал';
   });
 
-  readonly materialModalTitle = computed(() => {
-    if (this.showMaterialBundleTabs()) {
-      return this.materialBundleTab() === 'material' ? 'Новый материал' : 'Новая характеристика материала';
-    }
-    if (this.isMaterialsModalOpen()) {
-      if (this.isMaterialsViewMode()) return 'Просмотр материала — Мат.';
-      if (this.materialsStore.isEditMode()) return 'Редактирование материала';
-      return 'Новый материал';
-    }
-    if (this.isMaterialCharacteristicsModalOpen()) {
-      if (this.isMaterialCharacteristicsViewMode()) return 'Просмотр характеристики материала';
-      if (this.materialCharacteristicsStore.isEditMode()) return 'Редактирование характеристики материала';
-      return 'Новая характеристика материала';
-    }
-    return '';
-  });
-
-  readonly materialBundleCloseOnBackdrop = computed(() => {
-    if (this.materialBundleTab() === 'material') {
-      return this.isMaterialsViewMode();
-    }
-    return this.isMaterialCharacteristicsViewMode();
-  });
-
-  /** Поднять слой только на вкладке характеристики (каскад хаба поверх модалки материала). */
-  readonly materialBundleModalBackdropZIndex = computed((): number | null => {
-    if (this.materialBundleTab() !== 'characteristic') return null;
-    return this.materialCharacteristicsFormModalBackdropZIndex();
+  readonly materialCharacteristicsModalTitle = computed(() => {
+    if (!this.isMaterialCharacteristicsModalOpen()) return '';
+    if (this.isMaterialCharacteristicsViewMode()) return 'Просмотр характеристики материала';
+    if (this.materialCharacteristicsStore.isEditMode()) return 'Редактирование характеристики материала';
+    return 'Новая характеристика материала';
   });
 
   /** Модалка геометрии поверх модалки материала (оба на body). */
@@ -458,150 +467,44 @@ export class DictionariesPage implements OnDestroy {
     return 'success';
   });
 
+  /** Статус Excel/импорта — только на хабе; на полноэкранных маршрутах не показываем (бэклог #44). */
+  readonly showExcelImportStatusBanner = computed(() => {
+    if (this.standaloneCreateKey() !== null) return false;
+    if (this.isNewMaterialPageRoute()) return false;
+    if (this.isNewMaterialCharacteristicPageRoute()) return false;
+    return true;
+  });
+
   /** Подтверждение: добавить отсутствующие в малых справочниках позиции перед импортом характеристик. */
   readonly mcImportAssistOpen = signal(false);
   readonly mcImportAssistLines = signal<string[]>([]);
   private mcImportPendingPlan: MissingReferencePlan | null = null;
   private mcImportPendingDrafts: MaterialCharacteristicsImportDraftRow[] = [];
 
-  /** На хабе одна колонка hubLine; короткий заголовок колонки по смыслу справочника (см. naming convention). */
-  readonly workTypesColumns: TableColumn[] = [{ key: 'hubLine', label: 'Вид работ' }];
-
-  /** Full-view для раскрытия: показываем все значимые поля строки. */
-  readonly workTypesColumnsFull: TableColumn[] = [
-    { key: 'name', label: 'Название' },
-    { key: 'shortLabel', label: 'Коротко' },
-    { key: 'hourlyRateLabel', label: 'Ставка ₽/ч' },
-    { key: 'isActiveLabel', label: 'Активен' },
-  ];
-
-  readonly materialCharacteristicsColumnsPreview: TableColumn[] = [
-    { key: 'hubLine', label: 'Характеристика' },
-  ];
-
-  readonly materialCharacteristicsColumnsFull: TableColumn[] = [
-    { key: 'name', label: 'Название' },
-    { key: 'code', label: 'Код' },
-    { key: 'densityKgM3', label: 'Плотность' },
-    { key: 'color', label: 'Цвет', swatchHexKey: 'colorHex' },
-    { key: 'finish', label: 'Отделка' },
-    { key: 'coating', label: 'Покрытие' },
-    { key: 'notes', label: 'Заметка' },
-    { key: 'isActiveLabel', label: 'Активен' },
-  ];
-
-  readonly materialsColumnsPreview: TableColumn[] = [{ key: 'hubLine', label: 'Материал' }];
-
-  /** Широкая плитка материалов: все основные поля строкой таблицы (не одна склейка hubLine). */
-  readonly materialsColumnsFull: TableColumn[] = [
-    { key: 'name', label: 'Название' },
-    { key: 'code', label: 'Код' },
-    { key: 'characteristic', label: 'Характеристика' },
-    { key: 'geometry', label: 'Геометрия' },
-    { key: 'unit', label: 'Ед.' },
-    { key: 'priceLabel', label: 'Цена' },
-    { key: 'densityKgM3', label: 'Плотность' },
-    { key: 'color', label: 'Цвет', swatchHexKey: 'colorHex' },
-    { key: 'finishType', label: 'Отделка' },
-    { key: 'roughnessClass', label: 'Шерох.' },
-    { key: 'raMicron', label: 'Ra, мкм' },
-    { key: 'coatingType', label: 'Покрытие' },
-    { key: 'coatingSpec', label: 'Спецификация' },
-    { key: 'coatingThicknessMicron', label: 'Толщ., мкм' },
-    { key: 'notes', label: 'Заметка' },
-    { key: 'isActiveLabel', label: 'Активен' },
-  ];
-
-  readonly geometriesColumns: TableColumn[] = [{ key: 'hubLine', label: 'Профиль' }];
-
-  /** Full-view для раскрытия geometries. */
-  readonly geometriesColumnsFull: TableColumn[] = [
-    { key: 'name', label: 'Название' },
-    { key: 'shape', label: 'Форма' },
-    { key: 'params', label: 'Параметры' },
-    { key: 'isActiveLabel', label: 'Активен' },
-  ];
-
-  readonly unitsColumns: TableColumn[] = [{ key: 'hubLine', label: 'Ед. изм.' }];
-
-  /** Full-view для раскрытия units. */
-  readonly unitsColumnsFull: TableColumn[] = [
-    { key: 'name', label: 'Название' },
-    { key: 'code', label: 'Код' },
-    { key: 'notes', label: 'Заметка' },
-    { key: 'isActiveLabel', label: 'Активен' },
-  ];
-
-  readonly colorsColumns: TableColumn[] = [{ key: 'hubLine', label: 'Цвет', swatchHexKey: 'hex' }];
-
-  /** Full-view для раскрытия colors. */
-  readonly colorsColumnsFull: TableColumn[] = [
-    { key: 'ralCode', label: 'Код RAL' },
-    { key: 'name', label: 'Название' },
-    { key: 'hex', label: 'HEX', swatchHexKey: 'hex' },
-    { key: 'rgb', label: 'RGB' },
-  ];
-
-  readonly surfaceFinishesColumns: TableColumn[] = [{ key: 'hubLine', label: 'Отделка' }];
-
-  /** Full-view для раскрытия surface finishes. */
-  readonly surfaceFinishesColumnsFull: TableColumn[] = [
-    { key: 'finishType', label: 'Отделка' },
-    { key: 'roughnessClass', label: 'Шероховатость' },
-    { key: 'raMicron', label: 'Ra, мкм' },
-  ];
-
-  readonly coatingsColumns: TableColumn[] = [{ key: 'hubLine', label: 'Покрытие' }];
-
-  /** Full-view для раскрытия coatings. */
-  readonly coatingsColumnsFull: TableColumn[] = [
-    { key: 'coatingType', label: 'Тип покрытия' },
-    { key: 'coatingSpec', label: 'Спецификация' },
-    { key: 'thicknessMicron', label: 'Толщ., мкм' },
-  ];
-
-  readonly clientsColumns: TableColumn[] = [{ key: 'hubLine', label: 'ФИО' }];
-
-  /** Full-view для раскрытия clients. */
-  readonly clientsColumnsFull: TableColumn[] = [
-    { key: 'fio', label: 'ФИО' },
-    { key: 'email', label: 'Email' },
-    { key: 'phone', label: 'Телефон' },
-    { key: 'isActive', label: 'Активен' },
-  ];
-
-  readonly organizationsColumns: TableColumn[] = [{ key: 'hubLine', label: 'Организация' }];
-
-  readonly organizationsColumnsFull: TableColumn[] = [
-    { key: 'name', label: 'Название' },
-    { key: 'inn', label: 'ИНН' },
-    { key: 'legalForm', label: 'Вид' },
-    { key: 'contacts', label: 'Контакты' },
-    { key: 'isActive', label: 'Активна' },
-  ];
-
-  /** Как у остальных узких плиток хаба: одна колонка превью, раскрытие — полная таблица. */
-  readonly rolesColumns: TableColumn[] = [{ key: 'hubLine', label: 'Роль' }];
-
-  /** Full-view для раскрытия roles. */
-  readonly rolesColumnsFull: TableColumn[] = [
-    { key: 'hubLine', label: 'Роль' },
-    { key: 'code', label: 'Код' },
-    { key: 'notes', label: 'Заметки' },
-    { key: 'isActiveLabel', label: 'Активна' },
-    { key: 'isSystemLabel', label: 'Системная' },
-  ];
-
-  readonly usersColumns: TableColumn[] = [{ key: 'hubLine', label: 'Пользователь' }];
-
-  /** Full-view для раскрытия users. */
-  readonly usersColumnsFull: TableColumn[] = [
-    { key: 'hubLine', label: 'Пользователь' },
-    { key: 'login', label: 'Логин' },
-    { key: 'roleLabel', label: 'Роль' },
-    { key: 'email', label: 'Email' },
-    { key: 'phone', label: 'Телефон' },
-  ];
+  readonly workTypesColumns = WORK_TYPES_COLUMNS;
+  readonly workTypesColumnsFull = WORK_TYPES_COLUMNS_FULL;
+  readonly materialCharacteristicsColumnsPreview = MATERIAL_CHARACTERISTICS_COLUMNS_PREVIEW;
+  readonly materialCharacteristicsColumnsFull = MATERIAL_CHARACTERISTICS_COLUMNS_FULL;
+  readonly materialsColumnsPreview = MATERIALS_COLUMNS_PREVIEW;
+  readonly materialsColumnsFull = MATERIALS_COLUMNS_FULL;
+  readonly geometriesColumns = GEOMETRIES_COLUMNS;
+  readonly geometriesColumnsFull = GEOMETRIES_COLUMNS_FULL;
+  readonly unitsColumns = UNITS_COLUMNS;
+  readonly unitsColumnsFull = UNITS_COLUMNS_FULL;
+  readonly colorsColumns = COLORS_COLUMNS;
+  readonly colorsColumnsFull = COLORS_COLUMNS_FULL;
+  readonly surfaceFinishesColumns = SURFACE_FINISHES_COLUMNS;
+  readonly surfaceFinishesColumnsFull = SURFACE_FINISHES_COLUMNS_FULL;
+  readonly coatingsColumns = COATINGS_COLUMNS;
+  readonly coatingsColumnsFull = COATINGS_COLUMNS_FULL;
+  readonly clientsColumns = CLIENTS_COLUMNS;
+  readonly clientsColumnsFull = CLIENTS_COLUMNS_FULL;
+  readonly organizationsColumns = ORGANIZATIONS_COLUMNS;
+  readonly organizationsColumnsFull = ORGANIZATIONS_COLUMNS_FULL;
+  readonly rolesColumns = ROLES_COLUMNS;
+  readonly rolesColumnsFull = ROLES_COLUMNS_FULL;
+  readonly usersColumns = USERS_COLUMNS;
+  readonly usersColumnsFull = USERS_COLUMNS_FULL;
 
   /**
    * Колонки таблицы: на хабе-доске выбранный справочник — полный набор; иначе короткий превью-набор.
@@ -831,6 +734,29 @@ export class DictionariesPage implements OnDestroy {
     // Русское название в заголовке вкладки браузера.
     this.doc.title = 'Справочники — CRM';
 
+    /**
+     * Полноэкранные дочерние маршруты грузят **новый** экземпляр `DictionariesPage`.
+     * `effect` по `isNewMaterialPageRoute` мог срабатывать повторно и затирать форму;
+     * инициализация один раз после первого рендера достаточна.
+     */
+    afterNextRender(() => {
+      if (this.route.snapshot.data['standaloneCreate']) {
+        this.initStandaloneDictionaryCreateFromRoute();
+      }
+      if (this.route.snapshot.data['newMaterialPage'] === true) {
+        this.initNewMaterialStandaloneForm();
+      }
+      if (this.route.snapshot.data['newMaterialCharacteristicPage'] === true) {
+        this.initNewMaterialCharacteristicStandaloneForm();
+      }
+      if (isDevMode() && this.route.snapshot.queryParamMap.has('debug')) {
+        console.debug('[dictionaries] ?debug=', {
+          data: this.route.snapshot.data,
+          path: this.route.snapshot.routeConfig?.path,
+        });
+      }
+    });
+
     // Если открыта модалка редактирования «Материал характеристик», а пользователь
     // в другой вкладке/модалке поменял справочник (Color/SurfaceFinish/Coating),
     // то readonly-«Из справочников» поля должны обновляться автоматически.
@@ -943,16 +869,7 @@ export class DictionariesPage implements OnDestroy {
 
   openWorkTypesCreate(): void {
     if (!this.permissions.crud().canCreate) return;
-    this.isWorkTypesViewMode.set(false);
-    this.workTypesForm.enable({ emitEvent: false });
-    this.productionWorkTypesStore.startCreate();
-    this.workTypesForm.reset({
-      name: '',
-      shortLabel: '',
-      hourlyRateRub: 0,
-      isActive: true,
-    });
-    this.isWorkTypesModalOpen.set(true);
+    this.navigateToStandaloneDictionaryCreate('workTypes');
   }
 
   openWorkTypesEdit(id: string): void {
@@ -983,21 +900,24 @@ export class DictionariesPage implements OnDestroy {
     if (this.workTypesForm.invalid) {
       this.productionWorkTypesStore.submit({ value: payload, isValid: false });
       this.workTypesForm.markAllAsTouched();
+      scrollToFirstInvalidControlInForm('work-types-form', this.doc);
       return;
     }
-    const nameKey = this.normalizeWorkTypeName(payload.name);
+    const nameKey = normalizeWorkTypeName(payload.name);
     const editId = this.productionWorkTypesStore.editId();
     const hasDup = this.productionWorkTypesStore
       .items()
-      .some((x) => x.id !== editId && this.normalizeWorkTypeName(x.name) === nameKey);
+      .some((x) => x.id !== editId && normalizeWorkTypeName(x.name) === nameKey);
     if (hasDup) {
       nameCtrl.setErrors({ ...(nameCtrl.errors ?? {}), duplicate: true });
       this.productionWorkTypesStore.submit({ value: payload, isValid: false });
       this.workTypesForm.markAllAsTouched();
+      scrollToFirstInvalidControlInForm('work-types-form', this.doc);
       return;
     }
     this.productionWorkTypesStore.submit({ value: payload, isValid: true });
     this.closeWorkTypesModal();
+    this.finishStandaloneDictionaryCreateIfMatch('workTypes');
   }
 
   workTypesNameErrorText(): string {
@@ -1012,11 +932,6 @@ export class DictionariesPage implements OnDestroy {
     if (c.hasError('required')) return 'Укажите наименование';
     if (c.hasError('minlength')) return 'Минимум 2 символа';
     return 'Проверьте наименование';
-  }
-
-  /** Сравнение наименований без учёта регистра (для дубликатов в форме и Excel). */
-  private normalizeWorkTypeName(raw: string): string {
-    return raw.trim().toLocaleLowerCase('ru-RU');
   }
 
   deleteWorkType(id: string): void {
@@ -1064,14 +979,13 @@ export class DictionariesPage implements OnDestroy {
   }
 
   private buildWorkTypesPayload() {
-    const rawRate = this.workTypesForm.controls.hourlyRateRub.value;
-    const hourlyRateRub = typeof rawRate === 'number' ? rawRate : Number(rawRate);
-    return {
-      name: this.workTypesForm.controls.name.value.trim(),
-      shortLabel: this.workTypesForm.controls.shortLabel.value.trim(),
-      hourlyRateRub: Number.isFinite(hourlyRateRub) ? Math.round(hourlyRateRub) : 0,
-      isActive: this.workTypesForm.controls.isActive.value,
-    };
+    const c = this.workTypesForm.controls;
+    return workTypesPayloadFromValues({
+      name: c.name.value,
+      shortLabel: c.shortLabel.value,
+      hourlyRateRub: c.hourlyRateRub.value,
+      isActive: c.isActive.value,
+    });
   }
 
   workTypesHourlyRateErrorText(): string {
@@ -1087,8 +1001,7 @@ export class DictionariesPage implements OnDestroy {
     return 'Проверьте ставку';
   }
 
-  openMaterialsCreate(): void {
-    if (!this.permissions.crud().canCreate) return;
+  private resetMaterialsCreateForm(): void {
     this.isMaterialsViewMode.set(false);
     this.materialsForm.enable({ emitEvent: false });
     this.materialsStore.startCreate();
@@ -1102,25 +1015,117 @@ export class DictionariesPage implements OnDestroy {
       notes: '',
       isActive: true,
     });
-    this.materialBundleTab.set('material');
-    this.isMaterialsModalOpen.set(true);
   }
 
-  /** Переключение вкладок в объединённой модалке создания (материал ↔ характеристика). */
-  selectMaterialBundleTab(tab: 'material' | 'characteristic'): void {
-    if (tab === this.materialBundleTab()) return;
-    if (tab === 'characteristic') {
-      if (!this.isMaterialCharacteristicsModalOpen()) {
-        this.openMaterialCharacteristicsCreate();
-      } else {
-        this.materialBundleTab.set('characteristic');
-      }
-      return;
+  /** Инициализация формы на полноэкранном маршруте (без модалки). */
+  private initNewMaterialStandaloneForm(): void {
+    if (!this.permissions.crud().canCreate) return;
+    const pendingMcId = this.materialStandaloneFlow.consumePendingMaterialCharacteristicId();
+    this.resetMaterialsCreateForm();
+    if (pendingMcId) {
+      this.materialsForm.controls.materialCharacteristicId.setValue(pendingMcId);
     }
-    if (!this.isMaterialsModalOpen()) {
-      this.openMaterialsCreate();
+  }
+
+  navigateToNewMaterialPage(): void {
+    if (!this.permissions.crud().canCreate) return;
+    void this.router.navigate(['/справочники', 'новый-материал']);
+  }
+
+  navigateToNewMaterialCharacteristicPage(): void {
+    if (!this.permissions.crud().canCreate) return;
+    if (this.isNewMaterialPageRoute()) {
+      this.materialStandaloneFlow.markChainFromMaterialStandalone();
     }
-    this.materialBundleTab.set('material');
+    void this.router.navigate(['/справочники', 'новая-характеристика-материала']);
+  }
+
+  /**
+   * Флаги «quick-add» из модалок материала/характеристики — сбрасываем при выходе с полноэкранных маршрутов,
+   * чтобы не залипали после «Назад» без сохранения (бэклог #11).
+   */
+  private resetAllDictionaryHubQuickAddFlags(): void {
+    this.unitQuickAddForMaterials.set(false);
+    this.colorQuickAddForMaterialCharacteristics.set(false);
+    this.geometriesModalStackAboveMaterials.set(false);
+    this.coatingQuickAddForMaterialCharacteristics.set(false);
+    this.surfaceQuickAddForMaterialCharacteristics.set(false);
+  }
+
+  /**
+   * С формы материала/характеристики (в т.ч. полноэкранной) могли открыться модалки справочников поверх —
+   * перед закрытием основной формы закрываем их, иначе остаётся «открытый» слой и quick-add.
+   */
+  private closeDictionaryModalsStackedOverMaterialForm(): void {
+    if (this.isWorkTypesModalOpen()) this.closeWorkTypesModal();
+    if (this.isUnitsModalOpen()) this.closeUnitsModal();
+    if (this.isGeometriesModalOpen()) this.closeGeometriesModal();
+    if (this.isColorsModalOpen()) this.closeColorsModal();
+    if (this.isSurfaceFinishesModalOpen()) this.closeSurfaceFinishesModal();
+    if (this.isCoatingsModalOpen()) this.closeCoatingsModal();
+    if (this.isMaterialCharacteristicsModalOpen()) this.closeMaterialCharacteristicsModal();
+  }
+
+  /** Назад: один шаг по истории браузера (после standalone-формы). */
+  navigateBackFromNewMaterialPage(): void {
+    this.closeDictionaryModalsStackedOverMaterialForm();
+    this.closeMaterialBundleModal();
+    this.resetAllDictionaryHubQuickAddFlags();
+    this.location.back();
+  }
+
+  navigateBackFromNewMaterialCharacteristicPage(): void {
+    this.materialStandaloneFlow.cancelFlow();
+    this.closeDictionaryModalsStackedOverMaterialForm();
+    this.closeMaterialBundleModal();
+    this.resetAllDictionaryHubQuickAddFlags();
+    this.location.back();
+  }
+
+  navigateToStandaloneDictionaryCreate(key: StandaloneDictionaryCreateKey): void {
+    if (!this.permissions.crud().canCreate) return;
+    const row = STANDALONE_DICTIONARY_CREATE.find((x) => x.key === key);
+    if (!row) return;
+    void this.router.navigate(['/справочники', row.path]);
+  }
+
+  navigateBackFromStandaloneDictionaryCreate(): void {
+    callStandaloneCloseForKey(this.standaloneCreateKey(), {
+      workTypes: () => this.closeWorkTypesModal(),
+      units: () => this.closeUnitsModal(),
+      geometries: () => this.closeGeometriesModal(),
+      colors: () => this.closeColorsModal(),
+      surfaceFinishes: () => this.closeSurfaceFinishesModal(),
+      coatings: () => this.closeCoatingsModal(),
+      organizations: () => this.closeOrganizationsModal(),
+      clients: () => this.closeClientsModal(),
+      roles: () => this.closeRolesModal(),
+      users: () => this.closeUsersModal(),
+    });
+    this.resetAllDictionaryHubQuickAddFlags();
+    this.location.back();
+  }
+
+  onDismissMaterialsForm(): void {
+    if (this.isNewMaterialPageRoute()) {
+      this.navigateBackFromNewMaterialPage();
+    } else {
+      this.closeMaterialsModal();
+    }
+  }
+
+  onDismissMaterialCharacteristicsForm(): void {
+    if (this.isNewMaterialCharacteristicPageRoute()) {
+      this.navigateBackFromNewMaterialCharacteristicPage();
+    } else {
+      this.closeMaterialCharacteristicsModal();
+    }
+  }
+
+  openMaterialsCreate(): void {
+    if (!this.permissions.crud().canCreate) return;
+    this.resetMaterialsCreateForm();
+    this.isMaterialsModalOpen.set(true);
   }
 
   openMaterialsEdit(id: string): void {
@@ -1140,7 +1145,6 @@ export class DictionariesPage implements OnDestroy {
       notes: item.notes ?? '',
       isActive: item.isActive,
     });
-    this.materialBundleTab.set('material');
     this.isMaterialsModalOpen.set(true);
   }
 
@@ -1151,11 +1155,18 @@ export class DictionariesPage implements OnDestroy {
     this.materialCharacteristicsStore.resetForm();
     this.isMaterialCharacteristicsViewMode.set(false);
     this.isMaterialCharacteristicsModalOpen.set(false);
-    this.materialBundleTab.set('material');
   }
 
   closeMaterialsModal(): void {
-    this.closeMaterialBundleModal();
+    if (this.isNewMaterialCharacteristicPageRoute() && !this.isMaterialCharacteristicsModalOpen()) {
+      this.materialsStore.resetForm();
+      this.isMaterialsViewMode.set(false);
+      this.isMaterialsModalOpen.set(false);
+      return;
+    }
+    this.materialsStore.resetForm();
+    this.isMaterialsViewMode.set(false);
+    this.isMaterialsModalOpen.set(false);
   }
 
   submitMaterials(): void {
@@ -1163,9 +1174,20 @@ export class DictionariesPage implements OnDestroy {
     if (this.materialsForm.invalid) {
       this.materialsStore.submit({ value: payload, isValid: false });
       this.materialsForm.markAllAsTouched();
+      scrollToFirstInvalidControlInForm('materials-form', this.doc);
       return;
     }
     this.materialsStore.submit({ value: payload, isValid: true });
+    if (this.isNewMaterialPageRoute()) {
+      this.scheduleAfterStandaloneMaterialCreate(payload);
+      return;
+    }
+    if (this.isNewMaterialCharacteristicPageRoute()) {
+      this.materialsStore.resetForm();
+      this.isMaterialsViewMode.set(false);
+      this.isMaterialsModalOpen.set(false);
+      return;
+    }
     this.closeMaterialsModal();
   }
 
@@ -1191,7 +1213,6 @@ export class DictionariesPage implements OnDestroy {
       notes: item.notes ?? '',
       isActive: item.isActive,
     });
-    this.materialBundleTab.set('material');
     this.isMaterialsModalOpen.set(true);
   }
 
@@ -1211,12 +1232,10 @@ export class DictionariesPage implements OnDestroy {
     });
     this.materialsForm.disable({ emitEvent: false });
     this.isMaterialsViewMode.set(true);
-    this.materialBundleTab.set('material');
     this.isMaterialsModalOpen.set(true);
   }
 
-  openMaterialCharacteristicsCreate(): void {
-    if (!this.permissions.crud().canCreate) return;
+  private resetMaterialCharacteristicsCreateForm(): void {
     this.isMaterialCharacteristicsViewMode.set(false);
     this.materialCharacteristicsForm.enable({ emitEvent: false });
     this.materialCharacteristicsStore.startCreate();
@@ -1241,13 +1260,216 @@ export class DictionariesPage implements OnDestroy {
     this.syncMaterialCharacteristicColorFromReference('');
     this.syncMaterialCharacteristicFinishFromReference('');
     this.syncMaterialCharacteristicCoatingFromReference('');
-    this.materialBundleTab.set('characteristic');
+  }
+
+  private initNewMaterialCharacteristicStandaloneForm(): void {
+    if (!this.permissions.crud().canCreate) return;
+    this.resetMaterialCharacteristicsCreateForm();
+  }
+
+  private initWorkTypesStandaloneCreate(): void {
+    if (!this.permissions.crud().canCreate) return;
+    this.isWorkTypesViewMode.set(false);
+    this.workTypesForm.enable({ emitEvent: false });
+    this.productionWorkTypesStore.startCreate();
+    this.workTypesForm.reset({
+      name: '',
+      shortLabel: '',
+      hourlyRateRub: 0,
+      isActive: true,
+    });
+  }
+
+  private initUnitsStandaloneCreate(): void {
+    if (!this.permissions.crud().canCreate) return;
+    this.isUnitsViewMode.set(false);
+    this.unitsForm.enable({ emitEvent: false });
+    this.unitsStore.startCreate();
+    this.unitsForm.reset({
+      name: '',
+      code: '',
+      notes: '',
+      isActive: true,
+    });
+    this.unitQuickAddForMaterials.set(false);
+  }
+
+  private initGeometriesStandaloneCreate(): void {
+    if (!this.permissions.crud().canCreate) return;
+    this.isGeometriesViewMode.set(false);
+    this.geometriesForm.enable({ emitEvent: false });
+    this.geometriesStore.startCreate();
+    this.geometriesForm.reset({
+      name: '',
+      shapeKey: 'rectangular',
+      heightMm: null,
+      lengthMm: null,
+      widthMm: null,
+      diameterMm: null,
+      thicknessMm: null,
+      notes: '',
+      isActive: true,
+    });
+    this.geometriesModalStackAboveMaterials.set(false);
+  }
+
+  private initColorsStandaloneCreate(): void {
+    if (!this.permissions.crud().canCreate) return;
+    this.isColorsViewMode.set(false);
+    this.colorsEditingId.set(null);
+    this.colorsForm.enable({ emitEvent: false });
+    this.colorsStore.startCreate();
+    this.colorsForm.reset({
+      ralCode: 'RAL ',
+      name: '',
+      hex: '#000000',
+    });
+    this.colorQuickAddForMaterialCharacteristics.set(false);
+  }
+
+  private initSurfaceFinishesStandaloneCreate(): void {
+    if (!this.permissions.crud().canCreate) return;
+    this.isSurfaceFinishesViewMode.set(false);
+    this.surfaceFinishesEditingId.set(null);
+    this.surfaceFinishesForm.enable({ emitEvent: false });
+    this.surfaceFinishesStore.startCreate();
+    this.surfaceFinishesForm.reset({
+      finishType: '',
+      roughnessClass: '',
+      raMicron: null,
+    });
+    this.surfaceQuickAddForMaterialCharacteristics.set(false);
+  }
+
+  private initCoatingsStandaloneCreate(): void {
+    if (!this.permissions.crud().canCreate) return;
+    this.isCoatingsViewMode.set(false);
+    this.coatingsEditingId.set(null);
+    this.coatingsForm.enable({ emitEvent: false });
+    this.coatingsStore.startCreate();
+    this.coatingsForm.reset({
+      coatingType: '',
+      coatingSpec: '',
+      thicknessMicron: null,
+    });
+    this.coatingQuickAddForMaterialCharacteristics.set(false);
+  }
+
+  private initOrganizationsStandaloneCreate(): void {
+    if (!this.permissions.crud().canCreate) return;
+    this.isOrganizationsViewMode.set(false);
+    this.organizationsForm.enable({ emitEvent: false });
+    this.organizationsStore.startCreate();
+    this.organizationsForm.reset({
+      organizationKind: 'OOO',
+      name: '',
+      shortName: '',
+      inn: '',
+      kpp: '',
+      ogrn: '',
+      okpo: '',
+      phone: '',
+      email: '',
+      website: '',
+      legalAddress: '',
+      postalAddress: '',
+      bankName: '',
+      bankBik: '',
+      bankAccount: '',
+      bankCorrAccount: '',
+      signerName: '',
+      signerPosition: '',
+      notes: '',
+      contactIds: [],
+      contactPicker: '',
+      isActive: true,
+    });
+  }
+
+  private initClientsStandaloneCreate(): void {
+    if (!this.permissions.crud().canCreate) return;
+    this.clientsMarkupOnCreate = null;
+    this.isClientsViewMode.set(false);
+    this.clientsForm.enable({ emitEvent: false });
+    this.clientsStore.startCreate();
+    this.clientsForm.reset({
+      lastName: '',
+      firstName: '',
+      patronymic: '',
+      address: '',
+      phone: '',
+      email: '',
+      notes: '',
+      passportSeries: '',
+      passportNumber: '',
+      passportIssuedBy: '',
+      passportIssuedDate: '',
+      isActive: true,
+    });
+  }
+
+  private initRolesStandaloneCreate(): void {
+    if (!this.permissions.crud().canCreate) return;
+    this.isRolesViewMode.set(false);
+    this.rolesEditingId.set(null);
+    this.rolesForm.enable({ emitEvent: false });
+    this.rolesForm.reset({
+      name: '',
+      sortOrder: nextRoleSortOrder(this.rolesStore.items()),
+      notes: '',
+      isActive: true,
+    });
+  }
+
+  private initUsersStandaloneCreate(): void {
+    if (!this.permissions.crud().canCreate) return;
+    this.isUsersViewMode.set(false);
+    this.usersEditingId.set(null);
+    this.usersForm.enable({ emitEvent: false });
+    const pw = this.usersForm.controls.password;
+    pw.enable({ emitEvent: false });
+    pw.setValidators([Validators.required, Validators.minLength(4)]);
+    pw.updateValueAndValidity({ emitEvent: false });
+    const firstRole = this.rolesStore.matrixRoleColumns()[0]?.id ?? '';
+    this.usersForm.reset({
+      login: '',
+      password: '',
+      fullName: '',
+      email: '',
+      phone: '',
+      roleId: firstRole,
+    });
+  }
+
+  private initStandaloneDictionaryCreateFromRoute(): void {
+    const sc = this.route.snapshot.data['standaloneCreate'];
+    if (!isStandaloneDictionaryCreateKey(sc)) {
+      return;
+    }
+    const inits: Record<StandaloneDictionaryCreateKey, () => void> = {
+      workTypes: () => this.initWorkTypesStandaloneCreate(),
+      units: () => this.initUnitsStandaloneCreate(),
+      geometries: () => this.initGeometriesStandaloneCreate(),
+      colors: () => this.initColorsStandaloneCreate(),
+      surfaceFinishes: () => this.initSurfaceFinishesStandaloneCreate(),
+      coatings: () => this.initCoatingsStandaloneCreate(),
+      organizations: () => this.initOrganizationsStandaloneCreate(),
+      clients: () => this.initClientsStandaloneCreate(),
+      roles: () => this.initRolesStandaloneCreate(),
+      users: () => this.initUsersStandaloneCreate(),
+    };
+    inits[sc]();
+  }
+
+  openMaterialCharacteristicsCreate(): void {
+    if (!this.permissions.crud().canCreate) return;
+    this.resetMaterialCharacteristicsCreateForm();
     this.isMaterialCharacteristicsModalOpen.set(true);
   }
 
   /** «+» у поля геометрии: открыть создание геометрии поверх модалки материала (не плитку хаба под модалкой). */
   openGeometriesCreateFromMaterials(): void {
-    if (!this.isMaterialsModalOpen()) return;
+    if (!this.isMaterialsModalOpen() && !this.isNewMaterialPageRoute()) return;
     if (!this.permissions.crud().canCreate) return;
     this.geometriesModalStackAboveMaterials.set(true);
     this.openGeometriesCreate();
@@ -1281,12 +1503,13 @@ export class DictionariesPage implements OnDestroy {
       },
       { emitEvent: false },
     );
-    this.materialBundleTab.set('characteristic');
     this.isMaterialCharacteristicsModalOpen.set(true);
   }
 
   closeMaterialCharacteristicsModal(): void {
-    this.closeMaterialBundleModal();
+    this.materialCharacteristicsStore.resetForm();
+    this.isMaterialCharacteristicsViewMode.set(false);
+    this.isMaterialCharacteristicsModalOpen.set(false);
   }
 
   submitMaterialCharacteristics(): void {
@@ -1294,52 +1517,20 @@ export class DictionariesPage implements OnDestroy {
     if (this.materialCharacteristicsForm.invalid) {
       this.materialCharacteristicsStore.submit({ value: payload, isValid: false });
       this.materialCharacteristicsForm.markAllAsTouched();
+      scrollToFirstInvalidControlInForm('material-characteristics-form', this.doc);
       return;
     }
-    const bundleReturnToMaterials =
-      this.isMaterialsModalOpen() &&
-      !this.isMaterialsViewMode() &&
-      !this.materialsStore.isEditMode() &&
-      !this.materialCharacteristicsStore.isEditMode() &&
-      !this.isMaterialCharacteristicsViewMode();
-    const snapshotKey = this.materialCharacteristicQuickAddMatchKey(payload);
+    const standaloneCharSubmit =
+      this.isNewMaterialCharacteristicPageRoute() && !this.isMaterialCharacteristicsModalOpen();
     this.materialCharacteristicsStore.submit({ value: payload, isValid: true });
-    if (bundleReturnToMaterials) {
-      this.scheduleMaterialCharacteristicQuickAddToMaterials(snapshotKey);
-      queueMicrotask(() => {
-        this.materialCharacteristicsStore.resetForm();
-        this.materialCharacteristicsStore.startCreate();
-        this.materialCharacteristicsForm.enable({ emitEvent: false });
-        this.materialCharacteristicsForm.reset({
-          name: '',
-          code: '',
-          densityKgM3: null,
-          colorId: '',
-          colorName: '',
-          colorHex: '',
-          surfaceFinishId: '',
-          finishType: '',
-          roughnessClass: '',
-          raMicron: null,
-          coatingId: '',
-          coatingType: '',
-          coatingSpec: '',
-          coatingThicknessMicron: null,
-          notes: '',
-          isActive: true,
-        });
-        this.syncMaterialCharacteristicColorFromReference('');
-        this.syncMaterialCharacteristicFinishFromReference('');
-        this.syncMaterialCharacteristicCoatingFromReference('');
-        this.isMaterialCharacteristicsModalOpen.set(false);
-        this.materialBundleTab.set('material');
-      });
-    } else {
-      this.closeMaterialCharacteristicsModal();
+    if (standaloneCharSubmit) {
+      this.scheduleAfterStandaloneCharacteristicCreate(payload);
+      return;
     }
+    this.closeMaterialCharacteristicsModal();
   }
 
-  /** Ключ для поиска только что созданной характеристики в списке (как unitQuickAdd / геометрия). */
+  /** Ключ совпадения только что созданной записи в списке (после `getItems` в store). */
   private materialCharacteristicQuickAddMatchKey(
     x: MaterialCharacteristicItem | MaterialCharacteristicItemInput,
   ): string {
@@ -1353,19 +1544,78 @@ export class DictionariesPage implements OnDestroy {
     ].join('|');
   }
 
-  private scheduleMaterialCharacteristicQuickAddToMaterials(snapshotKey: string): void {
+  private materialItemSnapshotKeyFromPayload(p: MaterialItemInput): string {
+    return [
+      p.name.trim().toLowerCase(),
+      (p.code ?? '').trim().toLowerCase(),
+      p.materialCharacteristicId ?? '',
+      p.geometryId ?? '',
+      String(p.purchasePriceRub ?? ''),
+      String(p.isActive),
+    ].join('|');
+  }
+
+  private materialItemMatchesSnapshot(m: MaterialItem, key: string): boolean {
+    return (
+      this.materialItemSnapshotKeyFromPayload({
+        name: m.name,
+        code: m.code,
+        materialCharacteristicId: m.materialCharacteristicId,
+        geometryId: m.geometryId,
+        purchasePriceRub: m.purchasePriceRub,
+        isActive: m.isActive,
+      }) === key
+    );
+  }
+
+  /** После create материала store обновляется асинхронно — ждём строку, затем шаг назад. */
+  private scheduleAfterStandaloneMaterialCreate(payload: MaterialItemInput): void {
+    const snapshotKey = this.materialItemSnapshotKeyFromPayload(payload);
     let attempts = 0;
-    const maxAttempts = 24;
+    const maxAttempts = 40;
+    const tick = (): void => {
+      const created = this.materialsStore.items().find((m) => this.materialItemMatchesSnapshot(m, snapshotKey));
+      if (created) {
+        this.closeMaterialBundleModal();
+        this.location.back();
+        return;
+      }
+      if (attempts++ < maxAttempts) {
+        setTimeout(tick, 50);
+      } else {
+        this.closeMaterialBundleModal();
+        this.location.back();
+      }
+    };
+    queueMicrotask(tick);
+  }
+
+  /**
+   * После create характеристики: опционально подставить id в форму материала (если пришли с «Новый материал»),
+   * затем шаг назад по истории.
+   */
+  private scheduleAfterStandaloneCharacteristicCreate(payload: MaterialCharacteristicItemInput): void {
+    const snapshotKey = this.materialCharacteristicQuickAddMatchKey(payload);
+    let attempts = 0;
+    const maxAttempts = 40;
     const tick = (): void => {
       const created = this.materialCharacteristicsStore.items().find(
         (x) => this.materialCharacteristicQuickAddMatchKey(x) === snapshotKey,
       );
       if (created) {
-        this.materialsForm.controls.materialCharacteristicId.setValue(created.id);
+        this.materialStandaloneFlow.afterStandaloneCharacteristicSaved(created.id);
+        this.materialCharacteristicsStore.resetForm();
+        this.isMaterialCharacteristicsViewMode.set(false);
+        this.closeMaterialBundleModal();
+        this.location.back();
         return;
       }
       if (attempts++ < maxAttempts) {
         setTimeout(tick, 50);
+      } else {
+        this.materialStandaloneFlow.cancelFlow();
+        this.closeMaterialBundleModal();
+        this.location.back();
       }
     };
     queueMicrotask(tick);
@@ -1404,7 +1654,6 @@ export class DictionariesPage implements OnDestroy {
       },
       { emitEvent: false },
     );
-    this.materialBundleTab.set('characteristic');
     this.isMaterialCharacteristicsModalOpen.set(true);
   }
 
@@ -1435,27 +1684,30 @@ export class DictionariesPage implements OnDestroy {
     );
     this.materialCharacteristicsForm.disable({ emitEvent: false });
     this.isMaterialCharacteristicsViewMode.set(true);
-    this.materialBundleTab.set('characteristic');
     this.isMaterialCharacteristicsModalOpen.set(true);
   }
 
   openGeometriesCreate(): void {
     if (!this.permissions.crud().canCreate) return;
-    this.isGeometriesViewMode.set(false);
-    this.geometriesForm.enable({ emitEvent: false });
-    this.geometriesStore.startCreate();
-    this.geometriesForm.reset({
-      name: '',
-      shapeKey: 'rectangular',
-      heightMm: null,
-      lengthMm: null,
-      widthMm: null,
-      diameterMm: null,
-      thicknessMm: null,
-      notes: '',
-      isActive: true,
-    });
-    this.isGeometriesModalOpen.set(true);
+    if (this.geometriesModalStackAboveMaterials()) {
+      this.isGeometriesViewMode.set(false);
+      this.geometriesForm.enable({ emitEvent: false });
+      this.geometriesStore.startCreate();
+      this.geometriesForm.reset({
+        name: '',
+        shapeKey: 'rectangular',
+        heightMm: null,
+        lengthMm: null,
+        widthMm: null,
+        diameterMm: null,
+        thicknessMm: null,
+        notes: '',
+        isActive: true,
+      });
+      this.isGeometriesModalOpen.set(true);
+      return;
+    }
+    this.navigateToStandaloneDictionaryCreate('geometries');
   }
 
   openGeometriesEdit(id: string): void {
@@ -1491,6 +1743,7 @@ export class DictionariesPage implements OnDestroy {
     if (this.geometriesForm.invalid) {
       this.geometriesStore.submit({ value: payload, isValid: false });
       this.geometriesForm.markAllAsTouched();
+      scrollToFirstInvalidControlInForm('geometries-form', this.doc);
       return;
     }
     const quickAddForMaterials = this.geometriesModalStackAboveMaterials();
@@ -1500,6 +1753,7 @@ export class DictionariesPage implements OnDestroy {
       this.scheduleGeometryQuickAddToMaterials(snapshotKey);
     }
     this.closeGeometriesModal();
+    this.finishStandaloneDictionaryCreateIfMatch('geometries');
   }
 
   /** Как у единиц измерения: после создания геометрии из формы материала — подставить id в поле. */
@@ -1593,17 +1847,21 @@ export class DictionariesPage implements OnDestroy {
 
   openUnitsCreate(fromMaterials = false): void {
     if (!this.permissions.crud().canCreate) return;
-    this.isUnitsViewMode.set(false);
-    this.unitsForm.enable({ emitEvent: false });
-    this.unitsStore.startCreate();
-    this.unitsForm.reset({
-      name: '',
-      code: '',
-      notes: '',
-      isActive: true,
-    });
-    this.unitQuickAddForMaterials.set(fromMaterials);
-    this.isUnitsModalOpen.set(true);
+    if (fromMaterials) {
+      this.isUnitsViewMode.set(false);
+      this.unitsForm.enable({ emitEvent: false });
+      this.unitsStore.startCreate();
+      this.unitsForm.reset({
+        name: '',
+        code: '',
+        notes: '',
+        isActive: true,
+      });
+      this.unitQuickAddForMaterials.set(true);
+      this.isUnitsModalOpen.set(true);
+      return;
+    }
+    this.navigateToStandaloneDictionaryCreate('units');
   }
 
   openUnitsEdit(id: string): void {
@@ -1634,6 +1892,7 @@ export class DictionariesPage implements OnDestroy {
     if (this.unitsForm.invalid) {
       this.unitsStore.submit({ value: payload, isValid: false });
       this.unitsForm.markAllAsTouched();
+      scrollToFirstInvalidControlInForm('units-form', this.doc);
       return;
     }
     const quickAdd = this.unitQuickAddForMaterials();
@@ -1651,6 +1910,7 @@ export class DictionariesPage implements OnDestroy {
       });
     }
     this.closeUnitsModal();
+    this.finishStandaloneDictionaryCreateIfMatch('units');
   }
 
   deleteUnit(id: string): void {
@@ -1694,16 +1954,7 @@ export class DictionariesPage implements OnDestroy {
 
   openRolesCreate(): void {
     if (!this.permissions.crud().canCreate) return;
-    this.isRolesViewMode.set(false);
-    this.rolesEditingId.set(null);
-    this.rolesForm.enable({ emitEvent: false });
-    this.rolesForm.reset({
-      name: '',
-      sortOrder: nextRoleSortOrder(this.rolesStore.items()),
-      notes: '',
-      isActive: true,
-    });
-    this.isRolesModalOpen.set(true);
+    this.navigateToStandaloneDictionaryCreate('roles');
   }
 
   openRolesEdit(id: string): void {
@@ -1794,6 +2045,7 @@ export class DictionariesPage implements OnDestroy {
   submitRoles(): void {
     if (this.rolesForm.invalid) {
       this.rolesForm.markAllAsTouched();
+      scrollToFirstInvalidControlInForm('roles-form', this.doc);
       return;
     }
     const payload = this.buildRolesPayload();
@@ -1804,6 +2056,7 @@ export class DictionariesPage implements OnDestroy {
       this.rolesStore.create(payload);
     }
     this.closeRolesModal();
+    this.finishStandaloneDictionaryCreateIfMatchCreateOnly('roles', editId);
   }
 
   deleteRole(id: string): void {
@@ -1834,23 +2087,7 @@ export class DictionariesPage implements OnDestroy {
 
   openUsersCreate(): void {
     if (!this.permissions.crud().canCreate) return;
-    this.isUsersViewMode.set(false);
-    this.usersEditingId.set(null);
-    this.usersForm.enable({ emitEvent: false });
-    const pw = this.usersForm.controls.password;
-    pw.enable({ emitEvent: false });
-    pw.setValidators([Validators.required, Validators.minLength(4)]);
-    pw.updateValueAndValidity({ emitEvent: false });
-    const firstRole = this.rolesStore.matrixRoleColumns()[0]?.id ?? '';
-    this.usersForm.reset({
-      login: '',
-      password: '',
-      fullName: '',
-      email: '',
-      phone: '',
-      roleId: firstRole,
-    });
-    this.isUsersModalOpen.set(true);
+    this.navigateToStandaloneDictionaryCreate('users');
   }
 
   openUsersEdit(id: string): void {
@@ -1906,6 +2143,7 @@ export class DictionariesPage implements OnDestroy {
   submitUsers(): void {
     if (this.usersForm.invalid) {
       this.usersForm.markAllAsTouched();
+      scrollToFirstInvalidControlInForm('users-form', this.doc);
       return;
     }
     const v = this.usersForm.getRawValue();
@@ -1917,6 +2155,7 @@ export class DictionariesPage implements OnDestroy {
     if (logins.includes(v.login.trim().toLowerCase())) {
       this.usersForm.controls.login.setErrors({ duplicate: true });
       this.usersForm.markAllAsTouched();
+      scrollToFirstInvalidControlInForm('users-form', this.doc);
       return;
     }
     if (!this.rolesStore.roleExists(v.roleId)) {
@@ -1936,6 +2175,7 @@ export class DictionariesPage implements OnDestroy {
       this.usersStore.create(payload);
     }
     this.closeUsersModal();
+    this.finishStandaloneDictionaryCreateIfMatchCreateOnly('users', editId);
   }
 
   deleteUser(id: string): void {
@@ -1981,17 +2221,21 @@ export class DictionariesPage implements OnDestroy {
 
   openColorsCreate(fromMaterialCharacteristics = false): void {
     if (!this.permissions.crud().canCreate) return;
-    this.isColorsViewMode.set(false);
-    this.colorsEditingId.set(null);
-    this.colorsForm.enable({ emitEvent: false });
-    this.colorsStore.startCreate();
-    this.colorsForm.reset({
-      ralCode: 'RAL ',
-      name: '',
-      hex: '#000000',
-    });
-    this.colorQuickAddForMaterialCharacteristics.set(fromMaterialCharacteristics);
-    this.isColorsModalOpen.set(true);
+    if (fromMaterialCharacteristics) {
+      this.isColorsViewMode.set(false);
+      this.colorsEditingId.set(null);
+      this.colorsForm.enable({ emitEvent: false });
+      this.colorsStore.startCreate();
+      this.colorsForm.reset({
+        ralCode: 'RAL ',
+        name: '',
+        hex: '#000000',
+      });
+      this.colorQuickAddForMaterialCharacteristics.set(true);
+      this.isColorsModalOpen.set(true);
+      return;
+    }
+    this.navigateToStandaloneDictionaryCreate('colors');
   }
 
   openColorsEdit(id: string): void {
@@ -2025,6 +2269,7 @@ export class DictionariesPage implements OnDestroy {
     if (this.colorsForm.invalid) {
       this.colorsStore.submit({ value: payload, isValid: false });
       this.colorsForm.markAllAsTouched();
+      scrollToFirstInvalidControlInForm('colors-form', this.doc);
       return;
     }
 
@@ -2060,6 +2305,7 @@ export class DictionariesPage implements OnDestroy {
       });
     }
     this.closeColorsModal();
+    this.finishStandaloneDictionaryCreateIfMatch('colors');
   }
 
   deleteColor(id: string): void {
@@ -2139,17 +2385,21 @@ export class DictionariesPage implements OnDestroy {
 
   openSurfaceFinishesCreate(fromMaterialCharacteristics = false): void {
     if (!this.permissions.crud().canCreate) return;
-    this.isSurfaceFinishesViewMode.set(false);
-    this.surfaceFinishesEditingId.set(null);
-    this.surfaceFinishesForm.enable({ emitEvent: false });
-    this.surfaceFinishesStore.startCreate();
-    this.surfaceFinishesForm.reset({
-      finishType: '',
-      roughnessClass: '',
-      raMicron: null,
-    });
-    this.surfaceQuickAddForMaterialCharacteristics.set(fromMaterialCharacteristics);
-    this.isSurfaceFinishesModalOpen.set(true);
+    if (fromMaterialCharacteristics) {
+      this.isSurfaceFinishesViewMode.set(false);
+      this.surfaceFinishesEditingId.set(null);
+      this.surfaceFinishesForm.enable({ emitEvent: false });
+      this.surfaceFinishesStore.startCreate();
+      this.surfaceFinishesForm.reset({
+        finishType: '',
+        roughnessClass: '',
+        raMicron: null,
+      });
+      this.surfaceQuickAddForMaterialCharacteristics.set(true);
+      this.isSurfaceFinishesModalOpen.set(true);
+      return;
+    }
+    this.navigateToStandaloneDictionaryCreate('surfaceFinishes');
   }
 
   openSurfaceFinishesEdit(id: string): void {
@@ -2183,6 +2433,7 @@ export class DictionariesPage implements OnDestroy {
     if (this.surfaceFinishesForm.invalid) {
       this.surfaceFinishesStore.submit({ value: payload, isValid: false });
       this.surfaceFinishesForm.markAllAsTouched();
+      scrollToFirstInvalidControlInForm('surface-finishes-form', this.doc);
       return;
     }
 
@@ -2221,6 +2472,7 @@ export class DictionariesPage implements OnDestroy {
       });
     }
     this.closeSurfaceFinishesModal();
+    this.finishStandaloneDictionaryCreateIfMatch('surfaceFinishes');
   }
 
   deleteSurfaceFinish(id: string): void {
@@ -2305,17 +2557,21 @@ export class DictionariesPage implements OnDestroy {
 
   openCoatingsCreate(fromMaterialCharacteristics = false): void {
     if (!this.permissions.crud().canCreate) return;
-    this.isCoatingsViewMode.set(false);
-    this.coatingsEditingId.set(null);
-    this.coatingsForm.enable({ emitEvent: false });
-    this.coatingsStore.startCreate();
-    this.coatingsForm.reset({
-      coatingType: '',
-      coatingSpec: '',
-      thicknessMicron: null,
-    });
-    this.coatingQuickAddForMaterialCharacteristics.set(fromMaterialCharacteristics);
-    this.isCoatingsModalOpen.set(true);
+    if (fromMaterialCharacteristics) {
+      this.isCoatingsViewMode.set(false);
+      this.coatingsEditingId.set(null);
+      this.coatingsForm.enable({ emitEvent: false });
+      this.coatingsStore.startCreate();
+      this.coatingsForm.reset({
+        coatingType: '',
+        coatingSpec: '',
+        thicknessMicron: null,
+      });
+      this.coatingQuickAddForMaterialCharacteristics.set(true);
+      this.isCoatingsModalOpen.set(true);
+      return;
+    }
+    this.navigateToStandaloneDictionaryCreate('coatings');
   }
 
   openCoatingsEdit(id: string): void {
@@ -2349,6 +2605,7 @@ export class DictionariesPage implements OnDestroy {
     if (this.coatingsForm.invalid) {
       this.coatingsStore.submit({ value: payload, isValid: false });
       this.coatingsForm.markAllAsTouched();
+      scrollToFirstInvalidControlInForm('coatings-form', this.doc);
       return;
     }
     const quickAddMc = this.coatingQuickAddForMaterialCharacteristics();
@@ -2375,6 +2632,7 @@ export class DictionariesPage implements OnDestroy {
       this.coatingsStore.loadItems();
       this.materialCharacteristicsStore.loadItems();
       this.closeCoatingsModal();
+      this.finishStandaloneDictionaryCreateIfMatch('coatings');
       return;
     }
 
@@ -2391,6 +2649,7 @@ export class DictionariesPage implements OnDestroy {
       });
     }
     this.closeCoatingsModal();
+    this.finishStandaloneDictionaryCreateIfMatch('coatings');
   }
 
   async applyCoatingPropagationLocal(): Promise<void> {
@@ -2566,25 +2825,7 @@ export class DictionariesPage implements OnDestroy {
 
   openClientsCreate(): void {
     if (!this.permissions.crud().canCreate) return;
-    this.clientsMarkupOnCreate = null;
-    this.isClientsViewMode.set(false);
-    this.clientsForm.enable({ emitEvent: false });
-    this.clientsStore.startCreate();
-    this.clientsForm.reset({
-      lastName: '',
-      firstName: '',
-      patronymic: '',
-      address: '',
-      phone: '',
-      email: '',
-      notes: '',
-      passportSeries: '',
-      passportNumber: '',
-      passportIssuedBy: '',
-      passportIssuedDate: '',
-      isActive: true,
-    });
-    this.isClientsModalOpen.set(true);
+    this.navigateToStandaloneDictionaryCreate('clients');
   }
 
   openClientsEdit(id: string): void {
@@ -2623,10 +2864,12 @@ export class DictionariesPage implements OnDestroy {
     if (this.clientsForm.invalid) {
       this.clientsStore.submit({ value: payload, isValid: false });
       this.clientsForm.markAllAsTouched();
+      scrollToFirstInvalidControlInForm('clients-form', this.doc);
       return;
     }
     this.clientsStore.submit({ value: payload, isValid: true });
     this.closeClientsModal();
+    this.finishStandaloneDictionaryCreateIfMatch('clients');
   }
 
   deleteClient(id: string): void {
@@ -2684,34 +2927,7 @@ export class DictionariesPage implements OnDestroy {
 
   openOrganizationsCreate(): void {
     if (!this.permissions.crud().canCreate) return;
-    this.isOrganizationsViewMode.set(false);
-    this.organizationsForm.enable({ emitEvent: false });
-    this.organizationsStore.startCreate();
-    this.organizationsForm.reset({
-      organizationKind: 'OOO',
-      name: '',
-      shortName: '',
-      inn: '',
-      kpp: '',
-      ogrn: '',
-      okpo: '',
-      phone: '',
-      email: '',
-      website: '',
-      legalAddress: '',
-      postalAddress: '',
-      bankName: '',
-      bankBik: '',
-      bankAccount: '',
-      bankCorrAccount: '',
-      signerName: '',
-      signerPosition: '',
-      notes: '',
-      contactIds: [],
-      contactPicker: '',
-      isActive: true,
-    });
-    this.isOrganizationsModalOpen.set(true);
+    this.navigateToStandaloneDictionaryCreate('organizations');
   }
 
   openOrganizationsEdit(id: string): void {
@@ -2722,7 +2938,7 @@ export class DictionariesPage implements OnDestroy {
     if (!item) return;
     this.organizationsStore.startEdit(item.id);
     this.organizationsForm.reset({
-      organizationKind: this.mapLegalFormToOrganizationKind(item.legalForm),
+      organizationKind: mapLegalFormToOrganizationKind(item.legalForm),
       name: item.name ?? '',
       shortName: item.shortName ?? '',
       inn: item.inn ?? '',
@@ -2759,10 +2975,12 @@ export class DictionariesPage implements OnDestroy {
     if (this.organizationsForm.invalid) {
       this.organizationsStore.submit({ value: payload, isValid: false });
       this.organizationsForm.markAllAsTouched();
+      scrollToFirstInvalidControlInForm('organizations-form', this.doc);
       return;
     }
     this.organizationsStore.submit({ value: payload, isValid: true });
     this.closeOrganizationsModal();
+    this.finishStandaloneDictionaryCreateIfMatch('organizations');
   }
 
   deleteOrganization(id: string): void {
@@ -2778,7 +2996,7 @@ export class DictionariesPage implements OnDestroy {
     this.organizationsForm.enable({ emitEvent: false });
     this.organizationsStore.startCreate();
     this.organizationsForm.reset({
-      organizationKind: this.mapLegalFormToOrganizationKind(item.legalForm),
+      organizationKind: mapLegalFormToOrganizationKind(item.legalForm),
       name: `${item.name} (копия)`,
       shortName: item.shortName ?? '',
       inn: item.inn ?? '',
@@ -2809,7 +3027,7 @@ export class DictionariesPage implements OnDestroy {
     if (!item) return;
     this.organizationsStore.resetForm();
     this.organizationsForm.reset({
-      organizationKind: this.mapLegalFormToOrganizationKind(item.legalForm),
+      organizationKind: mapLegalFormToOrganizationKind(item.legalForm),
       name: item.name ?? '',
       shortName: item.shortName ?? '',
       inn: item.inn ?? '',
@@ -2941,7 +3159,7 @@ export class DictionariesPage implements OnDestroy {
 
   colorNameWithRal(): string {
     const name = this.colorsForm.controls.name.value.trim();
-    const ralCode = this.normalizeRalCode(this.colorsForm.controls.ralCode.value) ?? '';
+    const ralCode = normalizeRalCode(this.colorsForm.controls.ralCode.value) ?? '';
     if (ralCode && name) {
       return `${ralCode} · ${name}`;
     }
@@ -2967,7 +3185,7 @@ export class DictionariesPage implements OnDestroy {
   onRalCodeBlur(): void {
     const raw = this.colorsForm.controls.ralCode.value;
     const upper = raw.trim().toUpperCase();
-    const normalized = this.normalizeRalCode(raw);
+    const normalized = normalizeRalCode(raw);
 
     if (normalized) {
       this.colorsForm.controls.ralCode.setValue(normalized);
@@ -3923,9 +4141,9 @@ export class DictionariesPage implements OnDestroy {
   }
 
   private buildOrganizationsExcelRow(item: OrganizationItem): Record<string, string | number> {
-    const kind = this.mapLegalFormToOrganizationKind(item.legalForm);
+    const kind = mapLegalFormToOrganizationKind(item.legalForm);
     return {
-      'Вид организации': this.organizationKindToLegalForm(kind),
+      'Вид организации': organizationKindToLegalForm(kind),
       'Полное наименование': item.name,
       'Короткое наименование': item.shortName ?? '',
       ИНН: item.inn ?? '',
@@ -4123,101 +4341,88 @@ export class DictionariesPage implements OnDestroy {
     const u = this.unitsStore.items().find((x) => x.id === uid);
     const gid = this.materialsForm.controls.geometryId.value;
     const g = this.geometriesStore.items().find((x) => x.id === gid);
-    const rawP = this.materialsForm.controls.purchasePriceRub.value;
-    const purchasePriceRub = typeof rawP === 'number' ? rawP : Number(rawP);
-    return {
-      name: this.materialsForm.controls.name.value.trim(),
-      code: this.materialsForm.controls.code.value.trim() || undefined,
-      materialCharacteristicId: this.materialsForm.controls.materialCharacteristicId.value,
+    const c = this.materialsForm.controls;
+    return materialsPayloadFromValues({
+      name: c.name.value,
+      code: c.code.value,
+      materialCharacteristicId: c.materialCharacteristicId.value,
       geometryId: gid,
       geometryName: g?.name,
       unitId: uid || undefined,
       unitName: u ? `${u.name} (${u.code ?? '—'})` : undefined,
-      purchasePriceRub: Number.isFinite(purchasePriceRub) ? Math.round(purchasePriceRub) : 0,
-      notes: this.materialsForm.controls.notes.value.trim() || undefined,
-      isActive: this.materialsForm.controls.isActive.value,
-    };
+      purchasePriceRub: c.purchasePriceRub.value,
+      notes: c.notes.value,
+      isActive: c.isActive.value,
+    });
   }
 
   private buildMaterialCharacteristicsPayload(): MaterialCharacteristicItemInput {
-    return {
-      name: this.materialCharacteristicsForm.controls.name.value.trim(),
-      code: this.materialCharacteristicsForm.controls.code.value.trim() || undefined,
-      densityKgM3: this.materialCharacteristicsForm.controls.densityKgM3.value ?? undefined,
-      colorId: this.materialCharacteristicsForm.controls.colorId.value || undefined,
-      colorName: this.materialCharacteristicsForm.controls.colorName.value.trim() || undefined,
-      colorHex: this.materialCharacteristicsForm.controls.colorHex.value.trim() || undefined,
-      surfaceFinishId:
-        this.materialCharacteristicsForm.controls.surfaceFinishId.value || undefined,
-      finishType: this.materialCharacteristicsForm.controls.finishType.value.trim() || undefined,
-      roughnessClass:
-        this.materialCharacteristicsForm.controls.roughnessClass.value.trim() || undefined,
-      raMicron: this.materialCharacteristicsForm.controls.raMicron.value ?? undefined,
-      coatingId: this.materialCharacteristicsForm.controls.coatingId.value || undefined,
-      coatingType: this.materialCharacteristicsForm.controls.coatingType.value.trim() || undefined,
-      coatingSpec: this.materialCharacteristicsForm.controls.coatingSpec.value.trim() || undefined,
-      coatingThicknessMicron:
-        this.materialCharacteristicsForm.controls.coatingThicknessMicron.value ?? undefined,
-      notes: this.materialCharacteristicsForm.controls.notes.value.trim() || undefined,
-      isActive: this.materialCharacteristicsForm.controls.isActive.value,
-    };
+    const c = this.materialCharacteristicsForm.controls;
+    return materialCharacteristicsPayloadFromValues({
+      name: c.name.value,
+      code: c.code.value,
+      densityKgM3: c.densityKgM3.value,
+      colorId: c.colorId.value,
+      colorName: c.colorName.value,
+      colorHex: c.colorHex.value,
+      surfaceFinishId: c.surfaceFinishId.value,
+      finishType: c.finishType.value,
+      roughnessClass: c.roughnessClass.value,
+      raMicron: c.raMicron.value,
+      coatingId: c.coatingId.value,
+      coatingType: c.coatingType.value,
+      coatingSpec: c.coatingSpec.value,
+      coatingThicknessMicron: c.coatingThicknessMicron.value,
+      notes: c.notes.value,
+      isActive: c.isActive.value,
+    });
   }
 
   private buildGeometriesPayload() {
-    return {
-      name: this.geometriesForm.controls.name.value.trim(),
-      shapeKey: this.geometriesForm.controls.shapeKey.value,
-      heightMm: this.geometriesForm.controls.heightMm.value ?? undefined,
-      lengthMm: this.geometriesForm.controls.lengthMm.value ?? undefined,
-      widthMm: this.geometriesForm.controls.widthMm.value ?? undefined,
-      diameterMm: this.geometriesForm.controls.diameterMm.value ?? undefined,
-      thicknessMm: this.geometriesForm.controls.thicknessMm.value ?? undefined,
-      notes: this.geometriesForm.controls.notes.value.trim() || undefined,
-      isActive: this.geometriesForm.controls.isActive.value,
-    };
+    const c = this.geometriesForm.controls;
+    return geometriesPayloadFromValues({
+      name: c.name.value,
+      shapeKey: c.shapeKey.value,
+      heightMm: c.heightMm.value,
+      lengthMm: c.lengthMm.value,
+      widthMm: c.widthMm.value,
+      diameterMm: c.diameterMm.value,
+      thicknessMm: c.thicknessMm.value,
+      notes: c.notes.value,
+      isActive: c.isActive.value,
+    });
   }
 
   private buildUnitsPayload() {
-    return {
-      name: this.unitsForm.controls.name.value.trim(),
-      code: this.unitsForm.controls.code.value.trim(),
-      notes: this.unitsForm.controls.notes.value.trim() || undefined,
-      isActive: this.unitsForm.controls.isActive.value,
-    };
+    const c = this.unitsForm.controls;
+    return unitsPayloadFromValues({
+      name: c.name.value,
+      code: c.code.value,
+      notes: c.notes.value,
+      isActive: c.isActive.value,
+    });
   }
 
   private buildColorsPayload() {
-    const value = this.colorsForm.getRawValue();
-    const normalizedHex = /^#([A-Fa-f0-9]{6})$/.test(value.hex)
-      ? value.hex.toUpperCase()
-      : '#000000';
-    const normalizedRalCode = this.normalizeRalCode(value.ralCode);
-    return {
-      ralCode: normalizedRalCode,
-      name: value.name.trim(),
-      hex: normalizedHex,
-      rgb: {
-        r: Number.parseInt(normalizedHex.slice(1, 3), 16),
-        g: Number.parseInt(normalizedHex.slice(3, 5), 16),
-        b: Number.parseInt(normalizedHex.slice(5, 7), 16),
-      },
-    };
+    return colorsPayloadFromFormRaw(this.colorsForm.getRawValue());
   }
 
   private buildSurfaceFinishPayload() {
-    return {
-      finishType: this.surfaceFinishesForm.controls.finishType.value.trim(),
-      roughnessClass: this.surfaceFinishesForm.controls.roughnessClass.value.trim(),
-      raMicron: this.surfaceFinishesForm.controls.raMicron.value ?? undefined,
-    };
+    const c = this.surfaceFinishesForm.controls;
+    return surfaceFinishPayloadFromValues({
+      finishType: c.finishType.value,
+      roughnessClass: c.roughnessClass.value,
+      raMicron: c.raMicron.value,
+    });
   }
 
   private buildCoatingPayload() {
-    return {
-      coatingType: this.coatingsForm.controls.coatingType.value.trim(),
-      coatingSpec: this.coatingsForm.controls.coatingSpec.value.trim(),
-      thicknessMicron: this.coatingsForm.controls.thicknessMicron.value ?? undefined,
-    };
+    const c = this.coatingsForm.controls;
+    return coatingPayloadFromValues({
+      coatingType: c.coatingType.value,
+      coatingSpec: c.coatingSpec.value,
+      thicknessMicron: c.thicknessMicron.value,
+    });
   }
 
   private buildClientPayload(): ClientItemInput {
@@ -4229,34 +4434,24 @@ export class DictionariesPage implements OnDestroy {
     } else if (this.clientsMarkupOnCreate !== null) {
       clientMarkupPercent = this.clientsMarkupOnCreate;
     }
-    return {
-      lastName: this.clientsForm.controls.lastName.value.trim(),
-      firstName: this.clientsForm.controls.firstName.value.trim(),
-      patronymic: this.clientsForm.controls.patronymic.value.trim(),
-      address: this.clientsForm.controls.address.value.trim(),
-      phone: this.clientsForm.controls.phone.value.trim(),
-      email: this.clientsForm.controls.email.value.trim(),
-      notes: this.clientsForm.controls.notes.value.trim(),
+    const c = this.clientsForm.controls;
+    return clientPayloadFromForm(
+      {
+        lastName: c.lastName.value,
+        firstName: c.firstName.value,
+        patronymic: c.patronymic.value,
+        address: c.address.value,
+        phone: c.phone.value,
+        email: c.email.value,
+        notes: c.notes.value,
+        passportSeries: c.passportSeries.value,
+        passportNumber: c.passportNumber.value,
+        passportIssuedBy: c.passportIssuedBy.value,
+        passportIssuedDate: c.passportIssuedDate.value,
+        isActive: c.isActive.value,
+      },
       clientMarkupPercent,
-      passportSeries: this.clientsForm.controls.passportSeries.value.trim(),
-      passportNumber: this.clientsForm.controls.passportNumber.value.trim(),
-      passportIssuedBy: this.clientsForm.controls.passportIssuedBy.value.trim(),
-      passportIssuedDate: this.clientsForm.controls.passportIssuedDate.value.trim(),
-      isActive: this.clientsForm.controls.isActive.value,
-    };
-  }
-
-  private mapLegalFormToOrganizationKind(legalForm: string | undefined | null): 'OOO' | 'IP' {
-    const s = String(legalForm ?? '')
-      .trim()
-      .toUpperCase();
-    if (!s) return 'OOO';
-    if (s === 'IP' || s.includes('ИП')) return 'IP';
-    return 'OOO';
-  }
-
-  private organizationKindToLegalForm(kind: 'OOO' | 'IP'): string {
-    return kind === 'IP' ? 'ИП' : 'ООО';
+    );
   }
 
   private buildOrganizationsPayload(): OrganizationItemInput {
@@ -4264,32 +4459,31 @@ export class DictionariesPage implements OnDestroy {
       .map((x) => String(x))
       .filter(Boolean);
     const labelsMap = new Map(this.organizationContactSelectOptions().map((x) => [x.id, x.label]));
-    const kind = this.organizationsForm.controls.organizationKind.value;
-    const legalForm = this.organizationKindToLegalForm(kind);
-    return {
-      name: this.organizationsForm.controls.name.value.trim(),
-      shortName: this.organizationsForm.controls.shortName.value.trim() || undefined,
-      legalForm,
-      inn: this.organizationsForm.controls.inn.value.trim() || undefined,
-      kpp: kind === 'IP' ? undefined : this.organizationsForm.controls.kpp.value.trim() || undefined,
-      ogrn: this.organizationsForm.controls.ogrn.value.trim() || undefined,
-      okpo: this.organizationsForm.controls.okpo.value.trim() || undefined,
-      phone: this.organizationsForm.controls.phone.value.trim() || undefined,
-      email: this.organizationsForm.controls.email.value.trim() || undefined,
-      website: this.organizationsForm.controls.website.value.trim() || undefined,
-      legalAddress: this.organizationsForm.controls.legalAddress.value.trim() || undefined,
-      postalAddress: this.organizationsForm.controls.postalAddress.value.trim() || undefined,
-      bankName: this.organizationsForm.controls.bankName.value.trim() || undefined,
-      bankBik: this.organizationsForm.controls.bankBik.value.trim() || undefined,
-      bankAccount: this.organizationsForm.controls.bankAccount.value.trim() || undefined,
-      bankCorrAccount: this.organizationsForm.controls.bankCorrAccount.value.trim() || undefined,
-      signerName: this.organizationsForm.controls.signerName.value.trim() || undefined,
-      signerPosition: this.organizationsForm.controls.signerPosition.value.trim() || undefined,
-      notes: this.organizationsForm.controls.notes.value.trim() || undefined,
-      isActive: this.organizationsForm.controls.isActive.value,
-      contactIds: selectedContactIds,
-      contactLabels: selectedContactIds.map((id) => labelsMap.get(id) ?? id),
-    };
+    const c = this.organizationsForm.controls;
+    return organizationsPayloadFromFields({
+      organizationKind: c.organizationKind.value,
+      selectedContactIds,
+      contactLabelsById: labelsMap,
+      name: c.name.value,
+      shortName: c.shortName.value,
+      inn: c.inn.value,
+      kpp: c.kpp.value,
+      ogrn: c.ogrn.value,
+      okpo: c.okpo.value,
+      phone: c.phone.value,
+      email: c.email.value,
+      website: c.website.value,
+      legalAddress: c.legalAddress.value,
+      postalAddress: c.postalAddress.value,
+      bankName: c.bankName.value,
+      bankBik: c.bankBik.value,
+      bankAccount: c.bankAccount.value,
+      bankCorrAccount: c.bankCorrAccount.value,
+      signerName: c.signerName.value,
+      signerPosition: c.signerPosition.value,
+      notes: c.notes.value,
+      isActive: c.isActive.value,
+    });
   }
 
   private validateAndMapColorRows(rows: ReadonlyArray<Record<string, unknown>>): {
@@ -4316,7 +4510,7 @@ export class DictionariesPage implements OnDestroy {
     rows.forEach((row, idx) => {
       const rowNo = idx + 2;
       const ralRaw = String(row['RAL'] ?? '');
-      const ralCode = this.normalizeRalCode(ralRaw);
+      const ralCode = normalizeRalCode(ralRaw);
       const name = String(row['Название'] ?? '').trim();
       const hex = String(row['HEX'] ?? '').trim().toUpperCase();
       const rgbRaw = String(row['RGB'] ?? '').trim();
@@ -4359,37 +4553,6 @@ export class DictionariesPage implements OnDestroy {
 
     if (errors.length) return { ok: false, rows: mapped, errors: errors.slice(0, 6) };
     return { ok: true, rows: mapped, errors: [] };
-  }
-
-  private parseNumberOrNull(raw: unknown): number | null {
-    if (raw === null || raw === undefined) return null;
-    if (typeof raw === 'number') return Number.isFinite(raw) ? raw : null;
-    const s = String(raw).trim();
-    if (!s) return null;
-    const normalized = s.replace(/\s+/g, '').replace(',', '.');
-    const n = Number.parseFloat(normalized);
-    return Number.isFinite(n) ? n : null;
-  }
-
-  private normalizeRalCode(raw: string): string | undefined {
-    const value = raw.trim().toUpperCase();
-    if (!value) return undefined;
-
-    if (value === 'RAL' || value === 'RAL DESIGN' || value === 'RAL DESIGN:') {
-      return undefined;
-    }
-
-    const classic = /^(?:RAL\s*)?(\d{4})$/.exec(value);
-    if (classic) {
-      return `RAL ${classic[1]}`;
-    }
-
-    const design = /^(?:RAL\s*DESIGN[:\s]*)?(\d{3})\s*(\d{2})\s*(\d{2})$/.exec(value);
-    if (design) {
-      return `RAL DESIGN ${design[1]} ${design[2]} ${design[3]}`;
-    }
-
-    return undefined;
   }
 
   private ralCodeValidator(control: AbstractControl<string>): ValidationErrors | null {
@@ -4446,7 +4609,7 @@ export class DictionariesPage implements OnDestroy {
       const geometryName = String(row['Название геометрии'] ?? '').trim();
       const unitId = String(row['ID единицы'] ?? '').trim();
       const unitCode = String(row['Код ЕИ'] ?? '').trim();
-      const priceRaw = this.parseNumberOrNull(row['Цена ₽']);
+      const priceRaw = parseNumberOrNull(row['Цена ₽']);
       const notes = String(row['Заметки'] ?? '').trim();
       const activeRaw = String(row['Активен'] ?? '')
         .trim()
@@ -4586,7 +4749,7 @@ export class DictionariesPage implements OnDestroy {
 
         let densityKgM3: number | undefined;
         if (densityRaw !== '' && densityRaw !== null && densityRaw !== undefined) {
-          const d = this.parseNumberOrNull(densityRaw);
+          const d = parseNumberOrNull(densityRaw);
           if (d === null || d < 0) {
             errors.push(`Строка ${rowNo}: Плотность должна быть числом >= 0 или пусто.`);
             return;
@@ -4638,7 +4801,7 @@ export class DictionariesPage implements OnDestroy {
 
         let densityKgM3: number | undefined;
         if (densityRaw !== '' && densityRaw !== null && densityRaw !== undefined) {
-          const d = this.parseNumberOrNull(densityRaw);
+          const d = parseNumberOrNull(densityRaw);
           if (d === null || d < 0) {
             errors.push(`Строка ${rowNo}: Плотность должна быть числом >= 0 или пусто.`);
             return;
@@ -4774,7 +4937,7 @@ export class DictionariesPage implements OnDestroy {
       const cleaned = p
         .replace(/^[⌀Ø]\s*/u, '')
         .replace(/^диам\.?\s*/i, '');
-      const v = this.parseNumberOrNull(cleaned);
+      const v = parseNumberOrNull(cleaned);
       if (v === null) return null;
       nums.push(v);
     }
@@ -4888,7 +5051,7 @@ export class DictionariesPage implements OnDestroy {
     const extractNumber = (source: string, pattern: RegExp): number | null => {
       const match = pattern.exec(source);
       if (!match) return null;
-      return this.parseNumberOrNull(match[1]);
+      return parseNumberOrNull(match[1]);
     };
 
     rows.forEach((row, idx) => {
@@ -5027,16 +5190,16 @@ export class DictionariesPage implements OnDestroy {
 
     const seenInFile = new Set<string>();
     const existingNames = new Set(
-      this.productionWorkTypesStore.items().map((x) => this.normalizeWorkTypeName(x.name))
+      this.productionWorkTypesStore.items().map((x) => normalizeWorkTypeName(x.name))
     );
 
     rows.forEach((row, idx) => {
       const rowNo = idx + 2;
       const name = String(row['Наименование'] ?? '').trim();
       const shortLabel = String(row['Короткое обозначение'] ?? '').trim();
-      const rateRaw = this.parseNumberOrNull(row['Ставка руб/ч']);
+      const rateRaw = parseNumberOrNull(row['Ставка руб/ч']);
       const isActive = this.parseExcelBool(row['Активна'], true);
-      const nameKey = this.normalizeWorkTypeName(name);
+      const nameKey = normalizeWorkTypeName(name);
 
       if (!name || !shortLabel) {
         errors.push(`Строка ${rowNo}: заполните Наименование и Короткое обозначение.`);
@@ -5135,7 +5298,7 @@ export class DictionariesPage implements OnDestroy {
     rows.forEach((row, idx) => {
       const rowNo = idx + 2;
       let code = String(row['Код'] ?? '').trim();
-      const sortRaw = this.parseNumberOrNull(row['Порядок']);
+      const sortRaw = parseNumberOrNull(row['Порядок']);
       const name = String(row['Название'] ?? '').trim();
       const notes = String(row['Заметка'] ?? '').trim();
       const activeRaw = String(row['Активна'] ?? 'да').trim().toLowerCase();
@@ -5300,7 +5463,7 @@ export class DictionariesPage implements OnDestroy {
       const rowNo = idx + 2;
       const finishType = String(row['Тип финиша'] ?? '').trim();
       const roughnessClass = String(row['Шероховатость'] ?? '').trim();
-      const raMicron = this.parseNumberOrNull(row['Ra, мкм']);
+      const raMicron = parseNumberOrNull(row['Ra, мкм']);
 
       if (!finishType || !roughnessClass || raMicron === null) {
         errors.push(`Строка ${rowNo}: заполните Тип финиша/Шероховатость/Ra, мкм.`);
@@ -5339,7 +5502,7 @@ export class DictionariesPage implements OnDestroy {
       const rowNo = idx + 2;
       const coatingType = String(row['Тип покрытия'] ?? '').trim();
       const coatingSpec = String(row['Спецификация'] ?? '').trim();
-      const thicknessMicron = this.parseNumberOrNull(row['Толщина, мкм']);
+      const thicknessMicron = parseNumberOrNull(row['Толщина, мкм']);
 
       if (!coatingType || !coatingSpec || thicknessMicron === null) {
         errors.push(`Строка ${rowNo}: заполните Тип покрытия/Спецификация/Толщина, мкм.`);
@@ -5416,7 +5579,7 @@ export class DictionariesPage implements OnDestroy {
 
       let clientMarkupPercent: number | null = null;
       if (markupRaw !== '' && markupRaw !== null && markupRaw !== undefined) {
-        const n = this.parseNumberOrNull(markupRaw);
+        const n = parseNumberOrNull(markupRaw);
         if (n === null) {
           errors.push(`Строка ${rowNo}: «Наценка %» должна быть числом или пусто.`);
           return;
@@ -5481,7 +5644,7 @@ export class DictionariesPage implements OnDestroy {
     rows.forEach((row, idx) => {
       const rowNo = idx + 2;
       const kindRaw = String(row['Вид организации'] ?? '').trim();
-      const kind = this.mapLegalFormToOrganizationKind(kindRaw);
+      const kind = mapLegalFormToOrganizationKind(kindRaw);
       const name = String(row['Полное наименование'] ?? '').trim();
       const shortName = String(row['Короткое наименование'] ?? '').trim();
       const inn = String(row['ИНН'] ?? '').trim();
@@ -5529,7 +5692,7 @@ export class DictionariesPage implements OnDestroy {
       mapped.push({
         name,
         shortName: shortName || undefined,
-        legalForm: this.organizationKindToLegalForm(kind),
+        legalForm: organizationKindToLegalForm(kind),
         inn: inn || undefined,
         kpp: kind === 'IP' ? undefined : kpp || undefined,
         ogrn: ogrn || undefined,

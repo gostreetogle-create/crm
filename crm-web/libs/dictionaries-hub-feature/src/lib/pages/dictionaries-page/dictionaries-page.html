@@ -1,5 +1,5 @@
 <app-page-shell>
-  @if (excelImportStatus()) {
+  @if (showExcelImportStatusBanner() && excelImportStatus()) {
   <p
     class="importStatus"
     [class.importStatus--success]="excelImportTone() === 'success'"
@@ -11,6 +11,185 @@
     {{ excelImportStatus() }}
   </p>
   }
+  @if (standaloneCreateKey() === 'workTypes') {
+  <app-dictionary-standalone-create-shell
+    [pageTitle]="standaloneDictionaryTitle('workTypes')"
+    (backClicked)="navigateBackFromStandaloneDictionaryCreate()"
+  >
+    <ng-container *ngTemplateOutlet="workTypesContentTpl"></ng-container>
+    <app-ui-modal-form-actions
+      standaloneFormActions
+      [viewMode]="isWorkTypesViewMode()"
+      [formId]="'work-types-form'"
+      [submitLabel]="
+        productionWorkTypesStore.isEditMode() ? 'Сохранить изменения' : 'Создать вид работ'
+      "
+      (dismiss)="navigateBackFromStandaloneDictionaryCreate()"
+    />
+  </app-dictionary-standalone-create-shell>
+  } @else if (standaloneCreateKey() === 'units') {
+  <app-dictionary-standalone-create-shell
+    [pageTitle]="standaloneDictionaryTitle('units')"
+    (backClicked)="navigateBackFromStandaloneDictionaryCreate()"
+  >
+    <ng-container *ngTemplateOutlet="unitsContentTpl"></ng-container>
+    <app-ui-modal-form-actions
+      standaloneFormActions
+      [viewMode]="isUnitsViewMode()"
+      [formId]="'units-form'"
+      [submitLabel]="unitsStore.isEditMode() ? 'Сохранить изменения' : 'Создать единицу измерения'"
+      (dismiss)="navigateBackFromStandaloneDictionaryCreate()"
+    />
+  </app-dictionary-standalone-create-shell>
+  } @else if (standaloneCreateKey() === 'geometries') {
+  <app-dictionary-standalone-create-shell
+    [pageTitle]="standaloneDictionaryTitle('geometries')"
+    (backClicked)="navigateBackFromStandaloneDictionaryCreate()"
+  >
+    <ng-container *ngTemplateOutlet="geometriesContentTpl"></ng-container>
+    <app-ui-modal-form-actions
+      standaloneFormActions
+      [viewMode]="isGeometriesViewMode()"
+      [formId]="'geometries-form'"
+      [submitLabel]="geometriesStore.isEditMode() ? 'Сохранить изменения' : 'Создать геометрию'"
+      (dismiss)="navigateBackFromStandaloneDictionaryCreate()"
+    />
+  </app-dictionary-standalone-create-shell>
+  } @else if (standaloneCreateKey() === 'colors') {
+  <app-dictionary-standalone-create-shell
+    [pageTitle]="standaloneDictionaryTitle('colors')"
+    (backClicked)="navigateBackFromStandaloneDictionaryCreate()"
+  >
+    <ng-container *ngTemplateOutlet="colorsContentTpl"></ng-container>
+    <app-ui-modal-form-actions
+      standaloneFormActions
+      [viewMode]="isColorsViewMode()"
+      [formId]="'colors-form'"
+      [submitLabel]="colorsEditingId() ? 'Сохранить изменения' : 'Создать цвет'"
+      (dismiss)="navigateBackFromStandaloneDictionaryCreate()"
+    />
+  </app-dictionary-standalone-create-shell>
+  } @else if (standaloneCreateKey() === 'surfaceFinishes') {
+  <app-dictionary-standalone-create-shell
+    [pageTitle]="standaloneDictionaryTitle('surfaceFinishes')"
+    (backClicked)="navigateBackFromStandaloneDictionaryCreate()"
+  >
+    <ng-container *ngTemplateOutlet="surfaceFinishesContentTpl"></ng-container>
+    <app-ui-modal-form-actions
+      standaloneFormActions
+      [viewMode]="isSurfaceFinishesViewMode()"
+      [formId]="'surface-finishes-form'"
+      [submitLabel]="surfaceFinishesEditingId() ? 'Сохранить изменения' : 'Создать отделку'"
+      (dismiss)="navigateBackFromStandaloneDictionaryCreate()"
+    />
+  </app-dictionary-standalone-create-shell>
+  } @else if (standaloneCreateKey() === 'coatings') {
+  <app-dictionary-standalone-create-shell
+    [pageTitle]="standaloneDictionaryTitle('coatings')"
+    (backClicked)="navigateBackFromStandaloneDictionaryCreate()"
+  >
+    <ng-container *ngTemplateOutlet="coatingsContentTpl"></ng-container>
+    <app-ui-modal-form-actions
+      standaloneFormActions
+      [viewMode]="isCoatingsViewMode()"
+      [formId]="'coatings-form'"
+      [submitLabel]="coatingsEditingId() ? 'Сохранить изменения' : 'Создать покрытие'"
+      (dismiss)="navigateBackFromStandaloneDictionaryCreate()"
+    />
+  </app-dictionary-standalone-create-shell>
+  } @else if (standaloneCreateKey() === 'organizations') {
+  <app-dictionary-standalone-create-shell
+    [pageTitle]="standaloneDictionaryTitle('organizations')"
+    (backClicked)="navigateBackFromStandaloneDictionaryCreate()"
+  >
+    <ng-container *ngTemplateOutlet="organizationsContentTpl"></ng-container>
+    <app-ui-modal-form-actions
+      standaloneFormActions
+      [viewMode]="isOrganizationsViewMode()"
+      [formId]="'organizations-form'"
+      [submitLabel]="organizationsStore.isEditMode() ? 'Сохранить изменения' : 'Создать организацию'"
+      (dismiss)="navigateBackFromStandaloneDictionaryCreate()"
+    />
+  </app-dictionary-standalone-create-shell>
+  } @else if (standaloneCreateKey() === 'clients') {
+  <app-dictionary-standalone-create-shell
+    [pageTitle]="standaloneDictionaryTitle('clients')"
+    (backClicked)="navigateBackFromStandaloneDictionaryCreate()"
+  >
+    <ng-container *ngTemplateOutlet="clientsContentTpl"></ng-container>
+    <app-ui-modal-form-actions
+      standaloneFormActions
+      [viewMode]="isClientsViewMode()"
+      [formId]="'clients-form'"
+      [submitLabel]="clientsStore.isEditMode() ? 'Сохранить изменения' : 'Создать контакт'"
+      (dismiss)="navigateBackFromStandaloneDictionaryCreate()"
+    />
+  </app-dictionary-standalone-create-shell>
+  } @else if (standaloneCreateKey() === 'roles') {
+  <app-dictionary-standalone-create-shell
+    [pageTitle]="standaloneDictionaryTitle('roles')"
+    (backClicked)="navigateBackFromStandaloneDictionaryCreate()"
+  >
+    <ng-container *ngTemplateOutlet="rolesContentTpl"></ng-container>
+    <app-ui-modal-form-actions
+      standaloneFormActions
+      [viewMode]="isRolesViewMode()"
+      [formId]="'roles-form'"
+      [submitLabel]="rolesEditingId() ? 'Сохранить изменения' : 'Создать роль'"
+      (dismiss)="navigateBackFromStandaloneDictionaryCreate()"
+    />
+  </app-dictionary-standalone-create-shell>
+  } @else if (standaloneCreateKey() === 'users') {
+  <app-dictionary-standalone-create-shell
+    [pageTitle]="standaloneDictionaryTitle('users')"
+    (backClicked)="navigateBackFromStandaloneDictionaryCreate()"
+  >
+    <ng-container *ngTemplateOutlet="usersContentTpl"></ng-container>
+    <app-ui-modal-form-actions
+      standaloneFormActions
+      [viewMode]="isUsersViewMode()"
+      [formId]="'users-form'"
+      [submitLabel]="usersEditingId() ? 'Сохранить изменения' : 'Создать пользователя'"
+      (dismiss)="navigateBackFromStandaloneDictionaryCreate()"
+    />
+  </app-dictionary-standalone-create-shell>
+  } @else if (isNewMaterialPageRoute()) {
+  <app-new-material-fullscreen-page
+    [pageTitle]="'Новый материал'"
+    (backClicked)="navigateBackFromNewMaterialPage()"
+  >
+    <div nmBody>
+      <ng-container *ngTemplateOutlet="materialsContentTpl"></ng-container>
+    </div>
+    <div nmActions>
+      <app-ui-modal-form-actions
+        [viewMode]="isMaterialsViewMode()"
+        [formId]="'materials-form'"
+        [submitLabel]="materialsStore.isEditMode() ? 'Сохранить изменения' : 'Создать материал'"
+        (dismiss)="onDismissMaterialsForm()"
+      />
+    </div>
+  </app-new-material-fullscreen-page>
+  } @else if (isNewMaterialCharacteristicPageRoute()) {
+  <app-new-material-fullscreen-page
+    [pageTitle]="'Новая характеристика материала'"
+    (backClicked)="navigateBackFromNewMaterialCharacteristicPage()"
+  >
+    <div nmBody>
+      <ng-container *ngTemplateOutlet="materialCharacteristicsContentTpl"></ng-container>
+    </div>
+    <div nmActions>
+      <app-ui-modal-form-actions
+        [viewMode]="isMaterialCharacteristicsViewMode()"
+        [formId]="'material-characteristics-form'"
+        [submitLabel]="
+          materialCharacteristicsStore.isEditMode() ? 'Сохранить изменения' : 'Создать характеристику'
+        "
+        (dismiss)="onDismissMaterialCharacteristicsForm()"
+      />
+    </div>
+  </app-new-material-fullscreen-page>
+  } @else {
   <div class="dictionaryHub dictionaryHub--board">
     <app-content-card title="" [hideTitle]="true" density="compact" class="dictionaryHubBoardCard">
       <div
@@ -83,7 +262,7 @@
         [canDuplicate]="permissions.crud().canDuplicate"
         [canEdit]="permissions.crud().canEdit"
         [canDelete]="permissions.crud().canDelete"
-        (create)="openMaterialsCreate()"
+        (create)="navigateToNewMaterialPage()"
         (downloadTemplate)="downloadMaterialsTemplateExcel()"
         (importExcel)="onMaterialsExcelImported($event)"
         (exportExcel)="exportMaterialsExcel()"
@@ -117,7 +296,7 @@
         [canDuplicate]="permissions.crud().canDuplicate"
         [canEdit]="permissions.crud().canEdit"
         [canDelete]="permissions.crud().canDelete"
-        (create)="openMaterialCharacteristicsCreate()"
+        (create)="navigateToNewMaterialCharacteristicPage()"
         (downloadTemplate)="downloadMaterialCharacteristicsTemplateExcel()"
         (importExcel)="onMaterialCharacteristicsExcelImported($event)"
         (exportExcel)="exportMaterialCharacteristicsExcel()"
@@ -479,6 +658,7 @@
       }
     </app-content-card>
   </div>
+  }
 </app-page-shell>
 
 <ui-modal
@@ -766,13 +946,23 @@
 </ng-template>
 
 <ui-modal
-  *ngIf="isMaterialsModalOpen() || isMaterialCharacteristicsModalOpen()"
-  [title]="materialModalTitle()"
-  [content]="materialBundleContentTpl"
-  [actions]="materialBundleActionsTpl"
+  *ngIf="isMaterialsModalOpen()"
+  [title]="materialsModalTitle()"
+  [content]="materialsContentTpl"
+  [actions]="materialsActionsTpl"
   (close)="closeMaterialsModal()"
-  [closeOnBackdrop]="materialBundleCloseOnBackdrop()"
-  [backdropZIndex]="materialBundleModalBackdropZIndex()"
+  [closeOnBackdrop]="isMaterialsViewMode()"
+  size="xl"
+></ui-modal>
+
+<ui-modal
+  *ngIf="isMaterialCharacteristicsModalOpen()"
+  [title]="materialCharacteristicsModalTitle()"
+  [content]="materialCharacteristicsContentTpl"
+  [actions]="materialCharacteristicsActionsTpl"
+  (close)="closeMaterialCharacteristicsModal()"
+  [closeOnBackdrop]="isMaterialCharacteristicsViewMode()"
+  [backdropZIndex]="materialCharacteristicsFormModalBackdropZIndex()"
   size="xl"
 ></ui-modal>
 
@@ -814,13 +1004,13 @@
                 <option [value]="option.id">{{ option.label }}</option>
               }
             </select>
-            @if (showMaterialBundleTabs() && permissions.crud().canCreate) {
+            @if (permissions.crud().canCreate) {
               <app-ui-button
                 type="button"
                 [square]="true"
-                ariaLabel="Перейти к вкладке «Новая характеристика материала»"
-                title="Создать новую характеристику материала (вкладка формы)"
-                (clicked)="selectMaterialBundleTab('characteristic')"
+                ariaLabel="Открыть страницу создания новой характеристики материала"
+                title="Новая характеристика материала (отдельная страница)"
+                (clicked)="navigateToNewMaterialCharacteristicPage()"
               >
                 <span class="squareIconTone squareIconTone--affirm"><svg lucidePlus [size]="18"></svg></span>
               </app-ui-button>
@@ -842,7 +1032,7 @@
                 <option [value]="option.id">{{ option.label }}</option>
               }
             </select>
-            @if (showMaterialBundleTabs() && permissions.crud().canCreate) {
+            @if ((isMaterialsModalOpen() || isNewMaterialPageRoute()) && permissions.crud().canCreate) {
               <app-ui-button
                 type="button"
                 [square]="true"
@@ -1537,7 +1727,7 @@
     [viewMode]="isMaterialsViewMode()"
     [formId]="'materials-form'"
     [submitLabel]="materialsStore.isEditMode() ? 'Сохранить изменения' : 'Создать материал'"
-    (dismiss)="closeMaterialsModal()"
+    (dismiss)="onDismissMaterialsForm()"
   />
 </ng-template>
 
@@ -1738,47 +1928,8 @@
         ? 'Сохранить изменения'
         : 'Создать характеристику'
     "
-    (dismiss)="closeMaterialCharacteristicsModal()"
+    (dismiss)="onDismissMaterialCharacteristicsForm()"
   />
-</ng-template>
-
-<ng-template #materialBundleContentTpl>
-  @if (showMaterialBundleTabs()) {
-    <div class="dictionaryModalTabs" role="tablist" aria-label="Создание: материал или характеристика">
-      <button
-        type="button"
-        class="dictionaryModalTabs__btn"
-        role="tab"
-        [attr.aria-selected]="materialBundleTab() === 'material'"
-        (click)="selectMaterialBundleTab('material')"
-      >
-        Материал
-      </button>
-      <button
-        type="button"
-        class="dictionaryModalTabs__btn"
-        role="tab"
-        [attr.aria-selected]="materialBundleTab() === 'characteristic'"
-        (click)="selectMaterialBundleTab('characteristic')"
-      >
-        Новая характеристика материала
-      </button>
-    </div>
-  }
-  @if (materialBundleTab() === 'material') {
-    <ng-container *ngTemplateOutlet="materialsContentTpl"></ng-container>
-  }
-  @if (materialBundleTab() === 'characteristic') {
-    <ng-container *ngTemplateOutlet="materialCharacteristicsContentTpl"></ng-container>
-  }
-</ng-template>
-
-<ng-template #materialBundleActionsTpl>
-  @if (materialBundleTab() === 'material') {
-    <ng-container *ngTemplateOutlet="materialsActionsTpl"></ng-container>
-  } @else {
-    <ng-container *ngTemplateOutlet="materialCharacteristicsActionsTpl"></ng-container>
-  }
 </ng-template>
 
 <ui-modal

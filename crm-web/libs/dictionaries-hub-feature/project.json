@@ -8,6 +8,14 @@
   "targets": {
     "lint": {
       "executor": "@nx/eslint:lint"
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "libs/dictionaries-hub-feature/jest.config.cts",
+        "passWithNoTests": false
+      }
     }
   }
 }

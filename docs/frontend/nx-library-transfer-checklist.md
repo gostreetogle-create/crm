@@ -13,7 +13,7 @@
 
 Переносить в библиотеки в таком приоритете:
 
-1. `shared/ui` (переиспользуемые компоненты без доменной привязки).
+1. **`libs/ui-kit`** (`@srm/ui-kit`) — переиспользуемые компоненты без доменной привязки (актуальный канон; старый каталог `src/app/shared/ui` не наращивать).
 2. `@srm/shared-types` (типы, интерфейсы, контракты; не копить новое в `src/app/shared/model`).
 3. `shared/utils` (чистые функции, форматтеры, мапперы).
 4. `data-access` (API-клиенты, репозитории, адаптеры) - только после стабилизации UI.
@@ -77,7 +77,7 @@
 
 Рекомендуемая последовательность:
 
-1. Итерация A (выполнена): `crud-layout` (+ меню действий), `page-header`, `ui-modal`, `app-ui-button` в `libs/ui-kit`; прокси в `shared/ui`; демо в `srm-front` (`crud-smoke`). Детали: `srm-front-development-workflow.md` §8.
+1. Итерация A (выполнена): `crud-layout` (+ меню действий), `page-header`, `ui-modal`, `app-ui-button` в `libs/ui-kit` (`@srm/ui-kit`); демо в `srm-front` (`crud-smoke`). Детали: `srm-front-development-workflow.md` §8.
 2. Итерация B (выполнена): `FieldRow` и контракт `DictionaryPropagation*` в `@srm/shared-types`; импорты в data-слое обновлены; см. `srm-front-development-workflow.md` §9.
 3. Итерация C (выполнена): `API_CONFIG` в `@srm/platform-core`; вынесены **colors**, **materials**, **units**, **coatings**, **surface-finishes**, **geometries**, **material-characteristics**, **production-work-types**, **clients**, **organizations**, **roles**, **users** (`@srm/*-data-access`).
 4. Итерация D (фундамент): правило ESLint `type:data-access` и зависимости app → data-access; далее — перенос остальных репозиториев по одному. Страницы `features/*/pages/*` пока в `crm-web`.

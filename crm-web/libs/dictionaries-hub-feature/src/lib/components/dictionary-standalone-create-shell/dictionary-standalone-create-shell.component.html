@@ -1,0 +1,19 @@
+<main class="newMaterialPage" role="main" [attr.aria-labelledby]="headingId()">
+  <app-content-card title="" [hideTitle]="true" density="compact" class="newMaterialPageCard">
+    <div class="newMaterialPage__toolbar">
+      <app-ui-button
+        type="button"
+        variant="soft"
+        ariaLabel="Вернуться к списку справочников без сохранения"
+        (clicked)="backClicked.emit()"
+      >
+        ← Назад к справочникам
+      </app-ui-button>
+      <h1 class="newMaterialPage__title" [id]="headingId()">{{ pageTitle() }}</h1>
+    </div>
+    <ng-content />
+    <div class="newMaterialPage__actions">
+      <ng-content select="[standaloneFormActions]" />
+    </div>
+  </app-content-card>
+</main>

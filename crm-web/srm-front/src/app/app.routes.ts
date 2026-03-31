@@ -1,6 +1,9 @@
 import { Route } from '@angular/router';
 import { authGuard, permissionGuard } from '@srm/authz-runtime';
-import { DICTIONARIES_ROUTE_PROVIDERS } from '@srm/dictionaries-hub-feature';
+import {
+  buildStandaloneDictionaryCreateChildRoutes,
+  DICTIONARIES_ROUTE_PROVIDERS,
+} from '@srm/dictionaries-hub-feature';
 
 export const appRoutes: Route[] = [
   {
@@ -13,7 +16,27 @@ export const appRoutes: Route[] = [
     data: { permission: 'page.dictionaries' },
     providers: DICTIONARIES_ROUTE_PROVIDERS,
     loadComponent: () =>
-      import('@srm/dictionaries-hub-feature').then((m) => m.DictionariesPage),
+      import('@srm/dictionaries-hub-feature').then((m) => m.DictionariesShellComponent),
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import('@srm/dictionaries-hub-feature').then((m) => m.DictionariesPage),
+      },
+      {
+        path: 'новый-материал',
+        loadComponent: () =>
+          import('@srm/dictionaries-hub-feature').then((m) => m.DictionariesPage),
+        data: { newMaterialPage: true },
+      },
+      {
+        path: 'новая-характеристика-материала',
+        loadComponent: () =>
+          import('@srm/dictionaries-hub-feature').then((m) => m.DictionariesPage),
+        data: { newMaterialCharacteristicPage: true },
+      },
+      ...buildStandaloneDictionaryCreateChildRoutes(),
+    ],
   },
   {
     path: 'dictionaries',

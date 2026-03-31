@@ -2,18 +2,26 @@
 
 Цель: любой новый экран и новая фича должны использовать единый стиль и только переиспользуемые компоненты + theme tokens.
 
+## Визуальный аудит (пиксель-чеклист)
+
+Полный список проверок по экранам и состояниям: [`visual-consistency-checklist.md`](./visual-consistency-checklist.md).
+
+Почему в продукте всё ещё бывают расхождения с каноном и как согласовывать пробелы в доках: [`ui-consistency-and-legacy.md`](./ui-consistency-and-legacy.md).
+
 ## Источник стиля
 
 1. Глобальные токены (`CSS variables`) — `crm-web/src/styles.scss`.
-2. Runtime-применение темы из JSON — `crm-web/src/app/core/theme/theme.service.ts`.
-3. Шаблоны тем — `crm-web/src/app/shared/theme/theme-presets.ts`.
-4. Глобальный выбор темы (компактный icon-toggle light/dark в хедере) — `ThemePickerComponent` (`src/app/shared/ui/theme-picker/`).
-5. JSON entry point редактирования темы (вставляешь JSON и пересобираешь) — `crm-web/src/app/shared/theme/theme-json-entry.ts`.
-6. Синхронизация и хранение:
-   - единый поток темы `theme$` в `ThemeService`;
-   - выбранная тема сохраняется в `localStorage` (`crm-web.theme.tokens.v1`) и восстанавливается при перезагрузке.
-7. Текущий базовый визуальный вектор: более контрастные цвета + острые углы (`radiusCard/radiusPill` минимальные).
-8. Иконки: `@lucide/angular`, базовая геометрия 24px, семантические цвета от токенов темы:
+2. **Тема (контракт и пресеты):** `crm-web/libs/theme-core/src/lib/theme-schema.ts`, `theme-presets.ts`.
+3. **Runtime темы:** `ThemeStore` — `crm-web/libs/theme-core/src/lib/theme.store.ts`. Класс `ThemeService` в том же пакете оставлен для совместимости; новый код ориентируется на `ThemeStore` (см. реализацию).
+4. **JSON темы** (вставка/редактирование) — `crm-web/libs/theme-core/src/lib/theme-json-entry.ts`.
+5. **Публичный UI-кит:** импорт из **`@srm/ui-kit`**, исходники — `crm-web/libs/ui-kit/src/lib/`. Туда же относятся `ThemePickerComponent` (`libs/ui-kit/src/lib/theme-picker/`), `AppHeaderComponent`, `CrudLayout`, модалки, поля и т.д.
+6. Синхронизация и хранение темы:
+   - поток `theme$` (через `ThemeService`/`ThemeStore` — см. `theme-core`);
+   - выбранная тема в `localStorage` (`crm-web.theme.tokens.v1`) и восстановление при перезагрузке.
+7. **Общие SCSS-миксины/классы форм** (например `form-stack`) — пока в `crm-web/src/app/shared/styles/`; это мост к полному переносу в `ui-kit`/`theme-core` (см. `docs/frontend/srm-front-development-workflow.md` при необходимости).
+8. **Наследие:** в `crm-web/src/app/shared/ui/` остались единичные вещи (например `theme-studio`, `section-label`). **Новые** переиспользуемые компоненты добавляются в **`crm-web/libs/ui-kit`**, экспортируются из `libs/ui-kit/src/index.ts`, в приложениях импортируются как `@srm/ui-kit`.
+9. Текущий базовый визуальный вектор: более контрастные цвета + острые углы (`radiusCard/radiusPill` минимальные).
+10. Иконки: `@lucide/angular`, базовая геометрия 24px, семантические цвета от токенов темы:
    - `--icon-affirm` (позитивные действия: create/save/confirm),
    - `--accent` (навигация/ссылки/нейтральные действия),
    - `--warning` (внимание/сроки),
@@ -23,12 +31,12 @@
 ## Обязательные правила для новых фич
 
 1. Нельзя хардкодить цвета/радиусы/тени в `features/*` компонентах.
-   - Только через токены (`var(--...)`) и shared-ui.
-2. Layout-элементы и общие визуальные блоки переиспользуются из `src/app/shared/ui`.
-3. Если появился повторяющийся кусок UI (>=2 использования) — выносить в `shared/ui`.
+   - Только через токены (`var(--...)`) и компоненты **`@srm/ui-kit`**.
+2. Layout-элементы и общие визуальные блоки переиспользуются из **`@srm/ui-kit`** (`crm-web/libs/ui-kit/`).
+3. Если появился повторяющийся кусок UI (>=2 использования) — выносить в **`libs/ui-kit`**, экспортировать в публичном API пакета.
 4. Любая новая фича должна быть описана в docs:
    - структура фичи,
-   - какие shared-компоненты используются,
+   - какие компоненты **`@srm/ui-kit`** используются,
    - если добавлены новые токены/компоненты — где и зачем.
 5. Именование справочников и UI-подписей:
    - длинные/короткие наименования вести по `docs/frontend/dictionaries-naming-convention.md`,

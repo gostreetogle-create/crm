@@ -5,7 +5,7 @@ alwaysApply: true
 
 # Плитки `/dictionaries`: где править по запросу пользователя
 
-Все плитки справочников на хабе используют **один** `CrudLayout` (`crm-web/src/app/shared/ui/crud-layout/`).
+Все плитки справочников на хабе используют **один** `CrudLayout` из **`@srm/ui-kit`** (`crm-web/libs/ui-kit/src/lib/crud-layout/`).
 
 ## По умолчанию
 

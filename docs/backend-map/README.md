@@ -15,7 +15,7 @@
 node scripts/generate-backend-map-overview.cjs
 ```
 
-Любой новый `*.json` в `docs/backend-map/` (включая вложенные папки) подхватывается автоматически: блоки `dictionaries` и `entities` рендерятся таблицами; остальные корневые ключи — в разделе «Прочие разделы».
+Любой новый `*.json` в `docs/backend-map/` **рекурсивно** (включая вложенные папки, например `material_geometry_new_model/`) подхватывается автоматически: блоки `dictionaries` и `entities` рендерятся таблицами; прочие корневые ключи (вне стандартного набора) — в разделе «Дополнительные JSON-файлы».
 
 ---
 
@@ -68,6 +68,7 @@ node scripts/generate-backend-map-overview.cjs
 
 - **Источник правды по этой карте** — только `docs/backend-map/`.
 - После появления реального кода синхронизировать с `docs/api/*`, Prisma и т.д. по отдельным задачам.
+- **Фронт (CRM):** пользовательские справочники и сценарии CRUD описаны в [`docs/frontend/dictionaries-crud-playbook.md`](../frontend/dictionaries-crud-playbook.md); расхождения имен полей/справочников с этой картой закрывать осознанными задачами (модель ↔ UI).
 
 ---
 

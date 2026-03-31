@@ -2,7 +2,7 @@
 
 Цель: в новой модели сначала строим **единичные справочники**, без привязки к существующим таблицам.
 
-Файлы размещены в `docs/backend-map/material_geometry_new_model/` (генератор `OVERVIEW.generated.md` их не подхватывает, т.к. он смотрит только верхний уровень `docs/backend-map/`).
+Файлы размещены в `docs/backend-map/material_geometry_new_model/`. JSON (`material_geometry_entities.json`) **входит** в общий реестр и таблицы сущностей в [`OVERVIEW.generated.md`](../OVERVIEW.generated.md): скрипт `scripts/generate-backend-map-overview.cjs` обходит все `*.json` под `docs/backend-map/` **рекурсивно**. Этот `.md` — дополнительное человекочитаемое резюме таблицами.
 
 ## `material` — Материал
 

@@ -1,4 +1,5 @@
 import type { Provider } from '@angular/core';
+import { DictionariesMaterialStandaloneFlowService } from './dictionaries-material-standalone-flow.service';
 import { selectRepository } from '@srm/platform-core';
 import { API_CONFIG, type ApiConfig } from '@srm/platform-core';
 import {
@@ -67,6 +68,7 @@ import {
  * Keeps `app.routes.ts` readable; add new dictionary DI here.
  */
 export const DICTIONARIES_ROUTE_PROVIDERS: Provider[] = [
+  DictionariesMaterialStandaloneFlowService,
   MaterialsMockRepository,
   MaterialsHttpRepository,
   MaterialsStore,

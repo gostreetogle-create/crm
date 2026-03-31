@@ -1,82 +1,56 @@
 # UI reuse rules
 
-Цель: выжать максимум переиспользования из повторяющейся верстки и визуальных паттернов.
+Цель: максимум переиспользования повторяющейся вёрстки и визуальных паттернов без дублирования в фичах.
 
-## Куда выносить
+## Куда выносить (актуально для репозитория)
 
-1. Если таблица/карточка/бейдж используется минимум в 2 местах или логически общая (например `fields-table`) -> `src/app/shared/ui/...`.
-2. Если элемент специфичен только для одной доменной фичи -> `src/app/features/.../components/...`.
-3. Если в проекте не хватает компонента для повторяемого паттерна (кнопка, поле, диалог, и т.д.) -> сначала создать его в `src/app/shared/ui/...`, зафиксировать API компонента, и только потом применять в feature-страницах.
+1. Повторяющийся визуальный примитив (кнопка, поле, модалка, карточка, таблица CRUD, фильтр-бар и т.д.) — в **`crm-web/libs/ui-kit`**, публичный импорт **`@srm/ui-kit`**. Список экспорта: `crm-web/libs/ui-kit/src/index.ts`.
+2. Повторяющиеся **типы/контракты** между фичами — в **`@srm/shared-types`** (`crm-web/libs/shared-types`), не в `src/app/shared/model`.
+3. Элемент **только одной доменной фичи** — в `crm-web/libs/<feature>-feature/.../components/...` (например справочники: `dictionaries-hub-feature`).
+4. Общие **стили-утилиты** (классы сетки форм и т.п.), пока не перенесены в `ui-kit`: `crm-web/src/app/shared/styles/` (например `form-stack.scss`) — подключать через `@use` из страниц/компонентов; цель — со временем сузить до токенов + примитивов `ui-kit`.
 
-## Как проектируем shared-компоненты
+## Как проектируем компоненты в `ui-kit`
 
-- Почти всегда через `@Input()` (никаких зависимостей от конкретных массивов/моделей внутри shared).
-- Без SSR (чистый CSR): компонент должен быть визуальным и самодостаточным.
-- Верстка + SCSS лежат рядом с компонентом.
-- Стили внутри shared-компонентов должны опираться на theme tokens (`var(--...)`), а не на hardcoded цвета.
-- Для форм и form-like UI используем Reactive Forms как единый стандарт (без `ngModel` в поддерживаемых компонентах).
+- По возможности чистые `@Input()` / outputs, без привязки к доменным store.
+- Верстка + SCSS рядом с компонентом в `libs/ui-kit/src/lib/...`.
+- Стили на **theme tokens** (`var(--...)`), не произвольный hex в компоненте.
+- Формы: Reactive Forms как стандарт в поддерживаемых сценариях (см. [`development-workflow.md`](./development-workflow.md)).
 
 ## Проверка качества
 
-- После рефакторинга запускать `nx build crm-web`.
-- Затем руками проверять визуализацию в дев-сервере.
-- Для справочников в `/dictionaries` придерживаться `docs/frontend/dictionaries-crud-playbook.md`.
+- `nx build crm-web`.
+- Ручной смоук на dev-server для затронутых маршрутов.
+- Для хаба справочников — [`dictionaries-crud-playbook.md`](./dictionaries-crud-playbook.md).
 
-## Текущий UI-kit (пример)
+## Справочник: что где лежит (импорт → папка в репо)
 
-- `ContentCardComponent` (`src/app/shared/ui/cards/content-card/`)
-  - Обёртка “карточка/секция” с заголовком, используется как контейнер для блоков на страницах.
-- `DictionaryHubTileComponent` (`src/app/shared/ui/cards/dictionary-hub-tile/`)
-  - Плитка хаба справочников: раскрытие + `content-card` + проекция `crud-layout`. Вход `fullWidth` (по умолчанию `false`): при `true` — на всю ширину `dictionaryGrid` (`grid-column: 1 / -1`), без отдельного компонента и без иной логики раскрытия/высоты.
-- `UiStateCardComponent` (`src/app/shared/ui/state-card/`)
-  - Компактная плитка состояния (`info` / `success` / `warning` / `danger`) с иконкой Lucide — эталон для Demo и гайдов.
-- `PatternVariantStackComponent` / `PatternVariantSectionComponent` (`src/app/shared/ui/pattern-showcase/`)
-  - Вертикальный стек и один блок «вариант эталона»: заголовок, вводный блок с классом `.pattern-variant-intro` (глобальные стили в `shared/styles/pattern-variant-doc.scss`), внутри — `dictionaryGrid` + проекция контента.
-- Общие классы форм: `formGrid`, `inlineRow`, `formActionsRow`, `formAuxAction` — `src/app/shared/styles/form-stack.scss` (подключать через `@use` в страницах/компонентах).
-- `UiModalFormActionsComponent` (`src/app/shared/ui/modal-form-actions/`)
-  - Футер модалки с формой: «Закрыть»/«Отмена» + submit, связанный с формой по `id`; хост `display: contents` под разметку `ui-modal` (`.modalActions`).
-- `FieldsTableComponent` (`src/app/shared/ui/fields-table/`)
-  - Универсальная таблица полей для отображения `{ key, label, type, required, comment }` (тип `FieldRow` в `@srm/shared-types`).
-- `PageShellComponent` (`src/app/shared/ui/page-shell/`)
-  - Базовый shell страницы (фон, внешние отступы, контейнер ширины).
-- `PageHeaderComponent` (`crm-web/libs/ui-kit`, публичный API через `@srm/ui-kit`; в приложении раньше — `shared/ui/page-header`)
-  - Единый заголовок страницы + блок фактов справа.
-- `CrudLayoutComponent` (`crm-web/libs/ui-kit`; совместимый импорт из `shared/ui/crud-layout/public-api` или напрямую `@srm/ui-kit`)
-  - Таблица/карточки CRUD: колонки, данные, тулбар и действия формы через `ng-template`, флаг `loading` (пустой список при загрузке), row-actions с Lucide-иконками.
-  - На хабе `/dictionaries` таблица: **одна** колонка `hubLine` с коротким доменным заголовком + «Действия»; при `showCardLabel` заголовок карточки по центру сверху, под ним ряд `+` / поиск / Excel. Компактная таблица: `table-layout: fixed`, текст с ellipsis; у `TableColumn` опционально `swatchHexKey` — квадрат цвета (HEX) слева от текста.
-  - Встроенный toolbar-стандарт Excel: `downloadTemplate` / `importExcel` / `exportExcel` с иконками и единым UX.
-  - Видимость Excel-кнопок также управляется правами через `PermissionsService`.
-  - `subtitle` и `facts` доступны, но по умолчанию для справочников НЕ используем; включаем только по явному согласованию UX.
-- `FiltersBarComponent` (`src/app/shared/ui/filters-bar/`)
-  - Единый блок фильтров (поиск + сортировка + фильтр) с Lucide-иконками у полей.
-- `UiPaginationComponent` (`src/app/shared/ui/ui-pagination/`)
-  - Единая пагинация с кнопками навигации (стрелки на Lucide-иконках).
-- `ThemeStudioComponent` (`src/app/shared/ui/theme-studio/`)
-  - Вспомогательный internal-инструмент. По умолчанию не используем на рабочих страницах.
-- Основной JSON entry point для дизайнеров — `crm-web/src/app/shared/theme/theme-json-entry.ts`.
-- `ThemePickerComponent` (`src/app/shared/ui/theme-picker/`)
-  - Глобальный selector темы в правом верхнем углу экрана.
-- `UiButtonComponent` (`src/app/shared/ui/ui-button/`)
-  - Единая кнопка для всех страниц (`primary/soft/danger`, `button/submit/reset`).
-- `UiFormFieldComponent` (`src/app/shared/ui/ui-form-field/`)
-  - Единая обёртка поля формы (`label`, `required`, `errorText`) для одинакового UX на всех страницах.
-- `UiCheckboxFieldComponent` (`src/app/shared/ui/ui-checkbox-field/`)
-  - Единый checkbox-паттерн для форм (`formControlName` через ControlValueAccessor).
-- `HexRgbFieldComponent` (`src/app/shared/ui/hex-rgb-field/`)
-  - Переиспользуемое поле цвета: ручной `HEX`, color-picker и авто-подстановка `RGB`.
-- `SectionLabelComponent` (`src/app/shared/ui/section-label/`)
-  - Малый "приклеенный" label для угла карточек/секций (`text`, `corner=true` по умолчанию).
-- `PermissionsService` + auth types (`src/app/core/auth/`)
-  - Единый источник **прав** для UI: `PermissionKey`, `RoleId`, методы `can()` / `hasAny()`, `crud`; список ролей для матрицы и настроек — из справочника (`RolesStore`). Канон: `docs/frontend/rbac-and-admin-settings.md`.
-- `HasPermissionDirective` (`src/app/shared/directives/has-permission.directive.ts`)
-  - Структурная директива для шаблонов: `*appHasPermission="'crud.delete'"` или массив прав + режим `appHasPermissionMode="any"`.
+Все перечисленные ниже компоненты в коде подключаются через **`import { … } from '@srm/ui-kit'`**; путь — под `crm-web/libs/ui-kit/src/lib/`.
+
+| Компонент / сервис | Назначение |
+|--------------------|------------|
+| `ContentCardComponent`, `DictionaryHubTileComponent`, … | Карточки и плитки хаба (`lib/cards/`) |
+| `CrudLayoutComponent` | Таблица/тулбар CRUD (`lib/crud-layout/`) |
+| `PageShellComponent` | Оболочка страницы (`lib/page-shell/`) |
+| `UiModal`, `UiModalFormActionsComponent` | Модалки и футер формы (`lib/modal/`, `lib/modal-form-actions/`) |
+| `UiButtonComponent` | Кнопки (`lib/ui-button/`) |
+| `UiFormFieldComponent`, `UiCheckboxFieldComponent`, `HexRgbFieldComponent` | Поля форм |
+| `FieldsTableComponent` | Таблица полей `FieldRow` |
+| `FiltersBarComponent`, `UiPaginationComponent` | Фильтры и пагинация |
+| `AppHeaderComponent`, `ThemePickerComponent` | Хедер и переключатель темы |
+| `HubCrudExpandStateService` | Состояние раскрытия плиток хаба (`lib/hub-crud-expandable/`) |
+| `PatternVariantStackComponent`, `PatternVariantSectionComponent` | Витрина вариантов на demo (`lib/pattern-showcase/`) |
+| `UiStateCardComponent` | Плитка состояния (tone) |
+
+**Тема:** `ThemeStore`, схема токенов, пресеты, JSON entry — `crm-web/libs/theme-core/src/lib/` (пакет `@srm/theme-core`).
+
+**Остаток в `crm-web/src/app/shared/ui/`:** точечные компоненты (например `theme-studio`, `section-label`), не расширять без переноса в `ui-kit`.
+
+**Права в UI:** `PermissionsService` из `@srm/authz-runtime` / `@srm/authz-core` (см. [`rbac-and-admin-settings.md`](./rbac-and-admin-settings.md)); директивы — см. актуальные импорты в приложении.
 
 ## Что запрещено в feature-страницах
 
-- Не использовать “сырые” `<button>` для типовых действий CRUD; использовать `UiButtonComponent`.
-- Не дублировать шаблон `label + input/select/textarea + error`; использовать `UiFormFieldComponent`.
-- Не вводить локальные цвета/радиусы в feature-`scss`; только theme tokens и shared-ui.
-- Не использовать emoji/произвольные SVG для типовых действий CRUD/filters/pagination; использовать `@lucide/angular` и семантические токены темы (`--icon-affirm`, `--accent`, `--warning`, `--danger`, `--text-muted`).
-- Не допускать расхождения между Demo и справочниками по базовому каркасу `CrudLayout` (Demo — источник визуального эталона).
-- Если временно пришлось нарушить правило — обязательно добавить запись в `docs/frontend/temporary-deviations-log.md`.
-
+- «Сырые» `<button>` для типовых действий вместо `UiButtonComponent` (если нет веской причины + запись в [`temporary-deviations-log.md`](./temporary-deviations-log.md)).
+- Дублировать `label + input + error` вместо `UiFormFieldComponent`.
+- Локальные палитры/радиусы в feature-`scss` вместо токенов и примитивов `ui-kit`.
+- Emoji/произвольные SVG для типовых действий вместо `@lucide/angular` и семантических токенов (`--icon-affirm`, `--accent`, `--warning`, `--danger`, `--text-muted`).
+- Расхождение эталона Demo и продуктового хаба по базовому каркасу `CrudLayout` без согласованного отклонения.
