@@ -188,6 +188,9 @@
 
 ### Point 18: Docs sync after recovery
 - `Done`: обновлены `architecture-audit-master.md`, `release-ready-checklist.md`.
+- В "комитетный" контур включен UI/UX audit prompt для нетехнического владельца:
+  - `docs/frontend/ai-ui-audit-agent-prompt.ru.md`
+  - ссылка добавлена в `docs/frontend/development-workflow.md`.
 
 ### Point 19: Temporary deviations log
 - `Done`: новых временных отклонений не добавлено (не требуется).
