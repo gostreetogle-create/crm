@@ -43,6 +43,7 @@
 | 14 | 2026-03-31 | Повторный re-baseline цикла: подтверждение fail-fast поведения CI, актуализация master-аудита с post-check статусом и N/A границами применимости | docs/frontend | `a90194d` |
 | 15 | 2026-03-31 | Полный master-аудит 1..53 по frontend, расширение канон-доков (field contracts/parity alias/release-ready) и обновление видео-программы под формат goals/scenario/demo/errors/DoD | docs/frontend, docs | `a57331a` |
 | 16 | 2026-03-31 | Recovery-ветка frontend: восстановление Nx workspace файлов, full lint/test/build + smoke, добавлены контрактные тесты словарей и зафиксирован release-ready snapshot | crm-web, docs/frontend | `e2afdde` |
+| 17 | 2026-03-31 | Включён параллельный AI UI/UX prompt в комитетный процесс: добавлен документ и ссылка в development-workflow, синхронизированы audit/release-ready статусы | docs/frontend | `980a1d5` |
 
 ---
 
