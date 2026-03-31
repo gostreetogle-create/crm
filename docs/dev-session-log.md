@@ -40,6 +40,7 @@
 | 11 | 2026-03-31 | Материал/характеристика: одна модалка с вкладками, «+» на полях, автоподстановка геометрии и характеристики после создания | crm-web | `68ed6d1` |
 | 12 | 2026-03-31 | Справочники: standalone shell, quick-create, распил dictionaries-page (колонки/payload/utils), скролл к ошибке, тесты и CI; docs frontend/backend-map/analysis_hub; регенерация OVERVIEW | crm-web, docs, .cursor | `a3e6a46` |
 | 13 | 2026-03-31 | Архитектурный аудит frontend, fail-fast CI гейты (workspace/parity), унификация route redirects между crm-web и srm-front, обновление канон-доков и видео-программы | crm-web, .github, docs | `50f205f` |
+| 14 | 2026-03-31 | Повторный re-baseline цикла: подтверждение fail-fast поведения CI, актуализация master-аудита с post-check статусом и N/A границами применимости | docs/frontend | `a90194d` |
 
 ---
 
