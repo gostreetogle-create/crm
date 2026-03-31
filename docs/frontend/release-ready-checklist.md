@@ -2,6 +2,15 @@
 
 Статус проставляется как `PASS` / `FAIL` / `BLOCKED`.
 
+## Текущий снимок (2026-03-31, ветка `recovery/nx-workspace-restore-2026-03-31`)
+
+- Workspace integrity: `PASS`
+- Architecture guards: `PASS`
+- Quality gates: `PASS` (lint/test/build all projects; есть lint warnings в mock-репозиториях без падения CI)
+- Runtime smoke: `PASS` (HTTP 200 для `/`, `/dictionaries`, `/materials`, `/geometries` в `crm-web` и `srm-front`)
+- Docs sync: `PASS` (audit + release-checklist + новые контрактные тесты)
+- Общий release-ready статус: `PASS (условно)` для фронтенд-workspace `crm-web`; вне области остаются массовые удаления в `backend/**`, `deploy/**`, части `docs/**`.
+
 ## 1. Workspace integrity
 
 - [ ] `check:workspace-prereqs` -> PASS

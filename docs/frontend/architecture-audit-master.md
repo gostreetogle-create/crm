@@ -4,6 +4,16 @@
 Репозиторий: `D:/crm`  
 Область: `crm-web`, `srm-front`, `.github/workflows/frontend-ci.yml`, `docs/frontend/*`
 
+## Recovery Run (2026-03-31, branch `recovery/nx-workspace-restore-2026-03-31`)
+
+- Стартовый `git status --short`: массовые удаления tracked-файлов по `backend/**`, `crm-web/**`, `docs/**`; untracked: `crm-web/.nx/`, `crm-web/node_modules/`.
+- Стартовый `git log --oneline -5`:
+  - `29fc4ee` docs: запись в dev-session-log (#15) после push `a57331a`
+  - `a57331a` docs(frontend): complete master audit package for checklist alignment
+  - `e34a93e` docs: запись в dev-session-log (#14) после push `a90194d`
+  - `a90194d` docs(frontend): refresh master audit with re-baseline verification
+  - `da2af86` docs: запись в dev-session-log (#13) после push `50f205f`
+
 ## Допущения и границы
 
 1. Аудит проводится по фактическому состоянию рабочей копии, где зафиксированы массовые удаления из индекса git.
@@ -155,5 +165,39 @@
 
 ### G53. Финальные коммиты + push
 - `Pending`: выполняется отдельным шагом после завершения текущего пакета правок.
+
+## Recovery progress update (points 15-25)
+
+### Point 15: Field-contract consistency (critical dictionaries)
+- `Done`: добавлены контрактные тесты для payload + table-key набора в `dictionaries-hub-feature`.
+- Проверены зоны: work-types, materials, geometries, colors.
+
+### Point 16: Contract tests on critical routes/forms
+- `Done`: добавлены/расширены тесты:
+  - `dictionaries-page-payload-builders.spec.ts`
+  - `dictionaries-page-table-columns.spec.ts`
+
+### Point 17: Full quality cycle re-run
+- `Done`:
+  - `check:workspace-prereqs` PASS
+  - `check:route-parity` PASS
+  - `check:dictionaries-page-size` PASS
+  - `nx run-many -t lint --all` PASS (warnings only in existing mock repos)
+  - `nx run-many -t test --all` PASS
+  - `nx run-many -t build --all` PASS
+
+### Point 18: Docs sync after recovery
+- `Done`: обновлены `architecture-audit-master.md`, `release-ready-checklist.md`.
+
+### Point 19: Temporary deviations log
+- `Done`: новых временных отклонений не добавлено (не требуется).
+
+### Point 20: Updated risk register (top residual)
+- `Done`:
+  1. Массовые удаления вне frontend scope в рабочем дереве.
+  2. Lint warnings в mock data-access репозиториях (`_options` unused).
+  3. `nx affected` может быть no-op в зависимости от diff, поэтому для релизного цикла использовался `run-many --all`.
+  4. Mega-file `dictionaries-page.ts` остается зоной техдолга (лимит соблюден).
+  5. Smoke проверка выполнена на HTTP-уровне; browser-level сценарии (UI click-flow) требуют отдельного e2e/ручного прогона.
 
 
