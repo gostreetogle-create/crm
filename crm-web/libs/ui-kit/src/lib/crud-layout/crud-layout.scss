@@ -29,7 +29,7 @@
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
-  gap: var(--ui-space-3);
+  gap: var(--ui-toolbar-gap);
   width: 100%;
   min-width: 0;
 }
@@ -38,7 +38,7 @@
   display: flex;
   flex: 0 0 auto;
   align-items: center;
-  gap: var(--ui-space-2);
+  gap: var(--ui-toolbar-group-gap);
 }
 
 .crudToolbarTrailing {
@@ -66,7 +66,7 @@
   display: flex;
   justify-content: flex-start;
   align-items: center;
-  gap: var(--ui-space-2);
+  gap: var(--ui-toolbar-gap);
   margin-bottom: var(--ui-card-title-margin-bottom);
   min-width: 0;
   width: 100%;
@@ -76,20 +76,20 @@
 .crudToolbarExcel {
   display: flex;
   align-items: center;
-  gap: var(--ui-space-1);
+  gap: var(--ui-toolbar-group-gap);
 }
 
 .crudToolbarMain {
   flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
-  gap: var(--ui-space-3);
+  gap: var(--ui-toolbar-gap);
 }
 
 .crudToolbarActions {
   display: inline-flex;
   align-items: center;
-  gap: var(--ui-space-1);
+  gap: var(--ui-toolbar-group-gap);
 }
 
 .crudToolbarRight {
@@ -97,7 +97,7 @@
   margin-left: auto;
   display: flex;
   align-items: center;
-  gap: var(--ui-space-1);
+  gap: var(--ui-toolbar-group-gap);
 }
 
 .crudToolbarSearch {

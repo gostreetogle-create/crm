@@ -36,9 +36,19 @@
   color: var(--ui-button-soft-text);
 }
 
+.uiButtonSoft:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ui-button-soft-bg) 90%, var(--accent) 10%);
+}
+
 .uiButtonDanger {
   border-color: var(--danger);
   color: var(--danger);
+  background: color-mix(in srgb, var(--surface) 92%, var(--danger) 8%);
+}
+
+.uiButtonDanger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--surface) 84%, var(--danger) 16%);
+  border-color: color-mix(in srgb, var(--danger) 85%, black 15%);
 }
 
 .uiButtonSquare {
