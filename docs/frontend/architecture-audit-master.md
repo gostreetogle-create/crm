@@ -7,7 +7,7 @@
 
 ### 1.1 Git baseline
 - `git status --short`: массовые удаления по репозиторию (backend + часть frontend/docs), рабочее дерево не является clean baseline.
-- `git log --oneline -20`: HEAD `25bd670`, свежие изменения про dictionaries-hub / Nx / srm-front / docs.
+- `git log --oneline -20`: актуальный HEAD `da2af86` (после внедрения P0/P1 и записи в dev-session-log).
 
 ### 1.2 Runtime baseline (до фиксов)
 - `npm ci` в `crm-web`: PASS.
@@ -88,4 +88,20 @@
 - P1 refactor: DONE (route-contract refactor)
 - docs rewrite: PARTIAL (см. `development-workflow` ограничение)
 - video-docs plan: DONE
+
+## 7) Цикл-проверка после внедрения (re-baseline)
+
+### 7.1 Проверки
+- `npm run check:workspace-prereqs`: FAIL-FAST (ожидаемо) с явным списком отсутствующих обязательных Nx-файлов.
+- `npm run check:route-parity`: PASS.
+- `npm run check:dictionaries-page-size`: PASS (`5750 <= 6200`).
+
+### 7.2 Что подтверждено
+- CI не скрывает архитектурные проблемы и падает рано с объяснимой причиной.
+- Route parity `crm-web` / `srm-front` удерживается контрактом и fail-fast проверкой.
+- Mega-file риск формально контролируется guard-скриптом.
+
+### 7.3 N/A по шагам
+- Полный `nx affected -t lint,test,build` в текущем workspace: N/A (невозможен без восстановления `nx.json`/root project configs).
+- Перепись `docs/frontend/development-workflow.md`: N/A (файл относится к каноническим process-docs под hard-guard и требует отдельного согласования перед изменением).
 
