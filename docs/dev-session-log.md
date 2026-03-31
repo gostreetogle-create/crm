@@ -35,6 +35,7 @@
 | 6 | 2026-03-30 | Рефактор: единый helper выбора колонок в маленьких fullscreen-плитках (свернуто=1, раскрыто=full) | crm-web | `4bdf7ee` |
 | 7 | 2026-03-30 | Хаб: раскрытие только кнопкой, зелёное «нажато»; материалы и характеристики на fullscreen-плитке с fullWidth и превью колонок | crm-web | `29019fe` |
 | 8 | 2026-03-30 | Каскад хаба из модалки материала (body portal, z-index вложенных модалок), организации и смежные правки бэкенда/доков | crm-web, backend, docs | `84ae9a4` |
+| 9 | 2026-03-31 | Монорепа Nx: libs (data-access, auth, theme, ui-kit, feature-страницы), приложение `srm-front`, GitHub Actions `frontend-ci`, без сгенерированного nx-graph в docs | crm-web, .github, docs, deploy | `f475172` |
 
 ---
 
