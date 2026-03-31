@@ -766,18 +766,13 @@
 </ng-template>
 
 <ui-modal
-  *ngIf="isMaterialsModalOpen()"
-  [title]="
-    isMaterialsViewMode()
-      ? 'Просмотр материала — Мат.'
-      : materialsStore.isEditMode()
-        ? 'Редактирование материала'
-        : 'Новый материал'
-  "
-  [content]="materialsContentTpl"
-  [actions]="materialsActionsTpl"
+  *ngIf="isMaterialsModalOpen() || isMaterialCharacteristicsModalOpen()"
+  [title]="materialModalTitle()"
+  [content]="materialBundleContentTpl"
+  [actions]="materialBundleActionsTpl"
   (close)="closeMaterialsModal()"
-  [closeOnBackdrop]="isMaterialsViewMode()"
+  [closeOnBackdrop]="materialBundleCloseOnBackdrop()"
+  [backdropZIndex]="materialBundleModalBackdropZIndex()"
   size="xl"
 ></ui-modal>
 
@@ -819,13 +814,13 @@
                 <option [value]="option.id">{{ option.label }}</option>
               }
             </select>
-            @if (permissions.can(hubTilePerm('materialCharacteristics'))) {
+            @if (showMaterialBundleTabs() && permissions.crud().canCreate) {
               <app-ui-button
                 type="button"
                 [square]="true"
-                ariaLabel="Открыть справочник характеристик материала"
-                title="Открыть справочник характеристик материала"
-                (clicked)="openMaterialCharacteristicsHubFromMaterials()"
+                ariaLabel="Перейти к вкладке «Новая характеристика материала»"
+                title="Создать новую характеристику материала (вкладка формы)"
+                (clicked)="selectMaterialBundleTab('characteristic')"
               >
                 <span class="squareIconTone squareIconTone--affirm"><svg lucidePlus [size]="18"></svg></span>
               </app-ui-button>
@@ -847,13 +842,13 @@
                 <option [value]="option.id">{{ option.label }}</option>
               }
             </select>
-            @if (permissions.can(hubTilePerm('geometries'))) {
+            @if (showMaterialBundleTabs() && permissions.crud().canCreate) {
               <app-ui-button
                 type="button"
                 [square]="true"
-                ariaLabel="Открыть справочник форм и габаритов"
-                title="Открыть справочник форм и габаритов"
-                (clicked)="openGeometriesHubFromMaterials()"
+                ariaLabel="Добавить новую форму и габариты"
+                title="Создать геометрию (модалка поверх формы материала)"
+                (clicked)="openGeometriesCreateFromMaterials()"
               >
                 <span class="squareIconTone squareIconTone--affirm"><svg lucidePlus [size]="18"></svg></span>
               </app-ui-button>
@@ -1546,23 +1541,6 @@
   />
 </ng-template>
 
-<ui-modal
-  *ngIf="isMaterialCharacteristicsModalOpen()"
-  [title]="
-    isMaterialCharacteristicsViewMode()
-      ? 'Просмотр характеристики материала'
-      : materialCharacteristicsStore.isEditMode()
-        ? 'Редактирование характеристики материала'
-        : 'Новая характеристика материала'
-  "
-  [content]="materialCharacteristicsContentTpl"
-  [actions]="materialCharacteristicsActionsTpl"
-  [backdropZIndex]="materialCharacteristicsFormModalBackdropZIndex()"
-  (close)="closeMaterialCharacteristicsModal()"
-  [closeOnBackdrop]="isMaterialCharacteristicsViewMode()"
-  size="xl"
-></ui-modal>
-
 <ng-template #materialCharacteristicsContentTpl>
   <form
     id="material-characteristics-form"
@@ -1762,6 +1740,45 @@
     "
     (dismiss)="closeMaterialCharacteristicsModal()"
   />
+</ng-template>
+
+<ng-template #materialBundleContentTpl>
+  @if (showMaterialBundleTabs()) {
+    <div class="dictionaryModalTabs" role="tablist" aria-label="Создание: материал или характеристика">
+      <button
+        type="button"
+        class="dictionaryModalTabs__btn"
+        role="tab"
+        [attr.aria-selected]="materialBundleTab() === 'material'"
+        (click)="selectMaterialBundleTab('material')"
+      >
+        Материал
+      </button>
+      <button
+        type="button"
+        class="dictionaryModalTabs__btn"
+        role="tab"
+        [attr.aria-selected]="materialBundleTab() === 'characteristic'"
+        (click)="selectMaterialBundleTab('characteristic')"
+      >
+        Новая характеристика материала
+      </button>
+    </div>
+  }
+  @if (materialBundleTab() === 'material') {
+    <ng-container *ngTemplateOutlet="materialsContentTpl"></ng-container>
+  }
+  @if (materialBundleTab() === 'characteristic') {
+    <ng-container *ngTemplateOutlet="materialCharacteristicsContentTpl"></ng-container>
+  }
+</ng-template>
+
+<ng-template #materialBundleActionsTpl>
+  @if (materialBundleTab() === 'material') {
+    <ng-container *ngTemplateOutlet="materialsActionsTpl"></ng-container>
+  } @else {
+    <ng-container *ngTemplateOutlet="materialCharacteristicsActionsTpl"></ng-container>
+  }
 </ng-template>
 
 <ui-modal

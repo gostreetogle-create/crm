@@ -1,4 +1,4 @@
-import { DOCUMENT, NgFor, NgIf } from '@angular/common';
+import { DOCUMENT, NgFor, NgIf, NgTemplateOutlet } from '@angular/common';
 import { Component, OnDestroy, computed, effect, inject, signal } from '@angular/core';
 import { LucidePlus, LucideX } from '@lucide/angular';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
@@ -75,6 +75,7 @@ import { DICTIONARIES_ROUTE_PROVIDERS } from '../../dictionaries-route.providers
   imports: [
     NgIf,
     NgFor,
+    NgTemplateOutlet,
     ReactiveFormsModule,
     PageShellComponent,
     ContentCardComponent,
@@ -374,7 +375,8 @@ export class DictionariesPage implements OnDestroy {
   readonly unitQuickAddForMaterials = signal(false);
   /** Каскад: модалка «Материал» открыта, плитка справочника — поверх (z-index). */
   readonly materialCharacteristicsHubStackAboveModal = signal(false);
-  readonly geometriesHubStackAboveModal = signal(false);
+  /** Модалка «Новая геометрия» открыта из формы материала — поднять слой выше модалки материала. */
+  readonly geometriesModalStackAboveMaterials = signal(false);
   readonly coatingQuickAddForMaterialCharacteristics = signal(false);
   readonly surfaceQuickAddForMaterialCharacteristics = signal(false);
   readonly excelImportStatus = signal('');
@@ -391,12 +393,54 @@ export class DictionariesPage implements OnDestroy {
     return UI_MODAL_Z_INDEX_ABOVE_CASCADE_HUB;
   });
 
-  /** Аналогично для геометрий при каскаде из модалки «Материал». */
-  readonly geometriesFormModalBackdropZIndex = computed((): number | null => {
-    const hubOpen = this.hubBoardSelectedKey() === 'geometries';
-    if (!this.geometriesHubStackAboveModal() || !hubOpen) {
-      return null;
+  /** Вкладка в объединённой модалке «Материал / Характеристика» (только режим создания с двумя вкладками). */
+  readonly materialBundleTab = signal<'material' | 'characteristic'>('material');
+
+  readonly showMaterialBundleTabs = computed(() => {
+    const matCreate =
+      this.isMaterialsModalOpen() &&
+      !this.isMaterialsViewMode() &&
+      !this.materialsStore.isEditMode();
+    const charCreate =
+      this.isMaterialCharacteristicsModalOpen() &&
+      !this.isMaterialCharacteristicsViewMode() &&
+      !this.materialCharacteristicsStore.isEditMode();
+    return matCreate || charCreate;
+  });
+
+  readonly materialModalTitle = computed(() => {
+    if (this.showMaterialBundleTabs()) {
+      return this.materialBundleTab() === 'material' ? 'Новый материал' : 'Новая характеристика материала';
     }
+    if (this.isMaterialsModalOpen()) {
+      if (this.isMaterialsViewMode()) return 'Просмотр материала — Мат.';
+      if (this.materialsStore.isEditMode()) return 'Редактирование материала';
+      return 'Новый материал';
+    }
+    if (this.isMaterialCharacteristicsModalOpen()) {
+      if (this.isMaterialCharacteristicsViewMode()) return 'Просмотр характеристики материала';
+      if (this.materialCharacteristicsStore.isEditMode()) return 'Редактирование характеристики материала';
+      return 'Новая характеристика материала';
+    }
+    return '';
+  });
+
+  readonly materialBundleCloseOnBackdrop = computed(() => {
+    if (this.materialBundleTab() === 'material') {
+      return this.isMaterialsViewMode();
+    }
+    return this.isMaterialCharacteristicsViewMode();
+  });
+
+  /** Поднять слой только на вкладке характеристики (каскад хаба поверх модалки материала). */
+  readonly materialBundleModalBackdropZIndex = computed((): number | null => {
+    if (this.materialBundleTab() !== 'characteristic') return null;
+    return this.materialCharacteristicsFormModalBackdropZIndex();
+  });
+
+  /** Модалка геометрии поверх модалки материала (оба на body). */
+  readonly geometriesFormModalBackdropZIndex = computed((): number | null => {
+    if (!this.geometriesModalStackAboveMaterials()) return null;
     return UI_MODAL_Z_INDEX_ABOVE_CASCADE_HUB;
   });
 
@@ -890,9 +934,6 @@ export class DictionariesPage implements OnDestroy {
       if (key !== 'materialCharacteristics') {
         this.materialCharacteristicsHubStackAboveModal.set(false);
       }
-      if (key !== 'geometries') {
-        this.geometriesHubStackAboveModal.set(false);
-      }
     });
   }
 
@@ -1061,7 +1102,25 @@ export class DictionariesPage implements OnDestroy {
       notes: '',
       isActive: true,
     });
+    this.materialBundleTab.set('material');
     this.isMaterialsModalOpen.set(true);
+  }
+
+  /** Переключение вкладок в объединённой модалке создания (материал ↔ характеристика). */
+  selectMaterialBundleTab(tab: 'material' | 'characteristic'): void {
+    if (tab === this.materialBundleTab()) return;
+    if (tab === 'characteristic') {
+      if (!this.isMaterialCharacteristicsModalOpen()) {
+        this.openMaterialCharacteristicsCreate();
+      } else {
+        this.materialBundleTab.set('characteristic');
+      }
+      return;
+    }
+    if (!this.isMaterialsModalOpen()) {
+      this.openMaterialsCreate();
+    }
+    this.materialBundleTab.set('material');
   }
 
   openMaterialsEdit(id: string): void {
@@ -1081,13 +1140,22 @@ export class DictionariesPage implements OnDestroy {
       notes: item.notes ?? '',
       isActive: item.isActive,
     });
+    this.materialBundleTab.set('material');
     this.isMaterialsModalOpen.set(true);
   }
 
-  closeMaterialsModal(): void {
+  private closeMaterialBundleModal(): void {
     this.materialsStore.resetForm();
     this.isMaterialsViewMode.set(false);
     this.isMaterialsModalOpen.set(false);
+    this.materialCharacteristicsStore.resetForm();
+    this.isMaterialCharacteristicsViewMode.set(false);
+    this.isMaterialCharacteristicsModalOpen.set(false);
+    this.materialBundleTab.set('material');
+  }
+
+  closeMaterialsModal(): void {
+    this.closeMaterialBundleModal();
   }
 
   submitMaterials(): void {
@@ -1123,6 +1191,7 @@ export class DictionariesPage implements OnDestroy {
       notes: item.notes ?? '',
       isActive: item.isActive,
     });
+    this.materialBundleTab.set('material');
     this.isMaterialsModalOpen.set(true);
   }
 
@@ -1142,6 +1211,7 @@ export class DictionariesPage implements OnDestroy {
     });
     this.materialsForm.disable({ emitEvent: false });
     this.isMaterialsViewMode.set(true);
+    this.materialBundleTab.set('material');
     this.isMaterialsModalOpen.set(true);
   }
 
@@ -1171,25 +1241,16 @@ export class DictionariesPage implements OnDestroy {
     this.syncMaterialCharacteristicColorFromReference('');
     this.syncMaterialCharacteristicFinishFromReference('');
     this.syncMaterialCharacteristicCoatingFromReference('');
+    this.materialBundleTab.set('characteristic');
     this.isMaterialCharacteristicsModalOpen.set(true);
   }
 
-  /** Плитка «Характеристики материала» поверх модалки «Материал» (модалка не закрывается). */
-  openMaterialCharacteristicsHubFromMaterials(): void {
+  /** «+» у поля геометрии: открыть создание геометрии поверх модалки материала (не плитку хаба под модалкой). */
+  openGeometriesCreateFromMaterials(): void {
     if (!this.isMaterialsModalOpen()) return;
-    if (!this.permissions.can(this.hubTilePerm('materialCharacteristics'))) return;
-    this.materialCharacteristicsHubStackAboveModal.set(true);
-    this.hubBoardSelectedKey.set('materialCharacteristics');
-    this.hubExpand.open('materialCharacteristics');
-  }
-
-  /** Плитка «Форма и габариты» поверх модалки «Материал». */
-  openGeometriesHubFromMaterials(): void {
-    if (!this.isMaterialsModalOpen()) return;
-    if (!this.permissions.can(this.hubTilePerm('geometries'))) return;
-    this.geometriesHubStackAboveModal.set(true);
-    this.hubBoardSelectedKey.set('geometries');
-    this.hubExpand.open('geometries');
+    if (!this.permissions.crud().canCreate) return;
+    this.geometriesModalStackAboveMaterials.set(true);
+    this.openGeometriesCreate();
   }
 
   openMaterialCharacteristicsEdit(id: string): void {
@@ -1220,13 +1281,12 @@ export class DictionariesPage implements OnDestroy {
       },
       { emitEvent: false },
     );
+    this.materialBundleTab.set('characteristic');
     this.isMaterialCharacteristicsModalOpen.set(true);
   }
 
   closeMaterialCharacteristicsModal(): void {
-    this.materialCharacteristicsStore.resetForm();
-    this.isMaterialCharacteristicsViewMode.set(false);
-    this.isMaterialCharacteristicsModalOpen.set(false);
+    this.closeMaterialBundleModal();
   }
 
   submitMaterialCharacteristics(): void {
@@ -1236,8 +1296,79 @@ export class DictionariesPage implements OnDestroy {
       this.materialCharacteristicsForm.markAllAsTouched();
       return;
     }
+    const bundleReturnToMaterials =
+      this.isMaterialsModalOpen() &&
+      !this.isMaterialsViewMode() &&
+      !this.materialsStore.isEditMode() &&
+      !this.materialCharacteristicsStore.isEditMode() &&
+      !this.isMaterialCharacteristicsViewMode();
+    const snapshotKey = this.materialCharacteristicQuickAddMatchKey(payload);
     this.materialCharacteristicsStore.submit({ value: payload, isValid: true });
-    this.closeMaterialCharacteristicsModal();
+    if (bundleReturnToMaterials) {
+      this.scheduleMaterialCharacteristicQuickAddToMaterials(snapshotKey);
+      queueMicrotask(() => {
+        this.materialCharacteristicsStore.resetForm();
+        this.materialCharacteristicsStore.startCreate();
+        this.materialCharacteristicsForm.enable({ emitEvent: false });
+        this.materialCharacteristicsForm.reset({
+          name: '',
+          code: '',
+          densityKgM3: null,
+          colorId: '',
+          colorName: '',
+          colorHex: '',
+          surfaceFinishId: '',
+          finishType: '',
+          roughnessClass: '',
+          raMicron: null,
+          coatingId: '',
+          coatingType: '',
+          coatingSpec: '',
+          coatingThicknessMicron: null,
+          notes: '',
+          isActive: true,
+        });
+        this.syncMaterialCharacteristicColorFromReference('');
+        this.syncMaterialCharacteristicFinishFromReference('');
+        this.syncMaterialCharacteristicCoatingFromReference('');
+        this.isMaterialCharacteristicsModalOpen.set(false);
+        this.materialBundleTab.set('material');
+      });
+    } else {
+      this.closeMaterialCharacteristicsModal();
+    }
+  }
+
+  /** Ключ для поиска только что созданной характеристики в списке (как unitQuickAdd / геометрия). */
+  private materialCharacteristicQuickAddMatchKey(
+    x: MaterialCharacteristicItem | MaterialCharacteristicItemInput,
+  ): string {
+    return [
+      x.name.trim().toLowerCase(),
+      (x.code ?? '').trim().toLowerCase(),
+      String(x.densityKgM3 ?? ''),
+      x.colorId ?? '',
+      x.surfaceFinishId ?? '',
+      x.coatingId ?? '',
+    ].join('|');
+  }
+
+  private scheduleMaterialCharacteristicQuickAddToMaterials(snapshotKey: string): void {
+    let attempts = 0;
+    const maxAttempts = 24;
+    const tick = (): void => {
+      const created = this.materialCharacteristicsStore.items().find(
+        (x) => this.materialCharacteristicQuickAddMatchKey(x) === snapshotKey,
+      );
+      if (created) {
+        this.materialsForm.controls.materialCharacteristicId.setValue(created.id);
+        return;
+      }
+      if (attempts++ < maxAttempts) {
+        setTimeout(tick, 50);
+      }
+    };
+    queueMicrotask(tick);
   }
 
   deleteMaterialCharacteristic(id: string): void {
@@ -1273,6 +1404,7 @@ export class DictionariesPage implements OnDestroy {
       },
       { emitEvent: false },
     );
+    this.materialBundleTab.set('characteristic');
     this.isMaterialCharacteristicsModalOpen.set(true);
   }
 
@@ -1303,6 +1435,7 @@ export class DictionariesPage implements OnDestroy {
     );
     this.materialCharacteristicsForm.disable({ emitEvent: false });
     this.isMaterialCharacteristicsViewMode.set(true);
+    this.materialBundleTab.set('characteristic');
     this.isMaterialCharacteristicsModalOpen.set(true);
   }
 
@@ -1350,6 +1483,7 @@ export class DictionariesPage implements OnDestroy {
     this.geometriesStore.closeDialog();
     this.isGeometriesViewMode.set(false);
     this.isGeometriesModalOpen.set(false);
+    this.geometriesModalStackAboveMaterials.set(false);
   }
 
   submitGeometries(): void {
@@ -1359,8 +1493,53 @@ export class DictionariesPage implements OnDestroy {
       this.geometriesForm.markAllAsTouched();
       return;
     }
+    const quickAddForMaterials = this.geometriesModalStackAboveMaterials();
+    const snapshotKey = this.geometryQuickAddMatchKey(payload);
     this.geometriesStore.submit({ value: payload, isValid: true });
+    if (quickAddForMaterials) {
+      this.scheduleGeometryQuickAddToMaterials(snapshotKey);
+    }
     this.closeGeometriesModal();
+  }
+
+  /** Как у единиц измерения: после создания геометрии из формы материала — подставить id в поле. */
+  private geometryQuickAddMatchKey(x: {
+    name: string;
+    shapeKey: string;
+    heightMm?: number;
+    lengthMm?: number;
+    widthMm?: number;
+    diameterMm?: number;
+    thicknessMm?: number;
+  }): string {
+    return [
+      x.name.trim().toLowerCase(),
+      x.shapeKey,
+      String(x.heightMm ?? ''),
+      String(x.lengthMm ?? ''),
+      String(x.widthMm ?? ''),
+      String(x.diameterMm ?? ''),
+      String(x.thicknessMm ?? ''),
+    ].join('|');
+  }
+
+  /** Store обновляет список асинхронно после create — повторяем поиск, как для unitQuickAdd. */
+  private scheduleGeometryQuickAddToMaterials(snapshotKey: string): void {
+    let attempts = 0;
+    const maxAttempts = 24;
+    const tick = (): void => {
+      const created = this.geometriesStore.items().find(
+        (x) => this.geometryQuickAddMatchKey(x) === snapshotKey,
+      );
+      if (created) {
+        this.materialsForm.controls.geometryId.setValue(created.id);
+        return;
+      }
+      if (attempts++ < maxAttempts) {
+        setTimeout(tick, 50);
+      }
+    };
+    queueMicrotask(tick);
   }
 
   deleteGeometry(id: string): void {
