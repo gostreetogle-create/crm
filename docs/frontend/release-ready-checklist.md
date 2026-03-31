@@ -10,6 +10,7 @@
 - Runtime smoke: `PASS` (HTTP 200 для `/`, `/dictionaries`, `/materials`, `/geometries` в `crm-web` и `srm-front`)
 - Docs sync: `PASS` (audit + release-checklist + новые контрактные тесты + комитетный AI UI/UX prompt в workflow)
 - Общий release-ready статус: `PASS (условно)` для фронтенд-workspace `crm-web`; вне области остаются массовые удаления в `backend/**`, `deploy/**`, части `docs/**`.
+- UX batch status: `PASS` (Batch #1..#5: compact controls, table readability, fast form mode, toolbar rhythm, keyboard focus clarity).
 
 ## 1. Workspace integrity
 

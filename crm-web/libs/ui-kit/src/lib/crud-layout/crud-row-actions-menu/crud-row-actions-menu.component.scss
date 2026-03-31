@@ -35,6 +35,11 @@
   color: var(--text-primary);
 }
 
+.rowActionMenuTrigger:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent);
+  outline-offset: 1px;
+}
+
 .rowActionMenuTrigger--open {
   background: color-mix(in srgb, var(--accent) 12%, var(--surface));
   border-color: color-mix(in srgb, var(--accent) 35%, var(--border-color));
@@ -88,6 +93,12 @@
   background: color-mix(in srgb, var(--accent) 7%, var(--surface-soft));
 }
 
+.rowActionsMenuItem:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent);
+  outline-offset: -2px;
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface-soft));
+}
+
 .rowActionsMenuItem svg {
   flex-shrink: 0;
   color: var(--accent);
@@ -103,4 +114,9 @@
 
 .rowActionsMenuItem--danger:hover {
   background: color-mix(in srgb, var(--danger) 8%, var(--surface-soft));
+}
+
+.rowActionsMenuItem--danger:focus-visible {
+  outline-color: color-mix(in srgb, var(--danger) 46%, transparent);
+  background: color-mix(in srgb, var(--danger) 10%, var(--surface-soft));
 }
