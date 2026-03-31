@@ -314,7 +314,7 @@
 
 .dictionaryReadonlyGrid {
   display: grid;
-  gap: 12px 14px;
+  gap: var(--ui-form-stack-gap) 14px;
   grid-template-columns: minmax(0, 1fr);
 }
 
@@ -370,7 +370,7 @@
 
 .dictionaryFormSectionBody {
   display: grid;
-  gap: 12px;
+  gap: var(--ui-form-stack-gap);
   grid-template-columns: minmax(0, 1fr);
 }
 

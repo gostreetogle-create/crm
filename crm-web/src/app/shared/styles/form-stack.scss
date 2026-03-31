@@ -1,7 +1,7 @@
 /* Общая раскладка коротких форм (модалки, демо, справочники). */
 .formGrid {
   display: grid;
-  gap: 12px;
+  gap: var(--ui-form-stack-gap);
   grid-template-columns: minmax(0, 1fr);
 }
 
@@ -13,10 +13,10 @@
 }
 
 .formActionsRow {
-  margin-top: 12px;
+  margin-top: var(--ui-form-stack-gap);
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
+  gap: var(--ui-form-actions-gap);
 }
 
 .formAuxAction {
