@@ -301,6 +301,18 @@
   text-align: left;
 }
 
+.crudTable tbody tr {
+  transition: background-color 100ms ease;
+}
+
+.crudTable tbody tr:nth-child(even) {
+  background: color-mix(in srgb, var(--surface-soft) 62%, var(--surface) 38%);
+}
+
+.crudTable tbody tr:hover {
+  background: color-mix(in srgb, var(--surface-soft) 82%, var(--accent) 18%);
+}
+
 .crudTable th.actionsCol,
 .crudTable td.actionsCol {
   width: var(--ui-crud-actions-col-width);
