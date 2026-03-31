@@ -1,0 +1,75 @@
+<div
+  class="rowActionsMenuRoot"
+  [class.rowActionsMenuRoot--card]="variant === 'card'"
+  data-crud-row-actions-root
+>
+  <button
+    type="button"
+    class="rowActionMenuTrigger"
+    [class.rowActionMenuTrigger--open]="isOpen"
+    [attr.aria-expanded]="isOpen"
+    aria-haspopup="menu"
+    aria-label="Действия со строкой"
+    [attr.data-testid]="'row-actions-trigger-' + trackKey"
+    (click)="onToggle($event)"
+  >
+    <svg lucideMoreHorizontal [size]="16"></svg>
+  </button>
+  @if (isOpen) {
+    <div
+      class="rowActionsMenuPanel"
+      [class.rowActionsMenuPanel--card]="variant === 'card'"
+      role="menu"
+      (click)="$event.stopPropagation()"
+    >
+      @if (canView) {
+        <button
+          type="button"
+          role="menuitem"
+          class="rowActionsMenuItem"
+          [attr.data-testid]="'view-button-' + trackKey"
+          (click)="emitView()"
+        >
+          <svg lucideEye [size]="14"></svg>
+          <span>Просмотр</span>
+        </button>
+      }
+      @if (canEdit) {
+        <button
+          type="button"
+          role="menuitem"
+          class="rowActionsMenuItem"
+          [attr.data-testid]="'edit-button-' + trackKey"
+          (click)="emitEdit()"
+        >
+          <svg lucidePencil [size]="14"></svg>
+          <span>Изменить</span>
+        </button>
+      }
+      @if (canDuplicate) {
+        <button
+          type="button"
+          role="menuitem"
+          class="rowActionsMenuItem"
+          [attr.data-testid]="'duplicate-button-' + trackKey"
+          (click)="emitDuplicate()"
+        >
+          <svg lucideCopy [size]="14"></svg>
+          <span>Копировать</span>
+        </button>
+      }
+      @if (canDelete) {
+        <button
+          type="button"
+          role="menuitem"
+          class="rowActionsMenuItem rowActionsMenuItem--danger"
+          [attr.data-testid]="'delete-button-' + trackKey"
+          (click)="emitDelete()"
+        >
+          <svg lucideTrash2 [size]="14"></svg>
+          <span>Удалить</span>
+        </button>
+      }
+    </div>
+  }
+</div>

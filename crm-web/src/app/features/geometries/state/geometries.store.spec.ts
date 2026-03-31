@@ -2,10 +2,11 @@ import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import {
   GEOMETRIES_REPOSITORY,
-  GeometriesRepository,
-} from '../data/geometries.repository';
-import { GeometryItem } from '../model/geometry-item';
-import { GeometriesStore } from './geometries.store';
+  type GeometriesRepository,
+  type GeometryItem,
+} from '@srm/geometries-data-access';
+
+import { GeometriesStore } from '@srm/dictionaries-state';
 
 describe('GeometriesStore', () => {
   let store: InstanceType<typeof GeometriesStore>;
@@ -79,3 +80,5 @@ describe('GeometriesStore', () => {
     expect(store.isEditDialogOpen()).toBe(false);
   });
 });
+
+

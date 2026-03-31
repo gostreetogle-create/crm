@@ -1,0 +1,9 @@
+@if (session.isAuthenticated()) {
+  <app-app-header>
+    <app-theme-picker></app-theme-picker>
+  </app-app-header>
+}
+
+<main class="appMain" [class.appMain--guest]="!session.isAuthenticated()">
+  <router-outlet></router-outlet>
+</main>

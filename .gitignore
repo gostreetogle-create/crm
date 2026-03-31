@@ -9,3 +9,8 @@ backend/dist/
 backend/backups/
 
 .idea/
+
+# Nx graph export (генерируется локально, не хранить в git)
+docs/frontend/nx-graph.html
+docs/frontend/static/
+

@@ -13,3 +13,5 @@ export class SectionLabelComponent {
   @Input() corner = true;
 }
 
+
+

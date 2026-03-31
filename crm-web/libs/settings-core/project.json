@@ -1,0 +1,9 @@
+{
+  "name": "settings-core",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/settings-core/src",
+  "projectType": "library",
+  "tags": ["scope:platform", "type:core"],
+  "// targets": "to see all targets run: nx show project settings-core --web",
+  "targets": {}
+}

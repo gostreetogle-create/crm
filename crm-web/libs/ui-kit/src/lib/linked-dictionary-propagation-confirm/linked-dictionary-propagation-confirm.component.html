@@ -1,0 +1,33 @@
+<ui-modal
+  [title]="title"
+  [content]="contentTpl"
+  [actions]="actionsTpl"
+  [closeOnBackdrop]="true"
+  size="md"
+  (close)="closed.emit()"
+>
+</ui-modal>
+
+<ng-template #contentTpl>
+  @if (mode === 'update') {
+    <p class="muted">
+      {{ entityLabel }} используется в {{ relatedCount }} характеристиках материала.
+      После изменения справочника можно обновить сохраненные значения:
+    </p>
+  } @else {
+    <p class="muted">
+      Справочник используется в {{ relatedCount }} характеристиках материала.
+      После удаления можно выбрать, оставлять snapshot-значения или очищать их глобально.
+    </p>
+  }
+</ng-template>
+
+<ng-template #actionsTpl>
+  <app-ui-button variant="soft" type="button" (clicked)="local.emit()">
+    Изменить локально
+  </app-ui-button>
+  <app-ui-button type="button" (clicked)="global.emit()">
+    Изменить во всех связанных
+  </app-ui-button>
+</ng-template>
+

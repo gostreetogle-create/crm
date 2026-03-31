@@ -2,13 +2,11 @@ import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import {
   MATERIAL_CHARACTERISTICS_REPOSITORY,
-  MaterialCharacteristicsRepository,
-} from '../data/material-characteristics.repository';
-import {
-  MaterialCharacteristicItem,
-  MaterialCharacteristicItemInput,
-} from '../model/material-characteristic-item';
-import { MaterialCharacteristicsStore } from './material-characteristics.store';
+  type MaterialCharacteristicItem,
+  type MaterialCharacteristicItemInput,
+  type MaterialCharacteristicsRepository,
+} from '@srm/material-characteristics-data-access';
+import { MaterialCharacteristicsStore } from '@srm/dictionaries-state';
 
 describe('MaterialCharacteristicsStore', () => {
   let store: InstanceType<typeof MaterialCharacteristicsStore>;
@@ -88,11 +86,12 @@ describe('MaterialCharacteristicsStore', () => {
 
     const data = store.materialCharacteristicsData();
     expect(data.map((x) => x.name)).toEqual(['Алюминий', 'Сталь профиль']);
-    const steel = data.find((x) => x.id === 'mc-a')!;
-    expect(steel.color).toContain('Серый');
-    expect(steel.colorHex).toBe('#6B7280');
-    expect(steel.finish).toContain('Matte');
-    expect(steel.coating).toContain('Powder');
+    const steel = data.find((x) => x.id === 'mc-a');
+    expect(steel).toBeDefined();
+    expect(steel?.color).toContain('Серый');
+    expect(steel?.colorHex).toBe('#6B7280');
+    expect(steel?.finish).toContain('Matte');
+    expect(steel?.coating).toContain('Powder');
   });
 
   it('startEdit and submit(valid) calls update and clears editId', () => {
@@ -156,3 +155,5 @@ describe('MaterialCharacteristicsStore', () => {
     expect(repo.remove).toHaveBeenCalledWith('mc-b');
   });
 });
+
+

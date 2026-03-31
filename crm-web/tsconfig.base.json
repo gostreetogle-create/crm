@@ -1,0 +1,105 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "rootDir": ".",
+    "sourceMap": true,
+    "declaration": false,
+    "moduleResolution": "bundler",
+    "emitDecoratorMetadata": false,
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "target": "es2022",
+    "module": "preserve",
+    "lib": ["es2020", "dom"],
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@crm-web/ui-kit": ["libs/ui-kit/src/index.ts"],
+      "@crm-web/shared-types": ["libs/shared-types/src/index.ts"],
+      "@crm-web/platform-core": ["libs/platform-core/src/index.ts"],
+      "@crm-web/authz-core": ["libs/authz-core/src/index.ts"],
+      "@crm-web/authz-runtime": ["libs/authz-runtime/src/index.ts"],
+      "@crm-web/auth-session-core": ["libs/auth-session-core/src/index.ts"],
+      "@crm-web/theme-core": ["libs/theme-core/src/index.ts"],
+      "@crm-web/settings-core": ["libs/settings-core/src/index.ts"],
+      "@crm-web/dictionaries-utils": ["libs/dictionaries-utils/src/index.ts"],
+      "@crm-web/dictionaries-state": ["libs/dictionaries-state/src/index.ts"],
+      "@srm/ui-kit": ["libs/ui-kit/src/index.ts"],
+      "@srm/shared-types": ["libs/shared-types/src/index.ts"],
+      "@srm/platform-core": ["libs/platform-core/src/index.ts"],
+      "@srm/authz-core": ["libs/authz-core/src/index.ts"],
+      "@srm/authz-runtime": ["libs/authz-runtime/src/index.ts"],
+      "@srm/auth-session-core": ["libs/auth-session-core/src/index.ts"],
+      "@crm-web/auth-session-angular": [
+        "libs/auth-session-angular/src/index.ts"
+      ],
+      "@srm/auth-session-angular": ["libs/auth-session-angular/src/index.ts"],
+      "@srm/theme-core": ["libs/theme-core/src/index.ts"],
+      "@srm/settings-core": ["libs/settings-core/src/index.ts"],
+      "@srm/dictionaries-utils": ["libs/dictionaries-utils/src/index.ts"],
+      "@srm/dictionaries-state": ["libs/dictionaries-state/src/index.ts"],
+      "@crm-web/colors-data-access": ["libs/colors-data-access/src/index.ts"],
+      "@srm/colors-data-access": ["libs/colors-data-access/src/index.ts"],
+      "@crm-web/materials-data-access": [
+        "libs/materials-data-access/src/index.ts"
+      ],
+      "@srm/materials-data-access": ["libs/materials-data-access/src/index.ts"],
+      "@crm-web/units-data-access": ["libs/units-data-access/src/index.ts"],
+      "@srm/units-data-access": ["libs/units-data-access/src/index.ts"],
+      "@crm-web/coatings-data-access": [
+        "libs/coatings-data-access/src/index.ts"
+      ],
+      "@srm/coatings-data-access": ["libs/coatings-data-access/src/index.ts"],
+      "@crm-web/surface-finishes-data-access": [
+        "libs/surface-finishes-data-access/src/index.ts"
+      ],
+      "@srm/surface-finishes-data-access": [
+        "libs/surface-finishes-data-access/src/index.ts"
+      ],
+      "@crm-web/geometries-data-access": [
+        "libs/geometries-data-access/src/index.ts"
+      ],
+      "@srm/geometries-data-access": [
+        "libs/geometries-data-access/src/index.ts"
+      ],
+      "@crm-web/material-characteristics-data-access": [
+        "libs/material-characteristics-data-access/src/index.ts"
+      ],
+      "@srm/material-characteristics-data-access": [
+        "libs/material-characteristics-data-access/src/index.ts"
+      ],
+      "@crm-web/production-work-types-data-access": [
+        "libs/production-work-types-data-access/src/index.ts"
+      ],
+      "@srm/production-work-types-data-access": [
+        "libs/production-work-types-data-access/src/index.ts"
+      ],
+      "@crm-web/clients-data-access": ["libs/clients-data-access/src/index.ts"],
+      "@srm/clients-data-access": ["libs/clients-data-access/src/index.ts"],
+      "@crm-web/organizations-data-access": [
+        "libs/organizations-data-access/src/index.ts"
+      ],
+      "@srm/organizations-data-access": [
+        "libs/organizations-data-access/src/index.ts"
+      ],
+      "@crm-web/roles-data-access": ["libs/roles-data-access/src/index.ts"],
+      "@srm/roles-data-access": ["libs/roles-data-access/src/index.ts"],
+      "@crm-web/users-data-access": ["libs/users-data-access/src/index.ts"],
+      "@srm/users-data-access": ["libs/users-data-access/src/index.ts"],
+      "@crm-web/login-feature": ["libs/login-feature/src/index.ts"],
+      "@srm/login-feature": ["libs/login-feature/src/index.ts"],
+      "@crm-web/dictionaries-hub-feature": [
+        "libs/dictionaries-hub-feature/src/index.ts"
+      ],
+      "@srm/dictionaries-hub-feature": [
+        "libs/dictionaries-hub-feature/src/index.ts"
+      ],
+      "@crm-web/settings-feature": ["libs/settings-feature/src/index.ts"],
+      "@srm/settings-feature": ["libs/settings-feature/src/index.ts"],
+      "@crm-web/ui-demo-feature": ["libs/ui-demo-feature/src/index.ts"],
+      "@srm/ui-demo-feature": ["libs/ui-demo-feature/src/index.ts"]
+    }
+  },
+  "exclude": ["node_modules", "tmp"]
+}

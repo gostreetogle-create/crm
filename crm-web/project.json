@@ -5,7 +5,7 @@
   "projectType": "application",
   "prefix": "app",
   "sourceRoot": "./src",
-  "tags": [],
+  "tags": ["scope:legacy", "type:app"],
   "targets": {
     "build": {
       "executor": "@angular/build:application",
@@ -29,18 +29,6 @@
           "sourceMap": false,
           "extractLicenses": true,
           "namedChunks": false,
-          "budgets": [
-            {
-              "type": "initial",
-              "maximumWarning": "400kb",
-              "maximumError": "500kb"
-            },
-            {
-              "type": "anyComponentStyle",
-              "maximumWarning": "7kb",
-              "maximumError": "10kb"
-            }
-          ],
           "outputHashing": "all"
         },
         "development": {
@@ -77,7 +65,7 @@
       "executor": "@nx/jest:jest",
       "outputs": ["{workspaceRoot}/coverage/crm-web"],
       "options": {
-        "jestConfig": "jest.config.cts"
+        "jestConfig": "jest.config.app.ts"
       }
     },
     "serve-static": {

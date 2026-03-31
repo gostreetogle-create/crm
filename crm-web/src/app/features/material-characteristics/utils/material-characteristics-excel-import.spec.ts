@@ -1,6 +1,6 @@
-import type { ColorItem } from '../../colors/model/color-item';
-import type { CoatingItem } from '../../coatings/model/coating-item';
-import type { SurfaceFinishItem } from '../../surface-finishes/model/surface-finish-item';
+import type { ColorItem } from '@srm/colors-data-access';
+import type { CoatingItem } from '@srm/coatings-data-access';
+import type { SurfaceFinishItem } from '@srm/surface-finishes-data-access';
 import {
   findCoatingMatch,
   findColorMatch,
@@ -8,7 +8,7 @@ import {
   materialCharacteristicsDraftsToPayload,
   planMissingReferencesForMaterialCharacteristicsImport,
   splitCoatingCell,
-} from './material-characteristics-excel-import';
+} from '@srm/dictionaries-utils';
 
 function color(id: string, name: string, hex: string, ralCode?: string): ColorItem {
   const clean = hex.replace('#', '');
@@ -191,3 +191,5 @@ describe('material-characteristics-excel-import', () => {
     });
   });
 });
+
+

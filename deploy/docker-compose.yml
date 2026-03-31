@@ -5,7 +5,8 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: crm
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-crm}
+      # Имя CRM_* чтобы пустая переменная POSTGRES_PASSWORD в Windows не ломала подстановку.
+      POSTGRES_PASSWORD: ${CRM_POSTGRES_PASSWORD:-crm}
       POSTGRES_DB: crm
     volumes:
       - crm_pgdata:/var/lib/postgresql/data
@@ -32,7 +33,7 @@ services:
       PORT: 3000
       CORS_ORIGIN: ${CORS_ORIGIN}
       JWT_SECRET: ${JWT_SECRET}
-      DATABASE_URL: postgresql://crm:${POSTGRES_PASSWORD:-crm}@postgres:5432/crm?schema=public
+      DATABASE_URL: postgresql://crm:${CRM_POSTGRES_PASSWORD:-crm}@postgres:5432/crm?schema=public
       BACKUP_DIR: /var/lib/crm/backups
     volumes:
       - crm_backups:/var/lib/crm/backups

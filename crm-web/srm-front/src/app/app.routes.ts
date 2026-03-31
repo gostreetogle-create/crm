@@ -1,0 +1,50 @@
+import { Route } from '@angular/router';
+import { authGuard, permissionGuard } from '@srm/authz-runtime';
+import { DICTIONARIES_ROUTE_PROVIDERS } from '@srm/dictionaries-hub-feature';
+
+export const appRoutes: Route[] = [
+  {
+    path: '',
+    loadComponent: () => import('@srm/login-feature').then((m) => m.LoginPage),
+  },
+  {
+    path: 'справочники',
+    canActivate: [authGuard, permissionGuard],
+    data: { permission: 'page.dictionaries' },
+    providers: DICTIONARIES_ROUTE_PROVIDERS,
+    loadComponent: () =>
+      import('@srm/dictionaries-hub-feature').then((m) => m.DictionariesPage),
+  },
+  {
+    path: 'dictionaries',
+    redirectTo: '/справочники',
+    pathMatch: 'full',
+  },
+  {
+    path: 'demo',
+    canActivate: [authGuard, permissionGuard],
+    data: { permission: 'page.demo' },
+    loadComponent: () => import('@srm/ui-demo-feature').then((m) => m.UiDemoPage),
+  },
+  {
+    path: 'preferences',
+    canActivate: [authGuard, permissionGuard],
+    data: { permission: 'page.preferences' },
+    loadComponent: () => import('@srm/settings-feature').then((m) => m.UserPreferencesPage),
+  },
+  {
+    path: 'settings',
+    canActivate: [authGuard, permissionGuard],
+    data: { permission: 'page.admin.settings' },
+    loadComponent: () => import('@srm/settings-feature').then((m) => m.AdminSettingsPage),
+  },
+  {
+    path: 'forbidden',
+    loadComponent: () => import('./pages/forbidden/forbidden.page').then((m) => m.ForbiddenPage),
+  },
+  {
+    path: '404',
+    loadComponent: () => import('./pages/not-found/not-found.page').then((m) => m.NotFoundPage),
+  },
+  { path: '**', loadComponent: () => import('./pages/not-found/not-found.page').then((m) => m.NotFoundPage) },
+];

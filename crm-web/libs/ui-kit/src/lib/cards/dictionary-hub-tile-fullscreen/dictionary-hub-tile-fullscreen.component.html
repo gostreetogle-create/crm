@@ -1,0 +1,11 @@
+<section class="dictionaryTile">
+  <app-hub-crud-expandable-shell-fullscreen
+    [tileKey]="tileKey()"
+    [stackAboveModals]="stackAboveModals()"
+  >
+    <app-content-card title="" [hideTitle]="true" density="compact">
+      <ng-content />
+    </app-content-card>
+  </app-hub-crud-expandable-shell-fullscreen>
+</section>
+

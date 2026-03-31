@@ -1,0 +1,31 @@
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-card);
+  padding: var(--ui-card-padding);
+  box-shadow:
+    0 var(--ui-shadow-card-offset-y) var(--ui-shadow-card-blur) var(--shadow-color),
+    0 var(--ui-shadow-card-thin-offset-y) 0 var(--shadow-color);
+  margin-top: var(--ui-card-margin-top);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.cardConstrainedWidth {
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.card--density-compact {
+  padding: var(--ui-space-3);
+  margin-top: 0;
+  box-shadow:
+    0 1px 2px color-mix(in srgb, var(--shadow-color) 14%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--border-color) 88%, transparent);
+}
+
+.cardTitle {
+  margin: 0 0 var(--ui-card-title-margin-bottom);
+  font-size: var(--font-size-card-title);
+  letter-spacing: -0.01em;
+}

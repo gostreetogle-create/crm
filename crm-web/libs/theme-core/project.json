@@ -1,0 +1,9 @@
+{
+  "name": "theme-core",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/theme-core/src",
+  "projectType": "library",
+  "tags": ["scope:platform", "type:core"],
+  "// targets": "to see all targets run: nx show project theme-core --web",
+  "targets": {}
+}

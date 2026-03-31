@@ -1,0 +1,12 @@
+{
+  "name": "auth-session-angular",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/auth-session-angular/src",
+  "projectType": "library",
+  "tags": ["scope:platform", "type:core"],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    }
+  }
+}

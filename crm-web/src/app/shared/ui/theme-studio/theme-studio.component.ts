@@ -1,9 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { Component, effect, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { ThemeStore } from '../../../core/theme/theme.store';
-import { THEME_PRESETS } from '../../theme/theme-presets';
-import { ThemeTokens } from '../../theme/theme-schema';
+import { ThemeStore } from '@srm/theme-core';
+import { THEME_PRESETS } from '@srm/theme-core';
+import { ThemeTokens } from '@srm/theme-core';
 
 @Component({
   selector: 'app-theme-studio',
@@ -69,4 +69,7 @@ export class ThemeStudioComponent {
     this.messageKind = 'ok';
   }
 }
+
+
+
 

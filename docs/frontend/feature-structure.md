@@ -10,10 +10,11 @@
 
 2. `src/app/features/<feature-name>/components/...` (по мере роста)
    - Локальные компоненты, которые не хочется переиспользовать в других фичах.
-   - **Справочники в хабе `/dictionaries`:** UI-блок каждого справочника — в `features/dictionaries/components/<...>/`, доменные типы/репозиторий/store остаются в `features/<entity>/`. Так страница-хаб не превращается в один неограниченно растущий файл.
+   - **Справочники в хабе `/dictionaries`:** UI-блок каждого справочника — в `features/dictionaries/components/<...>/`, доменные типы/репозиторий/store остаются в `features/<entity>/`. Так страница-хаб не превращается в один неограниченно растущий файл. Уже вынесено: оболочка секции хаба (`dictionary-hub-section` — заголовок + сетка плиток).
 
-3. `src/app/shared/model/...`
-   - Общие типы/интерфейсы (например, `FieldRow`).
+3. `crm-web/libs/shared-types` (`@srm/shared-types`)
+   - Общие типы и контракты, которыми пользуются несколько фич или и `crm-web`, и `srm-front` (например `FieldRow`, `DictionaryPropagationOptions`).
+   - Папку `src/app/shared/model` не наращивать: новые общие типы добавлять в библиотеку и импортировать как `@srm/shared-types`.
 
 4. `src/app/shared/ui/...`
    - Переиспользуемые UI-компоненты (таблицы, бейджи, карточки, формы и т.п.).
@@ -22,6 +23,7 @@
 ## Роутинг
 
 - Страницы подключаются в `src/app/app.routes.ts`.
+- Провайдеры единого хаба справочников (`/справочники`) собраны в `src/app/features/dictionaries/dictionaries-route.providers.ts` и подключены на **компоненте** `DictionariesPage` (не в `app.routes.ts`), чтобы не тащить mock/http репозитории и сторы справочников в initial bundle.
 - Feature-level `*.routes.ts` — только если файл **реально импортируется** в `app.routes.ts` (или в дочерний `loadChildren`). Не держать «висячие» `*.routes.ts` и неподключённые `*-crud-page`, дублирующие хаб справочников — см. `docs/frontend/dictionaries-crud-playbook.md`, раздел «Порядок: единый хаб».
 
 ## SCSS

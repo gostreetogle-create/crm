@@ -1,2 +1,4 @@
-export * from './has-permission.directive';
+export { HasPermissionDirective } from '@srm/authz-runtime';
+
+
 

@@ -1,0 +1,13 @@
+{
+  "name": "colors-data-access",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/colors-data-access/src",
+  "prefix": "lib",
+  "projectType": "library",
+  "tags": ["scope:dictionaries", "type:data-access"],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    }
+  }
+}

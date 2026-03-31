@@ -36,12 +36,12 @@
 - `UiModalFormActionsComponent` (`src/app/shared/ui/modal-form-actions/`)
   - Футер модалки с формой: «Закрыть»/«Отмена» + submit, связанный с формой по `id`; хост `display: contents` под разметку `ui-modal` (`.modalActions`).
 - `FieldsTableComponent` (`src/app/shared/ui/fields-table/`)
-  - Универсальная таблица полей для отображения `{ key, label, type, required, comment }` (тип `FieldRow` в `src/app/shared/model/field-row.ts`).
+  - Универсальная таблица полей для отображения `{ key, label, type, required, comment }` (тип `FieldRow` в `@srm/shared-types`).
 - `PageShellComponent` (`src/app/shared/ui/page-shell/`)
   - Базовый shell страницы (фон, внешние отступы, контейнер ширины).
-- `PageHeaderComponent` (`src/app/shared/ui/page-header/`)
+- `PageHeaderComponent` (`crm-web/libs/ui-kit`, публичный API через `@srm/ui-kit`; в приложении раньше — `shared/ui/page-header`)
   - Единый заголовок страницы + блок фактов справа.
-- `CrudLayoutComponent` (`src/app/shared/ui/crud-layout/`)
+- `CrudLayoutComponent` (`crm-web/libs/ui-kit`; совместимый импорт из `shared/ui/crud-layout/public-api` или напрямую `@srm/ui-kit`)
   - Таблица/карточки CRUD: колонки, данные, тулбар и действия формы через `ng-template`, флаг `loading` (пустой список при загрузке), row-actions с Lucide-иконками.
   - На хабе `/dictionaries` таблица: **одна** колонка `hubLine` с коротким доменным заголовком + «Действия»; при `showCardLabel` заголовок карточки по центру сверху, под ним ряд `+` / поиск / Excel. Компактная таблица: `table-layout: fixed`, текст с ellipsis; у `TableColumn` опционально `swatchHexKey` — квадрат цвета (HEX) слева от текста.
   - Встроенный toolbar-стандарт Excel: `downloadTemplate` / `importExcel` / `exportExcel` с иконками и единым UX.

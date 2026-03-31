@@ -1,0 +1,1931 @@
+<app-page-shell>
+  @if (excelImportStatus()) {
+  <p
+    class="importStatus"
+    [class.importStatus--success]="excelImportTone() === 'success'"
+    [class.importStatus--error]="excelImportTone() === 'error'"
+    [class.importStatus--info]="excelImportTone() === 'info'"
+    role="status"
+    aria-live="polite"
+  >
+    {{ excelImportStatus() }}
+  </p>
+  }
+  <div class="dictionaryHub dictionaryHub--board">
+    <app-content-card title="" [hideTitle]="true" density="compact" class="dictionaryHubBoardCard">
+      <div
+        class="dictionaryHubBoardPicker"
+        [class.dictionaryHubBoardPicker--split]="hubBoardPickerHalves().length > 1"
+        role="toolbar"
+        aria-label="Выбор справочника по разделам"
+      >
+        @for (half of hubBoardPickerHalves(); track $index) {
+          <div class="dictionaryHubBoardHalf">
+            <div class="dictionaryHubBoardHalfInner">
+              @for (col of half; track col.sectionId) {
+                <div class="dictionaryHubBoardColumn">
+                  <div class="dictionaryHubBoardColumnTitle" [attr.id]="col.sectionId">{{ col.section }}</div>
+                  <div class="dictionaryHubBoardColumnButtons" role="group" [attr.aria-labelledby]="col.sectionId">
+                    @for (item of col.items; track item.key) {
+                      <button
+                        type="button"
+                        class="dictionaryHubBoardPickerBtn"
+                        [class.dictionaryHubBoardPickerBtn--active]="isHubBoardRowSelected(item.key)"
+                        (click)="selectHubBoardRow(item.key, $event)"
+                      >
+                        {{ item.title }}
+                      </button>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </app-content-card>
+
+    <app-content-card title="" [hideTitle]="true" density="compact" class="dictionaryHubDetailCard">
+      @switch (hubBoardSelectedKey()) {
+            @case ('materials') {
+      <crud-layout
+        title="Материалы"
+        [showHeader]="false"
+        [showCardLabel]="false"
+        [showNameSearch]="true"
+        [showCreateAction]="true"
+        [canCreate]="permissions.crud().canCreate"
+        createAriaLabel="Добавить материал"
+        createTitle="Добавить материал"
+        [columns]="materialsColumnsForTile()"
+        [data]="materialsStore.materialsData()"
+        [loading]="materialsStore.loading()"
+        [maxTableBodyRows]="null"
+        [tableBodyMaxHeight]="hubBoardDetailTableMaxHeight"
+        [showExcelActions]="true"
+        [canDownloadTemplate]="permissions.can('excel.template')"
+        [canImportExcel]="permissions.can('excel.import')"
+        [canExportExcel]="permissions.can('excel.export')"
+        [canView]="true"
+        [canDuplicate]="permissions.crud().canDuplicate"
+        [canEdit]="permissions.crud().canEdit"
+        [canDelete]="permissions.crud().canDelete"
+        (create)="openMaterialsCreate()"
+        (downloadTemplate)="downloadMaterialsTemplateExcel()"
+        (importExcel)="onMaterialsExcelImported($event)"
+        (exportExcel)="exportMaterialsExcel()"
+        (view)="openMaterialsView($event)"
+        (duplicate)="duplicateMaterial($event)"
+        (edit)="openMaterialsEdit($event)"
+        (delete)="deleteMaterial($event)"
+      ></crud-layout>
+        }
+
+            @case ('materialCharacteristics') {
+      <crud-layout
+        title="Характеристики материала"
+        [showHeader]="false"
+        [showCardLabel]="false"
+        [showNameSearch]="true"
+        [showCreateAction]="true"
+        [canCreate]="permissions.crud().canCreate"
+        createAriaLabel="Добавить характеристику материала"
+        createTitle="Добавить характеристику материала"
+        [columns]="materialCharacteristicsColumnsForTile()"
+        [data]="materialCharacteristicsStore.materialCharacteristicsData()"
+        [loading]="materialCharacteristicsStore.loading()"
+        [maxTableBodyRows]="null"
+        [tableBodyMaxHeight]="hubBoardDetailTableMaxHeight"
+        [showExcelActions]="true"
+        [canDownloadTemplate]="permissions.can('excel.template')"
+        [canImportExcel]="permissions.can('excel.import')"
+        [canExportExcel]="permissions.can('excel.export')"
+        [canView]="true"
+        [canDuplicate]="permissions.crud().canDuplicate"
+        [canEdit]="permissions.crud().canEdit"
+        [canDelete]="permissions.crud().canDelete"
+        (create)="openMaterialCharacteristicsCreate()"
+        (downloadTemplate)="downloadMaterialCharacteristicsTemplateExcel()"
+        (importExcel)="onMaterialCharacteristicsExcelImported($event)"
+        (exportExcel)="exportMaterialCharacteristicsExcel()"
+        (view)="openMaterialCharacteristicsView($event)"
+        (duplicate)="duplicateMaterialCharacteristic($event)"
+        (edit)="openMaterialCharacteristicsEdit($event)"
+        (delete)="deleteMaterialCharacteristic($event)"
+      ></crud-layout>
+        }
+
+            @case ('workTypes') {
+      <crud-layout
+        title="Вид работ"
+        [showHeader]="false"
+        [showCardLabel]="false"
+        [showNameSearch]="true"
+        [showCreateAction]="true"
+        [canCreate]="permissions.crud().canCreate"
+        createAriaLabel="Добавить вид работ"
+        createTitle="Добавить вид работ"
+        [columns]="workTypesColumnsForTile()"
+        [data]="productionWorkTypesStore.workTypesData()"
+        [loading]="productionWorkTypesStore.loading()"
+        [maxTableBodyRows]="null"
+        [tableBodyMaxHeight]="hubBoardDetailTableMaxHeight"
+        [showExcelActions]="true"
+        [canDownloadTemplate]="permissions.can('excel.template')"
+        [canImportExcel]="permissions.can('excel.import')"
+        [canExportExcel]="permissions.can('excel.export')"
+        [canView]="true"
+        [canDuplicate]="permissions.crud().canDuplicate"
+        [canEdit]="permissions.crud().canEdit"
+        [canDelete]="permissions.crud().canDelete"
+        deleteConfirmMessage="Удалить вид работ?"
+        (create)="openWorkTypesCreate()"
+        (downloadTemplate)="downloadWorkTypesTemplateExcel()"
+        (importExcel)="onWorkTypesExcelImported($event)"
+        (exportExcel)="exportWorkTypesExcel()"
+        (view)="openWorkTypesView($event)"
+        (duplicate)="duplicateWorkType($event)"
+        (edit)="openWorkTypesEdit($event)"
+        (delete)="deleteWorkType($event)"
+      ></crud-layout>
+        }
+
+            @case ('units') {
+      <crud-layout
+        title="Единицы измерения"
+        [showHeader]="false"
+        [showCardLabel]="false"
+        [showNameSearch]="true"
+        [showCreateAction]="true"
+        [canCreate]="permissions.crud().canCreate"
+        createAriaLabel="Добавить единицу измерения"
+        createTitle="Добавить единицу измерения"
+        [columns]="unitsColumnsForTile()"
+        [data]="unitsStore.unitsData()"
+        [loading]="unitsStore.loading()"
+        [maxTableBodyRows]="null"
+        [tableBodyMaxHeight]="hubBoardDetailTableMaxHeight"
+        [showExcelActions]="true"
+        [canDownloadTemplate]="permissions.can('excel.template')"
+        [canImportExcel]="permissions.can('excel.import')"
+        [canExportExcel]="permissions.can('excel.export')"
+        [canView]="true"
+        [canDuplicate]="permissions.crud().canDuplicate"
+        [canEdit]="permissions.crud().canEdit"
+        [canDelete]="permissions.crud().canDelete"
+        (create)="openUnitsCreate()"
+        (downloadTemplate)="downloadUnitsTemplateExcel()"
+        (importExcel)="onUnitsExcelImported($event)"
+        (exportExcel)="exportUnitsExcel()"
+        (view)="openUnitsView($event)"
+        (duplicate)="duplicateUnit($event)"
+        (edit)="openUnitsEdit($event)"
+        (delete)="deleteUnit($event)"
+      ></crud-layout>
+        }
+
+            @case ('geometries') {
+      <crud-layout
+        title="Форма и габаритные размеры"
+        [showHeader]="false"
+        [showCardLabel]="false"
+        [showNameSearch]="true"
+        [showCreateAction]="true"
+        [canCreate]="permissions.crud().canCreate"
+        createAriaLabel="Добавить форму и габаритные размеры"
+        createTitle="Добавить форму и габаритные размеры"
+        [columns]="geometriesColumnsForTile()"
+        [data]="geometriesStore.geometriesData()"
+        [loading]="geometriesStore.loading()"
+        [maxTableBodyRows]="null"
+        [tableBodyMaxHeight]="hubBoardDetailTableMaxHeight"
+        [showExcelActions]="true"
+        [canDownloadTemplate]="permissions.can('excel.template')"
+        [canImportExcel]="permissions.can('excel.import')"
+        [canExportExcel]="permissions.can('excel.export')"
+        [canView]="true"
+        [canDuplicate]="permissions.crud().canDuplicate"
+        [canEdit]="permissions.crud().canEdit"
+        [canDelete]="permissions.crud().canDelete"
+        (create)="openGeometriesCreate()"
+        (downloadTemplate)="downloadGeometriesTemplateExcel()"
+        (importExcel)="onGeometriesExcelImported($event)"
+        (exportExcel)="exportGeometriesExcel()"
+        (view)="openGeometriesView($event)"
+        (duplicate)="duplicateGeometry($event)"
+        (edit)="openGeometriesEdit($event)"
+        (delete)="deleteGeometry($event)"
+      ></crud-layout>
+        }
+
+                @case ('colors') {
+      <crud-layout
+        title="Цвета (RAL)"
+        [showHeader]="false"
+        [showCardLabel]="false"
+        [showNameSearch]="true"
+        [showCreateAction]="true"
+        [canCreate]="permissions.crud().canCreate"
+        createAriaLabel="Добавить цвет RAL"
+        createTitle="Добавить цвет RAL"
+        [columns]="colorsColumnsForTile()"
+        [data]="colorsStore.colorsData()"
+        [loading]="colorsStore.loading()"
+        [maxTableBodyRows]="null"
+        [tableBodyMaxHeight]="hubBoardDetailTableMaxHeight"
+        [showExcelActions]="true"
+        [canDownloadTemplate]="permissions.can('excel.template')"
+        [canImportExcel]="permissions.can('excel.import')"
+        [canExportExcel]="permissions.can('excel.export')"
+        [canView]="true"
+        [canDuplicate]="permissions.crud().canDuplicate"
+        [canEdit]="permissions.crud().canEdit"
+        [canDelete]="permissions.crud().canDelete"
+        (create)="openColorsCreate()"
+        (downloadTemplate)="downloadColorsTemplateExcel()"
+        (importExcel)="onColorsExcelImported($event)"
+        (exportExcel)="exportColorsExcel()"
+        (view)="openColorsView($event)"
+        (duplicate)="duplicateColor($event)"
+        (edit)="openColorsEdit($event)"
+        (delete)="deleteColor($event)"
+      ></crud-layout>
+        }
+
+            @case ('surfaceFinishes') {
+      <crud-layout
+        title="Тип отделки / шероховатость"
+        [showHeader]="false"
+        [showCardLabel]="false"
+        [showNameSearch]="true"
+        [showCreateAction]="true"
+        [canCreate]="permissions.crud().canCreate"
+        createAriaLabel="Добавить финиш"
+        createTitle="Добавить финиш"
+        [columns]="surfaceFinishesColumnsForTile()"
+        [data]="surfaceFinishesStore.surfaceFinishesData()"
+        [loading]="surfaceFinishesStore.loading()"
+        [maxTableBodyRows]="null"
+        [tableBodyMaxHeight]="hubBoardDetailTableMaxHeight"
+        [showExcelActions]="true"
+        [canDownloadTemplate]="permissions.can('excel.template')"
+        [canImportExcel]="permissions.can('excel.import')"
+        [canExportExcel]="permissions.can('excel.export')"
+        [canView]="true"
+        [canDuplicate]="permissions.crud().canDuplicate"
+        [canEdit]="permissions.crud().canEdit"
+        [canDelete]="permissions.crud().canDelete"
+        (create)="openSurfaceFinishesCreate()"
+        (downloadTemplate)="downloadSurfaceFinishesTemplateExcel()"
+        (importExcel)="onSurfaceFinishesExcelImported($event)"
+        (exportExcel)="exportSurfaceFinishesExcel()"
+        (view)="openSurfaceFinishesView($event)"
+        (duplicate)="duplicateSurfaceFinish($event)"
+        (edit)="openSurfaceFinishesEdit($event)"
+        (delete)="deleteSurfaceFinish($event)"
+      ></crud-layout>
+        }
+
+            @case ('coatings') {
+      <crud-layout
+        title="Покрытие"
+        [showHeader]="false"
+        [showCardLabel]="false"
+        [showNameSearch]="true"
+        [showCreateAction]="true"
+        [canCreate]="permissions.crud().canCreate"
+        createAriaLabel="Добавить покрытие"
+        createTitle="Добавить покрытие"
+        [columns]="coatingsColumnsForTile()"
+        [data]="coatingsStore.coatingsData()"
+        [loading]="coatingsStore.loading()"
+        [maxTableBodyRows]="null"
+        [tableBodyMaxHeight]="hubBoardDetailTableMaxHeight"
+        [showExcelActions]="true"
+        [canDownloadTemplate]="permissions.can('excel.template')"
+        [canImportExcel]="permissions.can('excel.import')"
+        [canExportExcel]="permissions.can('excel.export')"
+        [canView]="true"
+        [canDuplicate]="permissions.crud().canDuplicate"
+        [canEdit]="permissions.crud().canEdit"
+        [canDelete]="permissions.crud().canDelete"
+        (create)="openCoatingsCreate()"
+        (downloadTemplate)="downloadCoatingsTemplateExcel()"
+        (importExcel)="onCoatingsExcelImported($event)"
+        (exportExcel)="exportCoatingsExcel()"
+        (view)="openCoatingsView($event)"
+        (duplicate)="duplicateCoating($event)"
+        (edit)="openCoatingsEdit($event)"
+        (delete)="deleteCoating($event)"
+      ></crud-layout>
+        }
+
+                @case ('organizations') {
+      <crud-layout
+        title="Организации"
+        [showHeader]="false"
+        [showCardLabel]="false"
+        [showNameSearch]="true"
+        nameSearchPlaceholder="Поиск по названию, ИНН..."
+        [showCreateAction]="true"
+        [canCreate]="permissions.crud().canCreate"
+        createAriaLabel="Добавить организацию"
+        createTitle="Добавить организацию"
+        [columns]="organizationsColumnsForTile()"
+        [data]="organizationsStore.organizationsData()"
+        [loading]="organizationsStore.loading()"
+        [maxTableBodyRows]="null"
+        [tableBodyMaxHeight]="hubBoardDetailTableMaxHeight"
+        [showExcelActions]="true"
+        [canDownloadTemplate]="permissions.can('excel.template')"
+        [canImportExcel]="permissions.can('excel.import')"
+        [canExportExcel]="permissions.can('excel.export')"
+        [canView]="true"
+        [canDuplicate]="permissions.crud().canDuplicate"
+        [canEdit]="permissions.crud().canEdit"
+        [canDelete]="permissions.crud().canDelete"
+        deleteConfirmMessage="Удалить организацию?"
+        (create)="openOrganizationsCreate()"
+        (downloadTemplate)="downloadOrganizationsTemplateExcel()"
+        (importExcel)="onOrganizationsExcelImported($event)"
+        (exportExcel)="exportOrganizationsExcel()"
+        (view)="openOrganizationsView($event)"
+        (duplicate)="duplicateOrganization($event)"
+        (edit)="openOrganizationsEdit($event)"
+        (delete)="deleteOrganization($event)"
+      ></crud-layout>
+        }
+
+            @case ('clients') {
+      <crud-layout
+        title="Контактные лица"
+        [showHeader]="false"
+        [showCardLabel]="false"
+        [showNameSearch]="true"
+        nameSearchPlaceholder="Поиск по ФИО..."
+        [showCreateAction]="true"
+        [canCreate]="permissions.crud().canCreate"
+        createAriaLabel="Добавить контакт"
+        createTitle="Добавить контакт"
+        [columns]="clientsColumnsForTile()"
+        [data]="clientsStore.clientsData()"
+        [loading]="clientsStore.loading()"
+        [maxTableBodyRows]="null"
+        [tableBodyMaxHeight]="hubBoardDetailTableMaxHeight"
+        [showExcelActions]="true"
+        [canDownloadTemplate]="permissions.can('excel.template')"
+        [canImportExcel]="permissions.can('excel.import')"
+        [canExportExcel]="permissions.can('excel.export')"
+        [canView]="true"
+        [canDuplicate]="permissions.crud().canDuplicate"
+        [canEdit]="permissions.crud().canEdit"
+        [canDelete]="permissions.crud().canDelete"
+        deleteConfirmMessage="Удалить контакт?"
+        (create)="openClientsCreate()"
+        (downloadTemplate)="downloadClientsTemplateExcel()"
+        (importExcel)="onClientsExcelImported($event)"
+        (exportExcel)="exportClientsExcel()"
+        (view)="openClientsView($event)"
+        (duplicate)="duplicateClient($event)"
+        (edit)="openClientsEdit($event)"
+        (delete)="deleteClient($event)"
+      ></crud-layout>
+        }
+
+                @case ('roles') {
+      <crud-layout
+        title="Роли"
+        [showHeader]="false"
+        [showCardLabel]="false"
+        [showNameSearch]="true"
+        nameSearchPlaceholder="Поиск по названию…"
+        [showCreateAction]="true"
+        [canCreate]="permissions.crud().canCreate"
+        createAriaLabel="Добавить роль"
+        createTitle="Добавить роль"
+        [columns]="rolesColumnsForTile()"
+        [data]="rolesStore.rolesData()"
+        [loading]="false"
+        [maxTableBodyRows]="null"
+        [tableBodyMaxHeight]="hubBoardDetailTableMaxHeight"
+        [showExcelActions]="true"
+        [canDownloadTemplate]="permissions.can('excel.template')"
+        [canImportExcel]="permissions.can('excel.import')"
+        [canExportExcel]="permissions.can('excel.export')"
+        [canView]="true"
+        [canDuplicate]="permissions.crud().canDuplicate"
+        [canEdit]="permissions.crud().canEdit"
+        [canDelete]="permissions.crud().canDelete"
+        deleteConfirmMessage="Удалить роль? Системные роли не удаляются."
+        (create)="openRolesCreate()"
+        (downloadTemplate)="downloadRolesTemplateExcel()"
+        (importExcel)="onRolesExcelImported($event)"
+        (exportExcel)="exportRolesExcel()"
+        (view)="openRolesView($event)"
+        (duplicate)="duplicateRole($event)"
+        (edit)="openRolesEdit($event)"
+        (delete)="deleteRole($event)"
+      ></crud-layout>
+        }
+
+            @case ('users') {
+      <crud-layout
+        title="Пользователи"
+        [showHeader]="false"
+        [showCardLabel]="false"
+        [showNameSearch]="true"
+        nameSearchPlaceholder="Поиск по логину или ФИО..."
+        [showCreateAction]="true"
+        [canCreate]="permissions.crud().canCreate"
+        createAriaLabel="Добавить пользователя"
+        createTitle="Добавить пользователя"
+        [columns]="usersColumnsForTile()"
+        [data]="usersStore.usersData()"
+        [loading]="false"
+        [maxTableBodyRows]="null"
+        [tableBodyMaxHeight]="hubBoardDetailTableMaxHeight"
+        [showExcelActions]="true"
+        [canDownloadTemplate]="permissions.can('excel.template')"
+        [canImportExcel]="permissions.can('excel.import')"
+        [canExportExcel]="permissions.can('excel.export')"
+        [canView]="true"
+        [canDuplicate]="permissions.crud().canDuplicate"
+        [canEdit]="permissions.crud().canEdit"
+        [canDelete]="permissions.crud().canDelete"
+        deleteConfirmMessage="Удалить пользователя?"
+        (create)="openUsersCreate()"
+        (downloadTemplate)="downloadUsersTemplateExcel()"
+        (importExcel)="onUsersExcelImported($event)"
+        (exportExcel)="exportUsersExcel()"
+        (view)="openUsersView($event)"
+        (duplicate)="duplicateUser($event)"
+        (edit)="openUsersEdit($event)"
+        (delete)="deleteUser($event)"
+      ></crud-layout>
+        }
+      }
+    </app-content-card>
+  </div>
+</app-page-shell>
+
+<ui-modal
+  *ngIf="mcImportAssistOpen()"
+  title="Нет в справочниках"
+  [content]="mcImportAssistContentTpl"
+  [actions]="mcImportAssistActionsTpl"
+  (close)="cancelMcImportAssist()"
+  [closeOnBackdrop]="false"
+  size="md"
+></ui-modal>
+
+<ng-template #mcImportAssistContentTpl>
+  <div class="formGrid">
+    <p class="mcImportAssistIntro">
+      Следующие значения из файла не найдены в справочниках «Цвет RAL», «Тип отделки» и «Покрытие». Добавить
+      их автоматически и продолжить импорт характеристик?
+    </p>
+    <ul class="mcImportAssistList">
+      @for (line of mcImportAssistLines(); track line) {
+        <li>{{ line }}</li>
+      }
+    </ul>
+  </div>
+</ng-template>
+
+<ng-template #mcImportAssistActionsTpl>
+  <app-ui-button variant="soft" type="button" (clicked)="cancelMcImportAssist()">Отмена</app-ui-button>
+  <app-ui-button type="button" (clicked)="confirmMcImportAssist()">Добавить и импортировать</app-ui-button>
+</ng-template>
+
+<ui-modal
+  *ngIf="isRolesModalOpen()"
+  [title]="
+    isRolesViewMode()
+      ? 'Просмотр роли'
+      : rolesEditingId()
+        ? 'Редактирование роли'
+        : 'Новая роль'
+  "
+  [content]="rolesContentTpl"
+  [actions]="rolesActionsTpl"
+  (close)="closeRolesModal()"
+  [closeOnBackdrop]="isRolesViewMode()"
+  size="md"
+></ui-modal>
+
+<ng-template #rolesContentTpl>
+  <form id="roles-form" [formGroup]="rolesForm" (ngSubmit)="submitRoles()" class="formGrid">
+    <fieldset class="dictionaryFormSection">
+      <legend>Роль</legend>
+      <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
+        <app-ui-form-field
+          label="Название"
+          [required]="true"
+          [invalid]="rolesForm.controls.name.invalid && (rolesForm.controls.name.touched || rolesForm.controls.name.dirty)"
+          [errorText]="rolesForm.controls.name.hasError('required') ? 'Обязательное поле' : 'Минимум 2 символа'"
+        >
+          <input type="text" formControlName="name" placeholder="Менеджер продаж" />
+        </app-ui-form-field>
+        @if (!isRolesViewMode()) {
+          <p class="muted dictionaryFieldRowFull">
+            После сохранения активная роль появится колонкой в «Админ-настройках» — там выставляются галочки прав.
+            Технический код роли подставляется автоматически (для экспорта и импорта пользователей).
+          </p>
+        }
+
+        <app-ui-form-field
+          label="Порядок (в матрице и списках)"
+          [required]="true"
+          [invalid]="rolesForm.controls.sortOrder.invalid && (rolesForm.controls.sortOrder.touched || rolesForm.controls.sortOrder.dirty)"
+          [errorText]="
+            rolesForm.controls.sortOrder.hasError('required')
+              ? 'Укажите число'
+              : rolesForm.controls.sortOrder.hasError('min') || rolesForm.controls.sortOrder.hasError('max')
+                ? 'Целое от 1 до 999999'
+                : ''
+          "
+        >
+          <input type="number" formControlName="sortOrder" min="1" max="999999" step="1" />
+        </app-ui-form-field>
+        <p class="muted">
+          Чем меньше число, тем левее колонка в «Админ-настройках» и тем выше роль в списках. При «Создать» и
+          «Дублировать» номер подставляется автоматически (следующий после максимального); при необходимости поменяйте
+          вручную.
+        </p>
+
+        <app-ui-form-field class="dictionaryFieldRowFull" label="Заметка" [wide]="true">
+          <textarea rows="2" formControlName="notes" placeholder="Необязательно"></textarea>
+        </app-ui-form-field>
+
+        <app-ui-checkbox-field class="checkbox" label="Активна" formControlName="isActive"></app-ui-checkbox-field>
+      </div>
+    </fieldset>
+  </form>
+</ng-template>
+
+<ng-template #rolesActionsTpl>
+  <app-ui-modal-form-actions
+    [viewMode]="isRolesViewMode()"
+    [formId]="'roles-form'"
+    [submitLabel]="rolesEditingId() ? 'Сохранить изменения' : 'Создать роль'"
+    (dismiss)="closeRolesModal()"
+  />
+</ng-template>
+
+<ui-modal
+  *ngIf="isUsersModalOpen()"
+  [title]="
+    isUsersViewMode()
+      ? 'Просмотр пользователя'
+      : usersEditingId()
+        ? 'Редактирование пользователя'
+        : 'Новый пользователь'
+  "
+  [content]="usersContentTpl"
+  [actions]="usersActionsTpl"
+  (close)="closeUsersModal()"
+  [closeOnBackdrop]="isUsersViewMode()"
+  size="md"
+></ui-modal>
+
+<ng-template #usersContentTpl>
+  <form id="users-form" [formGroup]="usersForm" (ngSubmit)="submitUsers()" class="formGrid">
+    <fieldset class="dictionaryFormSection">
+      <legend>Учётная запись</legend>
+      <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
+        <app-ui-form-field
+          label="Логин"
+          [required]="true"
+          [invalid]="usersForm.controls.login.invalid && (usersForm.controls.login.touched || usersForm.controls.login.dirty)"
+          [errorText]="
+            usersForm.controls.login.hasError('required')
+              ? 'Обязательное поле'
+              : usersForm.controls.login.hasError('minlength')
+                ? 'Минимум 2 символа'
+                : usersForm.controls.login.hasError('duplicate')
+                  ? 'Такой логин уже есть'
+                  : ''
+          "
+        >
+          <input type="text" formControlName="login" autocomplete="username" />
+        </app-ui-form-field>
+
+        @if (!isUsersViewMode()) {
+          <app-ui-form-field
+            [label]="usersEditingId() ? 'Новый пароль (пусто — не менять)' : 'Пароль'"
+            [required]="!usersEditingId()"
+            [invalid]="usersForm.controls.password.invalid && (usersForm.controls.password.touched || usersForm.controls.password.dirty)"
+            [errorText]="
+              usersForm.controls.password.hasError('required')
+                ? 'Задайте пароль'
+                : usersForm.controls.password.hasError('minlength')
+                  ? 'Минимум 4 символа'
+                  : ''
+            "
+          >
+            <input type="password" formControlName="password" autocomplete="new-password" />
+          </app-ui-form-field>
+        } @else {
+          <p class="muted">Пароль в режиме просмотра не показывается.</p>
+        }
+
+        <app-ui-form-field
+          label="ФИО"
+          [required]="true"
+          [invalid]="usersForm.controls.fullName.invalid && (usersForm.controls.fullName.touched || usersForm.controls.fullName.dirty)"
+          [errorText]="usersForm.controls.fullName.hasError('required') ? 'Обязательное поле' : 'Минимум 2 символа'"
+        >
+          <input type="text" formControlName="fullName" autocomplete="name" />
+        </app-ui-form-field>
+
+        <app-ui-form-field
+          label="Email"
+          [invalid]="usersForm.controls.email.invalid && (usersForm.controls.email.touched || usersForm.controls.email.dirty)"
+          [errorText]="usersForm.controls.email.hasError('email') ? 'Некорректный email' : ''"
+        >
+          <input type="email" formControlName="email" autocomplete="email" />
+        </app-ui-form-field>
+
+        <app-ui-form-field label="Телефон" [invalid]="false" [errorText]="''">
+          <input type="tel" formControlName="phone" autocomplete="tel" />
+        </app-ui-form-field>
+
+        <app-ui-form-field
+          label="Роль"
+          [required]="true"
+          [invalid]="usersForm.controls.roleId.invalid && (usersForm.controls.roleId.touched || usersForm.controls.roleId.dirty)"
+          [errorText]="usersForm.controls.roleId.hasError('required') ? 'Выберите роль' : ''"
+        >
+          <select formControlName="roleId">
+            @if (roleSelectOptions().length === 0) {
+              <option value="">— Нет активных ролей —</option>
+            }
+            @for (opt of roleSelectOptions(); track opt.id) {
+              <option [value]="opt.id">{{ opt.label }}</option>
+            }
+          </select>
+        </app-ui-form-field>
+      </div>
+    </fieldset>
+    @if (!isUsersViewMode()) {
+      <p class="muted">В mock пароль хранится открытым текстом; на бэкенде — только хеш и политика сложности.</p>
+    }
+  </form>
+</ng-template>
+
+<ng-template #usersActionsTpl>
+  <app-ui-modal-form-actions
+    [viewMode]="isUsersViewMode()"
+    [formId]="'users-form'"
+    [submitLabel]="usersEditingId() ? 'Сохранить изменения' : 'Создать пользователя'"
+    (dismiss)="closeUsersModal()"
+  />
+</ng-template>
+
+<ui-modal
+  *ngIf="isWorkTypesModalOpen()"
+  [title]="
+    isWorkTypesViewMode()
+      ? 'Просмотр вида работ — Вид раб.'
+      : productionWorkTypesStore.isEditMode()
+        ? 'Редактирование вида работ — Вид раб.'
+        : 'Новый вид работ — Вид раб.'
+  "
+  [content]="workTypesContentTpl"
+  [actions]="workTypesActionsTpl"
+  (close)="closeWorkTypesModal()"
+  [closeOnBackdrop]="isWorkTypesViewMode()"
+  size="md"
+></ui-modal>
+
+<ng-template #workTypesContentTpl>
+  <form id="work-types-form" [formGroup]="workTypesForm" (ngSubmit)="submitWorkTypes()" class="formGrid">
+    <fieldset class="dictionaryFormSection">
+      <legend>Вид работ и расценка</legend>
+      <div class="dictionaryFormSectionBody">
+        <app-ui-form-field
+          label="Наименование"
+          [required]="true"
+          [invalid]="isWorkTypesInvalid('name')"
+          [errorText]="workTypesNameErrorText()"
+        >
+          <input type="text" formControlName="name" placeholder="Сварка" />
+        </app-ui-form-field>
+
+        <app-ui-form-field
+          label="Короткое обозначение"
+          [required]="true"
+          [invalid]="isWorkTypesInvalid('shortLabel')"
+          [errorText]="isWorkTypesInvalid('shortLabel') ? 'Укажите обозначение' : ''"
+        >
+          <input type="text" formControlName="shortLabel" placeholder="Напр. Св." />
+        </app-ui-form-field>
+
+        <app-ui-form-field
+          label="Ставка, ₽/ч"
+          [required]="true"
+          [invalid]="isWorkTypesInvalid('hourlyRateRub')"
+          [errorText]="workTypesHourlyRateErrorText()"
+        >
+          <input type="number" formControlName="hourlyRateRub" min="1" step="1" placeholder="600" />
+        </app-ui-form-field>
+      </div>
+    </fieldset>
+
+    <fieldset class="dictionaryFormSection">
+      <legend>Статус</legend>
+      <div class="dictionaryFormSectionBody">
+        <app-ui-checkbox-field class="checkbox" label="Активна" formControlName="isActive"></app-ui-checkbox-field>
+      </div>
+    </fieldset>
+  </form>
+</ng-template>
+
+<ng-template #workTypesActionsTpl>
+  <app-ui-modal-form-actions
+    [viewMode]="isWorkTypesViewMode()"
+    [formId]="'work-types-form'"
+    [submitLabel]="
+      productionWorkTypesStore.isEditMode() ? 'Сохранить изменения' : 'Создать вид работ'
+    "
+    (dismiss)="closeWorkTypesModal()"
+  />
+</ng-template>
+
+<ui-modal
+  *ngIf="isMaterialsModalOpen()"
+  [title]="
+    isMaterialsViewMode()
+      ? 'Просмотр материала — Мат.'
+      : materialsStore.isEditMode()
+        ? 'Редактирование материала'
+        : 'Новый материал'
+  "
+  [content]="materialsContentTpl"
+  [actions]="materialsActionsTpl"
+  (close)="closeMaterialsModal()"
+  [closeOnBackdrop]="isMaterialsViewMode()"
+  size="xl"
+></ui-modal>
+
+<ng-template #materialsContentTpl>
+  <form id="materials-form" [formGroup]="materialsForm" (ngSubmit)="submitMaterials()" class="formGrid">
+    <fieldset class="dictionaryFormSection">
+      <legend>Учётная позиция</legend>
+      <p class="muted dictionaryFieldRowFull">
+        Плотность, цвет, финиш и покрытие задаются в справочнике <strong>«Характеристики материала»</strong> — здесь
+        только выбор профиля и формы, плюс цена и единица для склада.
+      </p>
+      <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
+        <app-ui-form-field
+          label="Название позиции"
+          [required]="true"
+          [invalid]="isMaterialsInvalid('name')"
+          [errorText]="isMaterialsInvalid('name') ? 'Минимум 2 символа' : ''"
+        >
+          <input type="text" formControlName="name" />
+        </app-ui-form-field>
+
+        <app-ui-form-field label="Код позиции">
+          <input type="text" formControlName="code" />
+        </app-ui-form-field>
+
+        <app-ui-form-field
+          class="dictionaryFieldRowFull"
+          label="Характеристика материала"
+          [required]="true"
+          [invalid]="isMaterialsInvalid('materialCharacteristicId')"
+          [errorText]="
+            isMaterialsInvalid('materialCharacteristicId') ? 'Выберите профиль из справочника' : ''
+          "
+        >
+          <div class="colorRefRow">
+            <select formControlName="materialCharacteristicId">
+              <option value="">— Не выбрана —</option>
+              @for (option of materialCharacteristicSelectOptions(); track option.id) {
+                <option [value]="option.id">{{ option.label }}</option>
+              }
+            </select>
+            @if (permissions.can(hubTilePerm('materialCharacteristics'))) {
+              <app-ui-button
+                type="button"
+                [square]="true"
+                ariaLabel="Открыть справочник характеристик материала"
+                title="Открыть справочник характеристик материала"
+                (clicked)="openMaterialCharacteristicsHubFromMaterials()"
+              >
+                <span class="squareIconTone squareIconTone--affirm"><svg lucidePlus [size]="18"></svg></span>
+              </app-ui-button>
+            }
+          </div>
+        </app-ui-form-field>
+
+        <app-ui-form-field
+          class="dictionaryFieldRowFull"
+          label="Форма и габариты"
+          [required]="true"
+          [invalid]="isMaterialsInvalid('geometryId')"
+          [errorText]="isMaterialsInvalid('geometryId') ? 'Выберите геометрию из справочника' : ''"
+        >
+          <div class="colorRefRow">
+            <select formControlName="geometryId">
+              <option value="">— Не выбрана —</option>
+              @for (option of geometrySelectOptions(); track option.id) {
+                <option [value]="option.id">{{ option.label }}</option>
+              }
+            </select>
+            @if (permissions.can(hubTilePerm('geometries'))) {
+              <app-ui-button
+                type="button"
+                [square]="true"
+                ariaLabel="Открыть справочник форм и габаритов"
+                title="Открыть справочник форм и габаритов"
+                (clicked)="openGeometriesHubFromMaterials()"
+              >
+                <span class="squareIconTone squareIconTone--affirm"><svg lucidePlus [size]="18"></svg></span>
+              </app-ui-button>
+            }
+          </div>
+        </app-ui-form-field>
+
+        <app-ui-form-field
+          class="dictionaryFieldRowFull"
+          label="Единица измерения"
+          [required]="true"
+          [invalid]="isMaterialsInvalid('unitId')"
+          [errorText]="isMaterialsInvalid('unitId') ? 'Выберите единицу из справочника' : ''"
+        >
+          <div class="colorRefRow">
+            <select formControlName="unitId">
+              <option value="">— Не выбрана —</option>
+              @for (option of unitsStore.options(); track option.id) {
+                <option [value]="option.id">{{ option.label }}</option>
+              }
+            </select>
+            <app-ui-button
+              type="button"
+              [square]="true"
+              ariaLabel="Добавить единицу измерения"
+              title="Добавить единицу измерения"
+              (clicked)="openUnitsCreate(true)"
+            >
+              <span class="squareIconTone squareIconTone--affirm"><svg lucidePlus [size]="18"></svg></span>
+            </app-ui-button>
+          </div>
+        </app-ui-form-field>
+
+        <app-ui-form-field
+          label="Цена, ₽ за 1 ед."
+          [required]="true"
+          [invalid]="isMaterialsInvalid('purchasePriceRub')"
+          [errorText]="materialsPurchasePriceErrorText()"
+        >
+          <input type="number" formControlName="purchasePriceRub" min="1" step="1" />
+        </app-ui-form-field>
+      </div>
+    </fieldset>
+
+    @if (materialsForm.controls.materialCharacteristicId.value) {
+      <fieldset
+        class="dictionaryFormSection dictionaryFormSection--autoFields"
+        aria-label="Сводка профиля, только просмотр"
+      >
+        <legend>Сводка профиля (только просмотр)</legend>
+        <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2 dictionaryReadonlyGrid">
+          <div class="dictionaryReadonlyPair">
+            <span class="dictionaryReadonlyLabel">Плотность, кг/м³</span>
+            <span class="dictionaryReadonlyValue">{{ materialCharacteristicDensityLabelForMaterials() }}</span>
+          </div>
+          <div class="dictionaryReadonlyPair">
+            <span class="dictionaryReadonlyLabel">Цвет</span>
+            <div class="dictionaryReadonlyValueRow">
+              <span
+                class="colorSwatch"
+                aria-hidden="true"
+                [style.background]="selectedMaterialProfileColorHex() || '#e5e7eb'"
+              ></span>
+              <span class="dictionaryReadonlyValue">{{ materialCharacteristicColorTextForMaterials() }}</span>
+            </div>
+          </div>
+          <div class="dictionaryReadonlyPair">
+            <span class="dictionaryReadonlyLabel">Отделка</span>
+            <span class="dictionaryReadonlyValue">{{
+              materialCharacteristicPreviewForMaterials()?.finishType?.trim() || '—'
+            }}</span>
+          </div>
+          <div class="dictionaryReadonlyPair">
+            <span class="dictionaryReadonlyLabel">Шероховатость</span>
+            <span class="dictionaryReadonlyValue">{{
+              materialCharacteristicPreviewForMaterials()?.roughnessClass?.trim() || '—'
+            }}</span>
+          </div>
+          <div class="dictionaryReadonlyPair dictionaryFieldRowFull">
+            <span class="dictionaryReadonlyLabel">Покрытие</span>
+            <span class="dictionaryReadonlyValue">{{ materialCharacteristicCoatingSummaryForMaterials() }}</span>
+          </div>
+        </div>
+      </fieldset>
+    }
+
+    <fieldset class="dictionaryFormSection">
+      <legend>Дополнительно</legend>
+      <div class="dictionaryFormSectionBody">
+        <app-ui-form-field label="Заметки" [wide]="true">
+          <textarea rows="2" formControlName="notes"></textarea>
+        </app-ui-form-field>
+
+        <app-ui-checkbox-field class="checkbox" label="Активен" formControlName="isActive"></app-ui-checkbox-field>
+      </div>
+    </fieldset>
+  </form>
+</ng-template>
+
+<ui-modal
+  *ngIf="isCoatingsModalOpen()"
+  [title]="
+    isCoatingsViewMode()
+      ? 'Просмотр покрытия — Покр.'
+      : coatingsStore.isEditMode()
+        ? 'Редактирование покрытия'
+        : 'Новое покрытие'
+  "
+  [content]="coatingsContentTpl"
+  [actions]="coatingsActionsTpl"
+  (close)="closeCoatingsModal()"
+  [closeOnBackdrop]="isCoatingsViewMode()"
+  size="md"
+></ui-modal>
+
+<ng-template #coatingsContentTpl>
+  <form id="coatings-form" [formGroup]="coatingsForm" (ngSubmit)="submitCoatings()" class="formGrid">
+    <fieldset class="dictionaryFormSection">
+      <legend>Параметры покрытия</legend>
+      <div class="dictionaryFormSectionBody">
+        <app-ui-form-field
+          label="Тип покрытия"
+          [required]="true"
+          [invalid]="isCoatingsInvalid('coatingType')"
+          [errorText]="isCoatingsInvalid('coatingType') ? 'Минимум 2 символа' : ''"
+        >
+          <input type="text" formControlName="coatingType" placeholder="Anodizing / Powder / Galvanized..." />
+        </app-ui-form-field>
+
+        <app-ui-form-field
+          label="Спецификация"
+          [required]="true"
+          [invalid]="isCoatingsInvalid('coatingSpec')"
+          [errorText]="isCoatingsInvalid('coatingSpec') ? 'Минимум 2 символа' : ''"
+        >
+          <input type="text" formControlName="coatingSpec" placeholder="Clear anodized / Zn hot-dip..." />
+        </app-ui-form-field>
+
+        <app-ui-form-field
+          label="Толщина, мкм"
+          [invalid]="isCoatingsInvalid('thicknessMicron')"
+          [errorText]="isCoatingsInvalid('thicknessMicron') ? 'Проверьте значение' : ''"
+        >
+          <input type="number" formControlName="thicknessMicron" />
+        </app-ui-form-field>
+      </div>
+    </fieldset>
+  </form>
+</ng-template>
+
+<ng-template #coatingsActionsTpl>
+  <app-ui-modal-form-actions
+    [viewMode]="isCoatingsViewMode()"
+    [formId]="'coatings-form'"
+    [submitLabel]="coatingsStore.isEditMode() ? 'Сохранить изменения' : 'Создать покрытие'"
+    (dismiss)="closeCoatingsModal()"
+  />
+</ng-template>
+
+<app-linked-dictionary-propagation-confirm
+  *ngIf="isCoatingPropagationConfirmOpen()"
+  mode="update"
+  entityLabel="Покрытие"
+  [relatedCount]="coatingPropagationPlan()?.relatedCount ?? 0"
+  (local)="applyCoatingPropagationLocal()"
+  (global)="applyCoatingPropagationAll()"
+  (closed)="closeCoatingPropagationConfirm()"
+></app-linked-dictionary-propagation-confirm>
+
+<app-linked-dictionary-propagation-confirm
+  *ngIf="isCoatingDeletePropagationConfirmOpen()"
+  mode="delete"
+  entityLabel="Покрытие"
+  [relatedCount]="coatingDeletePropagationPlan()?.relatedCount ?? 0"
+  (local)="applyCoatingDeletePropagationLocal()"
+  (global)="applyCoatingDeletePropagationAll()"
+  (closed)="closeCoatingDeletePropagationConfirm()"
+></app-linked-dictionary-propagation-confirm>
+
+<ui-modal
+  *ngIf="isClientsModalOpen()"
+  [title]="
+    isClientsViewMode()
+      ? 'Просмотр контакта — ФЛ'
+      : clientsStore.isEditMode()
+        ? 'Редактирование контакта'
+        : 'Новый контакт'
+  "
+  [content]="clientsContentTpl"
+  [actions]="clientsActionsTpl"
+  (close)="closeClientsModal()"
+  [closeOnBackdrop]="isClientsViewMode()"
+  size="xl"
+></ui-modal>
+
+<ng-template #clientsContentTpl>
+  <form id="clients-form" [formGroup]="clientsForm" (ngSubmit)="submitClients()" class="formGrid">
+    <fieldset class="dictionaryFormSection">
+      <legend>ФИО</legend>
+      <ui-form-grid [columns]="3">
+        <app-ui-form-field
+          label="Фамилия"
+          [required]="true"
+          [invalid]="isClientsInvalid('lastName')"
+          [errorText]="isClientsInvalid('lastName') ? 'Минимум 2 символа' : ''"
+        >
+          <input type="text" formControlName="lastName" autocomplete="family-name" />
+        </app-ui-form-field>
+
+        <app-ui-form-field
+          label="Имя"
+          [required]="true"
+          [invalid]="isClientsInvalid('firstName')"
+          [errorText]="isClientsInvalid('firstName') ? 'Минимум 2 символа' : ''"
+        >
+          <input type="text" formControlName="firstName" autocomplete="given-name" />
+        </app-ui-form-field>
+
+        <app-ui-form-field label="Отчество" [invalid]="isClientsInvalid('patronymic')" [errorText]="''">
+          <input type="text" formControlName="patronymic" autocomplete="additional-name" />
+        </app-ui-form-field>
+      </ui-form-grid>
+    </fieldset>
+
+    <fieldset class="dictionaryFormSection">
+      <legend>Контакты</legend>
+      <ui-form-grid [columns]="3">
+        <app-ui-form-field
+          class="uiFormGrid__full"
+          label="Адрес"
+          [wide]="true"
+          [invalid]="isClientsInvalid('address')"
+          [errorText]="''"
+        >
+          <input type="text" formControlName="address" autocomplete="street-address" />
+        </app-ui-form-field>
+
+        <app-ui-form-field label="Телефон" [invalid]="isClientsInvalid('phone')" [errorText]="''">
+          <input type="tel" formControlName="phone" autocomplete="tel" />
+        </app-ui-form-field>
+
+        <app-ui-form-field label="Email" [invalid]="isClientsInvalid('email')" [errorText]="''">
+          <input type="email" formControlName="email" autocomplete="email" />
+        </app-ui-form-field>
+      </ui-form-grid>
+    </fieldset>
+
+    <fieldset class="dictionaryFormSection">
+      <legend>Заметки</legend>
+      <div class="dictionaryFormSectionBody">
+        <app-ui-form-field label="Текст" [wide]="true">
+          <textarea rows="2" formControlName="notes"></textarea>
+        </app-ui-form-field>
+      </div>
+    </fieldset>
+
+    <fieldset class="dictionaryFormSection">
+      <legend>Паспорт (необязательно)</legend>
+      <ui-form-grid [columns]="3">
+        <app-ui-form-field label="Серия" [invalid]="isClientsInvalid('passportSeries')" [errorText]="''">
+          <input type="text" formControlName="passportSeries" inputmode="numeric" autocomplete="off" />
+        </app-ui-form-field>
+
+        <app-ui-form-field label="Номер" [invalid]="isClientsInvalid('passportNumber')" [errorText]="''">
+          <input type="text" formControlName="passportNumber" inputmode="numeric" autocomplete="off" />
+        </app-ui-form-field>
+
+        <app-ui-form-field label="Дата выдачи" [invalid]="isClientsInvalid('passportIssuedDate')" [errorText]="''">
+          <input type="text" formControlName="passportIssuedDate" placeholder="ГГГГ-ММ-ДД или произвольно" autocomplete="off" />
+        </app-ui-form-field>
+
+        <app-ui-form-field
+          class="uiFormGrid__full"
+          label="Кем выдан"
+          [wide]="true"
+          [invalid]="isClientsInvalid('passportIssuedBy')"
+          [errorText]="''"
+        >
+          <input type="text" formControlName="passportIssuedBy" autocomplete="off" />
+        </app-ui-form-field>
+      </ui-form-grid>
+    </fieldset>
+
+    <fieldset class="dictionaryFormSection">
+      <legend>Статус</legend>
+      <div class="dictionaryFormSectionBody">
+        <app-ui-checkbox-field class="checkbox" label="Активен" formControlName="isActive"></app-ui-checkbox-field>
+      </div>
+    </fieldset>
+  </form>
+</ng-template>
+
+<ng-template #clientsActionsTpl>
+  <app-ui-modal-form-actions
+    [viewMode]="isClientsViewMode()"
+    [formId]="'clients-form'"
+    [submitLabel]="clientsStore.isEditMode() ? 'Сохранить изменения' : 'Создать контакт'"
+    (dismiss)="closeClientsModal()"
+  />
+</ng-template>
+
+<ui-modal
+  *ngIf="isOrganizationsModalOpen()"
+  [title]="
+    isOrganizationsViewMode()
+      ? (organizationsForm.controls.organizationKind.value === 'IP'
+          ? 'Просмотр организации — ИП'
+          : 'Просмотр организации — ООО')
+      : organizationsStore.isEditMode()
+        ? 'Редактирование организации'
+        : 'Новая организация'
+  "
+  [content]="organizationsContentTpl"
+  [actions]="organizationsActionsTpl"
+  (close)="closeOrganizationsModal()"
+  [closeOnBackdrop]="isOrganizationsViewMode()"
+  size="xl"
+></ui-modal>
+
+<ng-template #organizationsContentTpl>
+  <form id="organizations-form" [formGroup]="organizationsForm" (ngSubmit)="submitOrganizations()" class="formGrid">
+    <fieldset class="dictionaryFormSection">
+      <legend>Карточка организации</legend>
+      <ui-form-grid [columns]="3">
+        <app-ui-form-field label="Вид организации" [invalid]="false" [errorText]="''">
+          <select formControlName="organizationKind">
+            <option value="OOO">ООО</option>
+            <option value="IP">ИП</option>
+          </select>
+        </app-ui-form-field>
+        <app-ui-form-field
+          class="uiFormGrid__full"
+          label="Полное наименование"
+          [required]="true"
+          [wide]="true"
+          [invalid]="isOrganizationsInvalid('name')"
+          [errorText]="isOrganizationsInvalid('name') ? 'Минимум 2 символа' : ''"
+        >
+          <input type="text" formControlName="name" placeholder="ООО &quot;Пример&quot;" />
+        </app-ui-form-field>
+
+        <app-ui-form-field label="Короткое наименование" [invalid]="false" [errorText]="''">
+          <input type="text" formControlName="shortName" placeholder="ООО &quot;Пример&quot;" />
+        </app-ui-form-field>
+      </ui-form-grid>
+    </fieldset>
+
+    <fieldset class="dictionaryFormSection">
+      <legend>Реквизиты</legend>
+      <ui-form-grid [columns]="3">
+        <app-ui-form-field label="ИНН" [invalid]="false" [errorText]="''">
+          <input type="text" formControlName="inn" inputmode="numeric" [attr.placeholder]="organizationInnPlaceholder()" />
+        </app-ui-form-field>
+        @if (organizationsForm.controls.organizationKind.value !== 'IP') {
+          <app-ui-form-field label="КПП" [invalid]="false" [errorText]="''">
+            <input type="text" formControlName="kpp" inputmode="numeric" />
+          </app-ui-form-field>
+        }
+        <app-ui-form-field [label]="organizationOgrnLabel()" [invalid]="false" [errorText]="''">
+          <input type="text" formControlName="ogrn" inputmode="numeric" />
+        </app-ui-form-field>
+        <app-ui-form-field label="ОКПО" [invalid]="false" [errorText]="''">
+          <input type="text" formControlName="okpo" inputmode="numeric" />
+        </app-ui-form-field>
+      </ui-form-grid>
+    </fieldset>
+
+    <fieldset class="dictionaryFormSection">
+      <legend>Контакты</legend>
+      <ui-form-grid [columns]="3">
+        <app-ui-form-field label="Телефон" [invalid]="false" [errorText]="''">
+          <input type="tel" formControlName="phone" autocomplete="tel" />
+        </app-ui-form-field>
+        <app-ui-form-field label="Email" [invalid]="false" [errorText]="''">
+          <input type="email" formControlName="email" autocomplete="email" />
+        </app-ui-form-field>
+        <app-ui-form-field label="Сайт" [invalid]="false" [errorText]="''">
+          <input type="url" formControlName="website" placeholder="https://example.com" />
+        </app-ui-form-field>
+        <app-ui-form-field class="uiFormGrid__full" label="Контактные лица" [wide]="true" [invalid]="false" [errorText]="''">
+          <div class="orgContactPick">
+            <div class="colorRefRow">
+              <select
+                formControlName="contactPicker"
+                (change)="addOrganizationContactFromPicker()"
+                [attr.aria-label]="'Выберите контакт для добавления'"
+              >
+                <option value="">— Выберите контакт —</option>
+                @for (opt of organizationContactPickerOptions(); track opt.id) {
+                  <option [value]="opt.id">{{ opt.label }}</option>
+                }
+              </select>
+              <app-ui-button
+                type="button"
+                [square]="true"
+                ariaLabel="Добавить контактное лицо"
+                title="Добавить контактное лицо"
+                (clicked)="openClientsCreate()"
+              >
+                <span class="squareIconTone squareIconTone--affirm"><svg lucidePlus [size]="18"></svg></span>
+              </app-ui-button>
+            </div>
+            @if (organizationsForm.controls.contactIds.value.length > 0) {
+              <ul class="orgContactPickList" aria-label="Выбранные контактные лица">
+                @for (cid of organizationsForm.controls.contactIds.value; track cid) {
+                  @let row = organizationContactRow(cid);
+                  <li class="orgContactPickList__item">
+                    <div class="orgContactPickList__body">
+                      <div class="orgContactPickList__fio">{{ row.fio }}</div>
+                      <div class="orgContactPickList__meta">
+                        <span class="orgContactPickList__metaLine"
+                          ><span class="orgContactPickList__k">Тел.</span> {{ row.phone }}</span
+                        >
+                        <span class="orgContactPickList__metaLine"
+                          ><span class="orgContactPickList__k">Email</span> {{ row.email }}</span
+                        >
+                      </div>
+                    </div>
+                    @if (!isOrganizationsViewMode()) {
+                      <button
+                        type="button"
+                        class="orgContactPickList__remove"
+                        [attr.aria-label]="'Удалить контакт из списка'"
+                        (click)="removeOrganizationContact(cid)"
+                      >
+                        <svg lucideX [size]="16" aria-hidden="true"></svg>
+                      </button>
+                    }
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+        </app-ui-form-field>
+      </ui-form-grid>
+    </fieldset>
+
+    <fieldset class="dictionaryFormSection">
+      <legend>Адреса</legend>
+      <ui-form-grid [columns]="3">
+        <app-ui-form-field class="uiFormGrid__full" label="Юридический адрес" [wide]="true" [invalid]="false" [errorText]="''">
+          <input type="text" formControlName="legalAddress" />
+        </app-ui-form-field>
+        <app-ui-form-field class="uiFormGrid__full" label="Почтовый адрес" [wide]="true" [invalid]="false" [errorText]="''">
+          <input type="text" formControlName="postalAddress" />
+        </app-ui-form-field>
+      </ui-form-grid>
+    </fieldset>
+
+    <fieldset class="dictionaryFormSection">
+      <legend>Банк и подписант</legend>
+      <ui-form-grid [columns]="3">
+        <app-ui-form-field class="uiFormGrid__full" label="Банк" [wide]="true" [invalid]="false" [errorText]="''">
+          <input type="text" formControlName="bankName" />
+        </app-ui-form-field>
+        <app-ui-form-field label="БИК" [invalid]="false" [errorText]="''">
+          <input type="text" formControlName="bankBik" inputmode="numeric" />
+        </app-ui-form-field>
+        <app-ui-form-field label="Расчётный счёт" [invalid]="false" [errorText]="''">
+          <input type="text" formControlName="bankAccount" inputmode="numeric" />
+        </app-ui-form-field>
+        <app-ui-form-field label="Корр. счёт" [invalid]="false" [errorText]="''">
+          <input type="text" formControlName="bankCorrAccount" inputmode="numeric" />
+        </app-ui-form-field>
+        <app-ui-form-field label="Подписант" [invalid]="false" [errorText]="''">
+          <input type="text" formControlName="signerName" />
+        </app-ui-form-field>
+        <app-ui-form-field label="Должность подписанта" [invalid]="false" [errorText]="''">
+          <input type="text" formControlName="signerPosition" />
+        </app-ui-form-field>
+      </ui-form-grid>
+    </fieldset>
+
+    <fieldset class="dictionaryFormSection">
+      <legend>Дополнительно</legend>
+      <div class="dictionaryFormSectionBody">
+        <app-ui-form-field label="Заметки" [wide]="true">
+          <textarea rows="2" formControlName="notes"></textarea>
+        </app-ui-form-field>
+        <app-ui-checkbox-field class="checkbox" label="Активна" formControlName="isActive"></app-ui-checkbox-field>
+      </div>
+    </fieldset>
+  </form>
+</ng-template>
+
+<ng-template #organizationsActionsTpl>
+  <app-ui-modal-form-actions
+    [viewMode]="isOrganizationsViewMode()"
+    [formId]="'organizations-form'"
+    [submitLabel]="organizationsStore.isEditMode() ? 'Сохранить изменения' : 'Создать организацию'"
+    (dismiss)="closeOrganizationsModal()"
+  />
+</ng-template>
+
+<ui-modal
+  *ngIf="isSurfaceFinishesModalOpen()"
+  [title]="
+    isSurfaceFinishesViewMode()
+      ? 'Просмотр типа отделки / шероховатости — Тип отд. / шерох.'
+      : surfaceFinishesStore.isEditMode()
+        ? 'Редактирование финиша'
+        : 'Новый финиш'
+  "
+  [content]="surfaceFinishesContentTpl"
+  [actions]="surfaceFinishesActionsTpl"
+  (close)="closeSurfaceFinishesModal()"
+  [closeOnBackdrop]="isSurfaceFinishesViewMode()"
+  size="md"
+></ui-modal>
+
+<ng-template #surfaceFinishesContentTpl>
+  <form id="surface-finishes-form" [formGroup]="surfaceFinishesForm" (ngSubmit)="submitSurfaceFinishes()" class="formGrid">
+    <fieldset class="dictionaryFormSection">
+      <legend>Отделка и шероховатость</legend>
+      <div class="dictionaryFormSectionBody">
+        <app-ui-form-field
+          label="Тип отделки"
+          [required]="true"
+          [invalid]="isSurfaceFinishesInvalid('finishType')"
+          [errorText]="isSurfaceFinishesInvalid('finishType') ? 'Минимум 2 символа' : ''"
+        >
+          <input type="text" formControlName="finishType" placeholder="Glossy / Matte / Satin..." />
+        </app-ui-form-field>
+
+        <app-ui-form-field
+          label="Шероховатость (класс / обозначение)"
+          [required]="true"
+          [invalid]="isSurfaceFinishesInvalid('roughnessClass')"
+          [errorText]="isSurfaceFinishesInvalid('roughnessClass') ? 'Минимум 2 символа' : ''"
+        >
+          <input type="text" formControlName="roughnessClass" placeholder="Ra 0.8 / N7 / Полированная..." />
+        </app-ui-form-field>
+
+        <app-ui-form-field
+          label="Ra, мкм"
+          [invalid]="isSurfaceFinishesInvalid('raMicron')"
+          [errorText]="isSurfaceFinishesInvalid('raMicron') ? 'Проверьте значение' : ''"
+        >
+          <input type="number" formControlName="raMicron" />
+        </app-ui-form-field>
+      </div>
+    </fieldset>
+  </form>
+</ng-template>
+
+<ng-template #surfaceFinishesActionsTpl>
+  <app-ui-modal-form-actions
+    [viewMode]="isSurfaceFinishesViewMode()"
+    [formId]="'surface-finishes-form'"
+    [submitLabel]="surfaceFinishesStore.isEditMode() ? 'Сохранить изменения' : 'Создать финиш'"
+    (dismiss)="closeSurfaceFinishesModal()"
+  />
+</ng-template>
+
+<app-linked-dictionary-propagation-confirm
+  *ngIf="isSurfaceFinishPropagationConfirmOpen()"
+  mode="update"
+  entityLabel="Тип отделки / шероховатость"
+  [relatedCount]="surfaceFinishPropagationPlan()?.relatedCount ?? 0"
+  (local)="applySurfaceFinishPropagationLocal()"
+  (global)="applySurfaceFinishPropagationAll()"
+  (closed)="closeSurfaceFinishPropagationConfirm()"
+></app-linked-dictionary-propagation-confirm>
+
+<app-linked-dictionary-propagation-confirm
+  *ngIf="isSurfaceFinishDeletePropagationConfirmOpen()"
+  mode="delete"
+  entityLabel="Тип отделки / шероховатость"
+  [relatedCount]="surfaceFinishDeletePropagationPlan()?.relatedCount ?? 0"
+  (local)="applySurfaceFinishDeletePropagationLocal()"
+  (global)="applySurfaceFinishDeletePropagationAll()"
+  (closed)="closeSurfaceFinishDeletePropagationConfirm()"
+></app-linked-dictionary-propagation-confirm>
+
+<ui-modal
+  *ngIf="isColorsModalOpen()"
+  [title]="
+    isColorsViewMode()
+      ? 'Просмотр цвета RAL — Цвет'
+      : colorsStore.isEditMode()
+        ? 'Редактирование цвета RAL — Цвет'
+        : 'Новый цвет RAL — Цвет'
+  "
+  [content]="colorsContentTpl"
+  [actions]="colorsActionsTpl"
+  (close)="closeColorsModal()"
+  [closeOnBackdrop]="isColorsViewMode()"
+  size="md"
+></ui-modal>
+
+<ng-template #colorsContentTpl>
+  <form id="colors-form" [formGroup]="colorsForm" (ngSubmit)="submitColors()" class="formGrid">
+    <fieldset class="dictionaryFormSection">
+      <legend>Код и название</legend>
+      <div class="dictionaryFormSectionBody">
+        <app-ui-form-field
+          label="Код RAL"
+          [invalid]="isColorsInvalidOnBlur('ralCode')"
+          [errorText]="isColorsInvalidOnBlur('ralCode') ? 'Формат: RAL 0000 или 0000; RAL DESIGN 000 00 00' : ''"
+        >
+          <input
+            type="text"
+            formControlName="ralCode"
+            placeholder="RAL 7035 / RAL DESIGN 270 30 35"
+            (focus)="onRalCodeFocus()"
+            (blur)="onRalCodeBlur()"
+          />
+        </app-ui-form-field>
+
+        <app-ui-form-field
+          label="Название"
+          [required]="true"
+          [invalid]="isColorsInvalid('name')"
+          [errorText]="isColorsInvalid('name') ? 'Минимум 2 символа' : ''"
+        >
+          <input type="text" formControlName="name" />
+        </app-ui-form-field>
+      </div>
+    </fieldset>
+
+    <fieldset class="dictionaryFormSection">
+      <legend>Цвет (HEX / RGB)</legend>
+      <div class="dictionaryFormSectionBody">
+        <app-hex-rgb-field
+          [control]="colorsForm.controls.hex"
+          [required]="true"
+          [invalid]="isColorsInvalid('hex')"
+          [errorText]="isColorsInvalid('hex') ? 'HEX в формате #RRGGBB' : ''"
+        ></app-hex-rgb-field>
+      </div>
+    </fieldset>
+
+    <fieldset
+      class="dictionaryFormSection dictionaryFormSection--autoFields"
+      aria-label="Сводка цвета, только просмотр"
+    >
+      <legend>Сводка</legend>
+      <div class="dictionaryFormSectionBody dictionaryReadonlyGrid">
+        <div class="dictionaryReadonlyPair dictionaryFieldRowFull">
+          <span class="dictionaryReadonlyLabel">RAL и название (как в списках)</span>
+          <div class="dictionaryReadonlyValueRow">
+            <span
+              class="colorSwatch"
+              aria-hidden="true"
+              [style.background]="colorPreviewHexForColorsForm() ?? '#e5e7eb'"
+            ></span>
+            <span class="dictionaryReadonlyValue">{{ colorNameWithRal() }}</span>
+          </div>
+        </div>
+      </div>
+    </fieldset>
+  </form>
+</ng-template>
+
+<ng-template #colorsActionsTpl>
+  <app-ui-modal-form-actions
+    [viewMode]="isColorsViewMode()"
+    [formId]="'colors-form'"
+    [submitLabel]="colorsStore.isEditMode() ? 'Сохранить изменения' : 'Создать цвет'"
+    (dismiss)="closeColorsModal()"
+  />
+</ng-template>
+
+<app-linked-dictionary-propagation-confirm
+  *ngIf="isColorPropagationConfirmOpen()"
+  mode="update"
+  entityLabel="Цвет RAL"
+  [relatedCount]="colorPropagationPlan()?.relatedCount ?? 0"
+  (local)="applyColorPropagationLocal()"
+  (global)="applyColorPropagationAll()"
+  (closed)="closeColorPropagationConfirm()"
+></app-linked-dictionary-propagation-confirm>
+
+<app-linked-dictionary-propagation-confirm
+  *ngIf="isColorDeletePropagationConfirmOpen()"
+  mode="delete"
+  entityLabel="Цвет RAL"
+  [relatedCount]="colorDeletePropagationPlan()?.relatedCount ?? 0"
+  (local)="applyColorDeletePropagationLocal()"
+  (global)="applyColorDeletePropagationAll()"
+  (closed)="closeColorDeletePropagationConfirm()"
+></app-linked-dictionary-propagation-confirm>
+
+<ng-template #materialsActionsTpl>
+  <app-ui-modal-form-actions
+    [viewMode]="isMaterialsViewMode()"
+    [formId]="'materials-form'"
+    [submitLabel]="materialsStore.isEditMode() ? 'Сохранить изменения' : 'Создать материал'"
+    (dismiss)="closeMaterialsModal()"
+  />
+</ng-template>
+
+<ui-modal
+  *ngIf="isMaterialCharacteristicsModalOpen()"
+  [title]="
+    isMaterialCharacteristicsViewMode()
+      ? 'Просмотр характеристики материала'
+      : materialCharacteristicsStore.isEditMode()
+        ? 'Редактирование характеристики материала'
+        : 'Новая характеристика материала'
+  "
+  [content]="materialCharacteristicsContentTpl"
+  [actions]="materialCharacteristicsActionsTpl"
+  [backdropZIndex]="materialCharacteristicsFormModalBackdropZIndex()"
+  (close)="closeMaterialCharacteristicsModal()"
+  [closeOnBackdrop]="isMaterialCharacteristicsViewMode()"
+  size="xl"
+></ui-modal>
+
+<ng-template #materialCharacteristicsContentTpl>
+  <form
+    id="material-characteristics-form"
+    [formGroup]="materialCharacteristicsForm"
+    (ngSubmit)="submitMaterialCharacteristics()"
+    class="formGrid"
+  >
+    <fieldset class="dictionaryFormSection">
+      <legend>Профиль</legend>
+      <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
+        <app-ui-form-field
+          label="Название"
+          [required]="true"
+          [invalid]="isMaterialCharacteristicsInvalid('name')"
+          [errorText]="isMaterialCharacteristicsInvalid('name') ? 'Минимум 2 символа' : ''"
+        >
+          <input type="text" formControlName="name" />
+        </app-ui-form-field>
+
+        <app-ui-form-field label="Код">
+          <input type="text" formControlName="code" />
+        </app-ui-form-field>
+
+        <app-ui-form-field label="Плотность (кг/м³)">
+          <input type="number" formControlName="densityKgM3" />
+        </app-ui-form-field>
+      </div>
+    </fieldset>
+
+    <fieldset class="dictionaryFormSection">
+      <legend>Справочники — выбор записей</legend>
+      <div class="dictionaryFormSectionBody">
+        <app-ui-form-field label="Цвет (RAL)">
+          <div class="colorRefRow">
+            <select formControlName="colorId">
+              <option value="">— Не выбран —</option>
+              @for (option of colorsStore.options(); track option.id) {
+                <option [value]="option.id">{{ option.label }}</option>
+              }
+            </select>
+            <app-ui-button
+              type="button"
+              [square]="true"
+              ariaLabel="Добавить цвет RAL"
+              title="Добавить цвет RAL"
+              (clicked)="openColorsCreate(true)"
+            >
+              <span class="squareIconTone squareIconTone--affirm"><svg lucidePlus [size]="18"></svg></span>
+            </app-ui-button>
+          </div>
+        </app-ui-form-field>
+
+        <app-ui-form-field label="Тип отделки / шероховатость">
+          <div class="colorRefRow">
+            <select formControlName="surfaceFinishId">
+              <option value="">— Не выбран —</option>
+              @for (option of surfaceFinishesStore.options(); track option.id) {
+                <option [value]="option.id">{{ option.label }}</option>
+              }
+            </select>
+            <app-ui-button
+              type="button"
+              [square]="true"
+              ariaLabel="Добавить финиш"
+              title="Добавить финиш"
+              (clicked)="openSurfaceFinishesCreate(true)"
+            >
+              <span class="squareIconTone squareIconTone--affirm"><svg lucidePlus [size]="18"></svg></span>
+            </app-ui-button>
+          </div>
+        </app-ui-form-field>
+
+        <app-ui-form-field label="Покрытие">
+          <div class="colorRefRow">
+            <select formControlName="coatingId">
+              <option value="">— Не выбран —</option>
+              @for (option of coatingsStore.options(); track option.id) {
+                <option [value]="option.id">{{ option.label }}</option>
+              }
+            </select>
+            <app-ui-button
+              type="button"
+              [square]="true"
+              ariaLabel="Добавить покрытие"
+              title="Добавить покрытие"
+              (clicked)="openCoatingsCreate(true)"
+            >
+              <span class="squareIconTone squareIconTone--affirm"><svg lucidePlus [size]="18"></svg></span>
+            </app-ui-button>
+          </div>
+        </app-ui-form-field>
+      </div>
+    </fieldset>
+
+    @if (
+      materialCharacteristicsForm.controls.colorId.value ||
+      materialCharacteristicsForm.controls.surfaceFinishId.value ||
+      materialCharacteristicsForm.controls.coatingId.value
+    ) {
+      <fieldset
+        class="dictionaryFormSection dictionaryFormSection--autoFields"
+        aria-label="Значения из связанных справочников, только просмотр"
+      >
+        <legend>Из справочников</legend>
+        <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2 dictionaryReadonlyGrid">
+          <div class="dictionaryReadonlyPair">
+            <span class="dictionaryReadonlyLabel">Цвет — название</span>
+            <span class="dictionaryReadonlyValue">{{
+              (materialCharacteristicsForm.controls.colorName.value || '').trim() || '—'
+            }}</span>
+          </div>
+
+          <div class="dictionaryReadonlyPair">
+            <span class="dictionaryReadonlyLabel">Цвет — HEX</span>
+            <div class="dictionaryReadonlyValueRow">
+              <span
+                class="colorSwatch"
+                aria-hidden="true"
+                [style.background]="selectedMaterialCharacteristicColorHex() || '#e5e7eb'"
+              ></span>
+              <span class="dictionaryReadonlyValue">{{
+                (materialCharacteristicsForm.controls.colorHex.value || '').trim() || '—'
+              }}</span>
+            </div>
+          </div>
+
+          <div class="dictionaryReadonlyPair">
+            <span class="dictionaryReadonlyLabel">Отделка — тип</span>
+            <span class="dictionaryReadonlyValue">{{
+              (materialCharacteristicsForm.controls.finishType.value || '').trim() || '—'
+            }}</span>
+          </div>
+
+          <div class="dictionaryReadonlyPair">
+            <span class="dictionaryReadonlyLabel">Отделка — шероховатость (класс)</span>
+            <span class="dictionaryReadonlyValue">{{
+              (materialCharacteristicsForm.controls.roughnessClass.value || '').trim() || '—'
+            }}</span>
+          </div>
+
+          <div class="dictionaryReadonlyPair">
+            <span class="dictionaryReadonlyLabel">Отделка — Ra, мкм</span>
+            <span class="dictionaryReadonlyValue">{{
+              materialCharacteristicsForm.controls.raMicron.value != null
+                ? materialCharacteristicsForm.controls.raMicron.value
+                : '—'
+            }}</span>
+          </div>
+
+          <div class="dictionaryReadonlyPair">
+            <span class="dictionaryReadonlyLabel">Покрытие — тип</span>
+            <span class="dictionaryReadonlyValue">{{
+              (materialCharacteristicsForm.controls.coatingType.value || '').trim() || '—'
+            }}</span>
+          </div>
+
+          <div class="dictionaryReadonlyPair">
+            <span class="dictionaryReadonlyLabel">Покрытие — спецификация</span>
+            <span class="dictionaryReadonlyValue">{{
+              (materialCharacteristicsForm.controls.coatingSpec.value || '').trim() || '—'
+            }}</span>
+          </div>
+
+          <div class="dictionaryReadonlyPair">
+            <span class="dictionaryReadonlyLabel">Покрытие — толщина, мкм</span>
+            <span class="dictionaryReadonlyValue">{{
+              materialCharacteristicsForm.controls.coatingThicknessMicron.value != null
+                ? materialCharacteristicsForm.controls.coatingThicknessMicron.value
+                : '—'
+            }}</span>
+          </div>
+        </div>
+      </fieldset>
+    }
+
+    <fieldset class="dictionaryFormSection">
+      <legend>Дополнительно</legend>
+      <div class="dictionaryFormSectionBody">
+        <app-ui-form-field label="Заметки" [wide]="true">
+          <textarea rows="2" formControlName="notes"></textarea>
+        </app-ui-form-field>
+
+        <app-ui-checkbox-field class="checkbox" label="Активен" formControlName="isActive"></app-ui-checkbox-field>
+      </div>
+    </fieldset>
+  </form>
+</ng-template>
+
+<ng-template #materialCharacteristicsActionsTpl>
+  <app-ui-modal-form-actions
+    [viewMode]="isMaterialCharacteristicsViewMode()"
+    [formId]="'material-characteristics-form'"
+    [submitLabel]="
+      materialCharacteristicsStore.isEditMode()
+        ? 'Сохранить изменения'
+        : 'Создать характеристику'
+    "
+    (dismiss)="closeMaterialCharacteristicsModal()"
+  />
+</ng-template>
+
+<ui-modal
+  *ngIf="isGeometriesModalOpen()"
+  [title]="
+    isGeometriesViewMode()
+      ? 'Просмотр формы и габаритных размеров — Форма / габ. разм.'
+      : geometriesStore.isEditMode()
+        ? 'Редактирование геометрии'
+        : 'Новая геометрия'
+  "
+  [content]="geometriesContentTpl"
+  [actions]="geometriesActionsTpl"
+  [backdropZIndex]="geometriesFormModalBackdropZIndex()"
+  (close)="closeGeometriesModal()"
+  [closeOnBackdrop]="isGeometriesViewMode()"
+  size="lg"
+></ui-modal>
+
+<ng-template #geometriesContentTpl>
+  <form id="geometries-form" [formGroup]="geometriesForm" (ngSubmit)="submitGeometries()" class="formGrid geometriesFormPanel">
+    <fieldset class="dictionaryFormSection">
+      <legend>Наименование и тип</legend>
+      <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
+        <app-ui-form-field
+          label="Название"
+          [required]="true"
+          [invalid]="isGeometriesInvalid('name')"
+          [errorText]="isGeometriesInvalid('name') ? 'Минимум 2 символа' : ''"
+        >
+          <input type="text" formControlName="name" />
+        </app-ui-form-field>
+
+        <app-ui-form-field
+          label="Тип геометрии"
+          [required]="true"
+          [invalid]="isGeometriesInvalid('shapeKey')"
+          [errorText]="isGeometriesInvalid('shapeKey') ? 'Укажите тип' : ''"
+        >
+          <select formControlName="shapeKey">
+            <option *ngFor="let s of shapeOptions" [value]="s.value">{{ s.label }}</option>
+          </select>
+        </app-ui-form-field>
+      </div>
+    </fieldset>
+
+    <fieldset class="geometryParams">
+      <legend>Параметры, мм</legend>
+      <div class="geometryDimsGrid">
+        <app-ui-form-field
+          *ngIf="geometriesDimensionVisible('diameterMm')"
+          [label]="geometryDiameterFieldLabel"
+          [invalid]="isGeometriesInvalid('diameterMm')"
+          [errorText]="isGeometriesInvalid('diameterMm') ? 'Проверьте значение' : ''"
+        >
+          <input type="number" formControlName="diameterMm" />
+        </app-ui-form-field>
+
+        <app-ui-form-field
+          *ngIf="geometriesDimensionVisible('thicknessMm')"
+          label="Толщина (мм)"
+          [invalid]="isGeometriesInvalid('thicknessMm')"
+          [errorText]="isGeometriesInvalid('thicknessMm') ? 'Проверьте значение' : ''"
+        >
+          <input type="number" formControlName="thicknessMm" />
+        </app-ui-form-field>
+
+        <app-ui-form-field
+          *ngIf="geometriesDimensionVisible('heightMm')"
+          label="Высота (мм)"
+          [invalid]="isGeometriesInvalid('heightMm')"
+          [errorText]="isGeometriesInvalid('heightMm') ? 'Проверьте значение' : ''"
+        >
+          <input type="number" formControlName="heightMm" />
+        </app-ui-form-field>
+
+        <app-ui-form-field
+          *ngIf="geometriesDimensionVisible('widthMm')"
+          label="Ширина (мм)"
+          [invalid]="isGeometriesInvalid('widthMm')"
+          [errorText]="isGeometriesInvalid('widthMm') ? 'Проверьте значение' : ''"
+        >
+          <input type="number" formControlName="widthMm" />
+        </app-ui-form-field>
+
+        <app-ui-form-field
+          *ngIf="geometriesDimensionVisible('lengthMm')"
+          label="Длина (мм)"
+          [invalid]="isGeometriesInvalid('lengthMm')"
+          [errorText]="isGeometriesInvalid('lengthMm') ? 'Проверьте значение' : ''"
+        >
+          <input type="number" formControlName="lengthMm" />
+        </app-ui-form-field>
+      </div>
+    </fieldset>
+
+    <fieldset class="dictionaryFormSection">
+      <legend>Дополнительно</legend>
+      <div class="dictionaryFormSectionBody">
+        <app-ui-form-field label="Заметки" [wide]="true">
+          <textarea rows="2" formControlName="notes"></textarea>
+        </app-ui-form-field>
+
+        <app-ui-checkbox-field class="checkbox" label="Активна" formControlName="isActive"></app-ui-checkbox-field>
+      </div>
+    </fieldset>
+  </form>
+</ng-template>
+
+<ng-template #geometriesActionsTpl>
+  <app-ui-modal-form-actions
+    [viewMode]="isGeometriesViewMode()"
+    [formId]="'geometries-form'"
+    [submitLabel]="geometriesStore.isEditMode() ? 'Сохранить изменения' : 'Создать геометрию'"
+    (dismiss)="closeGeometriesModal()"
+  />
+</ng-template>
+
+<ui-modal
+  *ngIf="isUnitsModalOpen()"
+  [title]="
+    isUnitsViewMode()
+      ? 'Просмотр единицы измерения — Ед. изм.'
+      : unitsStore.isEditMode()
+        ? 'Редактирование единицы'
+        : 'Новая единица'
+  "
+  [content]="unitsContentTpl"
+  [actions]="unitsActionsTpl"
+  (close)="closeUnitsModal()"
+  [closeOnBackdrop]="isUnitsViewMode()"
+  size="md"
+></ui-modal>
+
+<ng-template #unitsContentTpl>
+  <form id="units-form" [formGroup]="unitsForm" (ngSubmit)="submitUnits()" class="formGrid">
+    <fieldset class="dictionaryFormSection">
+      <legend>Обозначение</legend>
+      <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
+        <app-ui-form-field
+          label="Название"
+          [required]="true"
+          [invalid]="isUnitsInvalid('name')"
+          [errorText]="isUnitsInvalid('name') ? 'Введите название' : ''"
+        >
+          <input type="text" formControlName="name" />
+        </app-ui-form-field>
+
+        <app-ui-form-field
+          label="Код"
+          [required]="true"
+          [invalid]="isUnitsInvalid('code')"
+          [errorText]="isUnitsInvalid('code') ? 'Минимум 2 символа' : ''"
+        >
+          <input type="text" formControlName="code" />
+        </app-ui-form-field>
+      </div>
+    </fieldset>
+
+    <fieldset class="dictionaryFormSection">
+      <legend>Дополнительно</legend>
+      <div class="dictionaryFormSectionBody">
+        <app-ui-form-field label="Комментарий" [wide]="true">
+          <textarea rows="2" formControlName="notes"></textarea>
+        </app-ui-form-field>
+
+        <app-ui-checkbox-field class="checkbox" label="Активна" formControlName="isActive"></app-ui-checkbox-field>
+      </div>
+    </fieldset>
+  </form>
+</ng-template>
+
+<ng-template #unitsActionsTpl>
+  <app-ui-modal-form-actions
+    [viewMode]="isUnitsViewMode()"
+    [formId]="'units-form'"
+    [submitLabel]="unitsStore.isEditMode() ? 'Сохранить изменения' : 'Создать единицу'"
+    (dismiss)="closeUnitsModal()"
+  />
+</ng-template>

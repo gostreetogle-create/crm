@@ -1,0 +1,106 @@
+:host {
+  display: contents;
+}
+
+.rowActionsMenuRoot {
+  position: relative;
+  display: inline-flex;
+  justify-content: flex-end;
+  vertical-align: middle;
+}
+
+.rowActionsMenuRoot--card {
+  width: 100%;
+  justify-content: flex-end;
+}
+
+.rowActionMenuTrigger {
+  box-sizing: border-box;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in srgb, var(--border-color) 90%, transparent);
+  border-radius: var(--ui-row-action-btn-radius);
+  background: var(--surface-soft);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.rowActionMenuTrigger:hover {
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+  border-color: color-mix(in srgb, var(--accent) 22%, var(--border-color));
+  color: var(--text-primary);
+}
+
+.rowActionMenuTrigger--open {
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border-color));
+  color: var(--text-primary);
+}
+
+.rowActionMenuTrigger svg {
+  flex-shrink: 0;
+}
+
+.rowActionsMenuPanel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 2px);
+  z-index: 25;
+  min-width: 10.5rem;
+  padding: var(--ui-space-1) 0;
+  margin: 0;
+  list-style: none;
+  background: var(--surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-card);
+  box-shadow:
+    0 4px 16px color-mix(in srgb, var(--shadow-color) 18%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--border-color) 65%, transparent);
+}
+
+.rowActionsMenuPanel--card {
+  right: 0;
+  left: auto;
+}
+
+.rowActionsMenuItem {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-2);
+  width: 100%;
+  margin: 0;
+  padding: var(--ui-space-2) var(--ui-space-3);
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: var(--font-size-small);
+  line-height: 1.25;
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+}
+
+.rowActionsMenuItem:hover {
+  background: color-mix(in srgb, var(--accent) 7%, var(--surface-soft));
+}
+
+.rowActionsMenuItem svg {
+  flex-shrink: 0;
+  color: var(--accent);
+}
+
+.rowActionsMenuItem--danger {
+  color: var(--danger);
+}
+
+.rowActionsMenuItem--danger svg {
+  color: var(--danger);
+}
+
+.rowActionsMenuItem--danger:hover {
+  background: color-mix(in srgb, var(--danger) 8%, var(--surface-soft));
+}

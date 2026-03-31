@@ -1,15 +1,17 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
-import { GeometriesStore } from '../../geometries/state/geometries.store';
-import { MaterialCharacteristicItem } from '../../material-characteristics/model/material-characteristic-item';
-import { MaterialCharacteristicsStore } from '../../material-characteristics/state/material-characteristics.store';
+import {
+  GeometriesStore,
+  MaterialCharacteristicsStore,
+  MaterialsStore,
+} from '@srm/dictionaries-state';
+import type { MaterialCharacteristicItem } from '@srm/material-characteristics-data-access';
+import type { MaterialItem } from '@srm/materials-data-access';
 import {
   MATERIALS_REPOSITORY,
-  MaterialsRepository,
-} from '../data/materials.repository';
-import { MaterialItem } from '../model/material-item';
-import { MaterialsStore } from './materials.store';
+  type MaterialsRepository,
+} from '@srm/materials-data-access';
 
 describe('MaterialsStore', () => {
   let store: InstanceType<typeof MaterialsStore>;
@@ -153,3 +155,5 @@ describe('MaterialsStore', () => {
     expect(store.formSubmitAttempted()).toBe(true);
   });
 });
+
+

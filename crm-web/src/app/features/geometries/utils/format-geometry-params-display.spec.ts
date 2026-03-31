@@ -1,5 +1,5 @@
-import { GeometryItem } from '../model/geometry-item';
-import { formatGeometryParamsDisplay } from './format-geometry-params-display';
+import type { GeometryItem } from '@srm/geometries-data-access';
+import { formatGeometryParamsDisplay } from '@srm/dictionaries-utils';
 
 function base(over: Partial<GeometryItem>): GeometryItem {
   return {
@@ -56,3 +56,5 @@ describe('formatGeometryParamsDisplay', () => {
     expect(formatGeometryParamsDisplay(base({ shapeKey: 'rectangular' }))).toBe('\u2014');
   });
 });
+
+

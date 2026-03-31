@@ -1,0 +1,9 @@
+{
+  "name": "authz-runtime",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/authz-runtime/src",
+  "projectType": "library",
+  "tags": ["scope:platform", "type:core"],
+  "// targets": "to see all targets run: nx show project authz-runtime --web",
+  "targets": {}
+}

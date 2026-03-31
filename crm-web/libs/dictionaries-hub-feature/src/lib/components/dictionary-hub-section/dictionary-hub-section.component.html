@@ -1,0 +1,8 @@
+@if (visible()) {
+  <section class="dictionaryHubSection" [attr.aria-labelledby]="headingId()">
+    <h2 [id]="headingId()" class="dictionaryHubSection__title">{{ title() }}</h2>
+    <div class="dictionaryGrid">
+      <ng-content />
+    </div>
+  </section>
+}

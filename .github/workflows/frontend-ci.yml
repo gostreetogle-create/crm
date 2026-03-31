@@ -1,0 +1,56 @@
+name: frontend-ci
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "crm-web/**"
+      - "docs/frontend/**"
+  pull_request:
+    paths:
+      - "crm-web/**"
+      - "docs/frontend/**"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: crm-web
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: "crm-web/package-lock.json"
+
+      - name: Install
+        run: npm ci
+
+      - name: Lint srm-front
+        run: npx nx lint srm-front
+
+      - name: Lint ui-kit
+        run: npx nx lint ui-kit
+
+      - name: Lint feature libs
+        run: npx nx run-many -t lint -p login-feature,dictionaries-hub-feature,settings-feature,ui-demo-feature --parallel=2
+
+      - name: Test crm-web
+        run: npx nx test crm-web
+
+      - name: Test srm-front
+        run: npx nx test srm-front
+
+      - name: Build srm-front (production)
+        run: npx nx build srm-front --configuration=production
+
+      - name: Build crm-web (development)
+        run: npx nx build crm-web --configuration=development
+
+      - name: Build crm-web (production)
+        run: npx nx build crm-web --configuration=production

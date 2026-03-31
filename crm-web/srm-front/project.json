@@ -1,0 +1,95 @@
+{
+  "name": "srm-front",
+  "$schema": "../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "prefix": "app",
+  "sourceRoot": "srm-front/src",
+  "tags": ["scope:srm", "type:app"],
+  "targets": {
+    "build": {
+      "executor": "@angular/build:application",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/srm-front",
+        "browser": "srm-front/src/main.ts",
+        "tsConfig": "srm-front/tsconfig.app.json",
+        "inlineStyleLanguage": "scss",
+        "assets": [
+          {
+            "glob": "**/*",
+            "input": "srm-front/public"
+          }
+        ],
+        "styles": ["src/styles.scss", "srm-front/src/styles.scss"]
+      },
+      "configurations": {
+        "production": {
+          "budgets": [
+            {
+              "type": "initial",
+              "maximumWarning": "900kb",
+              "maximumError": "8mb"
+            },
+            {
+              "type": "anyComponentStyle",
+              "maximumWarning": "12kb",
+              "maximumError": "20kb"
+            }
+          ],
+          "outputHashing": "all"
+        },
+        "development": {
+          "optimization": false,
+          "extractLicenses": false,
+          "sourceMap": true,
+          "budgets": [
+            {
+              "type": "initial",
+              "maximumWarning": "50mb",
+              "maximumError": "50mb"
+            },
+            {
+              "type": "anyComponentStyle",
+              "maximumWarning": "50mb",
+              "maximumError": "50mb"
+            }
+          ]
+        }
+      },
+      "defaultConfiguration": "production"
+    },
+    "serve": {
+      "continuous": true,
+      "executor": "@angular/build:dev-server",
+      "configurations": {
+        "production": {
+          "buildTarget": "srm-front:build:production"
+        },
+        "development": {
+          "buildTarget": "srm-front:build:development"
+        }
+      },
+      "defaultConfiguration": "development"
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "srm-front/jest.config.cts",
+        "tsConfig": "srm-front/tsconfig.spec.json"
+      }
+    },
+    "serve-static": {
+      "continuous": true,
+      "executor": "@nx/web:file-server",
+      "options": {
+        "buildTarget": "srm-front:build",
+        "staticFilePath": "dist/srm-front/browser",
+        "spa": true
+      }
+    }
+  }
+}
