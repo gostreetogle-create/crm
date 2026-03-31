@@ -12,7 +12,7 @@ import {
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { LucidePlus, LucideX } from '@lucide/angular';
-import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { Observable, Subscription, filter, firstValueFrom, forkJoin, map, of, startWith } from 'rxjs';
 import { PermissionsService } from '@srm/authz-runtime';
 import { permissionKeyForDictionaryHubTile } from '@srm/authz-core';
@@ -345,9 +345,11 @@ export class DictionariesPage implements OnDestroy {
   readonly isRolesModalOpen = signal(false);
   readonly isRolesViewMode = signal(false);
   readonly rolesEditingId = signal<string | null>(null);
+  readonly rolesSubmitAttempted = signal(false);
   readonly isUsersModalOpen = signal(false);
   readonly isUsersViewMode = signal(false);
   readonly usersEditingId = signal<string | null>(null);
+  readonly usersSubmitAttempted = signal(false);
   readonly colorQuickAddForMaterialCharacteristics = signal(false);
   readonly unitQuickAddForMaterials = signal(false);
   /** Каскад: модалка «Материал» открыта, плитка справочника — поверх (z-index). */
@@ -735,14 +737,10 @@ export class DictionariesPage implements OnDestroy {
     this.doc.title = 'Справочники — CRM';
 
     /**
-     * Полноэкранные дочерние маршруты грузят **новый** экземпляр `DictionariesPage`.
-     * `effect` по `isNewMaterialPageRoute` мог срабатывать повторно и затирать форму;
-     * инициализация один раз после первого рендера достаточна.
+     * Для специальных полноэкранных сценариев (материал/характеристика) достаточно
+     * одноразовой инициализации после первого рендера экземпляра страницы.
      */
     afterNextRender(() => {
-      if (this.route.snapshot.data['standaloneCreate']) {
-        this.initStandaloneDictionaryCreateFromRoute();
-      }
       if (this.route.snapshot.data['newMaterialPage'] === true) {
         this.initNewMaterialStandaloneForm();
       }
@@ -755,6 +753,15 @@ export class DictionariesPage implements OnDestroy {
           path: this.route.snapshot.routeConfig?.path,
         });
       }
+    });
+
+    /**
+     * Standalone-create может открываться/закрываться в рамках одного экземпляра страницы:
+     * при каждом заходе переинициализируем форму, чтобы не переносить touched/dirty между заходами.
+     */
+    effect(() => {
+      if (!this.standaloneCreateKey()) return;
+      this.initStandaloneDictionaryCreateFromRoute();
     });
 
     // Если открыта модалка редактирования «Материал характеристик», а пользователь
@@ -1413,18 +1420,21 @@ export class DictionariesPage implements OnDestroy {
     this.isRolesViewMode.set(false);
     this.rolesEditingId.set(null);
     this.rolesForm.enable({ emitEvent: false });
+    this.rolesSubmitAttempted.set(false);
     this.rolesForm.reset({
       name: '',
       sortOrder: nextRoleSortOrder(this.rolesStore.items()),
       notes: '',
       isActive: true,
     });
+    this.clearFormInteractionState(this.rolesForm);
   }
 
   private initUsersStandaloneCreate(): void {
     if (!this.permissions.crud().canCreate) return;
     this.isUsersViewMode.set(false);
     this.usersEditingId.set(null);
+    this.usersSubmitAttempted.set(false);
     this.usersForm.enable({ emitEvent: false });
     const pw = this.usersForm.controls.password;
     pw.enable({ emitEvent: false });
@@ -1439,6 +1449,7 @@ export class DictionariesPage implements OnDestroy {
       phone: '',
       roleId: firstRole,
     });
+    this.clearFormInteractionState(this.usersForm);
   }
 
   private initStandaloneDictionaryCreateFromRoute(): void {
@@ -1963,6 +1974,7 @@ export class DictionariesPage implements OnDestroy {
     if (!item) return;
     this.isRolesViewMode.set(false);
     this.rolesEditingId.set(id);
+    this.rolesSubmitAttempted.set(false);
     this.rolesForm.enable({ emitEvent: false });
     this.rolesForm.reset({
       name: item.name ?? '',
@@ -1970,6 +1982,7 @@ export class DictionariesPage implements OnDestroy {
       notes: item.notes ?? '',
       isActive: item.isActive,
     });
+    this.clearFormInteractionState(this.rolesForm);
     this.isRolesModalOpen.set(true);
   }
 
@@ -1977,12 +1990,14 @@ export class DictionariesPage implements OnDestroy {
     const item = this.rolesStore.roleById(id);
     if (!item) return;
     this.rolesEditingId.set(null);
+    this.rolesSubmitAttempted.set(false);
     this.rolesForm.reset({
       name: item.name ?? '',
       sortOrder: item.sortOrder ?? 1,
       notes: item.notes ?? '',
       isActive: item.isActive,
     });
+    this.clearFormInteractionState(this.rolesForm);
     this.rolesForm.disable({ emitEvent: false });
     this.isRolesViewMode.set(true);
     this.isRolesModalOpen.set(true);
@@ -1992,6 +2007,7 @@ export class DictionariesPage implements OnDestroy {
     this.rolesForm.enable({ emitEvent: false });
     this.isRolesViewMode.set(false);
     this.rolesEditingId.set(null);
+    this.rolesSubmitAttempted.set(false);
     this.isRolesModalOpen.set(false);
   }
 
@@ -2044,6 +2060,7 @@ export class DictionariesPage implements OnDestroy {
 
   submitRoles(): void {
     if (this.rolesForm.invalid) {
+      this.rolesSubmitAttempted.set(true);
       this.rolesForm.markAllAsTouched();
       scrollToFirstInvalidControlInForm('roles-form', this.doc);
       return;
@@ -2075,6 +2092,7 @@ export class DictionariesPage implements OnDestroy {
     if (!item || item.isSystem) return;
     this.isRolesViewMode.set(false);
     this.rolesEditingId.set(null);
+    this.rolesSubmitAttempted.set(false);
     this.rolesForm.enable({ emitEvent: false });
     this.rolesForm.reset({
       name: item.name ? `${item.name} (копия)` : '',
@@ -2082,6 +2100,7 @@ export class DictionariesPage implements OnDestroy {
       notes: item.notes ?? '',
       isActive: item.isActive,
     });
+    this.clearFormInteractionState(this.rolesForm);
     this.isRolesModalOpen.set(true);
   }
 
@@ -2096,6 +2115,7 @@ export class DictionariesPage implements OnDestroy {
     if (!item) return;
     this.isUsersViewMode.set(false);
     this.usersEditingId.set(id);
+    this.usersSubmitAttempted.set(false);
     this.usersForm.enable({ emitEvent: false });
     const pw = this.usersForm.controls.password;
     pw.enable({ emitEvent: false });
@@ -2109,6 +2129,7 @@ export class DictionariesPage implements OnDestroy {
       phone: item.phone,
       roleId: item.roleId,
     });
+    this.clearFormInteractionState(this.usersForm);
     this.isUsersModalOpen.set(true);
   }
 
@@ -2116,6 +2137,7 @@ export class DictionariesPage implements OnDestroy {
     const item = this.usersStore.userById(id);
     if (!item) return;
     this.usersEditingId.set(null);
+    this.usersSubmitAttempted.set(false);
     this.usersForm.reset({
       login: item.login,
       password: '',
@@ -2124,6 +2146,7 @@ export class DictionariesPage implements OnDestroy {
       phone: item.phone,
       roleId: item.roleId,
     });
+    this.clearFormInteractionState(this.usersForm);
     this.usersForm.disable({ emitEvent: false });
     this.isUsersViewMode.set(true);
     this.isUsersModalOpen.set(true);
@@ -2137,11 +2160,13 @@ export class DictionariesPage implements OnDestroy {
     pw.updateValueAndValidity({ emitEvent: false });
     this.isUsersViewMode.set(false);
     this.usersEditingId.set(null);
+    this.usersSubmitAttempted.set(false);
     this.isUsersModalOpen.set(false);
   }
 
   submitUsers(): void {
     if (this.usersForm.invalid) {
+      this.usersSubmitAttempted.set(true);
       this.usersForm.markAllAsTouched();
       scrollToFirstInvalidControlInForm('users-form', this.doc);
       return;
@@ -2153,6 +2178,7 @@ export class DictionariesPage implements OnDestroy {
       .filter((x) => x.id !== editId)
       .map((x) => x.login.trim().toLowerCase());
     if (logins.includes(v.login.trim().toLowerCase())) {
+      this.usersSubmitAttempted.set(true);
       this.usersForm.controls.login.setErrors({ duplicate: true });
       this.usersForm.markAllAsTouched();
       scrollToFirstInvalidControlInForm('users-form', this.doc);
@@ -2189,6 +2215,7 @@ export class DictionariesPage implements OnDestroy {
     if (!item) return;
     this.isUsersViewMode.set(false);
     this.usersEditingId.set(null);
+    this.usersSubmitAttempted.set(false);
     this.usersForm.enable({ emitEvent: false });
     const pw = this.usersForm.controls.password;
     pw.enable({ emitEvent: false });
@@ -2208,7 +2235,17 @@ export class DictionariesPage implements OnDestroy {
       phone: item.phone,
       roleId: item.roleId,
     });
+    this.clearFormInteractionState(this.usersForm);
     this.isUsersModalOpen.set(true);
+  }
+
+  private clearFormInteractionState(form: FormGroup): void {
+    form.markAsPristine();
+    form.markAsUntouched();
+    Object.values(form.controls).forEach((control) => {
+      control.markAsPristine();
+      control.markAsUntouched();
+    });
   }
 
   private readonly usersPasswordIfAnyMin4 = (control: AbstractControl): ValidationErrors | null => {
@@ -4313,6 +4350,73 @@ export class DictionariesPage implements OnDestroy {
       control.invalid &&
       (control.touched || control.dirty || this.organizationsStore.formSubmitAttempted())
     );
+  }
+
+  /**
+   * Пользователи/роли без `formSubmitAttempted` в store: как у контактов по смыслу —
+   * подпись ошибки только после blur/ввода либо после `markAllAsTouched()` на неуспешном сабмите.
+   */
+  isUsersInvalid(controlName: keyof typeof this.usersForm.controls): boolean {
+    const control = this.usersForm.controls[controlName];
+    return control.invalid && (control.dirty || this.usersSubmitAttempted());
+  }
+
+  isRolesInvalid(controlName: keyof typeof this.rolesForm.controls): boolean {
+    const control = this.rolesForm.controls[controlName];
+    return control.invalid && (control.dirty || this.rolesSubmitAttempted());
+  }
+
+  usersLoginErrorText(): string {
+    const c = this.usersForm.controls.login;
+    if (!this.isUsersInvalid('login')) return '';
+    if (c.hasError('required')) return 'Обязательное поле';
+    if (c.hasError('minlength')) return 'Минимум 2 символа';
+    if (c.hasError('duplicate')) return 'Такой логин уже есть';
+    return '';
+  }
+
+  usersPasswordErrorText(): string {
+    const c = this.usersForm.controls.password;
+    if (!this.isUsersInvalid('password')) return '';
+    if (c.hasError('required')) return 'Задайте пароль';
+    if (c.hasError('minlength')) return 'Минимум 4 символа';
+    return '';
+  }
+
+  usersFullNameErrorText(): string {
+    if (!this.isUsersInvalid('fullName')) return '';
+    // Как у контакта: одна формулировка для пустого и короткого значения.
+    return 'Минимум 2 символа';
+  }
+
+  usersEmailErrorText(): string {
+    const c = this.usersForm.controls.email;
+    if (!this.isUsersInvalid('email')) return '';
+    if (c.hasError('email')) return 'Некорректный email';
+    return '';
+  }
+
+  usersRoleErrorText(): string {
+    const c = this.usersForm.controls.roleId;
+    if (!this.isUsersInvalid('roleId')) return '';
+    if (c.hasError('required')) return 'Выберите роль';
+    return '';
+  }
+
+  rolesNameErrorText(): string {
+    const c = this.rolesForm.controls.name;
+    if (!this.isRolesInvalid('name')) return '';
+    if (c.hasError('required')) return 'Обязательное поле';
+    if (c.hasError('minlength')) return 'Минимум 2 символа';
+    return '';
+  }
+
+  rolesSortOrderErrorText(): string {
+    const c = this.rolesForm.controls.sortOrder;
+    if (!this.isRolesInvalid('sortOrder')) return '';
+    if (c.hasError('required')) return 'Укажите число';
+    if (c.hasError('min') || c.hasError('max')) return 'Целое от 1 до 999999';
+    return '';
   }
 
   organizationInnPlaceholder(): string {

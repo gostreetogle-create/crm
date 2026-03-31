@@ -11,7 +11,7 @@ import { NgIf } from '@angular/common';
         {{ label }}<span class="requiredMark" *ngIf="required"> *</span>
       </span>
       <ng-content></ng-content>
-      <span class="fieldError" *ngIf="errorText">{{ errorText }}</span>
+      <span class="fieldError" *ngIf="invalid && errorText">{{ errorText }}</span>
     </label>
   `,
   styleUrl: './ui-form-field.component.scss',

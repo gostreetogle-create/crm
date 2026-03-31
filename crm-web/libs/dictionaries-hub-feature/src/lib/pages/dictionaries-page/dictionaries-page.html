@@ -712,12 +712,12 @@
       <legend>Роль</legend>
       <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
         <app-ui-form-field
-          label="Название"
+          label="Наименование"
           [required]="true"
-          [invalid]="rolesForm.controls.name.invalid && (rolesForm.controls.name.touched || rolesForm.controls.name.dirty)"
-          [errorText]="rolesForm.controls.name.hasError('required') ? 'Обязательное поле' : 'Минимум 2 символа'"
+          [invalid]="isRolesInvalid('name')"
+          [errorText]="rolesNameErrorText()"
         >
-          <input type="text" formControlName="name" placeholder="Менеджер продаж" />
+          <input type="text" formControlName="name" placeholder="Введите наименование роли" />
         </app-ui-form-field>
         @if (!isRolesViewMode()) {
           <p class="muted dictionaryFieldRowFull">
@@ -729,14 +729,8 @@
         <app-ui-form-field
           label="Порядок (в матрице и списках)"
           [required]="true"
-          [invalid]="rolesForm.controls.sortOrder.invalid && (rolesForm.controls.sortOrder.touched || rolesForm.controls.sortOrder.dirty)"
-          [errorText]="
-            rolesForm.controls.sortOrder.hasError('required')
-              ? 'Укажите число'
-              : rolesForm.controls.sortOrder.hasError('min') || rolesForm.controls.sortOrder.hasError('max')
-                ? 'Целое от 1 до 999999'
-                : ''
-          "
+          [invalid]="isRolesInvalid('sortOrder')"
+          [errorText]="rolesSortOrderErrorText()"
         >
           <input type="number" formControlName="sortOrder" min="1" max="999999" step="1" />
         </app-ui-form-field>
@@ -789,16 +783,8 @@
         <app-ui-form-field
           label="Логин"
           [required]="true"
-          [invalid]="usersForm.controls.login.invalid && (usersForm.controls.login.touched || usersForm.controls.login.dirty)"
-          [errorText]="
-            usersForm.controls.login.hasError('required')
-              ? 'Обязательное поле'
-              : usersForm.controls.login.hasError('minlength')
-                ? 'Минимум 2 символа'
-                : usersForm.controls.login.hasError('duplicate')
-                  ? 'Такой логин уже есть'
-                  : ''
-          "
+          [invalid]="isUsersInvalid('login')"
+          [errorText]="usersLoginErrorText()"
         >
           <input type="text" formControlName="login" autocomplete="username" />
         </app-ui-form-field>
@@ -807,14 +793,8 @@
           <app-ui-form-field
             [label]="usersEditingId() ? 'Новый пароль (пусто — не менять)' : 'Пароль'"
             [required]="!usersEditingId()"
-            [invalid]="usersForm.controls.password.invalid && (usersForm.controls.password.touched || usersForm.controls.password.dirty)"
-            [errorText]="
-              usersForm.controls.password.hasError('required')
-                ? 'Задайте пароль'
-                : usersForm.controls.password.hasError('minlength')
-                  ? 'Минимум 4 символа'
-                  : ''
-            "
+            [invalid]="isUsersInvalid('password')"
+            [errorText]="usersPasswordErrorText()"
           >
             <input type="password" formControlName="password" autocomplete="new-password" />
           </app-ui-form-field>
@@ -825,16 +805,16 @@
         <app-ui-form-field
           label="ФИО"
           [required]="true"
-          [invalid]="usersForm.controls.fullName.invalid && (usersForm.controls.fullName.touched || usersForm.controls.fullName.dirty)"
-          [errorText]="usersForm.controls.fullName.hasError('required') ? 'Обязательное поле' : 'Минимум 2 символа'"
+          [invalid]="isUsersInvalid('fullName')"
+          [errorText]="usersFullNameErrorText()"
         >
           <input type="text" formControlName="fullName" autocomplete="name" />
         </app-ui-form-field>
 
         <app-ui-form-field
           label="Email"
-          [invalid]="usersForm.controls.email.invalid && (usersForm.controls.email.touched || usersForm.controls.email.dirty)"
-          [errorText]="usersForm.controls.email.hasError('email') ? 'Некорректный email' : ''"
+          [invalid]="isUsersInvalid('email')"
+          [errorText]="usersEmailErrorText()"
         >
           <input type="email" formControlName="email" autocomplete="email" />
         </app-ui-form-field>
@@ -846,8 +826,8 @@
         <app-ui-form-field
           label="Роль"
           [required]="true"
-          [invalid]="usersForm.controls.roleId.invalid && (usersForm.controls.roleId.touched || usersForm.controls.roleId.dirty)"
-          [errorText]="usersForm.controls.roleId.hasError('required') ? 'Выберите роль' : ''"
+          [invalid]="isUsersInvalid('roleId')"
+          [errorText]="usersRoleErrorText()"
         >
           <select formControlName="roleId">
             @if (roleSelectOptions().length === 0) {

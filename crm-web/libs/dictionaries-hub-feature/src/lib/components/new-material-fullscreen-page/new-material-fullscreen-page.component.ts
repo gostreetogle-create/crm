@@ -31,12 +31,18 @@ export class NewMaterialFullscreenPageComponent {
   constructor() {
     afterNextRender(() => {
       const root = this.el.nativeElement;
-      const first = root.querySelector(
-        'input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled])',
-      );
-      if (first instanceof HTMLElement) {
-        first.focus();
-      }
+      setTimeout(() => {
+        const title = root.querySelector('h1.newMaterialPage__title') as HTMLElement | null;
+        if (title) {
+          title.setAttribute('tabindex', '-1');
+          title.focus({ preventScroll: true });
+          return;
+        }
+        const first = root.querySelector(
+          'input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled])',
+        ) as HTMLElement | null;
+        first?.focus();
+      }, 0);
     });
   }
 }
