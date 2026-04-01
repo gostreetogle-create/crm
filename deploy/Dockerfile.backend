@@ -21,5 +21,7 @@ COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/prisma ./prisma
 COPY --from=build /app/package.json ./
+COPY deploy/entrypoint-backend.sh /entrypoint-backend.sh
+RUN chmod +x /entrypoint-backend.sh
 EXPOSE 3000
-CMD ["sh", "-c", "npx prisma migrate deploy && npx prisma db seed && node dist/server.js"]
+CMD ["/entrypoint-backend.sh"]
