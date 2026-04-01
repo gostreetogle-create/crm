@@ -44,6 +44,7 @@
 | 15 | 2026-03-31 | Полный master-аудит 1..53 по frontend, расширение канон-доков (field contracts/parity alias/release-ready) и обновление видео-программы под формат goals/scenario/demo/errors/DoD | docs/frontend, docs | `a57331a` |
 | 16 | 2026-03-31 | Recovery-ветка frontend: восстановление Nx workspace файлов, full lint/test/build + smoke, добавлены контрактные тесты словарей и зафиксирован release-ready snapshot | crm-web, docs/frontend | `e2afdde` |
 | 17 | 2026-03-31 | Включён параллельный AI UI/UX prompt в комитетный процесс: добавлен документ и ссылка в development-workflow, синхронизированы audit/release-ready статусы | docs/frontend | `980a1d5` |
+| 18 | 2026-04-01 | Слит `recovery/nx-workspace-restore-2026-03-31` в `main` и запушен: выравнивание валидации ролей/пользователей, правки словарей/ui-kit форм, тесты payload/columns | crm-web, docs | `e015a9d` |
 
 ---
 
