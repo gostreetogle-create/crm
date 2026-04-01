@@ -153,6 +153,20 @@
       (dismiss)="navigateBackFromStandaloneDictionaryCreate()"
     />
   </app-dictionary-standalone-create-shell>
+  } @else if (standaloneCreateKey() === 'kpPhotos') {
+  <app-dictionary-standalone-create-shell
+    [pageTitle]="standaloneDictionaryTitle('kpPhotos')"
+    (backClicked)="navigateBackFromStandaloneDictionaryCreate()"
+  >
+    <ng-container *ngTemplateOutlet="kpPhotosContentTpl"></ng-container>
+    <app-ui-modal-form-actions
+      standaloneFormActions
+      [viewMode]="isKpPhotosViewMode()"
+      [formId]="'kp-photos-form'"
+      [submitLabel]="kpPhotosStore.isEditMode() ? 'Сохранить изменения' : 'Создать запись'"
+      (dismiss)="navigateBackFromStandaloneDictionaryCreate()"
+    />
+  </app-dictionary-standalone-create-shell>
   } @else if (isNewMaterialPageRoute()) {
   <app-new-material-fullscreen-page
     [pageTitle]="'Новый материал'"
@@ -581,6 +595,39 @@
         (duplicate)="duplicateClient($event)"
         (edit)="openClientsEdit($event)"
         (delete)="deleteClient($event)"
+      ></crud-layout>
+        }
+
+            @case ('kpPhotos') {
+      <crud-layout
+        title="Фото для КП"
+        [showHeader]="false"
+        [showCardLabel]="false"
+        [showNameSearch]="true"
+        nameSearchPlaceholder="Поиск по наименованию, организации…"
+        [showCreateAction]="false"
+        [canCreate]="permissions.crud().canCreate"
+        createAriaLabel="Добавить фото для КП"
+        createTitle="Добавить фото для КП"
+        [columns]="kpPhotosColumnsForTile()"
+        [data]="kpPhotosStore.kpPhotosData()"
+        [loading]="kpPhotosStore.loading()"
+        [maxTableBodyRows]="null"
+        [tableBodyMaxHeight]="hubBoardDetailTableMaxHeight"
+        [showExcelActions]="false"
+        [canDownloadTemplate]="false"
+        [canImportExcel]="false"
+        [canExportExcel]="false"
+        [canView]="true"
+        [canDuplicate]="permissions.crud().canDuplicate"
+        [canEdit]="permissions.crud().canEdit"
+        [canDelete]="permissions.crud().canDelete"
+        deleteConfirmMessage="Удалить запись?"
+        (create)="openKpPhotosCreate()"
+        (view)="openKpPhotosView($event)"
+        (duplicate)="duplicateKpPhoto($event)"
+        (edit)="openKpPhotosEdit($event)"
+        (delete)="deleteKpPhoto($event)"
       ></crud-layout>
         }
 
@@ -2687,5 +2734,111 @@
     [formId]="'units-form'"
     [submitLabel]="unitsStore.isEditMode() ? 'Сохранить изменения' : 'Создать единицу'"
     (dismiss)="closeUnitsModal()"
+  />
+</ng-template>
+
+<ui-modal
+  *ngIf="isKpPhotosModalOpen()"
+  [title]="
+    isKpPhotosViewMode()
+      ? 'Просмотр — Фото для КП'
+      : kpPhotosStore.isEditMode()
+        ? 'Редактирование'
+        : 'Новое фото для КП'
+  "
+  [content]="kpPhotosContentTpl"
+  [actions]="kpPhotosActionsTpl"
+  (close)="closeKpPhotosModal()"
+  [closeOnBackdrop]="isKpPhotosViewMode()"
+  size="md"
+></ui-modal>
+
+<ng-template #kpPhotosContentTpl>
+  @if (isKpPhotosViewMode()) {
+    <div class="dictionaryFormSection">
+      <p><strong>{{ kpPhotosForm.controls.name.value }}</strong></p>
+      <p>Организация: {{ kpPhotoOrganizationLabel() }}</p>
+      <p>Название фото: {{ kpPhotosForm.controls.photoTitle.value }}</p>
+      @if (kpPhotosForm.controls.photoUrl.value) {
+        <div class="kpPhotoPreview">
+          <img [src]="kpPhotosForm.controls.photoUrl.value" alt="" />
+        </div>
+      }
+      <p>Активна: {{ kpPhotosForm.controls.isActive.value ? 'Да' : 'Нет' }}</p>
+    </div>
+  } @else {
+    <form id="kp-photos-form" [formGroup]="kpPhotosForm" (ngSubmit)="submitKpPhotos()" class="formGrid">
+      <fieldset class="dictionaryFormSection">
+        <legend>Запись</legend>
+        <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
+          <app-ui-form-field
+            label="Наименование"
+            [required]="true"
+            [invalid]="isKpPhotosInvalid('name')"
+            [errorText]="isKpPhotosInvalid('name') ? 'Введите наименование' : ''"
+          >
+            <input type="text" formControlName="name" />
+          </app-ui-form-field>
+
+          <app-ui-form-field
+            label="Организация"
+            [required]="true"
+            [invalid]="isKpPhotosInvalid('organizationId')"
+            [errorText]="isKpPhotosInvalid('organizationId') ? 'Выберите организацию' : ''"
+          >
+            <select formControlName="organizationId">
+              <option value="">— выберите —</option>
+              @for (opt of organizationsStore.options(); track opt.id) {
+                <option [value]="opt.id">{{ opt.label }}</option>
+              }
+            </select>
+          </app-ui-form-field>
+        </div>
+      </fieldset>
+
+      <fieldset class="dictionaryFormSection">
+        <legend>Фото</legend>
+        <div class="dictionaryFormSectionBody">
+          <app-ui-form-field
+            label="Название фото"
+            [required]="true"
+            [invalid]="isKpPhotosInvalid('photoTitle')"
+            [errorText]="isKpPhotosInvalid('photoTitle') ? 'Укажите название' : ''"
+          >
+            <input type="text" formControlName="photoTitle" />
+          </app-ui-form-field>
+
+          <div class="kpPhotoUploadRow">
+            <label class="kpPhotoUploadLabel">
+              <span>Файл изображения</span>
+              <input type="file" accept="image/*" (change)="onKpPhotoFileSelected($event)" />
+            </label>
+            <p class="dictionaryMuted">До 1,5 МБ. Сохраняется в базе (data URL).</p>
+          </div>
+
+          @if (kpPhotosForm.controls.photoUrl.value) {
+            <div class="kpPhotoPreview">
+              <img [src]="kpPhotosForm.controls.photoUrl.value" alt="" />
+            </div>
+          }
+        </div>
+      </fieldset>
+
+      <fieldset class="dictionaryFormSection">
+        <legend>Дополнительно</legend>
+        <div class="dictionaryFormSectionBody">
+          <app-ui-checkbox-field class="checkbox" label="Активна" formControlName="isActive"></app-ui-checkbox-field>
+        </div>
+      </fieldset>
+    </form>
+  }
+</ng-template>
+
+<ng-template #kpPhotosActionsTpl>
+  <app-ui-modal-form-actions
+    [viewMode]="isKpPhotosViewMode()"
+    [formId]="'kp-photos-form'"
+    [submitLabel]="kpPhotosStore.isEditMode() ? 'Сохранить изменения' : 'Создать запись'"
+    (dismiss)="closeKpPhotosModal()"
   />
 </ng-template>

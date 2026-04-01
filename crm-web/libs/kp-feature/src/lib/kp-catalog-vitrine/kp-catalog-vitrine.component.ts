@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, Output, computed, signal } from '@angular/core';
-import { LucidePlus, LucideStar } from '@lucide/angular';
+import { LucideShoppingCart, LucideStar } from '@lucide/angular';
 import {
   FiltersBarComponent,
   ProductCardComponent,
@@ -18,7 +18,7 @@ import type { KpCatalogProduct } from './kp-catalog-product.model';
     ProductCardComponent,
     UiButtonComponent,
     UiPaginationComponent,
-    LucidePlus,
+    LucideShoppingCart,
     LucideStar,
   ],
   templateUrl: './kp-catalog-vitrine.component.html',

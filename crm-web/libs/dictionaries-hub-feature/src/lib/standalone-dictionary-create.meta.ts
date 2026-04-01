@@ -13,6 +13,7 @@ export const STANDALONE_DICTIONARY_CREATE = [
   { key: 'clients', path: 'новый-контакт', title: 'Новое контактное лицо' },
   { key: 'roles', path: 'новая-роль', title: 'Новая роль' },
   { key: 'users', path: 'новый-пользователь', title: 'Новый пользователь' },
+  { key: 'kpPhotos', path: 'новое-фото-кп', title: 'Новое фото для КП' },
 ] as const;
 
 export type StandaloneDictionaryCreateKey = (typeof STANDALONE_DICTIONARY_CREATE)[number]['key'];

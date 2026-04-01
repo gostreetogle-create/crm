@@ -100,7 +100,9 @@
       "@crm-web/ui-demo-feature": ["libs/ui-demo-feature/src/index.ts"],
       "@srm/ui-demo-feature": ["libs/ui-demo-feature/src/index.ts"],
       "@crm-web/kp-feature": ["libs/kp-feature/src/index.ts"],
-      "@srm/kp-feature": ["libs/kp-feature/src/index.ts"]
+      "@srm/kp-feature": ["libs/kp-feature/src/index.ts"],
+      "@crm-web/kp-photos-data-access": ["libs/kp-photos-data-access/src/index.ts"],
+      "@srm/kp-photos-data-access": ["libs/kp-photos-data-access/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

@@ -1,0 +1,117 @@
+<div class="kp-recipient-toolbar">
+  <div class="kp-recipient-toolbar__fieldRow">
+    <div class="kp-recipient-toolbar__combo" #recipientCombo>
+      <span class="kp-recipient-toolbar__combo-caption" id="kp-recipient-toolbar-label">Получатель КП</span>
+      <div class="kp-recipient-toolbar__combo-inner">
+      <button
+        type="button"
+        class="kp-recipient-toolbar__combo-trigger"
+        [attr.aria-expanded]="recipientPanelOpen()"
+        aria-haspopup="dialog"
+        [attr.aria-controls]="'kp-recipient-toolbar-panel'"
+        aria-labelledby="kp-recipient-toolbar-label"
+        (click)="toggleRecipientPanel($event)"
+      >
+        <span class="kp-recipient-toolbar__combo-value">{{ recipientDisplayLabel() }}</span>
+        <span class="kp-recipient-toolbar__combo-chevron" aria-hidden="true">▾</span>
+      </button>
+      @if (recipientPanelOpen()) {
+        <div
+          class="kp-recipient-toolbar__combo-dropdown"
+          id="kp-recipient-toolbar-panel"
+          aria-labelledby="kp-recipient-toolbar-label"
+          (click)="$event.stopPropagation()"
+        >
+          <div class="kp-recipient-toolbar__combo-search">
+            <input
+              type="search"
+              class="kp-recipient-toolbar__combo-searchInput"
+              [formControl]="organizationSearchCtrl"
+              autocomplete="off"
+              placeholder="Поиск по названию, ФИО, телефону…"
+              aria-label="Поиск в списке получателей"
+              (click)="$event.stopPropagation()"
+              (keydown)="$event.stopPropagation()"
+            />
+          </div>
+          <div class="kp-recipient-toolbar__combo-scroll">
+            <button
+              type="button"
+              class="kp-recipient-toolbar__combo-option kp-recipient-toolbar__combo-option--muted"
+              (click)="pickRecipient('', $event)"
+            >
+              — не выбрано —
+            </button>
+            @if (filteredOrganizations().length) {
+              <div class="kp-recipient-toolbar__combo-groupTitle" role="presentation">Организации</div>
+              @for (org of filteredOrganizations(); track org.id) {
+                <button
+                  type="button"
+                  class="kp-recipient-toolbar__combo-option"
+                  (click)="pickRecipient(orgOptionValue(org), $event)"
+                >
+                  {{ organizationOptionLabel(org) }}
+                </button>
+              }
+            }
+            @if (filteredClients().length) {
+              <div class="kp-recipient-toolbar__combo-groupTitle" role="presentation">Контактные лица</div>
+              @for (c of filteredClients(); track c.id) {
+                <button
+                  type="button"
+                  class="kp-recipient-toolbar__combo-option"
+                  (click)="pickRecipient(clientOptionValue(c), $event)"
+                >
+                  {{ clientLabel(c) }}
+                </button>
+              }
+            }
+            @if (!filteredOrganizations().length && !filteredClients().length) {
+              <div class="kp-recipient-toolbar__combo-empty" role="presentation">Ничего не найдено</div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+    </div>
+    <app-ui-button
+      type="button"
+      variant="primary"
+      [square]="true"
+      ariaLabel="Добавить организацию в справочнике"
+      title="Добавить организацию"
+      (clicked)="openAddOrganization()"
+    >
+      <svg lucidePlus [size]="18" aria-hidden="true"></svg>
+    </app-ui-button>
+  </div>
+  @if (selectedOrganization(); as orgPick) {
+    @if (contactsLinkedToOrganization(orgPick).length > 0) {
+      <div class="kp-recipient-toolbar__fieldRow">
+        <div class="kp-recipient-toolbar__contactPick">
+          <span class="kp-recipient-toolbar__contactPick-caption" id="kp-recipient-toolbar-org-contact-label">Контакт для КП</span>
+          <select
+            class="kp-recipient-toolbar__contactPick-select"
+            [formControl]="organizationContactIdCtrl"
+            aria-labelledby="kp-recipient-toolbar-org-contact-label"
+          >
+            <option value="">— не выбрано —</option>
+            @for (c of contactsLinkedToOrganization(orgPick); track c.id) {
+              <option [value]="c.id">{{ clientLabel(c) }}</option>
+            }
+          </select>
+        </div>
+        <app-ui-button
+          type="button"
+          variant="primary"
+          [square]="true"
+          ariaLabel="Добавить контактное лицо в справочнике"
+          title="Добавить контактное лицо"
+          (clicked)="openAddContact()"
+        >
+          <svg lucidePlus [size]="18" aria-hidden="true"></svg>
+        </app-ui-button>
+      </div>
+    }
+  }
+</div>

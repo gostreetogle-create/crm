@@ -130,6 +130,23 @@ model Organization {
 
   contacts OrganizationContact[]
   commercialOffers CommercialOffer[]
+  kpPhotos KpPhoto[]
+}
+
+/// Изображения для вставки в коммерческое предложение (привязка к организации).
+model KpPhoto {
+  id             String   @id @default(uuid())
+  name           String
+  organizationId String
+  photoTitle     String
+  photoUrl       String   @db.Text
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  @@index([organizationId])
 }
 
 enum CommercialOfferStatus {

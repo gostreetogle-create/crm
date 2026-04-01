@@ -425,3 +425,36 @@
     grid-template-columns: 1fr;
   }
 }
+
+.dictionaryMuted {
+  font-size: var(--font-size-small, 12px);
+  color: var(--text-muted);
+  margin: 0.25rem 0 0;
+}
+
+.kpPhotoUploadRow {
+  margin-bottom: 0.5rem;
+}
+
+.kpPhotoUploadLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: var(--font-size-small, 12px);
+  color: var(--text-muted);
+}
+
+.kpPhotoPreview {
+  max-width: 100%;
+  margin-top: 0.5rem;
+  border-radius: var(--radius-card, 8px);
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+
+  img {
+    display: block;
+    max-width: 100%;
+    max-height: 200px;
+    object-fit: contain;
+  }
+}

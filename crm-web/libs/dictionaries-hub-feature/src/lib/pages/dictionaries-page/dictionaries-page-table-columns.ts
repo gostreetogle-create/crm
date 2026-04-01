@@ -72,6 +72,15 @@ export const UNITS_COLUMNS_FULL: TableColumn[] = [
   { key: 'isActiveLabel', label: 'Активен' },
 ];
 
+export const KP_PHOTOS_COLUMNS: TableColumn[] = [{ key: 'hubLine', label: 'Фото для КП' }];
+
+export const KP_PHOTOS_COLUMNS_FULL: TableColumn[] = [
+  { key: 'name', label: 'Наименование' },
+  { key: 'organizationName', label: 'Организация' },
+  { key: 'photoTitle', label: 'Название фото' },
+  { key: 'isActiveLabel', label: 'Активен' },
+];
+
 export const COLORS_COLUMNS: TableColumn[] = [{ key: 'hubLine', label: 'Цвет', swatchHexKey: 'hex' }];
 
 /** Full-view для раскрытия colors. */

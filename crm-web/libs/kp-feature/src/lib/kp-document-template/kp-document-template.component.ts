@@ -1,17 +1,10 @@
 import { DecimalPipe } from '@angular/common';
-import {
-  Component,
-  ElementRef,
-  HostListener,
-  Input,
-  ViewChild,
-  signal,
-} from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormArray, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import type { ClientItem } from '@srm/clients-data-access';
 import { formatClientFio } from '@srm/clients-data-access';
 import type { OrganizationItem } from '@srm/organizations-data-access';
-import { LucideTrash2 } from '@lucide/angular';
+import { LucidePlus, LucideTrash2 } from '@lucide/angular';
 import { UiButtonComponent } from '@srm/ui-kit';
 
 /** Строка табличной части КП. */
@@ -30,11 +23,15 @@ export type KpPageChunk = {
   formIndices: readonly number[];
   /** Смещение для нумерации колонки «№» на этом листе. */
   displayOffset: number;
-  /** Первая страница — фон kp-1str, остальные — kp-2str. */
+  /** Первая страница — `kp-1str.png`, продолжение — `kp-2str.png` (лежат в `public/branding/kp/`). */
   useFirstBackground: boolean;
 };
 
-/** Фоны — только два PNG из `public/branding/kp/`. */
+/**
+ * Фоны по умолчанию — файлы в репозитории: `kp-1str.png`, `kp-2str.png`.
+ * Свой макет с другими именами (например `КП_СпортИН-ЮГ_стр1.png`): положите PNG в ту же папку
+ * и замените путь здесь или переименуйте файлы под эти константы.
+ */
 export const KP_PAGE1_BACKGROUND = '/branding/kp/kp-1str.png';
 export const KP_PAGE2_BACKGROUND = '/branding/kp/kp-2str.png';
 
@@ -46,18 +43,13 @@ export const KP_RECIPIENT_CONTACT_PREFIX = 'contact:';
 @Component({
   selector: 'app-kp-document-template',
   standalone: true,
-  imports: [DecimalPipe, ReactiveFormsModule, UiButtonComponent, LucideTrash2],
+  imports: [DecimalPipe, ReactiveFormsModule, UiButtonComponent, LucidePlus, LucideTrash2],
   templateUrl: './kp-document-template.component.html',
   styleUrl: './kp-document-template.component.scss',
 })
 export class KpDocumentTemplateComponent {
-  readonly bgPage1 = KP_PAGE1_BACKGROUND;
-  readonly bgPage2 = KP_PAGE2_BACKGROUND;
-
-  /** Выпадающая панель с поиском (комбобокс вместо нативного select). */
-  readonly recipientPanelOpen = signal(false);
-
-  @ViewChild('recipientCombo', { read: ElementRef }) private recipientComboRef?: ElementRef<HTMLElement>;
+  /** Добавить строку в таблицу КП (кнопка под таблицей в превью). */
+  @Output() readonly addLineClick = new EventEmitter<void>();
 
   /** Строки КП: редактирование и удаление в превью; в печати кнопки скрываются через `kp-no-print`. */
   @Input({ required: true }) linesForm!: FormArray;
@@ -69,8 +61,6 @@ export class KpDocumentTemplateComponent {
    * Получатель: `org:<id>` или `contact:<id>` (либо организация, либо контакт).
    */
   @Input() recipientCtrl: FormControl<string> | null = null;
-  /** Фильтр по названию / ФИО / телефону / email для пунктов списка. */
-  @Input() organizationSearchCtrl: FormControl<string> | null = null;
   /** Один контакт организации для блока «Контакт:» в КП (если у организации несколько контактов). */
   @Input() organizationContactIdCtrl: FormControl<string> | null = null;
 
@@ -87,26 +77,26 @@ export class KpDocumentTemplateComponent {
 
   /**
    * Сколько строк таблицы помещается на одном листе; дальше — следующий лист (фон 2стр).
-   * Не увеличивает высоту листа — только переносит строки.
+   * Поле ввода — слева от кнопки «+» под таблицей (без подписи в макете).
    */
-  @Input() rowsPerPage = 12;
+  @Input() rowsPerPageCtrl: FormControl<string> | null = null;
 
   lineItemsValue(): KpLineItem[] {
     return (this.linesForm?.getRawValue() ?? []) as KpLineItem[];
   }
 
-  /** Подпись в списке: краткое наименование или полное. */
-  organizationOptionLabel(org: OrganizationItem): string {
-    const s = org.shortName?.trim();
-    return s || org.name;
+  resolvedBgPage1(): string {
+    return KP_PAGE1_BACKGROUND;
   }
 
-  orgOptionValue(org: OrganizationItem): string {
-    return `${KP_RECIPIENT_ORG_PREFIX}${org.id}`;
+  resolvedBgPage2(): string {
+    return KP_PAGE2_BACKGROUND;
   }
 
-  clientOptionValue(c: ClientItem): string {
-    return `${KP_RECIPIENT_CONTACT_PREFIX}${c.id}`;
+  /** CSS `url("...")` с кавычками — нужно для `data:` и `blob:`. */
+  backgroundImageCssUrl(href: string): string {
+    const escaped = href.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+    return `url("${escaped}")`;
   }
 
   /**
@@ -141,47 +131,6 @@ export class KpDocumentTemplateComponent {
     return this.organizations.find((o) => o.id === p.id) ?? null;
   }
 
-  /** Организации в группе списка с учётом поиска; выбранная не пропадает. */
-  filteredOrganizations(): OrganizationItem[] {
-    const q = (this.organizationSearchCtrl?.value ?? '').trim().toLowerCase();
-    const list = this.organizations.filter((o) => o.isActive);
-    const filtered = !q
-      ? [...list]
-      : list.filter(
-          (o) =>
-            o.name.toLowerCase().includes(q) || (o.shortName?.toLowerCase().includes(q) ?? false),
-        );
-    const sel = this.selectedOrganization();
-    if (sel && q && !filtered.some((o) => o.id === sel.id)) {
-      return [sel, ...filtered];
-    }
-    return filtered;
-  }
-
-  /** Контактные лица во второй группе списка; выбранный контакт не пропадает при фильтре. */
-  filteredClients(): ClientItem[] {
-    const q = (this.organizationSearchCtrl?.value ?? '').trim().toLowerCase();
-    const list = this.clients.filter((c) => c.isActive);
-    const match = (c: ClientItem) => {
-      if (!q) {
-        return true;
-      }
-      const fio = formatClientFio(c).toLowerCase();
-      return (
-        fio.includes(q) ||
-        (c.email?.toLowerCase().includes(q) ?? false) ||
-        (c.phone?.includes(q) ?? false) ||
-        (c.address?.toLowerCase().includes(q) ?? false)
-      );
-    };
-    let filtered = list.filter(match);
-    const sel = this.selectedContact();
-    if (sel && q && !filtered.some((c) => c.id === sel.id)) {
-      filtered = [sel, ...filtered];
-    }
-    return filtered;
-  }
-
   clientLabel(c: ClientItem): string {
     return formatClientFio(c);
   }
@@ -193,22 +142,6 @@ export class KpDocumentTemplateComponent {
       return null;
     }
     return this.clients.find((c) => c.id === p.id) ?? null;
-  }
-
-  /** Контакты, привязанные к организации в справочнике (порядок как в карточке). */
-  contactsLinkedToOrganization(org: OrganizationItem): ClientItem[] {
-    if (!org.contactIds?.length) {
-      return [];
-    }
-    const byId = new Map(this.clients.map((c) => [c.id, c]));
-    const out: ClientItem[] = [];
-    for (const id of org.contactIds) {
-      const c = byId.get(id);
-      if (c?.isActive) {
-        out.push(c);
-      }
-    }
-    return out;
   }
 
   /** Выбранный в списке контакт организации для вывода в КП. */
@@ -223,54 +156,6 @@ export class KpDocumentTemplateComponent {
       return null;
     }
     return this.clients.find((c) => c.id === id) ?? null;
-  }
-
-  /** Текст на кнопке комбобокса. */
-  recipientDisplayLabel(): string {
-    const org = this.selectedOrganization();
-    if (org) {
-      return this.organizationOptionLabel(org);
-    }
-    const c = this.selectedContact();
-    if (c) {
-      return this.clientLabel(c);
-    }
-    return '— не выбрано —';
-  }
-
-  toggleRecipientPanel(ev?: Event): void {
-    ev?.stopPropagation();
-    this.recipientPanelOpen.update((v) => !v);
-  }
-
-  pickRecipient(value: string, ev?: Event): void {
-    ev?.stopPropagation();
-    ev?.preventDefault();
-    this.recipientCtrl?.setValue(value);
-    this.recipientPanelOpen.set(false);
-  }
-
-  @HostListener('document:click', ['$event'])
-  onDocumentClick(ev: MouseEvent): void {
-    if (!this.recipientPanelOpen()) {
-      return;
-    }
-    const root = this.recipientComboRef?.nativeElement;
-    if (!root) {
-      return;
-    }
-    const t = ev.target;
-    if (t instanceof Node && root.contains(t)) {
-      return;
-    }
-    this.recipientPanelOpen.set(false);
-  }
-
-  @HostListener('document:keydown', ['$event'])
-  onDocumentKeydown(ev: KeyboardEvent): void {
-    if (ev.key === 'Escape' && this.recipientPanelOpen()) {
-      this.recipientPanelOpen.set(false);
-    }
   }
 
   /** Индексы FormArray в порядке вывода: сначала строки с непустым imageUrl, затем остальные (стабильный порядок внутри групп). */
@@ -327,7 +212,8 @@ export class KpDocumentTemplateComponent {
   }
 
   private rowsPerPageEffective(): number {
-    const n = Number(this.rowsPerPage);
+    const raw = this.rowsPerPageCtrl ? String(this.rowsPerPageCtrl.value ?? '').trim() : '';
+    const n = raw ? Number(raw.replace(/\s/g, '').replace(',', '.')) : NaN;
     return Number.isFinite(n) && n >= 1 ? Math.floor(n) : 12;
   }
 
@@ -376,11 +262,37 @@ export class KpDocumentTemplateComponent {
     return this.lineItemsValue().reduce((acc, line) => acc + this.lineSum(line), 0);
   }
 
+  /** Сумма НДС из поля (число). */
+  parsedVatAmount(): number {
+    const raw = String(this.vatAmountCtrl?.value ?? '').trim();
+    if (!raw) {
+      return 0;
+    }
+    const n = Number(raw.replace(/\s/g, '').replace(',', '.'));
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  /** Всего к оплате: итог по таблице + НДС. */
+  totalPayable(): number {
+    return this.computedTotal() + this.parsedVatAmount();
+  }
+
   showTotalOnChunk(chunkIndex: number): boolean {
     if (!this.showTotal || !this.lineItemsValue().length) {
       return false;
     }
     return chunkIndex === this.pageChunks().length - 1;
+  }
+
+  /** Есть следующий лист с позициями таблицы — подсказка под таблицей. */
+  showTableContinuationHint(chunkIndex: number): boolean {
+    const chunks = this.pageChunks();
+    return chunks.length > 1 && chunkIndex < chunks.length - 1;
+  }
+
+  /** Номер листа, на котором продолжение (для подписи «на стр. N»). */
+  continuationSheetNumber(chunkIndex: number): number {
+    return chunkIndex + 2;
   }
 
   /** Ссылки на индекс в FormArray для строк слайса. */

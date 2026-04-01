@@ -22,7 +22,8 @@ import {
   KpDocumentTemplateComponent,
   type KpLineItem,
 } from '../../kp-document-template/kp-document-template.component';
-import { LucidePlus, LucidePrinter } from '@lucide/angular';
+import { KpRecipientToolbarComponent } from '../../kp-recipient-toolbar/kp-recipient-toolbar.component';
+import { LucidePrinter } from '@lucide/angular';
 
 @Component({
   selector: 'app-kp-builder-page',
@@ -33,7 +34,7 @@ import { LucidePlus, LucidePrinter } from '@lucide/angular';
     UiButtonComponent,
     KpCatalogVitrineComponent,
     KpDocumentTemplateComponent,
-    LucidePlus,
+    KpRecipientToolbarComponent,
     LucidePrinter,
   ],
   templateUrl: './kp-builder-page.html',
@@ -92,10 +93,13 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
   });
 
   ngOnInit(): void {
-    this.patchDefaultVatAmount();
     this.form.controls.vatPercent.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.recalculateVatAmountFromTotal());
+    this.lines()
+      .valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.recalculateVatAmountFromTotal());
+    this.recalculateVatAmountFromTotal();
     this.organizationsRepository
       .getItems()
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -205,12 +209,6 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
     return this.form.controls.lines;
   }
 
-  rowsPerPageNumber(): number {
-    const v = this.form.controls.rowsPerPage.value?.trim();
-    const n = v ? parseInt(v, 10) : 12;
-    return Number.isFinite(n) && n >= 1 ? n : 12;
-  }
-
   /** Новая строка с типовыми значениями для быстрого ввода. */
   addLine(): void {
     this.lines().push(this.lineGroup('', '1', 'шт.', '0', ''));
@@ -233,21 +231,13 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
   }
 
   /**
-   * НДС «в том числе» в итоге: T × r / (100 + r). Подставляем при пустой сумме НДС.
+   * Итого по таблице — сумма без НДС; НДС начисляется сверху: T × r / 100.
+   * «Всего к оплате» в шаблоне = T + сумма НДС.
    */
-  private patchDefaultVatAmount(): void {
-    const amt = this.form.controls.vatAmount;
-    if (amt.value?.trim()) {
-      return;
-    }
-    this.recalculateVatAmountFromTotal();
-  }
-
-  /** Пересчёт суммы НДС от итога по строкам и текущей ставке (в т.ч. при смене %). */
   private recalculateVatAmountFromTotal(): void {
     const total = this.totalFromLines();
     const p = this.parsePercent(this.form.controls.vatPercent.value);
-    const vat = total * (p / (100 + p));
+    const vat = total * (p / 100);
     this.form.controls.vatAmount.patchValue(vat.toFixed(2), { emitEvent: false });
   }
 

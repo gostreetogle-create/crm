@@ -35,6 +35,12 @@ export const HUB_BOARD_DICTIONARY_ROW_DEFS: readonly HubBoardDictionaryRowDef[] 
   { section: 'Цвет, отделка и покрытия', sectionId: 'dictionary-hub-section-surface', key: 'coatings', title: 'Покрытие' },
   { section: 'Клиенты', sectionId: 'dictionary-hub-section-clients', key: 'organizations', title: 'Организации' },
   { section: 'Клиенты', sectionId: 'dictionary-hub-section-clients', key: 'clients', title: 'Контактные лица' },
+  {
+    section: 'Коммерческое предложение',
+    sectionId: 'dictionary-hub-section-commercial',
+    key: 'kpPhotos',
+    title: 'Фото для КП',
+  },
   { section: 'Пользователи и доступ', sectionId: 'dictionary-hub-section-access', key: 'roles', title: 'Роли' },
   { section: 'Пользователи и доступ', sectionId: 'dictionary-hub-section-access', key: 'users', title: 'Пользователи' },
 ];
@@ -43,5 +49,6 @@ export const HUB_BOARD_SECTION_ORDER: readonly string[] = [
   'dictionary-hub-section-production',
   'dictionary-hub-section-surface',
   'dictionary-hub-section-clients',
+  'dictionary-hub-section-commercial',
   'dictionary-hub-section-access',
 ];

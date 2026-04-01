@@ -18,6 +18,11 @@
           {
             "glob": "**/*",
             "input": "srm-front/public"
+          },
+          {
+            "glob": "**/*",
+            "input": "public/branding/kp",
+            "output": "/branding/kp"
           }
         ],
         "styles": ["src/styles.scss", "srm-front/src/styles.scss"]

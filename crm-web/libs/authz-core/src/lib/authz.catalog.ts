@@ -26,6 +26,7 @@ export const PERMISSION_CATALOG: Record<
   'dict.hub.coatings': { labelRu: 'Плитка «Покрытие»', group: 'dict' },
   'dict.hub.roles': { labelRu: 'Плитка «Роли»', group: 'dict' },
   'dict.hub.users': { labelRu: 'Плитка «Пользователи»', group: 'dict' },
+  'dict.hub.kp_photos': { labelRu: 'Плитка «Фото для КП»', group: 'dict' },
   'crud.create': { labelRu: 'Создание записей', group: 'crud' },
   'crud.edit': { labelRu: 'Редактирование записей', group: 'crud' },
   'crud.delete': { labelRu: 'Удаление записей', group: 'crud' },

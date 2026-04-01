@@ -6,28 +6,25 @@
       </aside>
 
       <div class="kp-builder__column-right">
-        <div
-          class="kp-builder__sheet-toolbar kp-no-print"
-          [formGroup]="form"
-          aria-label="Параметры листа и позиции КП"
-        >
+        <div class="kp-builder__sheet-toolbar kp-no-print" aria-label="Параметры листа и позиции КП">
+          <div class="kp-builder__recipient-row">
+            <app-kp-recipient-toolbar
+              [organizations]="organizations()"
+              [clients]="clients()"
+              [recipientCtrl]="form.controls.recipient"
+              [organizationSearchCtrl]="form.controls.organizationSearch"
+              [organizationContactIdCtrl]="form.controls.organizationContactId"
+            />
+          </div>
           <div class="kp-builder__positions-actions">
-            <label class="kp-builder__rows-inline">
-              <span class="kp-builder__rows-inline-label">Строк на листе</span>
-              <input type="text" formControlName="rowsPerPage" inputmode="numeric" class="kp-builder__rows-inline-input" />
-            </label>
-            <app-ui-button type="button" variant="soft" (clicked)="addLine()">
-              <span class="kp-builder__btn-with-icon">
-                <svg lucidePlus [size]="18" aria-hidden="true"></svg>
-                Добавить строку
-              </span>
-            </app-ui-button>
-            <app-ui-button type="button" variant="primary" (clicked)="print()">
-              <span class="kp-builder__btn-with-icon">
-                <svg lucidePrinter [size]="18" aria-hidden="true"></svg>
-                Печать / PDF
-              </span>
-            </app-ui-button>
+            <div class="kp-builder__print-action">
+              <app-ui-button type="button" variant="primary" (clicked)="print()">
+                <span class="kp-builder__btn-with-icon">
+                  <svg lucidePrinter [size]="18" aria-hidden="true"></svg>
+                  Печать / PDF
+                </span>
+              </app-ui-button>
+            </div>
           </div>
         </div>
 
@@ -43,13 +40,13 @@
                 [organizations]="organizations()"
                 [clients]="clients()"
                 [recipientCtrl]="form.controls.recipient"
-                [organizationSearchCtrl]="form.controls.organizationSearch"
                 [organizationContactIdCtrl]="form.controls.organizationContactId"
                 [vatPercentCtrl]="form.controls.vatPercent"
                 [vatAmountCtrl]="form.controls.vatAmount"
                 [contentPaddingTop]="contentPaddingTop"
                 [contentPaddingTopPage2]="contentPaddingTopPage2"
-                [rowsPerPage]="rowsPerPageNumber()"
+                [rowsPerPageCtrl]="form.controls.rowsPerPage"
+                (addLineClick)="addLine()"
               />
             </div>
           </div>

@@ -20,6 +20,7 @@ export type PermissionKey =
   | 'dict.hub.coatings'
   | 'dict.hub.roles'
   | 'dict.hub.users'
+  | 'dict.hub.kp_photos'
   | 'crud.create'
   | 'crud.edit'
   | 'crud.delete'

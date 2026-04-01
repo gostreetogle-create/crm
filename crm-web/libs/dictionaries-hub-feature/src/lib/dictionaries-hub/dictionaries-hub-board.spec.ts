@@ -18,6 +18,7 @@ describe('dictionaries-hub-board', () => {
       'dictionary-hub-section-production',
       'dictionary-hub-section-surface',
       'dictionary-hub-section-clients',
+      'dictionary-hub-section-commercial',
       'dictionary-hub-section-access',
     ]);
     expect(cols[0].items.length).toBeGreaterThan(0);

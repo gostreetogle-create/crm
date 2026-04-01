@@ -42,6 +42,8 @@ import {
   COLORS_COLUMNS_FULL,
   GEOMETRIES_COLUMNS,
   GEOMETRIES_COLUMNS_FULL,
+  KP_PHOTOS_COLUMNS,
+  KP_PHOTOS_COLUMNS_FULL,
   MATERIAL_CHARACTERISTICS_COLUMNS_FULL,
   MATERIAL_CHARACTERISTICS_COLUMNS_PREVIEW,
   MATERIALS_COLUMNS_FULL,
@@ -71,6 +73,7 @@ import {
   coatingPayloadFromValues,
   colorsPayloadFromFormRaw,
   geometriesPayloadFromValues,
+  kpPhotosPayloadFromValues,
   materialCharacteristicsPayloadFromValues,
   materialsPayloadFromValues,
   organizationsPayloadFromFields,
@@ -83,6 +86,7 @@ import {
   CoatingsStore,
   ColorsStore,
   GeometriesStore,
+  KpPhotosStore,
   MaterialCharacteristicsStore,
   MaterialsStore,
   OrganizationsStore,
@@ -272,6 +276,7 @@ export class DictionariesPage implements OnDestroy {
   readonly materialsStore = inject(MaterialsStore);
   readonly geometriesStore = inject(GeometriesStore);
   readonly unitsStore = inject(UnitsStore);
+  readonly kpPhotosStore = inject(KpPhotosStore);
   readonly colorsStore = inject(ColorsStore);
   readonly coatingsStore = inject(CoatingsStore);
   readonly surfaceFinishesStore = inject(SurfaceFinishesStore);
@@ -292,6 +297,7 @@ export class DictionariesPage implements OnDestroy {
   readonly isMaterialsModalOpen = signal(false);
   readonly isGeometriesModalOpen = signal(false);
   readonly isUnitsModalOpen = signal(false);
+  readonly isKpPhotosModalOpen = signal(false);
   readonly isColorsModalOpen = signal(false);
   readonly isCoatingsModalOpen = signal(false);
   readonly coatingsEditingId = signal<string | null>(null);
@@ -340,6 +346,7 @@ export class DictionariesPage implements OnDestroy {
   readonly isMaterialsViewMode = signal(false);
   readonly isGeometriesViewMode = signal(false);
   readonly isUnitsViewMode = signal(false);
+  readonly isKpPhotosViewMode = signal(false);
   readonly isColorsViewMode = signal(false);
   readonly isCoatingsViewMode = signal(false);
   readonly isClientsViewMode = signal(false);
@@ -503,6 +510,8 @@ export class DictionariesPage implements OnDestroy {
   readonly geometriesColumnsFull = GEOMETRIES_COLUMNS_FULL;
   readonly unitsColumns = UNITS_COLUMNS;
   readonly unitsColumnsFull = UNITS_COLUMNS_FULL;
+  readonly kpPhotosColumns = KP_PHOTOS_COLUMNS;
+  readonly kpPhotosColumnsFull = KP_PHOTOS_COLUMNS_FULL;
   readonly colorsColumns = COLORS_COLUMNS;
   readonly colorsColumnsFull = COLORS_COLUMNS_FULL;
   readonly surfaceFinishesColumns = SURFACE_FINISHES_COLUMNS;
@@ -543,6 +552,7 @@ export class DictionariesPage implements OnDestroy {
 
   readonly workTypesColumnsForTile = this.columnsForTile('workTypes', this.workTypesColumns, this.workTypesColumnsFull);
   readonly unitsColumnsForTile = this.columnsForTile('units', this.unitsColumns, this.unitsColumnsFull);
+  readonly kpPhotosColumnsForTile = this.columnsForTile('kpPhotos', this.kpPhotosColumns, this.kpPhotosColumnsFull);
   readonly clientsColumnsForTile = this.columnsForTile('clients', this.clientsColumns, this.clientsColumnsFull);
   readonly organizationsColumnsForTile = this.columnsForTile(
     'organizations',
@@ -664,6 +674,14 @@ export class DictionariesPage implements OnDestroy {
     name: ['', [Validators.required, Validators.minLength(1)]],
     code: ['', [Validators.required, Validators.minLength(2)]],
     notes: [''],
+    isActive: [true],
+  });
+
+  readonly kpPhotosForm = this.fb.nonNullable.group({
+    name: ['', [Validators.required, Validators.minLength(1)]],
+    organizationId: ['', Validators.required],
+    photoTitle: ['', [Validators.required, Validators.minLength(1)]],
+    photoUrl: ['', Validators.required],
     isActive: [true],
   });
 
@@ -824,6 +842,7 @@ export class DictionariesPage implements OnDestroy {
     this.materialCharacteristicsStore.loadItems();
     this.geometriesStore.loadItems();
     this.unitsStore.loadItems();
+    this.kpPhotosStore.loadItems();
     this.colorsStore.loadItems();
     this.coatingsStore.loadItems();
     this.surfaceFinishesStore.loadItems();
@@ -1118,6 +1137,7 @@ export class DictionariesPage implements OnDestroy {
       clients: () => this.closeClientsModal(),
       roles: () => this.closeRolesModal(),
       users: () => this.closeUsersModal(),
+      kpPhotos: () => this.closeKpPhotosModal(),
     });
     this.resetAllDictionaryHubQuickAddFlags();
     this.location.back();
@@ -1466,6 +1486,20 @@ export class DictionariesPage implements OnDestroy {
     this.clearFormInteractionState(this.usersForm);
   }
 
+  private initKpPhotosStandaloneCreate(): void {
+    if (!this.permissions.crud().canCreate) return;
+    this.isKpPhotosViewMode.set(false);
+    this.kpPhotosForm.enable({ emitEvent: false });
+    this.kpPhotosStore.startCreate();
+    this.kpPhotosForm.reset({
+      name: '',
+      organizationId: '',
+      photoTitle: '',
+      photoUrl: '',
+      isActive: true,
+    });
+  }
+
   private initStandaloneDictionaryCreateFromRoute(): void {
     const sc = this.route.snapshot.data['standaloneCreate'];
     if (!isStandaloneDictionaryCreateKey(sc)) {
@@ -1482,6 +1516,7 @@ export class DictionariesPage implements OnDestroy {
       clients: () => this.initClientsStandaloneCreate(),
       roles: () => this.initRolesStandaloneCreate(),
       users: () => this.initUsersStandaloneCreate(),
+      kpPhotos: () => this.initKpPhotosStandaloneCreate(),
     };
     inits[sc]();
   }
@@ -1975,6 +2010,113 @@ export class DictionariesPage implements OnDestroy {
     this.unitsForm.disable({ emitEvent: false });
     this.isUnitsViewMode.set(true);
     this.isUnitsModalOpen.set(true);
+  }
+
+  openKpPhotosCreate(): void {
+    if (!this.permissions.crud().canCreate) return;
+    this.navigateToStandaloneDictionaryCreate('kpPhotos');
+  }
+
+  openKpPhotosEdit(id: string): void {
+    if (!this.permissions.crud().canEdit) return;
+    this.isKpPhotosViewMode.set(false);
+    this.kpPhotosForm.enable({ emitEvent: false });
+    const item = this.kpPhotosStore.items().find((x) => x.id === id);
+    if (!item) return;
+    this.kpPhotosStore.startEdit(item.id);
+    this.kpPhotosForm.reset({
+      name: item.name ?? '',
+      organizationId: item.organizationId ?? '',
+      photoTitle: item.photoTitle ?? '',
+      photoUrl: item.photoUrl ?? '',
+      isActive: item.isActive,
+    });
+    this.isKpPhotosModalOpen.set(true);
+  }
+
+  closeKpPhotosModal(): void {
+    this.kpPhotosStore.resetForm();
+    this.isKpPhotosViewMode.set(false);
+    this.isKpPhotosModalOpen.set(false);
+  }
+
+  submitKpPhotos(): void {
+    const payload = this.buildKpPhotosPayload();
+    if (this.kpPhotosForm.invalid) {
+      this.kpPhotosStore.submit({ value: payload, isValid: false });
+      this.kpPhotosForm.markAllAsTouched();
+      scrollToFirstInvalidControlInForm('kp-photos-form', this.doc);
+      return;
+    }
+    this.kpPhotosStore.submit({ value: payload, isValid: true });
+    this.closeKpPhotosModal();
+    this.finishStandaloneDictionaryCreateIfMatch('kpPhotos');
+  }
+
+  deleteKpPhoto(id: string): void {
+    if (!this.permissions.crud().canDelete) return;
+    this.kpPhotosStore.delete(id);
+  }
+
+  duplicateKpPhoto(id: string): void {
+    if (!this.permissions.can('crud.duplicate')) return;
+    const item = this.kpPhotosStore.items().find((x) => x.id === id);
+    if (!item) return;
+    this.isKpPhotosViewMode.set(false);
+    this.kpPhotosForm.enable({ emitEvent: false });
+    this.kpPhotosStore.startCreate();
+    this.kpPhotosForm.reset({
+      name: item.name ? `${item.name} (копия)` : '',
+      organizationId: item.organizationId ?? '',
+      photoTitle: item.photoTitle ?? '',
+      photoUrl: item.photoUrl ?? '',
+      isActive: item.isActive,
+    });
+    this.isKpPhotosModalOpen.set(true);
+  }
+
+  openKpPhotosView(id: string): void {
+    const item = this.kpPhotosStore.items().find((x) => x.id === id);
+    if (!item) return;
+    this.kpPhotosStore.resetForm();
+    this.kpPhotosForm.reset({
+      name: item.name ?? '',
+      organizationId: item.organizationId ?? '',
+      photoTitle: item.photoTitle ?? '',
+      photoUrl: item.photoUrl ?? '',
+      isActive: item.isActive,
+    });
+    this.kpPhotosForm.disable({ emitEvent: false });
+    this.isKpPhotosViewMode.set(true);
+    this.isKpPhotosModalOpen.set(true);
+  }
+
+  /** Подпись организации в просмотре записи «Фото для КП». */
+  kpPhotoOrganizationLabel(): string {
+    const id = this.kpPhotosForm.controls.organizationId.value?.trim() ?? '';
+    if (!id) return '—';
+    return this.organizationsStore.options().find((o) => o.id === id)?.label ?? '—';
+  }
+
+  onKpPhotoFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file || !file.type.startsWith('image/')) {
+      return;
+    }
+    const maxBytes = 1.5 * 1024 * 1024;
+    if (file.size > maxBytes) {
+      window.alert('Файл слишком большой. Максимум 1,5 МБ.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const url = typeof reader.result === 'string' ? reader.result : '';
+      this.kpPhotosForm.controls.photoUrl.setValue(url);
+      this.kpPhotosForm.controls.photoUrl.markAsDirty();
+    };
+    reader.readAsDataURL(file);
   }
 
   openRolesCreate(): void {
@@ -4426,6 +4568,14 @@ export class DictionariesPage implements OnDestroy {
     );
   }
 
+  isKpPhotosInvalid(controlName: keyof typeof this.kpPhotosForm.controls): boolean {
+    const control = this.kpPhotosForm.controls[controlName];
+    return (
+      control.invalid &&
+      (control.touched || control.dirty || this.kpPhotosStore.formSubmitAttempted())
+    );
+  }
+
   isColorsInvalid(controlName: keyof typeof this.colorsForm.controls): boolean {
     const control = this.colorsForm.controls[controlName];
     return (
@@ -4624,6 +4774,17 @@ export class DictionariesPage implements OnDestroy {
       name: c.name.value,
       code: c.code.value,
       notes: c.notes.value,
+      isActive: c.isActive.value,
+    });
+  }
+
+  private buildKpPhotosPayload() {
+    const c = this.kpPhotosForm.controls;
+    return kpPhotosPayloadFromValues({
+      name: c.name.value,
+      organizationId: c.organizationId.value,
+      photoTitle: c.photoTitle.value,
+      photoUrl: c.photoUrl.value,
       isActive: c.isActive.value,
     });
   }

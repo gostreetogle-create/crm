@@ -17,6 +17,7 @@ import {
   CoatingsStore,
   ColorsStore,
   GeometriesStore,
+  KpPhotosStore,
   MaterialCharacteristicsStore,
   MaterialsStore,
   OrganizationsStore,
@@ -57,6 +58,11 @@ import {
   SurfaceFinishesHttpRepository,
   SurfaceFinishesMockRepository,
 } from '@srm/surface-finishes-data-access';
+import {
+  KP_PHOTOS_REPOSITORY,
+  KpPhotosHttpRepository,
+  KpPhotosMockRepository,
+} from '@srm/kp-photos-data-access';
 import {
   UNITS_REPOSITORY,
   UnitsHttpRepository,
@@ -176,6 +182,15 @@ export const DICTIONARIES_ROUTE_PROVIDERS: Provider[] = [
       httpRepo: OrganizationsHttpRepository,
     ) => selectRepository({ apiConfig, mockRepo, httpRepo }),
     deps: [API_CONFIG, OrganizationsMockRepository, OrganizationsHttpRepository],
+  },
+  KpPhotosMockRepository,
+  KpPhotosHttpRepository,
+  KpPhotosStore,
+  {
+    provide: KP_PHOTOS_REPOSITORY,
+    useFactory: (apiConfig: ApiConfig, mockRepo: KpPhotosMockRepository, httpRepo: KpPhotosHttpRepository) =>
+      selectRepository({ apiConfig, mockRepo, httpRepo }),
+    deps: [API_CONFIG, KpPhotosMockRepository, KpPhotosHttpRepository],
   },
 ];
 

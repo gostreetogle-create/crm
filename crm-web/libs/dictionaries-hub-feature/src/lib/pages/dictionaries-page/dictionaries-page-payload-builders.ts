@@ -128,6 +128,22 @@ export function unitsPayloadFromValues(v: {
   };
 }
 
+export function kpPhotosPayloadFromValues(v: {
+  name: string;
+  organizationId: string;
+  photoTitle: string;
+  photoUrl: string;
+  isActive: boolean;
+}) {
+  return {
+    name: v.name.trim(),
+    organizationId: v.organizationId.trim(),
+    photoTitle: v.photoTitle.trim(),
+    photoUrl: v.photoUrl.trim(),
+    isActive: v.isActive,
+  };
+}
+
 export function colorsPayloadFromFormRaw(value: {
   ralCode: string;
   name: string;
