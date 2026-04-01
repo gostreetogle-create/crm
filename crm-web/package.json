@@ -20,6 +20,7 @@
     "@angular/platform-browser": "~21.2.0",
     "@angular/platform-browser-dynamic": "~21.2.0",
     "@angular/router": "~21.2.0",
+    "@fontsource/montserrat": "^5.2.5",
     "@lucide/angular": "^1.7.0",
     "@ngrx/signals": "^21.1.0",
     "rxjs": "~7.8.0",

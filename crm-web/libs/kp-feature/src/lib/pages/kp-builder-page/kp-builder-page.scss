@@ -1,0 +1,324 @@
+.kp-builder {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+
+.kp-builder__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.kp-builder__page-title {
+  margin: 0;
+  font-size: var(--font-size-page-title, 1.5rem);
+  font-weight: 700;
+}
+
+.kp-builder__btn-with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* Позиции — только в правой колонке */
+.kp-builder__positions {
+  flex: 0 0 auto;
+  min-width: 0;
+  width: 100%;
+}
+
+.kp-builder__positions-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  margin-bottom: 0.65rem;
+}
+
+.kp-builder__positions-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.kp-builder__positions-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.kp-builder__rows-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-right: 0.25rem;
+  font-size: var(--font-size-small, 12px);
+  color: var(--text-muted);
+}
+
+.kp-builder__rows-inline-label {
+  white-space: nowrap;
+}
+
+.kp-builder__rows-inline-input {
+  width: 3rem;
+  padding: 0.25rem 0.4rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-elevated, var(--bg-base));
+  color: var(--text-primary);
+  font-size: inherit;
+  text-align: center;
+}
+
+.kp-builder__table-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--bg-elevated, rgba(16, 24, 40, 0.35));
+}
+
+.kp-pos-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.kp-pos-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--bg-elevated, rgba(16, 24, 40, 0.6));
+  backdrop-filter: blur(6px);
+}
+
+.kp-pos-table th {
+  padding: 0.45rem 0.5rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-color);
+  white-space: nowrap;
+}
+
+.kp-pos-table__th-num {
+  width: 2.25rem;
+  text-align: center;
+}
+
+.kp-pos-table__th-narrow {
+  width: 4.5rem;
+}
+
+.kp-pos-table__th-price {
+  width: 6.5rem;
+}
+
+.kp-pos-table__th-actions {
+  width: 2.5rem;
+}
+
+.kp-pos-table__row:nth-child(even) td {
+  background: rgba(16, 24, 40, 0.2);
+}
+
+.kp-pos-table td {
+  padding: 0.2rem 0.35rem;
+  vertical-align: middle;
+  border-bottom: 1px solid rgba(16, 24, 40, 0.35);
+}
+
+.kp-pos-table__num {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.kp-pos-table__input {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding: 0.35rem 0.45rem;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.kp-pos-table__input:hover {
+  border-color: rgba(16, 24, 40, 0.35);
+}
+
+.kp-pos-table__input:focus {
+  outline: none;
+  border-color: var(--accent-color, #3b82f6);
+  background: rgba(16, 24, 40, 0.25);
+}
+
+.kp-pos-table__input--narrow {
+  max-width: 5rem;
+}
+
+.kp-pos-table__input--price {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.kp-pos-table__actions {
+  text-align: center;
+  padding: 0.15rem;
+}
+
+/* Слева товары ~2/3, справа позиции + КП ~1/3 экрана */
+.kp-builder__split {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: stretch;
+  width: 100%;
+}
+
+.kp-builder__catalog {
+  box-sizing: border-box;
+  flex: 1;
+  min-width: 0;
+  min-height: min(12rem, 40vh);
+  display: flex;
+  flex-direction: column;
+  border: 1px dashed var(--border-color);
+  border-radius: 12px;
+  padding: 1rem 1.15rem;
+  background: rgba(16, 24, 40, 0.25);
+}
+
+.kp-builder__column-right {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+  min-height: 0;
+}
+
+.kp-builder__preview-wrap {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  justify-self: stretch;
+  width: 100%;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.kp-builder__preview-hint {
+  flex-shrink: 0;
+  margin: 0 0 0.35rem;
+  font-size: var(--font-size-small, 12px);
+  color: var(--text-muted);
+  text-align: right;
+}
+
+.kp-builder__preview {
+  box-sizing: border-box;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
+  width: 100%;
+  max-width: 100%;
+  margin-left: 0;
+  padding: 3mm;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+  background: linear-gradient(145deg, rgba(16, 24, 40, 0.04), rgba(16, 24, 40, 0.02));
+  box-shadow: 0 2px 12px var(--shadow-color);
+}
+
+.kp-builder__preview-zoom {
+  display: block;
+  flex: 0 0 auto;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  /* Подгонка под ширину контейнера (= колонка «Позиции»); значение с ResizeObserver */
+  zoom: var(--kp-preview-zoom, 0.68);
+}
+
+@media (max-width: 1100px) {
+  .kp-builder__split {
+    grid-template-columns: 1fr;
+  }
+
+  .kp-builder__preview-wrap {
+    flex: 0 1 auto;
+    justify-self: center;
+    width: 100%;
+    max-width: min(480px, 100%);
+  }
+
+  .kp-builder__preview {
+    flex: 0 1 auto;
+    min-height: min(45vh, 420px);
+    max-height: min(72vh, 760px);
+  }
+}
+
+@media print {
+  .kp-no-print {
+    display: none !important;
+  }
+
+  .kp-builder {
+    gap: 0;
+  }
+
+  .kp-builder__preview {
+    flex: none;
+    overflow: visible;
+    max-height: none;
+    max-width: none;
+    width: auto;
+    min-height: 0;
+    margin-left: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .kp-builder__preview-zoom {
+    zoom: 1 !important;
+    transform: none;
+    width: auto;
+    max-width: none;
+  }
+
+  .kp-builder__preview-wrap {
+    justify-self: stretch;
+    width: auto;
+    max-width: none;
+  }
+
+  .kp-builder__split {
+    display: block;
+  }
+}

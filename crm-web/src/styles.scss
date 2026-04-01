@@ -133,3 +133,28 @@ body {
 *::after {
   box-sizing: border-box;
 }
+
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  app-root {
+    display: block;
+  }
+
+  app-app-header {
+    display: none !important;
+  }
+
+  main.appMain {
+    padding: 0 !important;
+  }
+}

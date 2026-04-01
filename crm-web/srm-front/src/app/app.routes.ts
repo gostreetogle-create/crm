@@ -51,6 +51,12 @@ export const appRoutes: Route[] = [
     loadComponent: () => import('@srm/ui-demo-feature').then((m) => m.UiDemoPage),
   },
   {
+    path: 'коммерческое',
+    canActivate: [authGuard, permissionGuard],
+    data: { permission: 'page.commercialProposal' },
+    loadComponent: () => import('@srm/kp-feature').then((m) => m.KpBuilderPage),
+  },
+  {
     path: 'preferences',
     canActivate: [authGuard, permissionGuard],
     data: { permission: 'page.preferences' },

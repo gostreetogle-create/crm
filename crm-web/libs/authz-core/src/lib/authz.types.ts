@@ -5,6 +5,7 @@ export type RoleId = string;
 export type PermissionKey =
   | 'page.dictionaries'
   | 'page.demo'
+  | 'page.commercialProposal'
   | 'page.preferences'
   | 'page.admin.settings'
   | 'dict.hub.materials'

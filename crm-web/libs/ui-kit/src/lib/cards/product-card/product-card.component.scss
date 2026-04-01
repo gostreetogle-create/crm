@@ -1,41 +1,151 @@
+/* Карточка товара: плотная витрина (e-commerce) — компактные отступы и типографика при сохранении градиентов и CTA-зоны. */
 .productCard {
-  background: var(--surface);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-card);
-  padding: var(--ui-card-padding);
-  box-shadow:
-    0 var(--ui-shadow-card-offset-y) var(--ui-shadow-card-blur) var(--shadow-color),
-    0 var(--ui-shadow-card-thin-offset-y) 0 var(--shadow-color);
-}
-
-.productMedia {
-  width: 100%;
-  aspect-ratio: 1 / 1; // квадратная медиа-зона (1:1), как на e-commerce карточках
+  --product-accent: var(--accent);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-width: 0;
+  border-radius: 12px;
   overflow: hidden;
-  border-radius: var(--radius-card);
-  margin-bottom: var(--ui-card-title-margin-bottom);
+  background: linear-gradient(
+    168deg,
+    color-mix(in srgb, var(--product-accent) 6%, var(--surface)) 0%,
+    var(--surface) 40%,
+    color-mix(in srgb, var(--surface-soft) 88%, var(--product-accent) 12%) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--border-color) 78%, var(--product-accent) 22%);
+  box-shadow:
+    0 1px 0 color-mix(in srgb, white 55%, transparent),
+    0 6px 20px color-mix(in srgb, var(--shadow-color) 92%, var(--product-accent) 8%),
+    inset 0 1px 0 color-mix(in srgb, white 35%, transparent);
+  transition:
+    box-shadow 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.28s ease;
 }
 
-.productImage {
+@media (hover: hover) and (pointer: fine) {
+  .productCard:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--border-color) 55%, var(--product-accent) 45%);
+    box-shadow:
+      0 1px 0 color-mix(in srgb, white 60%, transparent),
+      0 12px 32px color-mix(in srgb, var(--shadow-color) 75%, var(--product-accent) 25%),
+      inset 0 1px 0 color-mix(in srgb, white 45%, transparent);
+  }
+
+  .productCard:hover .productCard__image {
+    transform: scale(1.03);
+  }
+}
+
+/* --- Медиа: рамка как у preview-card — глубина, блик, лёгкое затемнение по краям --- */
+.productCard__mediaBlock {
+  position: relative;
+  padding: 8px 8px 0;
+  flex-shrink: 0;
+}
+
+.productCard__mediaFrame {
+  position: relative;
+  /* Чуть ниже «квадрата» — как у типичных товарных превью в каталогах */
+  aspect-ratio: 4 / 5;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--border-color) 55%, transparent);
+  background: linear-gradient(
+    148deg,
+    color-mix(in srgb, var(--product-accent) 22%, #0f172a) 0%,
+    #1e293b 52%,
+    color-mix(in srgb, var(--surface) 8%, #0f172a) 100%
+  );
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, white 12%, transparent),
+    0 3px 12px color-mix(in srgb, #0f172a 35%, transparent);
+}
+
+.productCard__mediaGlow {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: radial-gradient(
+    ellipse 95% 70% at 28% 12%,
+    color-mix(in srgb, white 28%, transparent),
+    transparent 58%
+  );
+  mix-blend-mode: soft-light;
+  pointer-events: none;
+}
+
+.productCard__mediaVignette {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: radial-gradient(ellipse 90% 90% at 50% 50%, transparent 40%, color-mix(in srgb, #0f172a 45%, transparent) 100%);
+  pointer-events: none;
+  opacity: 0.35;
+}
+
+.productCard__image {
+  position: relative;
+  z-index: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover; // визуально ровно, как на топ e-commerce карточках
+  object-fit: cover;
   display: block;
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.productTop {
+/* --- Текстовый блок --- */
+.productCard__body {
+  flex: 1 1 auto;
   display: flex;
-  justify-content: space-between;
-  gap: var(--ui-nav-gap);
-  align-items: center;
-  margin-bottom: var(--ui-space-1);
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 8px 10px 6px;
 }
 
-.productTitle {
+.productCard__metaRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 6px;
+  min-height: 0;
+}
+
+.productCard__category {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1.3;
+  color: var(--text-muted);
+}
+
+.productCard__tag {
+  flex-shrink: 0;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--surface-soft) 88%, var(--product-accent) 12%);
+  border: 1px solid color-mix(in srgb, var(--border-color) 65%, var(--product-accent) 35%);
+  box-shadow: 0 1px 0 color-mix(in srgb, white 40%, transparent);
+}
+
+.productCard__title {
   margin: 0;
-  font-size: var(--font-size-card-title);
-  letter-spacing: -0.01em;
+  font-size: clamp(0.8125rem, 1.9vw, 0.9375rem);
+  font-weight: 700;
   line-height: 1.25;
+  letter-spacing: -0.015em;
+  color: var(--text-primary);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
@@ -43,66 +153,102 @@
   overflow: hidden;
 }
 
-.productSubtitle {
-  color: var(--text-muted);
-  line-height: 1.25;
-  font-size: var(--font-size-small);
-}
-
-.productTag {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 4px var(--ui-input-padding-x);
-  border-radius: var(--radius-pill);
-  border: 1px solid var(--border-color);
-  background: var(--surface-soft);
-  color: var(--text-primary);
-  white-space: nowrap;
-}
-
-.productSkuRow {
+.productCard__skuRow {
   display: flex;
-  justify-content: space-between;
-  gap: var(--ui-nav-gap);
-  align-items: baseline;
-  margin-top: var(--ui-card-title-margin-bottom);
-}
-
-.productSkuLabel {
-  color: var(--text-muted);
-  font-size: var(--font-size-small);
-}
-
-.productSkuValue {
-  font-size: var(--font-size-small);
-}
-
-.productDescription {
-  margin-top: var(--ui-card-title-margin-bottom);
-  color: var(--text-muted);
-}
-
-.productDivider {
-  height: 1px;
-  background: var(--border-color);
-  margin-top: var(--ui-card-title-margin-bottom);
-  margin-bottom: var(--ui-card-title-margin-bottom);
-}
-
-.productFooter {
-  display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: var(--ui-nav-gap);
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 0;
 }
 
-.productPrice {
+.productCard__skuLabel {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.productCard__skuChip {
+  font-size: 0.6875rem;
   font-weight: 700;
-  font-size: var(--font-size-card-title);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  padding: 2px 7px;
+  border-radius: 6px;
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--surface) 90%, var(--product-accent) 10%);
+  border: 1px solid color-mix(in srgb, var(--border-color) 70%, var(--product-accent) 30%);
 }
 
-.productActions {
+.productCard__description {
+  margin: 0;
+  font-size: 0.6875rem;
+  line-height: 1.4;
+  color: var(--text-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* --- Нижняя панель: цена + кнопки (как action-bar премиум-витрины) --- */
+.productCard__footer {
   display: flex;
-  gap: var(--ui-space-10);
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-shrink: 0;
+  margin-top: auto;
+  padding: 8px 10px 10px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--surface-soft) 70%, transparent) 0%,
+    color-mix(in srgb, var(--product-accent) 4%, var(--surface-soft)) 100%
+  );
+  border-top: 1px solid color-mix(in srgb, var(--border-color) 75%, var(--product-accent) 25%);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 50%, transparent);
+}
+
+.productCard__priceWrap {
+  min-width: 0;
+  flex: 1;
+}
+
+.productCard__price {
+  font-size: clamp(0.9375rem, 2.2vw, 1.0625rem);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+  color: var(--text-primary);
+  background: linear-gradient(
+    115deg,
+    var(--text-primary) 0%,
+    color-mix(in srgb, var(--text-primary) 88%, var(--product-accent) 12%) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  /* Fallback if clip unsupported */
+  @supports not (background-clip: text) {
+    color: var(--text-primary);
+  }
+}
+
+.productCard__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.productCard__actions--solo {
+  width: 100%;
+  justify-content: flex-end;
+}
+
+.productCard__actions ::ng-deep app-ui-button {
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--shadow-color) 80%, transparent);
 }

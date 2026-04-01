@@ -1,0 +1,104 @@
+.kp-vitrine {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.kp-vitrine__head {
+  min-width: 0;
+}
+
+.kp-vitrine__title {
+  margin: 0 0 0.35rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.kp-vitrine__lead {
+  margin: 0;
+  font-size: var(--font-size-small, 12px);
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.kp-vitrine__lead code {
+  font-size: 0.92em;
+}
+
+/* Панель: фильтры слева, справа — «На странице» + пагинация (как в макете КП). */
+.kp-vitrine__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 14px;
+  margin-bottom: 0.25rem;
+  min-width: 0;
+}
+
+.kp-vitrine__filtersWrap {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+
+.kp-vitrine__toolbarExtra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px 14px;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.kp-vitrine__pageSize {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.kp-vitrine__pageSizeLabel {
+  font-size: var(--font-size-small, 12px);
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.kp-vitrine__pageSizeSelect {
+  min-width: 3.5rem;
+  min-height: var(--ui-control-min-height);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--text-primary);
+  padding: 0 10px;
+  font-size: var(--font-size-small, 12px);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Убираем отступ «под сеткой» у пагинации в строке тулбара */
+.kp-vitrine__paginationWrap ::ng-deep .pagination {
+  margin-top: 0;
+  justify-content: flex-end;
+}
+
+/* Плотная витрина: как в типичном интернет-магазине — несколько узких карточек в ряд */
+.kp-vitrine__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+@media (max-width: 520px) {
+  .kp-vitrine__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.kp-vitrine__iconWarn {
+  display: inline-flex;
+  color: var(--warn-color, #f59e0b);
+}

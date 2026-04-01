@@ -1,0 +1,75 @@
+<section class="kp-vitrine" aria-label="Карточки товаров, витрина">
+  <header class="kp-vitrine__head">
+    <h2 class="kp-vitrine__title">Карточки товаров (витрина)</h2>
+    <p class="kp-vitrine__lead">
+      Демо-данные; источник замените на таблицу/API через <code>[catalogProducts]</code>.
+    </p>
+  </header>
+
+  <div class="kp-vitrine__toolbar">
+    <div class="kp-vitrine__filtersWrap">
+      <app-filters-bar
+        searchPlaceholder="Поиск по товарам / артикулу..."
+        [sortOptions]="productSortOptions"
+        [filterOptions]="productCategoryOptions()"
+        [selectedSort]="productSort()"
+        [selectedFilter]="productCategory()"
+        (searchChange)="onProductSearch($event)"
+        (sortChange)="onProductSortChange($event)"
+        (filterChange)="onProductCategory($event)"
+      ></app-filters-bar>
+    </div>
+
+    <div class="kp-vitrine__toolbarExtra">
+      <label class="kp-vitrine__pageSize">
+        <span class="kp-vitrine__pageSizeLabel">На странице</span>
+        <select
+          class="kp-vitrine__pageSizeSelect"
+          [value]="productPageSize()"
+          (change)="onProductPageSizeChange($any($event.target).value)"
+          aria-label="Количество карточек на странице"
+        >
+          @for (n of pageSizeOptions; track n) {
+            <option [value]="n">{{ n }}</option>
+          }
+        </select>
+      </label>
+      <div class="kp-vitrine__paginationWrap">
+        <app-ui-pagination
+          [page]="productPage()"
+          [pageCount]="productPageCount()"
+          (pageChange)="onProductPageChange($event)"
+        ></app-ui-pagination>
+      </div>
+    </div>
+  </div>
+
+  <div class="kp-vitrine__grid">
+    @for (p of visibleProducts(); track p.id) {
+      <app-product-card
+        [title]="p.title"
+        [subtitle]="p.category"
+        skuLabel="Артикул"
+        [skuValue]="p.sku"
+        [price]="formatPrice(p.price)"
+        [imageSrc]="imageUrl(p)"
+      >
+        <div product-actions>
+          <app-ui-button type="button" variant="soft" [square]="true" aria-label="В избранное">
+            <span class="kp-vitrine__iconWarn"><svg lucideStar [size]="18"></svg></span>
+          </app-ui-button>
+          <app-ui-button
+            type="button"
+            variant="primary"
+            [square]="true"
+            aria-label="Добавить в коммерческое предложение"
+            title="В КП"
+            (clicked)="onAddToKp(p)"
+          >
+            <svg lucidePlus [size]="18"></svg>
+          </app-ui-button>
+        </div>
+      </app-product-card>
+    }
+  </div>
+</section>

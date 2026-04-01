@@ -16,9 +16,21 @@
   margin: 0 auto;
 }
 
+.page--fluid {
+  max-width: none;
+  width: 100%;
+}
+
 code {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
     'Courier New', monospace;
   font-size: 0.95em;
 }
 
+@media print {
+  :host {
+    min-height: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+  }
+}

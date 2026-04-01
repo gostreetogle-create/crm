@@ -1,0 +1,50 @@
+<div class="kp-stack">
+  @for (chunk of pageChunks(); track chunk.globalStart; let chunkIndex = $index) {
+    <section
+      class="kp-sheet"
+      [class.kp-sheet--continuation]="!chunk.useFirstBackground"
+      [style.background-image]="
+        chunk.useFirstBackground ? 'url(' + bgPage1 + ')' : 'url(' + bgPage2 + ')'
+      "
+    >
+      <div
+        class="kp-sheet__content"
+        [style.padding-top]="chunk.useFirstBackground ? contentPaddingTop : contentPaddingTopPage2"
+      >
+        <section class="kp-sheet__table-wrap">
+          <table class="kp-sheet__table">
+            <thead>
+              <tr>
+                <th class="kp-sheet__col-n">№</th>
+                <th class="kp-sheet__col-name">Наименование</th>
+                <th class="kp-sheet__col-qty">Кол-во</th>
+                <th class="kp-sheet__col-unit">Ед.</th>
+                <th class="kp-sheet__col-price">Цена, ₽</th>
+                <th class="kp-sheet__col-sum">Сумма, ₽</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (line of chunk.lines; track $index) {
+                <tr class="kp-sheet__row">
+                  <td>{{ chunk.globalStart + $index + 1 }}</td>
+                  <td>{{ line.name }}</td>
+                  <td class="kp-sheet__num">{{ line.qty }}</td>
+                  <td>{{ line.unit }}</td>
+                  <td class="kp-sheet__num">{{ line.price }}</td>
+                  <td class="kp-sheet__num">{{ lineSum(line) | number: '1.2-2' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+
+          @if (showTotalOnChunk(chunkIndex)) {
+            <div class="kp-sheet__total">
+              <span>Итого:</span>
+              <span>{{ computedTotal() | number: '1.2-2' }} ₽</span>
+            </div>
+          }
+        </section>
+      </div>
+    </section>
+  }
+</div>

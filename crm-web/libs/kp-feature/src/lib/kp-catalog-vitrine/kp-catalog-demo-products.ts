@@ -1,0 +1,77 @@
+import type { KpCatalogProduct } from './kp-catalog-product.model';
+
+/** Демо-ассортимент. Замените на загрузку из API / store. */
+export const KP_CATALOG_DEMO_PRODUCTS: readonly KpCatalogProduct[] = [
+  {
+    id: 'p-1501',
+    category: 'Уличные тренажёры «STREET IRON»',
+    title: 'Уличный тренажёр — Подтягивание «STREET IRON»',
+    sku: 'УТ1501',
+    price: 125_000,
+    imageSeed: 'ut1501',
+  },
+  {
+    id: 'p-1502',
+    category: 'Уличные тренажёры «STREET IRON»',
+    title: 'Уличный тренажёр — Жим от плеч «STREET IRON»',
+    sku: 'УТ1502',
+    price: 125_000,
+    imageSeed: 'ut1502',
+  },
+  {
+    id: 'p-1503',
+    category: 'Уличные тренажёры «STREET IRON»',
+    title: 'Уличный тренажёр — Тяга на себя «STREET IRON»',
+    sku: 'УТ1503',
+    price: 120_000,
+    imageSeed: 'ut1503',
+  },
+  {
+    id: 'p-1504',
+    category: 'Уличные тренажёры «STREET IRON»',
+    title: 'Уличный тренажёр — Брусья/жим «STREET IRON»',
+    sku: 'УТ1504',
+    price: 119_000,
+    imageSeed: 'ut1504',
+  },
+  {
+    id: 'p-1601',
+    category: 'Уличные тренажёры «STREET IRON»',
+    title: 'Уличный тренажёр — Гиперэкстензия «STREET IRON»',
+    sku: 'УТ1601',
+    price: 132_000,
+    imageSeed: 'ut1601',
+  },
+  {
+    id: 'p-1602',
+    category: 'Уличные тренажёры «STREET IRON»',
+    title: 'Уличный тренажёр — Гребная тяга «STREET IRON»',
+    sku: 'УТ1602',
+    price: 128_000,
+    imageSeed: 'ut1602',
+  },
+  {
+    id: 'p-1701',
+    category: 'Уличные тренажёры «STREET IRON»',
+    title: 'Уличный тренажёр — Присед «STREET IRON»',
+    sku: 'УТ1701',
+    price: 109_000,
+    imageSeed: 'ut1701',
+  },
+  {
+    id: 'p-1702',
+    category: 'Уличные тренажёры «STREET IRON»',
+    title: 'Уличный тренажёр — Жим ногами «STREET IRON»',
+    sku: 'УТ1702',
+    price: 141_000,
+    imageSeed: 'ut1702',
+  },
+  {
+    id: 'p-1801',
+    category: 'Уличные тренажёры «STREET IRON»',
+    title: 'Уличный тренажёр — Степпер «STREET IRON»',
+    sku: 'УТ1801',
+    price: 98_000,
+    imageSeed: 'ut1801',
+  },
+];

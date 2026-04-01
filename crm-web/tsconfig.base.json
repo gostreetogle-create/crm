@@ -98,7 +98,9 @@
       "@crm-web/settings-feature": ["libs/settings-feature/src/index.ts"],
       "@srm/settings-feature": ["libs/settings-feature/src/index.ts"],
       "@crm-web/ui-demo-feature": ["libs/ui-demo-feature/src/index.ts"],
-      "@srm/ui-demo-feature": ["libs/ui-demo-feature/src/index.ts"]
+      "@srm/ui-demo-feature": ["libs/ui-demo-feature/src/index.ts"],
+      "@crm-web/kp-feature": ["libs/kp-feature/src/index.ts"],
+      "@srm/kp-feature": ["libs/kp-feature/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

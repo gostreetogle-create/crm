@@ -1,0 +1,158 @@
+/* Лист строго A4 — фон PNG не растягивается по вертикали; лишние строки — следующий лист */
+.kp-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+}
+
+.kp-sheet {
+  position: relative;
+  box-sizing: border-box;
+  width: 210mm;
+  height: 297mm;
+  min-height: 297mm;
+  max-height: 297mm;
+  margin: 0 auto;
+  overflow: hidden;
+  background-color: #fff;
+  background-repeat: no-repeat;
+  background-position: center top;
+  background-size: 100% 100%;
+  color: #101828;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 10.5pt;
+  line-height: 1.45;
+}
+
+.kp-sheet--continuation {
+  break-before: page;
+  page-break-before: always;
+}
+
+.kp-sheet__content {
+  position: relative;
+  z-index: 1;
+  box-sizing: border-box;
+  height: 100%;
+  max-height: 100%;
+  overflow: auto;
+  padding-left: 14mm;
+  padding-right: 14mm;
+  padding-bottom: 10mm;
+}
+
+.kp-sheet__table-wrap {
+  margin-top: 0;
+}
+
+.kp-sheet__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 9.5pt;
+}
+
+.kp-sheet__table thead {
+  display: table-header-group;
+}
+
+.kp-sheet__table th,
+.kp-sheet__table td {
+  border: none;
+  border-bottom: 1px solid rgba(16, 24, 40, 0.14);
+  padding: 8px 10px 8px 0;
+  vertical-align: top;
+}
+
+.kp-sheet__table th {
+  font-weight: 600;
+  text-align: left;
+  border-bottom: 1px solid rgba(16, 24, 40, 0.22);
+}
+
+.kp-sheet__col-n {
+  width: 32px;
+  text-align: center;
+}
+
+.kp-sheet__col-qty {
+  width: 64px;
+  text-align: right;
+}
+
+.kp-sheet__col-unit {
+  width: 48px;
+}
+
+.kp-sheet__col-price,
+.kp-sheet__col-sum {
+  width: 88px;
+  text-align: right;
+}
+
+.kp-sheet__num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.kp-sheet__row {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.kp-sheet__total {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 12px;
+  font-size: 11pt;
+  font-weight: 600;
+}
+
+@page {
+  size: A4;
+  margin: 0;
+}
+
+@media print {
+  .kp-stack {
+    gap: 0;
+  }
+
+  .kp-sheet {
+    width: 210mm;
+    height: 297mm;
+    min-height: 297mm;
+    max-height: 297mm;
+    margin: 0;
+    overflow: hidden;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+    page-break-after: always;
+    break-after: page;
+  }
+
+  .kp-sheet:last-child {
+    page-break-after: auto;
+    break-after: auto;
+  }
+
+  .kp-sheet--continuation {
+    break-before: page;
+    page-break-before: always;
+  }
+
+  .kp-sheet__content {
+    overflow: visible;
+  }
+
+  .kp-sheet__table thead {
+    display: table-header-group;
+  }
+
+  .kp-sheet__row {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}

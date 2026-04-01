@@ -1,40 +1,47 @@
 <section class="productCard">
-  <div class="productMedia" *ngIf="imageSrc">
-    <img
-      class="productImage"
-      [src]="imageSrc!"
-      [alt]="imageAlt || title"
-    />
-  </div>
-
-  <!-- Future: allow custom media block (e.g., thumbnails gallery, icon, etc.) -->
-  <ng-content select="[product-media]"></ng-content>
-
-  <div class="productTop">
-    <div class="productSubtitle" *ngIf="subtitle">{{ subtitle }}</div>
-    <span class="productTag" *ngIf="tag">{{ tag }}</span>
-  </div>
-
-  <h3 class="productTitle">{{ title }}</h3>
-
-  <div class="productSkuRow" *ngIf="skuLabel || skuValue">
-    <div class="productSkuLabel">{{ skuLabel || 'Артикул' }}</div>
-    <div class="productSkuValue">{{ skuValue }}</div>
-  </div>
-
-  <!-- Future: extra meta blocks (e.g., specs, availability, counts) -->
-  <ng-content select="[product-extra]"></ng-content>
-
-  <div class="productDescription" *ngIf="description">{{ description }}</div>
-
-  <ng-content></ng-content>
-
-  <div class="productDivider" aria-hidden="true"></div>
-
-  <div class="productFooter">
-    <div class="productPrice" *ngIf="price">{{ price }}</div>
-    <div class="productActions">
-      <ng-content select="[product-actions]"></ng-content>
+  <div class="productCard__mediaBlock" *ngIf="imageSrc">
+    <div class="productCard__mediaFrame">
+      <div class="productCard__mediaGlow" aria-hidden="true"></div>
+      <div class="productCard__mediaVignette" aria-hidden="true"></div>
+      <img
+        class="productCard__image"
+        [src]="imageSrc!"
+        [alt]="imageAlt || title"
+      />
     </div>
   </div>
+
+  <ng-content select="[product-media]"></ng-content>
+
+  <div class="productCard__body">
+    <div class="productCard__metaRow" *ngIf="subtitle || tag">
+      <div class="productCard__category" *ngIf="subtitle">{{ subtitle }}</div>
+      <span class="productCard__tag" *ngIf="tag">{{ tag }}</span>
+    </div>
+
+    <h3 class="productCard__title">{{ title }}</h3>
+
+    <div class="productCard__skuRow" *ngIf="skuLabel || skuValue">
+      <span class="productCard__skuLabel">{{ skuLabel || 'Артикул' }}</span>
+      <span class="productCard__skuChip" *ngIf="skuValue">{{ skuValue }}</span>
+    </div>
+
+    <ng-content select="[product-extra]"></ng-content>
+
+    <div class="productCard__description" *ngIf="description">{{ description }}</div>
+
+    <ng-content></ng-content>
+  </div>
+
+  <footer class="productCard__footer">
+    <div class="productCard__priceWrap" *ngIf="price">
+      <span class="productCard__price">{{ price }}</span>
+    </div>
+    <div
+      class="productCard__actions"
+      [class.productCard__actions--solo]="!price"
+    >
+      <ng-content select="[product-actions]"></ng-content>
+    </div>
+  </footer>
 </section>

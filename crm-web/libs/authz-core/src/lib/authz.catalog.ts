@@ -11,6 +11,7 @@ export const PERMISSION_CATALOG: Record<
 > = {
   'page.dictionaries': { labelRu: 'Раздел «Справочники»', group: 'page' },
   'page.demo': { labelRu: 'Раздел «Demo»', group: 'page' },
+  'page.commercialProposal': { labelRu: 'Раздел «Коммерческое предложение»', group: 'page' },
   'page.preferences': { labelRu: 'Раздел «Настройки»', group: 'page' },
   'page.admin.settings': { labelRu: 'Раздел «Админ-настройки»', group: 'page' },
   'dict.hub.materials': { labelRu: 'Плитка «Материалы»', group: 'dict' },
@@ -38,6 +39,7 @@ export const PERMISSION_CATALOG: Record<
 export const PERMISSION_KEYS_ORDERED: readonly PermissionKey[] = [
   'page.dictionaries',
   'page.demo',
+  'page.commercialProposal',
   'page.preferences',
   'page.admin.settings',
   ...DICTIONARY_HUB_PERMISSION_KEYS,
