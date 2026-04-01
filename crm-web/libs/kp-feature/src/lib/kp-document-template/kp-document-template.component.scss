@@ -91,6 +91,55 @@
   text-align: right;
 }
 
+.kp-sheet__col-actions {
+  width: 40px;
+  padding: 4px 0 4px 4px !important;
+  vertical-align: middle;
+  text-align: center;
+}
+
+.kp-sheet__col-num-cell {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.kp-sheet__actions {
+  padding: 2px 0 2px 4px !important;
+  vertical-align: middle;
+}
+
+.kp-sheet__cell-input {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 2px 4px;
+  border: 1px solid rgba(16, 24, 40, 0.2);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.92);
+  color: inherit;
+  font: inherit;
+  line-height: 1.35;
+}
+
+.kp-sheet__cell-input:focus {
+  outline: 2px solid rgba(59, 130, 246, 0.45);
+  outline-offset: 0;
+}
+
+.kp-sheet__cell-input--name {
+  min-width: 120px;
+}
+
+.kp-sheet__cell-input--unit {
+  min-width: 2.5rem;
+}
+
+.kp-sheet__cell-input--num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
 .kp-sheet__num {
   text-align: right;
   white-space: nowrap;
@@ -154,5 +203,23 @@
   .kp-sheet__row {
     break-inside: avoid;
     page-break-inside: avoid;
+  }
+
+  /* Кнопки и служебная колонка не попадают в PDF */
+  .kp-no-print {
+    display: none !important;
+  }
+
+  /* Поля ввода в печати выглядят как обычный текст */
+  .kp-sheet__cell-input {
+    border: none !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    padding: 0 !important;
+    outline: none !important;
+    box-shadow: none !important;
+    color: inherit !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 }

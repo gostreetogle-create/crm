@@ -12,8 +12,8 @@ import { FormArray, FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { PageShellComponent, UiButtonComponent } from '@srm/ui-kit';
 import { KpCatalogVitrineComponent } from '../../kp-catalog-vitrine/kp-catalog-vitrine.component';
 import type { KpCatalogProduct } from '../../kp-catalog-vitrine/kp-catalog-product.model';
-import { KpDocumentTemplateComponent, type KpLineItem } from '../../kp-document-template/kp-document-template.component';
-import { LucidePlus, LucidePrinter, LucideTrash2 } from '@lucide/angular';
+import { KpDocumentTemplateComponent } from '../../kp-document-template/kp-document-template.component';
+import { LucidePlus, LucidePrinter } from '@lucide/angular';
 
 @Component({
   selector: 'app-kp-builder-page',
@@ -26,7 +26,6 @@ import { LucidePlus, LucidePrinter, LucideTrash2 } from '@lucide/angular';
     KpDocumentTemplateComponent,
     LucidePlus,
     LucidePrinter,
-    LucideTrash2,
   ],
   templateUrl: './kp-builder-page.html',
   styleUrl: './kp-builder-page.scss',
@@ -40,7 +39,7 @@ export class KpBuilderPage implements AfterViewInit, OnDestroy {
   private resizeObserver?: ResizeObserver;
 
   /**
-   * Масштаб миниатюры КП под ширину контейнера (как у таблицы «Позиции» справа).
+   * Масштаб миниатюры КП под ширину колонки превью.
    * Лист A4 в шаблоне — 210mm; zoom = доступная ширина / 210mm.
    */
   readonly previewZoom = signal(0.68);
@@ -116,10 +115,6 @@ export class KpBuilderPage implements AfterViewInit, OnDestroy {
     return this.form.controls.lines;
   }
 
-  lineItemsValue(): KpLineItem[] {
-    return this.lines().getRawValue() as KpLineItem[];
-  }
-
   rowsPerPageNumber(): number {
     const v = this.form.controls.rowsPerPage.value?.trim();
     const n = v ? parseInt(v, 10) : 12;
@@ -129,15 +124,6 @@ export class KpBuilderPage implements AfterViewInit, OnDestroy {
   /** Новая строка с типовыми значениями для быстрого ввода. */
   addLine(): void {
     this.lines().push(this.lineGroup('', '1', 'шт.', '0'));
-  }
-
-  /** Полностью пустая строка под ручное заполнение или будущий импорт из каталога. */
-  addEmptyLine(): void {
-    this.lines().push(this.lineGroup('', '', '', ''));
-  }
-
-  removeLine(index: number): void {
-    this.lines().removeAt(index);
   }
 
   /** Добавить позицию из витрины в таблицу КП и в PDF. */

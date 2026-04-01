@@ -1,90 +1,38 @@
 <app-page-shell [fluid]="true">
   <div class="kp-builder">
-    <header class="kp-builder__toolbar kp-no-print">
-      <h1 class="kp-builder__page-title">Формирование коммерческого предложения</h1>
-      <app-ui-button type="button" variant="primary" (clicked)="print()">
-        <span class="kp-builder__btn-with-icon">
-          <svg lucidePrinter [size]="18" aria-hidden="true"></svg>
-          Печать / PDF
-        </span>
-      </app-ui-button>
-    </header>
-
     <div class="kp-builder__split">
       <aside class="kp-builder__catalog kp-no-print" aria-label="Карточки товаров, витрина">
         <app-kp-catalog-vitrine (addToKp)="addFromVitrine($event)" />
       </aside>
 
       <div class="kp-builder__column-right">
-        <!-- Позиции КП справа: компактная таблица; те же данные уходят в PDF -->
-        <section class="kp-builder__positions kp-no-print" aria-label="Позиции коммерческого предложения" [formGroup]="form">
-          <div class="kp-builder__positions-head">
-            <h2 class="kp-builder__positions-title">Позиции</h2>
-            <div class="kp-builder__positions-actions">
-              <label class="kp-builder__rows-inline">
-                <span class="kp-builder__rows-inline-label">Строк на листе</span>
-                <input type="text" formControlName="rowsPerPage" inputmode="numeric" class="kp-builder__rows-inline-input" />
-              </label>
-              <app-ui-button type="button" variant="soft" (clicked)="addLine()">
-                <span class="kp-builder__btn-with-icon">
-                  <svg lucidePlus [size]="18" aria-hidden="true"></svg>
-                  Добавить строку
-                </span>
-              </app-ui-button>
-              <app-ui-button type="button" variant="soft" (clicked)="addEmptyLine()">
-                Пустая строка
-              </app-ui-button>
-            </div>
+        <div
+          class="kp-builder__sheet-toolbar kp-no-print"
+          [formGroup]="form"
+          aria-label="Параметры листа и позиции КП"
+        >
+          <h2 class="kp-builder__positions-title">Позиции</h2>
+          <div class="kp-builder__positions-actions">
+            <label class="kp-builder__rows-inline">
+              <span class="kp-builder__rows-inline-label">Строк на листе</span>
+              <input type="text" formControlName="rowsPerPage" inputmode="numeric" class="kp-builder__rows-inline-input" />
+            </label>
+            <app-ui-button type="button" variant="soft" (clicked)="addLine()">
+              <span class="kp-builder__btn-with-icon">
+                <svg lucidePlus [size]="18" aria-hidden="true"></svg>
+                Добавить строку
+              </span>
+            </app-ui-button>
+            <app-ui-button type="button" variant="primary" (clicked)="print()">
+              <span class="kp-builder__btn-with-icon">
+                <svg lucidePrinter [size]="18" aria-hidden="true"></svg>
+                Печать / PDF
+              </span>
+            </app-ui-button>
           </div>
+        </div>
 
-          <div class="kp-builder__table-scroll">
-            <table class="kp-pos-table">
-              <thead>
-                <tr>
-                  <th class="kp-pos-table__th-num" scope="col">№</th>
-                  <th scope="col">Наименование</th>
-                  <th class="kp-pos-table__th-narrow" scope="col">Кол-во</th>
-                  <th class="kp-pos-table__th-narrow" scope="col">Ед.</th>
-                  <th class="kp-pos-table__th-price" scope="col">Цена, ₽</th>
-                  <th class="kp-pos-table__th-actions" scope="col"></th>
-                </tr>
-              </thead>
-              <tbody formArrayName="lines">
-                @for (ctrl of lines().controls; track $index) {
-                  <tr class="kp-pos-table__row" [formGroupName]="$index">
-                    <td class="kp-pos-table__num">{{ $index + 1 }}</td>
-                    <td>
-                      <input type="text" formControlName="name" class="kp-pos-table__input" placeholder="—" aria-label="Наименование" />
-                    </td>
-                    <td>
-                      <input type="text" formControlName="qty" class="kp-pos-table__input kp-pos-table__input--narrow" inputmode="decimal" aria-label="Количество" />
-                    </td>
-                    <td>
-                      <input type="text" formControlName="unit" class="kp-pos-table__input kp-pos-table__input--narrow" aria-label="Единица" />
-                    </td>
-                    <td>
-                      <input type="text" formControlName="price" class="kp-pos-table__input kp-pos-table__input--price" inputmode="decimal" aria-label="Цена" />
-                    </td>
-                    <td class="kp-pos-table__actions">
-                      <app-ui-button
-                        type="button"
-                        variant="soft"
-                        [square]="true"
-                        title="Удалить строку"
-                        ariaLabel="Удалить строку"
-                        (clicked)="removeLine($index)"
-                      >
-                        <svg lucideTrash2 [size]="16" aria-hidden="true"></svg>
-                      </app-ui-button>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        <section class="kp-builder__preview-wrap" aria-label="Предпросмотр">
+        <section class="kp-builder__preview-wrap" aria-label="Предпросмотр коммерческого предложения">
           <p class="kp-builder__preview-hint kp-no-print">
             Каждый блок — ровно A4. Печать: отключите колонтитулы в диалоге браузера.
           </p>
@@ -95,7 +43,7 @@
           >
             <div class="kp-builder__preview-zoom">
               <app-kp-document-template
-                [lineItems]="lineItemsValue()"
+                [linesForm]="lines()"
                 [contentPaddingTop]="contentPaddingTop"
                 [contentPaddingTopPage2]="contentPaddingTopPage2"
                 [rowsPerPage]="rowsPerPageNumber()"

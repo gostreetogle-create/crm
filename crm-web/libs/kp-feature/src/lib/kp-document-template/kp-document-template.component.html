@@ -21,17 +21,61 @@
                 <th class="kp-sheet__col-unit">Ед.</th>
                 <th class="kp-sheet__col-price">Цена, ₽</th>
                 <th class="kp-sheet__col-sum">Сумма, ₽</th>
+                <th class="kp-sheet__col-actions kp-no-print" scope="col" aria-hidden="true"></th>
               </tr>
             </thead>
             <tbody>
-              @for (line of chunk.lines; track $index) {
-                <tr class="kp-sheet__row">
-                  <td>{{ chunk.globalStart + $index + 1 }}</td>
-                  <td>{{ line.name }}</td>
-                  <td class="kp-sheet__num">{{ line.qty }}</td>
-                  <td>{{ line.unit }}</td>
-                  <td class="kp-sheet__num">{{ line.price }}</td>
-                  <td class="kp-sheet__num">{{ lineSum(line) | number: '1.2-2' }}</td>
+              @for (rowRef of rowRefsForChunk(chunk); track rowRef.idx) {
+                @let globalIdx = rowRef.idx;
+                <tr class="kp-sheet__row" [formGroup]="lineGroupAt(globalIdx)">
+                  <td class="kp-sheet__col-num-cell">{{ globalIdx + 1 }}</td>
+                  <td>
+                    <input
+                      type="text"
+                      formControlName="name"
+                      class="kp-sheet__cell-input kp-sheet__cell-input--name"
+                      aria-label="Наименование"
+                    />
+                  </td>
+                  <td class="kp-sheet__num">
+                    <input
+                      type="text"
+                      formControlName="qty"
+                      class="kp-sheet__cell-input kp-sheet__cell-input--num"
+                      inputmode="decimal"
+                      aria-label="Количество"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="text"
+                      formControlName="unit"
+                      class="kp-sheet__cell-input kp-sheet__cell-input--unit"
+                      aria-label="Единица"
+                    />
+                  </td>
+                  <td class="kp-sheet__num">
+                    <input
+                      type="text"
+                      formControlName="price"
+                      class="kp-sheet__cell-input kp-sheet__cell-input--num"
+                      inputmode="decimal"
+                      aria-label="Цена"
+                    />
+                  </td>
+                  <td class="kp-sheet__num">{{ lineSumAt(globalIdx) | number: '1.2-2' }}</td>
+                  <td class="kp-sheet__actions kp-no-print">
+                    <app-ui-button
+                      type="button"
+                      variant="soft"
+                      [square]="true"
+                      title="Удалить строку"
+                      ariaLabel="Удалить строку"
+                      (clicked)="removeLineAt(globalIdx)"
+                    >
+                      <svg lucideTrash2 [size]="16" aria-hidden="true"></svg>
+                    </app-ui-button>
+                  </td>
                 </tr>
               }
             </tbody>

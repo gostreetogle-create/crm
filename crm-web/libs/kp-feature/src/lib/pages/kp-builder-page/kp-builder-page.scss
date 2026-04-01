@@ -8,40 +8,21 @@
   margin: 0;
 }
 
-.kp-builder__toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.kp-builder__page-title {
-  margin: 0;
-  font-size: var(--font-size-page-title, 1.5rem);
-  font-weight: 700;
-}
-
 .kp-builder__btn-with-icon {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
 }
 
-/* Позиции — только в правой колонке */
-.kp-builder__positions {
-  flex: 0 0 auto;
-  min-width: 0;
-  width: 100%;
-}
-
-.kp-builder__positions-head {
+/* Тулбар над превью КП: строк на листе, добавить, печать */
+.kp-builder__sheet-toolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem 1rem;
-  margin-bottom: 0.65rem;
+  margin-bottom: 0.35rem;
+  min-width: 0;
 }
 
 .kp-builder__positions-title {
@@ -81,111 +62,7 @@
   text-align: center;
 }
 
-.kp-builder__table-scroll {
-  overflow-x: auto;
-  border: 1px solid var(--border-color);
-  border-radius: 10px;
-  background: var(--bg-elevated, rgba(16, 24, 40, 0.35));
-}
-
-.kp-pos-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-
-.kp-pos-table thead {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  background: var(--bg-elevated, rgba(16, 24, 40, 0.6));
-  backdrop-filter: blur(6px);
-}
-
-.kp-pos-table th {
-  padding: 0.45rem 0.5rem;
-  text-align: left;
-  font-weight: 600;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  color: var(--text-muted);
-  border-bottom: 1px solid var(--border-color);
-  white-space: nowrap;
-}
-
-.kp-pos-table__th-num {
-  width: 2.25rem;
-  text-align: center;
-}
-
-.kp-pos-table__th-narrow {
-  width: 4.5rem;
-}
-
-.kp-pos-table__th-price {
-  width: 6.5rem;
-}
-
-.kp-pos-table__th-actions {
-  width: 2.5rem;
-}
-
-.kp-pos-table__row:nth-child(even) td {
-  background: rgba(16, 24, 40, 0.2);
-}
-
-.kp-pos-table td {
-  padding: 0.2rem 0.35rem;
-  vertical-align: middle;
-  border-bottom: 1px solid rgba(16, 24, 40, 0.35);
-}
-
-.kp-pos-table__num {
-  text-align: center;
-  font-variant-numeric: tabular-nums;
-  color: var(--text-muted);
-  font-size: 12px;
-}
-
-.kp-pos-table__input {
-  box-sizing: border-box;
-  width: 100%;
-  min-width: 0;
-  padding: 0.35rem 0.45rem;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--text-primary);
-  font-size: 13px;
-  line-height: 1.35;
-}
-
-.kp-pos-table__input:hover {
-  border-color: rgba(16, 24, 40, 0.35);
-}
-
-.kp-pos-table__input:focus {
-  outline: none;
-  border-color: var(--accent-color, #3b82f6);
-  background: rgba(16, 24, 40, 0.25);
-}
-
-.kp-pos-table__input--narrow {
-  max-width: 5rem;
-}
-
-.kp-pos-table__input--price {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-
-.kp-pos-table__actions {
-  text-align: center;
-  padding: 0.15rem;
-}
-
-/* Слева товары ~2/3, справа позиции + КП ~1/3 экрана */
+/* Слева товары ~2/3, справа тулбар + превью КП ~1/3 экрана */
 .kp-builder__split {
   display: grid;
   grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
@@ -259,7 +136,7 @@
   width: 100%;
   max-width: 100%;
   margin: 0;
-  /* Подгонка под ширину контейнера (= колонка «Позиции»); значение с ResizeObserver */
+  /* Подгонка под ширину колонки превью; значение с ResizeObserver */
   zoom: var(--kp-preview-zoom, 0.68);
 }
 
