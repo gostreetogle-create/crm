@@ -2,7 +2,8 @@ FROM node:20-alpine AS deps
 WORKDIR /app
 COPY crm-web/package*.json ./crm-web/
 WORKDIR /app/crm-web
-RUN npm ci
+# Sequential lifecycle scripts avoid ETXTBSY on esbuild postinstall (common with Docker overlayfs).
+RUN npm ci --foreground-scripts
 
 FROM node:20-alpine AS build
 WORKDIR /app
