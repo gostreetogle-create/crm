@@ -218,32 +218,36 @@
   vertical-align: middle;
   font-size: var(--font-size-small);
   font-weight: 600;
-  text-align: left;
+  text-align: center;
   padding: var(--ui-button-padding-y) var(--ui-button-padding-x);
 }
 
 .crudHubHeadRow {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--ui-space-3);
+  justify-content: center;
+  gap: var(--ui-space-4);
   min-width: 0;
 }
 
 .crudHubHeadLabel {
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  text-align: left;
+  text-align: center;
 }
 
 .crudHubHeadActions {
   flex: 0 0 auto;
   white-space: nowrap;
-  text-align: right;
+  text-align: center;
   color: var(--text-primary);
+}
+
+.crudTable.crudTableHub th.actionsCol {
+  text-align: center;
 }
 
 .crudTable.crudTableHub th.actionsCol,
@@ -252,8 +256,11 @@
   min-width: calc(4 * 30px + 3 * var(--ui-space-1) + 2 * var(--ui-button-padding-x));
   max-width: none;
   white-space: nowrap;
-  text-align: right;
   box-sizing: border-box;
+}
+
+.crudTable.crudTableHub td.actionsCol {
+  text-align: right;
 }
 
 .crudTable.crudTableHub td:not(.actionsCol) .crudCellLine {
@@ -298,7 +305,14 @@
 .crudTable td {
   border-bottom: 1px solid var(--border-color);
   padding: var(--ui-button-padding-y) var(--ui-button-padding-x);
+}
+
+.crudTable td {
   text-align: left;
+}
+
+.crudTable th {
+  text-align: center;
 }
 
 .crudTable tbody tr {
@@ -317,6 +331,13 @@
 .crudTable td.actionsCol {
   width: var(--ui-crud-actions-col-width);
   white-space: nowrap;
+}
+
+.crudTable th.actionsCol {
+  text-align: center;
+}
+
+.crudTable td.actionsCol {
   text-align: right;
 }
 

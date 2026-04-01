@@ -27,8 +27,22 @@
   &__actions {
     margin-top: var(--ui-space-4);
     display: flex;
+    flex-wrap: wrap;
+    align-items: center;
     justify-content: flex-end;
+    /* app-ui-modal-form-actions — display:contents; кнопки — прямые flex-элементы */
+    gap: var(--ui-space-4);
   }
+}
+
+/* Только полноэкранный «главный» шаг: компактнее «Назад» и футер, без затрагивания полей формы */
+:host ::ng-deep .newMaterialPage__toolbar .uiButton,
+:host ::ng-deep .newMaterialPage__actions .uiButton {
+  padding-block: 6px;
+  padding-inline: 12px;
+  min-height: 28px;
+  font-size: var(--font-size-label);
+  line-height: 1.25;
 }
 
 .newMaterialPageCard {

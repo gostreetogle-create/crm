@@ -1,0 +1,32 @@
+<div
+  class="dictionaryPreviewCard"
+  role="region"
+  [attr.aria-label]="ariaLabel()"
+  [style.--dictionary-preview-accent]="accentColor()"
+>
+  <div class="dictionaryPreviewCard__hero dictionaryPreviewCard__hero--noPhoto">
+    <div class="dictionaryPreviewCard__heroBody">
+      <div class="dictionaryPreviewCard__meta">
+        @if (code()?.trim()) {
+          <span class="dictionaryPreviewCard__codeChip">{{ code() }}</span>
+        }
+        @if (showStatus()) {
+          <span
+            class="dictionaryPreviewCard__status"
+            [class.dictionaryPreviewCard__status--inactive]="!isActive()"
+          >
+            {{ isActive() ? activeLabel() : inactiveLabel() }}
+          </span>
+        }
+      </div>
+      <h2 class="dictionaryPreviewCard__title">{{ title() }}</h2>
+      @if (subtitle()?.trim()) {
+        <p class="dictionaryPreviewCard__subtitle">{{ subtitle() }}</p>
+      }
+    </div>
+  </div>
+
+  <div class="dictionaryPreviewCard__sections">
+    <ng-content />
+  </div>
+</div>

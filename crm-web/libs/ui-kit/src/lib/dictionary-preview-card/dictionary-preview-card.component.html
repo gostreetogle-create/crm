@@ -1,0 +1,46 @@
+<div
+  class="dictionaryPreviewCard"
+  role="region"
+  [attr.aria-label]="ariaLabel()"
+  [style.--dictionary-preview-accent]="accentColor()"
+>
+  <div class="dictionaryPreviewCard__hero">
+    <div class="dictionaryPreviewCard__photo" aria-hidden="true">
+      @if (imageSrc()) {
+        <img
+          class="dictionaryPreviewCard__photoImg"
+          [src]="imageSrc()!"
+          [alt]="imageAlt() || title()"
+        />
+      } @else {
+        <div class="dictionaryPreviewCard__photoFrame"></div>
+        <span class="dictionaryPreviewCard__photoLabel">{{ photoLabel() }}</span>
+        <span class="dictionaryPreviewCard__photoHint">{{ photoHint() }}</span>
+      }
+    </div>
+    <div class="dictionaryPreviewCard__heroBody">
+      <div class="dictionaryPreviewCard__meta">
+        @if (code()?.trim()) {
+          <span class="dictionaryPreviewCard__codeChip">{{ code() }}</span>
+        }
+        <span
+          class="dictionaryPreviewCard__status"
+          [class.dictionaryPreviewCard__status--inactive]="!isActive()"
+        >
+          {{ isActive() ? activeLabel() : inactiveLabel() }}
+        </span>
+      </div>
+      <h2 class="dictionaryPreviewCard__title">{{ title() }}</h2>
+      <p class="dictionaryPreviewCard__priceRow">
+        <span class="dictionaryPreviewCard__price">{{ pricePrimary() }}</span>
+        @if (priceSecondary()) {
+          <span class="dictionaryPreviewCard__priceSuffix">{{ priceSecondary() }}</span>
+        }
+      </p>
+    </div>
+  </div>
+
+  <div class="dictionaryPreviewCard__sections">
+    <ng-content />
+  </div>
+</div>

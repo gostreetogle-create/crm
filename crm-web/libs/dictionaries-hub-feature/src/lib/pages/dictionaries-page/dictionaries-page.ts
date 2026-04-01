@@ -126,6 +126,8 @@ import { UserItemInput } from '@srm/users-data-access';
 import {
   ContentCardComponent,
   CrudLayoutComponent,
+  DictionaryPreviewCardComponent,
+  DictionaryPreviewCardNoPhotoComponent,
   HexRgbFieldComponent,
   HubCrudExpandStateService,
   LinkedDictionaryPropagationConfirmComponent,
@@ -150,6 +152,8 @@ import {
     PageShellComponent,
     ContentCardComponent,
     CrudLayoutComponent,
+    DictionaryPreviewCardComponent,
+    DictionaryPreviewCardNoPhotoComponent,
     UiModalComponent,
     UiModalFormActionsComponent,
     UiFormGridComponent,
@@ -435,9 +439,15 @@ export class DictionariesPage implements OnDestroy {
     return UI_MODAL_Z_INDEX_ABOVE_CASCADE_HUB;
   });
 
+  /** Заголовок модалки просмотра: имя позиции из записи, без «Мат.» в шапке. */
+  readonly materialsViewHeadline = signal('');
+
   readonly materialsModalTitle = computed(() => {
     if (!this.isMaterialsModalOpen()) return '';
-    if (this.isMaterialsViewMode()) return 'Просмотр материала — Мат.';
+    if (this.isMaterialsViewMode()) {
+      const h = this.materialsViewHeadline().trim();
+      return h ? `Просмотр · ${h}` : 'Просмотр материала';
+    }
     if (this.materialsStore.isEditMode()) return 'Редактирование материала';
     return 'Новый материал';
   });
@@ -1158,6 +1168,7 @@ export class DictionariesPage implements OnDestroy {
   private closeMaterialBundleModal(): void {
     this.materialsStore.resetForm();
     this.isMaterialsViewMode.set(false);
+    this.materialsViewHeadline.set('');
     this.isMaterialsModalOpen.set(false);
     this.materialCharacteristicsStore.resetForm();
     this.isMaterialCharacteristicsViewMode.set(false);
@@ -1168,11 +1179,13 @@ export class DictionariesPage implements OnDestroy {
     if (this.isNewMaterialCharacteristicPageRoute() && !this.isMaterialCharacteristicsModalOpen()) {
       this.materialsStore.resetForm();
       this.isMaterialsViewMode.set(false);
+      this.materialsViewHeadline.set('');
       this.isMaterialsModalOpen.set(false);
       return;
     }
     this.materialsStore.resetForm();
     this.isMaterialsViewMode.set(false);
+    this.materialsViewHeadline.set('');
     this.isMaterialsModalOpen.set(false);
   }
 
@@ -1227,6 +1240,7 @@ export class DictionariesPage implements OnDestroy {
     const item = this.materialsStore.items().find((x) => x.id === id);
     if (!item) return;
     this.materialsStore.resetForm();
+    this.materialsViewHeadline.set(item.name?.trim() || '');
     this.materialsForm.reset({
       name: item.name ?? '',
       code: item.code ?? '',
@@ -3167,6 +3181,113 @@ export class DictionariesPage implements OnDestroy {
       return '—';
     }
     return ch.colorName?.trim() || ch.colorHex?.trim() || '—';
+  }
+
+  materialViewCharacteristicLabel(): string {
+    const id = this.materialsForm.controls.materialCharacteristicId.value;
+    return this.materialCharacteristicSelectOptions().find((o) => o.id === id)?.label ?? '—';
+  }
+
+  materialViewGeometryLabel(): string {
+    const id = this.materialsForm.controls.geometryId.value;
+    return this.geometrySelectOptions().find((o) => o.id === id)?.label ?? '—';
+  }
+
+  materialViewUnitLabel(): string {
+    const id = this.materialsForm.controls.unitId.value;
+    return this.unitsStore.options().find((o) => o.id === id)?.label ?? '—';
+  }
+
+  materialViewUnitShort(): string {
+    const id = this.materialsForm.controls.unitId.value;
+    const u = this.unitsStore.items().find((x) => x.id === id);
+    const c = u?.code?.trim();
+    if (c) {
+      return c;
+    }
+    const n = u?.name?.trim();
+    return n ? n.slice(0, 12) : 'ед.';
+  }
+
+  materialViewPriceFormatted(): string {
+    const v = this.materialsForm.controls.purchasePriceRub.value;
+    const n = typeof v === 'number' && !Number.isNaN(v) ? v : 0;
+    return new Intl.NumberFormat('ru-RU').format(n);
+  }
+
+  /** ФИО контакта для презентационной карточки просмотра. */
+  clientsPreviewFio(): string {
+    return formatClientFio(this.clientsForm.getRawValue());
+  }
+
+  clientsPreviewSubtitle(): string {
+    const v = this.clientsForm.getRawValue();
+    return [v.phone?.trim(), v.email?.trim()].filter(Boolean).join(' · ');
+  }
+
+  organizationsPreviewSubtitle(): string {
+    const v = this.organizationsForm.getRawValue();
+    const parts: string[] = [];
+    if (v.shortName?.trim()) {
+      parts.push(v.shortName.trim());
+    }
+    if (v.inn?.trim()) {
+      parts.push('ИНН ' + v.inn.trim());
+    }
+    return parts.join(' · ');
+  }
+
+  geometryShapeLabelForView(): string {
+    const key = this.geometriesForm.controls.shapeKey.value;
+    return this.shapeOptions.find((s) => s.value === key)?.label ?? '—';
+  }
+
+  formatGeometryMmValue(v: number | null): string {
+    if (v == null || Number.isNaN(v)) return '—';
+    return String(v);
+  }
+
+  materialCharacteristicsPreviewSubtitle(): string {
+    const d = this.materialCharacteristicsForm.controls.densityKgM3.value;
+    if (d != null && !Number.isNaN(d)) {
+      return `${d} кг/м³`;
+    }
+    return '';
+  }
+
+  materialCharacteristicsColorOptionLabel(): string {
+    const id = this.materialCharacteristicsForm.controls.colorId.value;
+    if (!id?.trim()) return '—';
+    return this.colorsStore.options().find((o) => o.id === id)?.label ?? '—';
+  }
+
+  materialCharacteristicsSurfaceOptionLabel(): string {
+    const id = this.materialCharacteristicsForm.controls.surfaceFinishId.value;
+    if (!id?.trim()) return '—';
+    return this.surfaceFinishesStore.options().find((o) => o.id === id)?.label ?? '—';
+  }
+
+  materialCharacteristicsCoatingOptionLabel(): string {
+    const id = this.materialCharacteristicsForm.controls.coatingId.value;
+    if (!id?.trim()) return '—';
+    return this.coatingsStore.options().find((o) => o.id === id)?.label ?? '—';
+  }
+
+  usersViewRoleLabel(): string {
+    const id = this.usersForm.controls.roleId.value;
+    return this.roleSelectOptions().find((o) => o.id === id)?.label ?? '—';
+  }
+
+  workTypesPreviewSubtitle(): string {
+    const v = this.workTypesForm.getRawValue();
+    const parts: string[] = [];
+    if (v.shortLabel?.trim()) {
+      parts.push(v.shortLabel.trim());
+    }
+    if (v.hourlyRateRub != null && v.hourlyRateRub > 0) {
+      parts.push(`${v.hourlyRateRub} ₽/ч`);
+    }
+    return parts.join(' · ');
   }
 
   /** Образец цвета из выбранной характеристики материала (для превью в карточке позиции). */

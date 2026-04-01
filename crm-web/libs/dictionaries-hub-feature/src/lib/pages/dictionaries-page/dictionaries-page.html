@@ -707,47 +707,62 @@
 ></ui-modal>
 
 <ng-template #rolesContentTpl>
-  <form id="roles-form" [formGroup]="rolesForm" (ngSubmit)="submitRoles()" class="formGrid">
-    <fieldset class="dictionaryFormSection">
-      <legend>Роль</legend>
-      <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
-        <app-ui-form-field
-          label="Наименование"
-          [required]="true"
-          [invalid]="isRolesInvalid('name')"
-          [errorText]="rolesNameErrorText()"
-        >
-          <input type="text" formControlName="name" placeholder="Введите наименование роли" />
-        </app-ui-form-field>
-        @if (!isRolesViewMode()) {
+  @if (isRolesViewMode()) {
+    <app-dictionary-preview-card-no-photo
+      ariaLabel="Карточка роли"
+      [accentColor]="'#3b5bdb'"
+      [title]="rolesForm.controls.name.value"
+      [subtitle]="'Порядок: ' + rolesForm.controls.sortOrder.value"
+      [isActive]="rolesForm.controls.isActive.value"
+    >
+      @if (rolesForm.controls.notes.value.trim()) {
+        <section class="dictionaryPreviewCard__notes">
+          <h3 class="dictionaryPreviewCard__panelTitle">Заметка</h3>
+          <p class="dictionaryPreviewCard__notesText">{{ rolesForm.controls.notes.value }}</p>
+        </section>
+      }
+    </app-dictionary-preview-card-no-photo>
+  } @else {
+    <form id="roles-form" [formGroup]="rolesForm" (ngSubmit)="submitRoles()" class="formGrid">
+      <fieldset class="dictionaryFormSection">
+        <legend>Роль</legend>
+        <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
+          <app-ui-form-field
+            label="Наименование"
+            [required]="true"
+            [invalid]="isRolesInvalid('name')"
+            [errorText]="rolesNameErrorText()"
+          >
+            <input type="text" formControlName="name" placeholder="Введите наименование роли" />
+          </app-ui-form-field>
           <p class="muted dictionaryFieldRowFull">
             После сохранения активная роль появится колонкой в «Админ-настройках» — там выставляются галочки прав.
             Технический код роли подставляется автоматически (для экспорта и импорта пользователей).
           </p>
-        }
 
-        <app-ui-form-field
-          label="Порядок (в матрице и списках)"
-          [required]="true"
-          [invalid]="isRolesInvalid('sortOrder')"
-          [errorText]="rolesSortOrderErrorText()"
-        >
-          <input type="number" formControlName="sortOrder" min="1" max="999999" step="1" />
-        </app-ui-form-field>
-        <p class="muted">
-          Чем меньше число, тем левее колонка в «Админ-настройках» и тем выше роль в списках. При «Создать» и
-          «Дублировать» номер подставляется автоматически (следующий после максимального); при необходимости поменяйте
-          вручную.
-        </p>
+          <app-ui-form-field
+            label="Порядок (в матрице и списках)"
+            [required]="true"
+            [invalid]="isRolesInvalid('sortOrder')"
+            [errorText]="rolesSortOrderErrorText()"
+          >
+            <input type="number" formControlName="sortOrder" min="1" max="999999" step="1" />
+          </app-ui-form-field>
+          <p class="muted">
+            Чем меньше число, тем левее колонка в «Админ-настройках» и тем выше роль в списках. При «Создать» и
+            «Дублировать» номер подставляется автоматически (следующий после максимального); при необходимости поменяйте
+            вручную.
+          </p>
 
-        <app-ui-form-field class="dictionaryFieldRowFull" label="Заметка" [wide]="true">
-          <textarea rows="2" formControlName="notes" placeholder="Необязательно"></textarea>
-        </app-ui-form-field>
+          <app-ui-form-field class="dictionaryFieldRowFull" label="Заметка" [wide]="true">
+            <textarea rows="2" formControlName="notes" placeholder="Необязательно"></textarea>
+          </app-ui-form-field>
 
-        <app-ui-checkbox-field class="checkbox" label="Активна" formControlName="isActive"></app-ui-checkbox-field>
-      </div>
-    </fieldset>
-  </form>
+          <app-ui-checkbox-field class="checkbox" label="Активна" formControlName="isActive"></app-ui-checkbox-field>
+        </div>
+      </fieldset>
+    </form>
+  }
 </ng-template>
 
 <ng-template #rolesActionsTpl>
@@ -776,20 +791,57 @@
 ></ui-modal>
 
 <ng-template #usersContentTpl>
-  <form id="users-form" [formGroup]="usersForm" (ngSubmit)="submitUsers()" class="formGrid">
-    <fieldset class="dictionaryFormSection">
-      <legend>Учётная запись</legend>
-      <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
-        <app-ui-form-field
-          label="Логин"
-          [required]="true"
-          [invalid]="isUsersInvalid('login')"
-          [errorText]="usersLoginErrorText()"
-        >
-          <input type="text" formControlName="login" autocomplete="username" />
-        </app-ui-form-field>
+  @if (isUsersViewMode()) {
+    <app-dictionary-preview-card-no-photo
+      ariaLabel="Карточка пользователя"
+      [accentColor]="'#3b5bdb'"
+      [title]="usersForm.controls.fullName.value"
+      [subtitle]="
+        (usersForm.controls.login.value.trim() || '') +
+        (usersForm.controls.email.value.trim() ? ' · ' + usersForm.controls.email.value : '')
+      "
+      [code]="usersForm.controls.login.value"
+      [showStatus]="false"
+    >
+      <section class="dictionaryPreviewCard__panel">
+        <h3 class="dictionaryPreviewCard__panelTitle">Учётная запись</h3>
+        <dl class="dictionaryPreviewCard__dl">
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>Логин</dt>
+            <dd>{{ usersForm.controls.login.value }}</dd>
+          </div>
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>Email</dt>
+            <dd>{{ usersForm.controls.email.value.trim() || '—' }}</dd>
+          </div>
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>Телефон</dt>
+            <dd>{{ usersForm.controls.phone.value.trim() || '—' }}</dd>
+          </div>
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>Роль</dt>
+            <dd>{{ usersViewRoleLabel() }}</dd>
+          </div>
+        </dl>
+      </section>
+      <section class="dictionaryPreviewCard__notes">
+        <p class="dictionaryPreviewCard__notesText">Пароль в режиме просмотра не показывается.</p>
+      </section>
+    </app-dictionary-preview-card-no-photo>
+  } @else {
+    <form id="users-form" [formGroup]="usersForm" (ngSubmit)="submitUsers()" class="formGrid">
+      <fieldset class="dictionaryFormSection">
+        <legend>Учётная запись</legend>
+        <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
+          <app-ui-form-field
+            label="Логин"
+            [required]="true"
+            [invalid]="isUsersInvalid('login')"
+            [errorText]="usersLoginErrorText()"
+          >
+            <input type="text" formControlName="login" autocomplete="username" />
+          </app-ui-form-field>
 
-        @if (!isUsersViewMode()) {
           <app-ui-form-field
             [label]="usersEditingId() ? 'Новый пароль (пусто — не менять)' : 'Пароль'"
             [required]="!usersEditingId()"
@@ -798,52 +850,48 @@
           >
             <input type="password" formControlName="password" autocomplete="new-password" />
           </app-ui-form-field>
-        } @else {
-          <p class="muted">Пароль в режиме просмотра не показывается.</p>
-        }
 
-        <app-ui-form-field
-          label="ФИО"
-          [required]="true"
-          [invalid]="isUsersInvalid('fullName')"
-          [errorText]="usersFullNameErrorText()"
-        >
-          <input type="text" formControlName="fullName" autocomplete="name" />
-        </app-ui-form-field>
+          <app-ui-form-field
+            label="ФИО"
+            [required]="true"
+            [invalid]="isUsersInvalid('fullName')"
+            [errorText]="usersFullNameErrorText()"
+          >
+            <input type="text" formControlName="fullName" autocomplete="name" />
+          </app-ui-form-field>
 
-        <app-ui-form-field
-          label="Email"
-          [invalid]="isUsersInvalid('email')"
-          [errorText]="usersEmailErrorText()"
-        >
-          <input type="email" formControlName="email" autocomplete="email" />
-        </app-ui-form-field>
+          <app-ui-form-field
+            label="Email"
+            [invalid]="isUsersInvalid('email')"
+            [errorText]="usersEmailErrorText()"
+          >
+            <input type="email" formControlName="email" autocomplete="email" />
+          </app-ui-form-field>
 
-        <app-ui-form-field label="Телефон" [invalid]="false" [errorText]="''">
-          <input type="tel" formControlName="phone" autocomplete="tel" />
-        </app-ui-form-field>
+          <app-ui-form-field label="Телефон" [invalid]="false" [errorText]="''">
+            <input type="tel" formControlName="phone" autocomplete="tel" />
+          </app-ui-form-field>
 
-        <app-ui-form-field
-          label="Роль"
-          [required]="true"
-          [invalid]="isUsersInvalid('roleId')"
-          [errorText]="usersRoleErrorText()"
-        >
-          <select formControlName="roleId">
-            @if (roleSelectOptions().length === 0) {
-              <option value="">— Нет активных ролей —</option>
-            }
-            @for (opt of roleSelectOptions(); track opt.id) {
-              <option [value]="opt.id">{{ opt.label }}</option>
-            }
-          </select>
-        </app-ui-form-field>
-      </div>
-    </fieldset>
-    @if (!isUsersViewMode()) {
+          <app-ui-form-field
+            label="Роль"
+            [required]="true"
+            [invalid]="isUsersInvalid('roleId')"
+            [errorText]="usersRoleErrorText()"
+          >
+            <select formControlName="roleId">
+              @if (roleSelectOptions().length === 0) {
+                <option value="">— Нет активных ролей —</option>
+              }
+              @for (opt of roleSelectOptions(); track opt.id) {
+                <option [value]="opt.id">{{ opt.label }}</option>
+              }
+            </select>
+          </app-ui-form-field>
+        </div>
+      </fieldset>
       <p class="muted">В mock пароль хранится открытым текстом; на бэкенде — только хеш и политика сложности.</p>
-    }
-  </form>
+    </form>
+  }
 </ng-template>
 
 <ng-template #usersActionsTpl>
@@ -872,46 +920,72 @@
 ></ui-modal>
 
 <ng-template #workTypesContentTpl>
-  <form id="work-types-form" [formGroup]="workTypesForm" (ngSubmit)="submitWorkTypes()" class="formGrid">
-    <fieldset class="dictionaryFormSection">
-      <legend>Вид работ и расценка</legend>
-      <div class="dictionaryFormSectionBody">
-        <app-ui-form-field
-          label="Наименование"
-          [required]="true"
-          [invalid]="isWorkTypesInvalid('name')"
-          [errorText]="workTypesNameErrorText()"
-        >
-          <input type="text" formControlName="name" placeholder="Сварка" />
-        </app-ui-form-field>
+  @if (isWorkTypesViewMode()) {
+    <app-dictionary-preview-card-no-photo
+      ariaLabel="Карточка вида работ"
+      [accentColor]="'#3b5bdb'"
+      [title]="workTypesForm.controls.name.value"
+      [subtitle]="workTypesPreviewSubtitle()"
+      [isActive]="workTypesForm.controls.isActive.value"
+      activeLabel="Активна"
+      inactiveLabel="Неактивна"
+    >
+      <section class="dictionaryPreviewCard__panel">
+        <h3 class="dictionaryPreviewCard__panelTitle">Параметры</h3>
+        <dl class="dictionaryPreviewCard__dl">
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>Короткое обозначение</dt>
+            <dd>{{ workTypesForm.controls.shortLabel.value.trim() || '—' }}</dd>
+          </div>
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>Ставка</dt>
+            <dd>{{ workTypesForm.controls.hourlyRateRub.value }} ₽/ч</dd>
+          </div>
+        </dl>
+      </section>
+    </app-dictionary-preview-card-no-photo>
+  } @else {
+    <form id="work-types-form" [formGroup]="workTypesForm" (ngSubmit)="submitWorkTypes()" class="formGrid">
+      <fieldset class="dictionaryFormSection">
+        <legend>Вид работ и расценка</legend>
+        <div class="dictionaryFormSectionBody">
+          <app-ui-form-field
+            label="Наименование"
+            [required]="true"
+            [invalid]="isWorkTypesInvalid('name')"
+            [errorText]="workTypesNameErrorText()"
+          >
+            <input type="text" formControlName="name" placeholder="Сварка" />
+          </app-ui-form-field>
 
-        <app-ui-form-field
-          label="Короткое обозначение"
-          [required]="true"
-          [invalid]="isWorkTypesInvalid('shortLabel')"
-          [errorText]="isWorkTypesInvalid('shortLabel') ? 'Укажите обозначение' : ''"
-        >
-          <input type="text" formControlName="shortLabel" placeholder="Напр. Св." />
-        </app-ui-form-field>
+          <app-ui-form-field
+            label="Короткое обозначение"
+            [required]="true"
+            [invalid]="isWorkTypesInvalid('shortLabel')"
+            [errorText]="isWorkTypesInvalid('shortLabel') ? 'Укажите обозначение' : ''"
+          >
+            <input type="text" formControlName="shortLabel" placeholder="Напр. Св." />
+          </app-ui-form-field>
 
-        <app-ui-form-field
-          label="Ставка, ₽/ч"
-          [required]="true"
-          [invalid]="isWorkTypesInvalid('hourlyRateRub')"
-          [errorText]="workTypesHourlyRateErrorText()"
-        >
-          <input type="number" formControlName="hourlyRateRub" min="1" step="1" placeholder="600" />
-        </app-ui-form-field>
-      </div>
-    </fieldset>
+          <app-ui-form-field
+            label="Ставка, ₽/ч"
+            [required]="true"
+            [invalid]="isWorkTypesInvalid('hourlyRateRub')"
+            [errorText]="workTypesHourlyRateErrorText()"
+          >
+            <input type="number" formControlName="hourlyRateRub" min="1" step="1" placeholder="600" />
+          </app-ui-form-field>
+        </div>
+      </fieldset>
 
-    <fieldset class="dictionaryFormSection">
-      <legend>Статус</legend>
-      <div class="dictionaryFormSectionBody">
-        <app-ui-checkbox-field class="checkbox" label="Активна" formControlName="isActive"></app-ui-checkbox-field>
-      </div>
-    </fieldset>
-  </form>
+      <fieldset class="dictionaryFormSection">
+        <legend>Статус</legend>
+        <div class="dictionaryFormSectionBody">
+          <app-ui-checkbox-field class="checkbox" label="Активна" formControlName="isActive"></app-ui-checkbox-field>
+        </div>
+      </fieldset>
+    </form>
+  }
 </ng-template>
 
 <ng-template #workTypesActionsTpl>
@@ -947,6 +1021,86 @@
 ></ui-modal>
 
 <ng-template #materialsContentTpl>
+  @if (isMaterialsViewMode()) {
+    <app-dictionary-preview-card
+      ariaLabel="Карточка материала"
+      [accentColor]="selectedMaterialProfileColorHex() || '#3b5bdb'"
+      [title]="materialsForm.controls.name.value"
+      [code]="materialsForm.controls.code.value"
+      [isActive]="materialsForm.controls.isActive.value"
+      activeLabel="Активна"
+      inactiveLabel="Неактивна"
+      [pricePrimary]="materialViewPriceFormatted()"
+      [priceSecondary]="'₽ за 1 ' + materialViewUnitShort()"
+      photoLabel="Фото"
+      photoHint="заливка позиции"
+    >
+      <section class="dictionaryPreviewCard__panel">
+        <h3 class="dictionaryPreviewCard__panelTitle">Позиция на складе</h3>
+        <dl class="dictionaryPreviewCard__dl">
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>Характеристика</dt>
+            <dd>{{ materialViewCharacteristicLabel() }}</dd>
+          </div>
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>Форма и габариты</dt>
+            <dd>{{ materialViewGeometryLabel() }}</dd>
+          </div>
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>Единица</dt>
+            <dd>{{ materialViewUnitLabel() }}</dd>
+          </div>
+        </dl>
+      </section>
+
+      @if (materialsForm.controls.materialCharacteristicId.value) {
+        <section class="dictionaryPreviewCard__panel dictionaryPreviewCard__panel--profile">
+          <h3 class="dictionaryPreviewCard__panelTitle">Профиль материала</h3>
+          <div class="dictionaryPreviewCard__profileGrid">
+            <div class="dictionaryPreviewCard__profileItem">
+              <span class="dictionaryPreviewCard__profileLabel">Плотность</span>
+              <span class="dictionaryPreviewCard__profileValue"
+                >{{ materialCharacteristicDensityLabelForMaterials() }} кг/м³</span
+              >
+            </div>
+            <div class="dictionaryPreviewCard__profileItem dictionaryPreviewCard__profileItem--color">
+              <span class="dictionaryPreviewCard__profileLabel">Цвет</span>
+              <span class="dictionaryPreviewCard__profileSwatchRow">
+                <span
+                  class="dictionaryPreviewCard__swatch"
+                  [style.background]="selectedMaterialProfileColorHex() || '#e5e7eb'"
+                ></span>
+                <span class="dictionaryPreviewCard__profileValue">{{ materialCharacteristicColorTextForMaterials() }}</span>
+              </span>
+            </div>
+            <div class="dictionaryPreviewCard__profileItem">
+              <span class="dictionaryPreviewCard__profileLabel">Отделка</span>
+              <span class="dictionaryPreviewCard__profileValue">{{
+                materialCharacteristicPreviewForMaterials()?.finishType?.trim() || '—'
+              }}</span>
+            </div>
+            <div class="dictionaryPreviewCard__profileItem">
+              <span class="dictionaryPreviewCard__profileLabel">Шероховатость</span>
+              <span class="dictionaryPreviewCard__profileValue">{{
+                materialCharacteristicPreviewForMaterials()?.roughnessClass?.trim() || '—'
+              }}</span>
+            </div>
+            <div class="dictionaryPreviewCard__profileItem dictionaryPreviewCard__profileItem--wide">
+              <span class="dictionaryPreviewCard__profileLabel">Покрытие</span>
+              <span class="dictionaryPreviewCard__profileValue">{{ materialCharacteristicCoatingSummaryForMaterials() }}</span>
+            </div>
+          </div>
+        </section>
+      }
+
+      @if (materialsForm.controls.notes.value.trim()) {
+        <section class="dictionaryPreviewCard__notes">
+          <h3 class="dictionaryPreviewCard__panelTitle">Заметки</h3>
+          <p class="dictionaryPreviewCard__notesText">{{ materialsForm.controls.notes.value }}</p>
+        </section>
+      }
+    </app-dictionary-preview-card>
+  } @else {
   <form id="materials-form" [formGroup]="materialsForm" (ngSubmit)="submitMaterials()" class="formGrid">
     <fieldset class="dictionaryFormSection">
       <legend>Учётная позиция</legend>
@@ -984,7 +1138,7 @@
                 <option [value]="option.id">{{ option.label }}</option>
               }
             </select>
-            @if (permissions.crud().canCreate) {
+            @if (permissions.crud().canCreate && !isMaterialsViewMode()) {
               <app-ui-button
                 type="button"
                 [square]="true"
@@ -1012,7 +1166,7 @@
                 <option [value]="option.id">{{ option.label }}</option>
               }
             </select>
-            @if ((isMaterialsModalOpen() || isNewMaterialPageRoute()) && permissions.crud().canCreate) {
+            @if ((isMaterialsModalOpen() || isNewMaterialPageRoute()) && permissions.crud().canCreate && !isMaterialsViewMode()) {
               <app-ui-button
                 type="button"
                 [square]="true"
@@ -1040,15 +1194,17 @@
                 <option [value]="option.id">{{ option.label }}</option>
               }
             </select>
-            <app-ui-button
-              type="button"
-              [square]="true"
-              ariaLabel="Добавить единицу измерения"
-              title="Добавить единицу измерения"
-              (clicked)="openUnitsCreate(true)"
-            >
-              <span class="squareIconTone squareIconTone--affirm"><svg lucidePlus [size]="18"></svg></span>
-            </app-ui-button>
+            @if (!isMaterialsViewMode()) {
+              <app-ui-button
+                type="button"
+                [square]="true"
+                ariaLabel="Добавить единицу измерения"
+                title="Добавить единицу измерения"
+                (clicked)="openUnitsCreate(true)"
+              >
+                <span class="squareIconTone squareIconTone--affirm"><svg lucidePlus [size]="18"></svg></span>
+              </app-ui-button>
+            }
           </div>
         </app-ui-form-field>
 
@@ -1116,6 +1272,7 @@
       </div>
     </fieldset>
   </form>
+  }
 </ng-template>
 
 <ui-modal
@@ -1135,38 +1292,68 @@
 ></ui-modal>
 
 <ng-template #coatingsContentTpl>
-  <form id="coatings-form" [formGroup]="coatingsForm" (ngSubmit)="submitCoatings()" class="formGrid">
-    <fieldset class="dictionaryFormSection">
-      <legend>Параметры покрытия</legend>
-      <div class="dictionaryFormSectionBody">
-        <app-ui-form-field
-          label="Тип покрытия"
-          [required]="true"
-          [invalid]="isCoatingsInvalid('coatingType')"
-          [errorText]="isCoatingsInvalid('coatingType') ? 'Минимум 2 символа' : ''"
-        >
-          <input type="text" formControlName="coatingType" placeholder="Anodizing / Powder / Galvanized..." />
-        </app-ui-form-field>
+  @if (isCoatingsViewMode()) {
+    <app-dictionary-preview-card-no-photo
+      ariaLabel="Карточка покрытия"
+      [accentColor]="'#3b5bdb'"
+      [title]="coatingsForm.controls.coatingType.value"
+      [subtitle]="coatingsForm.controls.coatingSpec.value"
+      [showStatus]="false"
+    >
+      <section class="dictionaryPreviewCard__panel">
+        <h3 class="dictionaryPreviewCard__panelTitle">Параметры</h3>
+        <dl class="dictionaryPreviewCard__dl">
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>Спецификация</dt>
+            <dd>{{ coatingsForm.controls.coatingSpec.value }}</dd>
+          </div>
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>Толщина</dt>
+            <dd>
+              {{
+                coatingsForm.controls.thicknessMicron.value != null
+                  ? coatingsForm.controls.thicknessMicron.value + ' мкм'
+                  : '—'
+              }}
+            </dd>
+          </div>
+        </dl>
+      </section>
+    </app-dictionary-preview-card-no-photo>
+  } @else {
+    <form id="coatings-form" [formGroup]="coatingsForm" (ngSubmit)="submitCoatings()" class="formGrid">
+      <fieldset class="dictionaryFormSection">
+        <legend>Параметры покрытия</legend>
+        <div class="dictionaryFormSectionBody">
+          <app-ui-form-field
+            label="Тип покрытия"
+            [required]="true"
+            [invalid]="isCoatingsInvalid('coatingType')"
+            [errorText]="isCoatingsInvalid('coatingType') ? 'Минимум 2 символа' : ''"
+          >
+            <input type="text" formControlName="coatingType" placeholder="Anodizing / Powder / Galvanized..." />
+          </app-ui-form-field>
 
-        <app-ui-form-field
-          label="Спецификация"
-          [required]="true"
-          [invalid]="isCoatingsInvalid('coatingSpec')"
-          [errorText]="isCoatingsInvalid('coatingSpec') ? 'Минимум 2 символа' : ''"
-        >
-          <input type="text" formControlName="coatingSpec" placeholder="Clear anodized / Zn hot-dip..." />
-        </app-ui-form-field>
+          <app-ui-form-field
+            label="Спецификация"
+            [required]="true"
+            [invalid]="isCoatingsInvalid('coatingSpec')"
+            [errorText]="isCoatingsInvalid('coatingSpec') ? 'Минимум 2 символа' : ''"
+          >
+            <input type="text" formControlName="coatingSpec" placeholder="Clear anodized / Zn hot-dip..." />
+          </app-ui-form-field>
 
-        <app-ui-form-field
-          label="Толщина, мкм"
-          [invalid]="isCoatingsInvalid('thicknessMicron')"
-          [errorText]="isCoatingsInvalid('thicknessMicron') ? 'Проверьте значение' : ''"
-        >
-          <input type="number" formControlName="thicknessMicron" />
-        </app-ui-form-field>
-      </div>
-    </fieldset>
-  </form>
+          <app-ui-form-field
+            label="Толщина, мкм"
+            [invalid]="isCoatingsInvalid('thicknessMicron')"
+            [errorText]="isCoatingsInvalid('thicknessMicron') ? 'Проверьте значение' : ''"
+          >
+            <input type="number" formControlName="thicknessMicron" />
+          </app-ui-form-field>
+        </div>
+      </fieldset>
+    </form>
+  }
 </ng-template>
 
 <ng-template #coatingsActionsTpl>
@@ -1215,100 +1402,156 @@
 ></ui-modal>
 
 <ng-template #clientsContentTpl>
-  <form id="clients-form" [formGroup]="clientsForm" (ngSubmit)="submitClients()" class="formGrid">
-    <fieldset class="dictionaryFormSection">
-      <legend>ФИО</legend>
-      <ui-form-grid [columns]="3">
-        <app-ui-form-field
-          label="Фамилия"
-          [required]="true"
-          [invalid]="isClientsInvalid('lastName')"
-          [errorText]="isClientsInvalid('lastName') ? 'Минимум 2 символа' : ''"
-        >
-          <input type="text" formControlName="lastName" autocomplete="family-name" />
-        </app-ui-form-field>
+  @if (isClientsViewMode()) {
+    <app-dictionary-preview-card-no-photo
+      ariaLabel="Карточка контакта"
+      [accentColor]="'#3b5bdb'"
+      [title]="clientsPreviewFio()"
+      [subtitle]="clientsPreviewSubtitle() || null"
+      [isActive]="clientsForm.controls.isActive.value"
+      activeLabel="Активен"
+      inactiveLabel="Неактивен"
+    >
+      <section class="dictionaryPreviewCard__panel">
+        <h3 class="dictionaryPreviewCard__panelTitle">Контакты</h3>
+        <dl class="dictionaryPreviewCard__dl">
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>Адрес</dt>
+            <dd>{{ clientsForm.controls.address.value.trim() || '—' }}</dd>
+          </div>
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>Телефон</dt>
+            <dd>{{ clientsForm.controls.phone.value.trim() || '—' }}</dd>
+          </div>
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>Email</dt>
+            <dd>{{ clientsForm.controls.email.value.trim() || '—' }}</dd>
+          </div>
+        </dl>
+      </section>
+      <section class="dictionaryPreviewCard__panel">
+        <h3 class="dictionaryPreviewCard__panelTitle">Паспорт</h3>
+        <dl class="dictionaryPreviewCard__dl">
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>Серия и номер</dt>
+            <dd>
+              {{ clientsForm.controls.passportSeries.value.trim() || '—' }}
+              {{ clientsForm.controls.passportNumber.value.trim() || '' }}
+            </dd>
+          </div>
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>Дата выдачи</dt>
+            <dd>{{ clientsForm.controls.passportIssuedDate.value.trim() || '—' }}</dd>
+          </div>
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>Кем выдан</dt>
+            <dd>{{ clientsForm.controls.passportIssuedBy.value.trim() || '—' }}</dd>
+          </div>
+        </dl>
+      </section>
+      @if (clientsForm.controls.notes.value.trim()) {
+        <section class="dictionaryPreviewCard__notes">
+          <h3 class="dictionaryPreviewCard__panelTitle">Заметки</h3>
+          <p class="dictionaryPreviewCard__notesText">{{ clientsForm.controls.notes.value }}</p>
+        </section>
+      }
+    </app-dictionary-preview-card-no-photo>
+  } @else {
+    <form id="clients-form" [formGroup]="clientsForm" (ngSubmit)="submitClients()" class="formGrid">
+      <fieldset class="dictionaryFormSection">
+        <legend>ФИО</legend>
+        <ui-form-grid [columns]="3">
+          <app-ui-form-field
+            label="Фамилия"
+            [required]="true"
+            [invalid]="isClientsInvalid('lastName')"
+            [errorText]="isClientsInvalid('lastName') ? 'Минимум 2 символа' : ''"
+          >
+            <input type="text" formControlName="lastName" autocomplete="family-name" />
+          </app-ui-form-field>
 
-        <app-ui-form-field
-          label="Имя"
-          [required]="true"
-          [invalid]="isClientsInvalid('firstName')"
-          [errorText]="isClientsInvalid('firstName') ? 'Минимум 2 символа' : ''"
-        >
-          <input type="text" formControlName="firstName" autocomplete="given-name" />
-        </app-ui-form-field>
+          <app-ui-form-field
+            label="Имя"
+            [required]="true"
+            [invalid]="isClientsInvalid('firstName')"
+            [errorText]="isClientsInvalid('firstName') ? 'Минимум 2 символа' : ''"
+          >
+            <input type="text" formControlName="firstName" autocomplete="given-name" />
+          </app-ui-form-field>
 
-        <app-ui-form-field label="Отчество" [invalid]="isClientsInvalid('patronymic')" [errorText]="''">
-          <input type="text" formControlName="patronymic" autocomplete="additional-name" />
-        </app-ui-form-field>
-      </ui-form-grid>
-    </fieldset>
+          <app-ui-form-field label="Отчество" [invalid]="isClientsInvalid('patronymic')" [errorText]="''">
+            <input type="text" formControlName="patronymic" autocomplete="additional-name" />
+          </app-ui-form-field>
+        </ui-form-grid>
+      </fieldset>
 
-    <fieldset class="dictionaryFormSection">
-      <legend>Контакты</legend>
-      <ui-form-grid [columns]="3">
-        <app-ui-form-field
-          class="uiFormGrid__full"
-          label="Адрес"
-          [wide]="true"
-          [invalid]="isClientsInvalid('address')"
-          [errorText]="''"
-        >
-          <input type="text" formControlName="address" autocomplete="street-address" />
-        </app-ui-form-field>
+      <fieldset class="dictionaryFormSection">
+        <legend>Контакты</legend>
+        <ui-form-grid [columns]="3">
+          <app-ui-form-field
+            class="uiFormGrid__full"
+            label="Адрес"
+            [wide]="true"
+            [invalid]="isClientsInvalid('address')"
+            [errorText]="''"
+          >
+            <input type="text" formControlName="address" autocomplete="street-address" />
+          </app-ui-form-field>
 
-        <app-ui-form-field label="Телефон" [invalid]="isClientsInvalid('phone')" [errorText]="''">
-          <input type="tel" formControlName="phone" autocomplete="tel" />
-        </app-ui-form-field>
+          <app-ui-form-field label="Телефон" [invalid]="isClientsInvalid('phone')" [errorText]="''">
+            <input type="tel" formControlName="phone" autocomplete="tel" />
+          </app-ui-form-field>
 
-        <app-ui-form-field label="Email" [invalid]="isClientsInvalid('email')" [errorText]="''">
-          <input type="email" formControlName="email" autocomplete="email" />
-        </app-ui-form-field>
-      </ui-form-grid>
-    </fieldset>
+          <app-ui-form-field label="Email" [invalid]="isClientsInvalid('email')" [errorText]="''">
+            <input type="email" formControlName="email" autocomplete="email" />
+          </app-ui-form-field>
+        </ui-form-grid>
+      </fieldset>
 
-    <fieldset class="dictionaryFormSection">
-      <legend>Заметки</legend>
-      <div class="dictionaryFormSectionBody">
-        <app-ui-form-field label="Текст" [wide]="true">
-          <textarea rows="2" formControlName="notes"></textarea>
-        </app-ui-form-field>
-      </div>
-    </fieldset>
+      <fieldset class="dictionaryFormSection">
+        <legend>Заметки</legend>
+        <div class="dictionaryFormSectionBody">
+          <app-ui-form-field label="Текст" [wide]="true">
+            <textarea rows="2" formControlName="notes"></textarea>
+          </app-ui-form-field>
+        </div>
+      </fieldset>
 
-    <fieldset class="dictionaryFormSection">
-      <legend>Паспорт (необязательно)</legend>
-      <ui-form-grid [columns]="3">
-        <app-ui-form-field label="Серия" [invalid]="isClientsInvalid('passportSeries')" [errorText]="''">
-          <input type="text" formControlName="passportSeries" inputmode="numeric" autocomplete="off" />
-        </app-ui-form-field>
+      <fieldset class="dictionaryFormSection">
+        <legend>Паспорт (необязательно)</legend>
+        <ui-form-grid [columns]="3">
+          <app-ui-form-field label="Серия" [invalid]="isClientsInvalid('passportSeries')" [errorText]="''">
+            <input type="text" formControlName="passportSeries" inputmode="numeric" autocomplete="off" />
+          </app-ui-form-field>
 
-        <app-ui-form-field label="Номер" [invalid]="isClientsInvalid('passportNumber')" [errorText]="''">
-          <input type="text" formControlName="passportNumber" inputmode="numeric" autocomplete="off" />
-        </app-ui-form-field>
+          <app-ui-form-field label="Номер" [invalid]="isClientsInvalid('passportNumber')" [errorText]="''">
+            <input type="text" formControlName="passportNumber" inputmode="numeric" autocomplete="off" />
+          </app-ui-form-field>
 
-        <app-ui-form-field label="Дата выдачи" [invalid]="isClientsInvalid('passportIssuedDate')" [errorText]="''">
-          <input type="text" formControlName="passportIssuedDate" placeholder="ГГГГ-ММ-ДД или произвольно" autocomplete="off" />
-        </app-ui-form-field>
+          <app-ui-form-field label="Дата выдачи" [invalid]="isClientsInvalid('passportIssuedDate')" [errorText]="''">
+            <input type="text" formControlName="passportIssuedDate" placeholder="ГГГГ-ММ-ДД или произвольно" autocomplete="off" />
+          </app-ui-form-field>
 
-        <app-ui-form-field
-          class="uiFormGrid__full"
-          label="Кем выдан"
-          [wide]="true"
-          [invalid]="isClientsInvalid('passportIssuedBy')"
-          [errorText]="''"
-        >
-          <input type="text" formControlName="passportIssuedBy" autocomplete="off" />
-        </app-ui-form-field>
-      </ui-form-grid>
-    </fieldset>
+          <app-ui-form-field
+            class="uiFormGrid__full"
+            label="Кем выдан"
+            [wide]="true"
+            [invalid]="isClientsInvalid('passportIssuedBy')"
+            [errorText]="''"
+          >
+            <input type="text" formControlName="passportIssuedBy" autocomplete="off" />
+          </app-ui-form-field>
+        </ui-form-grid>
+      </fieldset>
 
-    <fieldset class="dictionaryFormSection">
-      <legend>Статус</legend>
-      <div class="dictionaryFormSectionBody">
-        <app-ui-checkbox-field class="checkbox" label="Активен" formControlName="isActive"></app-ui-checkbox-field>
-      </div>
-    </fieldset>
-  </form>
+      <fieldset class="dictionaryFormSection">
+        <legend>Статус</legend>
+        <div class="dictionaryFormSectionBody">
+          <app-ui-checkbox-field class="checkbox" label="Активен" formControlName="isActive"></app-ui-checkbox-field>
+        </div>
+      </fieldset>
+    </form>
+  }
 </ng-template>
 
 <ng-template #clientsActionsTpl>
@@ -1339,105 +1582,223 @@
 ></ui-modal>
 
 <ng-template #organizationsContentTpl>
-  <form id="organizations-form" [formGroup]="organizationsForm" (ngSubmit)="submitOrganizations()" class="formGrid">
-    <fieldset class="dictionaryFormSection">
-      <legend>Карточка организации</legend>
-      <ui-form-grid [columns]="3">
-        <app-ui-form-field label="Вид организации" [invalid]="false" [errorText]="''">
-          <select formControlName="organizationKind">
-            <option value="OOO">ООО</option>
-            <option value="IP">ИП</option>
-          </select>
-        </app-ui-form-field>
-        <app-ui-form-field
-          class="uiFormGrid__full"
-          label="Полное наименование"
-          [required]="true"
-          [wide]="true"
-          [invalid]="isOrganizationsInvalid('name')"
-          [errorText]="isOrganizationsInvalid('name') ? 'Минимум 2 символа' : ''"
-        >
-          <input type="text" formControlName="name" placeholder="ООО &quot;Пример&quot;" />
-        </app-ui-form-field>
-
-        <app-ui-form-field label="Короткое наименование" [invalid]="false" [errorText]="''">
-          <input type="text" formControlName="shortName" placeholder="ООО &quot;Пример&quot;" />
-        </app-ui-form-field>
-      </ui-form-grid>
-    </fieldset>
-
-    <fieldset class="dictionaryFormSection">
-      <legend>Реквизиты</legend>
-      <ui-form-grid [columns]="3">
-        <app-ui-form-field label="ИНН" [invalid]="false" [errorText]="''">
-          <input type="text" formControlName="inn" inputmode="numeric" [attr.placeholder]="organizationInnPlaceholder()" />
-        </app-ui-form-field>
-        @if (organizationsForm.controls.organizationKind.value !== 'IP') {
-          <app-ui-form-field label="КПП" [invalid]="false" [errorText]="''">
-            <input type="text" formControlName="kpp" inputmode="numeric" />
-          </app-ui-form-field>
-        }
-        <app-ui-form-field [label]="organizationOgrnLabel()" [invalid]="false" [errorText]="''">
-          <input type="text" formControlName="ogrn" inputmode="numeric" />
-        </app-ui-form-field>
-        <app-ui-form-field label="ОКПО" [invalid]="false" [errorText]="''">
-          <input type="text" formControlName="okpo" inputmode="numeric" />
-        </app-ui-form-field>
-      </ui-form-grid>
-    </fieldset>
-
-    <fieldset class="dictionaryFormSection">
-      <legend>Контакты</legend>
-      <ui-form-grid [columns]="3">
-        <app-ui-form-field label="Телефон" [invalid]="false" [errorText]="''">
-          <input type="tel" formControlName="phone" autocomplete="tel" />
-        </app-ui-form-field>
-        <app-ui-form-field label="Email" [invalid]="false" [errorText]="''">
-          <input type="email" formControlName="email" autocomplete="email" />
-        </app-ui-form-field>
-        <app-ui-form-field label="Сайт" [invalid]="false" [errorText]="''">
-          <input type="url" formControlName="website" placeholder="https://example.com" />
-        </app-ui-form-field>
-        <app-ui-form-field class="uiFormGrid__full" label="Контактные лица" [wide]="true" [invalid]="false" [errorText]="''">
-          <div class="orgContactPick">
-            <div class="colorRefRow">
-              <select
-                formControlName="contactPicker"
-                (change)="addOrganizationContactFromPicker()"
-                [attr.aria-label]="'Выберите контакт для добавления'"
-              >
-                <option value="">— Выберите контакт —</option>
-                @for (opt of organizationContactPickerOptions(); track opt.id) {
-                  <option [value]="opt.id">{{ opt.label }}</option>
-                }
-              </select>
-              <app-ui-button
-                type="button"
-                [square]="true"
-                ariaLabel="Добавить контактное лицо"
-                title="Добавить контактное лицо"
-                (clicked)="openClientsCreate()"
-              >
-                <span class="squareIconTone squareIconTone--affirm"><svg lucidePlus [size]="18"></svg></span>
-              </app-ui-button>
+  @if (isOrganizationsViewMode()) {
+    <app-dictionary-preview-card-no-photo
+      ariaLabel="Карточка организации"
+      [accentColor]="'#3b5bdb'"
+      [title]="organizationsForm.controls.name.value"
+      [subtitle]="organizationsPreviewSubtitle()"
+      [code]="organizationsForm.controls.organizationKind.value === 'IP' ? 'ИП' : 'ООО'"
+      [isActive]="organizationsForm.controls.isActive.value"
+    >
+      <section class="dictionaryPreviewCard__panel">
+        <h3 class="dictionaryPreviewCard__panelTitle">Реквизиты</h3>
+        <dl class="dictionaryPreviewCard__dl">
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>ИНН</dt>
+            <dd>{{ organizationsForm.controls.inn.value.trim() || '—' }}</dd>
+          </div>
+          @if (organizationsForm.controls.organizationKind.value !== 'IP') {
+            <div class="dictionaryPreviewCard__dlRow">
+              <dt>КПП</dt>
+              <dd>{{ organizationsForm.controls.kpp.value.trim() || '—' }}</dd>
             </div>
-            @if (organizationsForm.controls.contactIds.value.length > 0) {
-              <ul class="orgContactPickList" aria-label="Выбранные контактные лица">
-                @for (cid of organizationsForm.controls.contactIds.value; track cid) {
-                  @let row = organizationContactRow(cid);
-                  <li class="orgContactPickList__item">
-                    <div class="orgContactPickList__body">
-                      <div class="orgContactPickList__fio">{{ row.fio }}</div>
-                      <div class="orgContactPickList__meta">
-                        <span class="orgContactPickList__metaLine"
-                          ><span class="orgContactPickList__k">Тел.</span> {{ row.phone }}</span
-                        >
-                        <span class="orgContactPickList__metaLine"
-                          ><span class="orgContactPickList__k">Email</span> {{ row.email }}</span
-                        >
+          }
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>{{ organizationOgrnLabel() }}</dt>
+            <dd>{{ organizationsForm.controls.ogrn.value.trim() || '—' }}</dd>
+          </div>
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>ОКПО</dt>
+            <dd>{{ organizationsForm.controls.okpo.value.trim() || '—' }}</dd>
+          </div>
+        </dl>
+      </section>
+      <section class="dictionaryPreviewCard__panel">
+        <h3 class="dictionaryPreviewCard__panelTitle">Контакты</h3>
+        <dl class="dictionaryPreviewCard__dl">
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>Телефон</dt>
+            <dd>{{ organizationsForm.controls.phone.value.trim() || '—' }}</dd>
+          </div>
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>Email</dt>
+            <dd>{{ organizationsForm.controls.email.value.trim() || '—' }}</dd>
+          </div>
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>Сайт</dt>
+            <dd>{{ organizationsForm.controls.website.value.trim() || '—' }}</dd>
+          </div>
+        </dl>
+        @if (organizationsForm.controls.contactIds.value.length > 0) {
+          <ul class="orgContactPickList" aria-label="Контактные лица">
+            @for (cid of organizationsForm.controls.contactIds.value; track cid) {
+              @let row = organizationContactRow(cid);
+              <li class="orgContactPickList__item">
+                <div class="orgContactPickList__body">
+                  <div class="orgContactPickList__fio">{{ row.fio }}</div>
+                  <div class="orgContactPickList__meta">
+                    <span class="orgContactPickList__metaLine"
+                      ><span class="orgContactPickList__k">Тел.</span> {{ row.phone }}</span
+                    >
+                    <span class="orgContactPickList__metaLine"
+                      ><span class="orgContactPickList__k">Email</span> {{ row.email }}</span
+                    >
+                  </div>
+                </div>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+      <section class="dictionaryPreviewCard__panel">
+        <h3 class="dictionaryPreviewCard__panelTitle">Адреса</h3>
+        <dl class="dictionaryPreviewCard__dl">
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>Юридический</dt>
+            <dd>{{ organizationsForm.controls.legalAddress.value.trim() || '—' }}</dd>
+          </div>
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>Почтовый</dt>
+            <dd>{{ organizationsForm.controls.postalAddress.value.trim() || '—' }}</dd>
+          </div>
+        </dl>
+      </section>
+      <section class="dictionaryPreviewCard__panel">
+        <h3 class="dictionaryPreviewCard__panelTitle">Банк и подписант</h3>
+        <dl class="dictionaryPreviewCard__dl">
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>Банк</dt>
+            <dd>{{ organizationsForm.controls.bankName.value.trim() || '—' }}</dd>
+          </div>
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>БИК</dt>
+            <dd>{{ organizationsForm.controls.bankBik.value.trim() || '—' }}</dd>
+          </div>
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>Расчётный счёт</dt>
+            <dd>{{ organizationsForm.controls.bankAccount.value.trim() || '—' }}</dd>
+          </div>
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>Корр. счёт</dt>
+            <dd>{{ organizationsForm.controls.bankCorrAccount.value.trim() || '—' }}</dd>
+          </div>
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>Подписант</dt>
+            <dd>{{ organizationsForm.controls.signerName.value.trim() || '—' }}</dd>
+          </div>
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>Должность</dt>
+            <dd>{{ organizationsForm.controls.signerPosition.value.trim() || '—' }}</dd>
+          </div>
+        </dl>
+      </section>
+      @if (organizationsForm.controls.notes.value.trim()) {
+        <section class="dictionaryPreviewCard__notes">
+          <h3 class="dictionaryPreviewCard__panelTitle">Заметки</h3>
+          <p class="dictionaryPreviewCard__notesText">{{ organizationsForm.controls.notes.value }}</p>
+        </section>
+      }
+    </app-dictionary-preview-card-no-photo>
+  } @else {
+    <form id="organizations-form" [formGroup]="organizationsForm" (ngSubmit)="submitOrganizations()" class="formGrid">
+      <fieldset class="dictionaryFormSection">
+        <legend>Карточка организации</legend>
+        <ui-form-grid [columns]="3">
+          <app-ui-form-field label="Вид организации" [invalid]="false" [errorText]="''">
+            <select formControlName="organizationKind">
+              <option value="OOO">ООО</option>
+              <option value="IP">ИП</option>
+            </select>
+          </app-ui-form-field>
+          <app-ui-form-field
+            class="uiFormGrid__full"
+            label="Полное наименование"
+            [required]="true"
+            [wide]="true"
+            [invalid]="isOrganizationsInvalid('name')"
+            [errorText]="isOrganizationsInvalid('name') ? 'Минимум 2 символа' : ''"
+          >
+            <input type="text" formControlName="name" placeholder="ООО &quot;Пример&quot;" />
+          </app-ui-form-field>
+
+          <app-ui-form-field label="Короткое наименование" [invalid]="false" [errorText]="''">
+            <input type="text" formControlName="shortName" placeholder="ООО &quot;Пример&quot;" />
+          </app-ui-form-field>
+        </ui-form-grid>
+      </fieldset>
+
+      <fieldset class="dictionaryFormSection">
+        <legend>Реквизиты</legend>
+        <ui-form-grid [columns]="3">
+          <app-ui-form-field label="ИНН" [invalid]="false" [errorText]="''">
+            <input type="text" formControlName="inn" inputmode="numeric" [attr.placeholder]="organizationInnPlaceholder()" />
+          </app-ui-form-field>
+          @if (organizationsForm.controls.organizationKind.value !== 'IP') {
+            <app-ui-form-field label="КПП" [invalid]="false" [errorText]="''">
+              <input type="text" formControlName="kpp" inputmode="numeric" />
+            </app-ui-form-field>
+          }
+          <app-ui-form-field [label]="organizationOgrnLabel()" [invalid]="false" [errorText]="''">
+            <input type="text" formControlName="ogrn" inputmode="numeric" />
+          </app-ui-form-field>
+          <app-ui-form-field label="ОКПО" [invalid]="false" [errorText]="''">
+            <input type="text" formControlName="okpo" inputmode="numeric" />
+          </app-ui-form-field>
+        </ui-form-grid>
+      </fieldset>
+
+      <fieldset class="dictionaryFormSection">
+        <legend>Контакты</legend>
+        <ui-form-grid [columns]="3">
+          <app-ui-form-field label="Телефон" [invalid]="false" [errorText]="''">
+            <input type="tel" formControlName="phone" autocomplete="tel" />
+          </app-ui-form-field>
+          <app-ui-form-field label="Email" [invalid]="false" [errorText]="''">
+            <input type="email" formControlName="email" autocomplete="email" />
+          </app-ui-form-field>
+          <app-ui-form-field label="Сайт" [invalid]="false" [errorText]="''">
+            <input type="url" formControlName="website" placeholder="https://example.com" />
+          </app-ui-form-field>
+          <app-ui-form-field class="uiFormGrid__full" label="Контактные лица" [wide]="true" [invalid]="false" [errorText]="''">
+            <div class="orgContactPick">
+              <div class="colorRefRow">
+                <select
+                  formControlName="contactPicker"
+                  (change)="addOrganizationContactFromPicker()"
+                  [attr.aria-label]="'Выберите контакт для добавления'"
+                >
+                  <option value="">— Выберите контакт —</option>
+                  @for (opt of organizationContactPickerOptions(); track opt.id) {
+                    <option [value]="opt.id">{{ opt.label }}</option>
+                  }
+                </select>
+                <app-ui-button
+                  type="button"
+                  [square]="true"
+                  ariaLabel="Добавить контактное лицо"
+                  title="Добавить контактное лицо"
+                  (clicked)="openClientsCreate()"
+                >
+                  <span class="squareIconTone squareIconTone--affirm"><svg lucidePlus [size]="18"></svg></span>
+                </app-ui-button>
+              </div>
+              @if (organizationsForm.controls.contactIds.value.length > 0) {
+                <ul class="orgContactPickList" aria-label="Выбранные контактные лица">
+                  @for (cid of organizationsForm.controls.contactIds.value; track cid) {
+                    @let row = organizationContactRow(cid);
+                    <li class="orgContactPickList__item">
+                      <div class="orgContactPickList__body">
+                        <div class="orgContactPickList__fio">{{ row.fio }}</div>
+                        <div class="orgContactPickList__meta">
+                          <span class="orgContactPickList__metaLine"
+                            ><span class="orgContactPickList__k">Тел.</span> {{ row.phone }}</span
+                          >
+                          <span class="orgContactPickList__metaLine"
+                            ><span class="orgContactPickList__k">Email</span> {{ row.email }}</span
+                          >
+                        </div>
                       </div>
-                    </div>
-                    @if (!isOrganizationsViewMode()) {
                       <button
                         type="button"
                         class="orgContactPickList__remove"
@@ -1446,62 +1807,62 @@
                       >
                         <svg lucideX [size]="16" aria-hidden="true"></svg>
                       </button>
-                    }
-                  </li>
-                }
-              </ul>
-            }
-          </div>
-        </app-ui-form-field>
-      </ui-form-grid>
-    </fieldset>
+                    </li>
+                  }
+                </ul>
+              }
+            </div>
+          </app-ui-form-field>
+        </ui-form-grid>
+      </fieldset>
 
-    <fieldset class="dictionaryFormSection">
-      <legend>Адреса</legend>
-      <ui-form-grid [columns]="3">
-        <app-ui-form-field class="uiFormGrid__full" label="Юридический адрес" [wide]="true" [invalid]="false" [errorText]="''">
-          <input type="text" formControlName="legalAddress" />
-        </app-ui-form-field>
-        <app-ui-form-field class="uiFormGrid__full" label="Почтовый адрес" [wide]="true" [invalid]="false" [errorText]="''">
-          <input type="text" formControlName="postalAddress" />
-        </app-ui-form-field>
-      </ui-form-grid>
-    </fieldset>
+      <fieldset class="dictionaryFormSection">
+        <legend>Адреса</legend>
+        <ui-form-grid [columns]="3">
+          <app-ui-form-field class="uiFormGrid__full" label="Юридический адрес" [wide]="true" [invalid]="false" [errorText]="''">
+            <input type="text" formControlName="legalAddress" />
+          </app-ui-form-field>
+          <app-ui-form-field class="uiFormGrid__full" label="Почтовый адрес" [wide]="true" [invalid]="false" [errorText]="''">
+            <input type="text" formControlName="postalAddress" />
+          </app-ui-form-field>
+        </ui-form-grid>
+      </fieldset>
 
-    <fieldset class="dictionaryFormSection">
-      <legend>Банк и подписант</legend>
-      <ui-form-grid [columns]="3">
-        <app-ui-form-field class="uiFormGrid__full" label="Банк" [wide]="true" [invalid]="false" [errorText]="''">
-          <input type="text" formControlName="bankName" />
-        </app-ui-form-field>
-        <app-ui-form-field label="БИК" [invalid]="false" [errorText]="''">
-          <input type="text" formControlName="bankBik" inputmode="numeric" />
-        </app-ui-form-field>
-        <app-ui-form-field label="Расчётный счёт" [invalid]="false" [errorText]="''">
-          <input type="text" formControlName="bankAccount" inputmode="numeric" />
-        </app-ui-form-field>
-        <app-ui-form-field label="Корр. счёт" [invalid]="false" [errorText]="''">
-          <input type="text" formControlName="bankCorrAccount" inputmode="numeric" />
-        </app-ui-form-field>
-        <app-ui-form-field label="Подписант" [invalid]="false" [errorText]="''">
-          <input type="text" formControlName="signerName" />
-        </app-ui-form-field>
-        <app-ui-form-field label="Должность подписанта" [invalid]="false" [errorText]="''">
-          <input type="text" formControlName="signerPosition" />
-        </app-ui-form-field>
-      </ui-form-grid>
-    </fieldset>
+      <fieldset class="dictionaryFormSection">
+        <legend>Банк и подписант</legend>
+        <ui-form-grid [columns]="3">
+          <app-ui-form-field class="uiFormGrid__full" label="Банк" [wide]="true" [invalid]="false" [errorText]="''">
+            <input type="text" formControlName="bankName" />
+          </app-ui-form-field>
+          <app-ui-form-field label="БИК" [invalid]="false" [errorText]="''">
+            <input type="text" formControlName="bankBik" inputmode="numeric" />
+          </app-ui-form-field>
+          <app-ui-form-field label="Расчётный счёт" [invalid]="false" [errorText]="''">
+            <input type="text" formControlName="bankAccount" inputmode="numeric" />
+          </app-ui-form-field>
+          <app-ui-form-field label="Корр. счёт" [invalid]="false" [errorText]="''">
+            <input type="text" formControlName="bankCorrAccount" inputmode="numeric" />
+          </app-ui-form-field>
+          <app-ui-form-field label="Подписант" [invalid]="false" [errorText]="''">
+            <input type="text" formControlName="signerName" />
+          </app-ui-form-field>
+          <app-ui-form-field label="Должность подписанта" [invalid]="false" [errorText]="''">
+            <input type="text" formControlName="signerPosition" />
+          </app-ui-form-field>
+        </ui-form-grid>
+      </fieldset>
 
-    <fieldset class="dictionaryFormSection">
-      <legend>Дополнительно</legend>
-      <div class="dictionaryFormSectionBody">
-        <app-ui-form-field label="Заметки" [wide]="true">
-          <textarea rows="2" formControlName="notes"></textarea>
-        </app-ui-form-field>
-        <app-ui-checkbox-field class="checkbox" label="Активна" formControlName="isActive"></app-ui-checkbox-field>
-      </div>
-    </fieldset>
-  </form>
+      <fieldset class="dictionaryFormSection">
+        <legend>Дополнительно</legend>
+        <div class="dictionaryFormSectionBody">
+          <app-ui-form-field label="Заметки" [wide]="true">
+            <textarea rows="2" formControlName="notes"></textarea>
+          </app-ui-form-field>
+          <app-ui-checkbox-field class="checkbox" label="Активна" formControlName="isActive"></app-ui-checkbox-field>
+        </div>
+      </fieldset>
+    </form>
+  }
 </ng-template>
 
 <ng-template #organizationsActionsTpl>
@@ -1530,38 +1891,68 @@
 ></ui-modal>
 
 <ng-template #surfaceFinishesContentTpl>
-  <form id="surface-finishes-form" [formGroup]="surfaceFinishesForm" (ngSubmit)="submitSurfaceFinishes()" class="formGrid">
-    <fieldset class="dictionaryFormSection">
-      <legend>Отделка и шероховатость</legend>
-      <div class="dictionaryFormSectionBody">
-        <app-ui-form-field
-          label="Тип отделки"
-          [required]="true"
-          [invalid]="isSurfaceFinishesInvalid('finishType')"
-          [errorText]="isSurfaceFinishesInvalid('finishType') ? 'Минимум 2 символа' : ''"
-        >
-          <input type="text" formControlName="finishType" placeholder="Glossy / Matte / Satin..." />
-        </app-ui-form-field>
+  @if (isSurfaceFinishesViewMode()) {
+    <app-dictionary-preview-card-no-photo
+      ariaLabel="Карточка отделки"
+      [accentColor]="'#3b5bdb'"
+      [title]="surfaceFinishesForm.controls.finishType.value"
+      [subtitle]="surfaceFinishesForm.controls.roughnessClass.value"
+      [showStatus]="false"
+    >
+      <section class="dictionaryPreviewCard__panel">
+        <h3 class="dictionaryPreviewCard__panelTitle">Параметры</h3>
+        <dl class="dictionaryPreviewCard__dl">
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>Шероховатость</dt>
+            <dd>{{ surfaceFinishesForm.controls.roughnessClass.value }}</dd>
+          </div>
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>Ra, мкм</dt>
+            <dd>
+              {{
+                surfaceFinishesForm.controls.raMicron.value != null
+                  ? surfaceFinishesForm.controls.raMicron.value
+                  : '—'
+              }}
+            </dd>
+          </div>
+        </dl>
+      </section>
+    </app-dictionary-preview-card-no-photo>
+  } @else {
+    <form id="surface-finishes-form" [formGroup]="surfaceFinishesForm" (ngSubmit)="submitSurfaceFinishes()" class="formGrid">
+      <fieldset class="dictionaryFormSection">
+        <legend>Отделка и шероховатость</legend>
+        <div class="dictionaryFormSectionBody">
+          <app-ui-form-field
+            label="Тип отделки"
+            [required]="true"
+            [invalid]="isSurfaceFinishesInvalid('finishType')"
+            [errorText]="isSurfaceFinishesInvalid('finishType') ? 'Минимум 2 символа' : ''"
+          >
+            <input type="text" formControlName="finishType" placeholder="Glossy / Matte / Satin..." />
+          </app-ui-form-field>
 
-        <app-ui-form-field
-          label="Шероховатость (класс / обозначение)"
-          [required]="true"
-          [invalid]="isSurfaceFinishesInvalid('roughnessClass')"
-          [errorText]="isSurfaceFinishesInvalid('roughnessClass') ? 'Минимум 2 символа' : ''"
-        >
-          <input type="text" formControlName="roughnessClass" placeholder="Ra 0.8 / N7 / Полированная..." />
-        </app-ui-form-field>
+          <app-ui-form-field
+            label="Шероховатость (класс / обозначение)"
+            [required]="true"
+            [invalid]="isSurfaceFinishesInvalid('roughnessClass')"
+            [errorText]="isSurfaceFinishesInvalid('roughnessClass') ? 'Минимум 2 символа' : ''"
+          >
+            <input type="text" formControlName="roughnessClass" placeholder="Ra 0.8 / N7 / Полированная..." />
+          </app-ui-form-field>
 
-        <app-ui-form-field
-          label="Ra, мкм"
-          [invalid]="isSurfaceFinishesInvalid('raMicron')"
-          [errorText]="isSurfaceFinishesInvalid('raMicron') ? 'Проверьте значение' : ''"
-        >
-          <input type="number" formControlName="raMicron" />
-        </app-ui-form-field>
-      </div>
-    </fieldset>
-  </form>
+          <app-ui-form-field
+            label="Ra, мкм"
+            [invalid]="isSurfaceFinishesInvalid('raMicron')"
+            [errorText]="isSurfaceFinishesInvalid('raMicron') ? 'Проверьте значение' : ''"
+          >
+            <input type="number" formControlName="raMicron" />
+          </app-ui-form-field>
+        </div>
+      </fieldset>
+    </form>
+  }
 </ng-template>
 
 <ng-template #surfaceFinishesActionsTpl>
@@ -1610,67 +2001,99 @@
 ></ui-modal>
 
 <ng-template #colorsContentTpl>
-  <form id="colors-form" [formGroup]="colorsForm" (ngSubmit)="submitColors()" class="formGrid">
-    <fieldset class="dictionaryFormSection">
-      <legend>Код и название</legend>
-      <div class="dictionaryFormSectionBody">
-        <app-ui-form-field
-          label="Код RAL"
-          [invalid]="isColorsInvalidOnBlur('ralCode')"
-          [errorText]="isColorsInvalidOnBlur('ralCode') ? 'Формат: RAL 0000 или 0000; RAL DESIGN 000 00 00' : ''"
-        >
-          <input
-            type="text"
-            formControlName="ralCode"
-            placeholder="RAL 7035 / RAL DESIGN 270 30 35"
-            (focus)="onRalCodeFocus()"
-            (blur)="onRalCodeBlur()"
-          />
-        </app-ui-form-field>
-
-        <app-ui-form-field
-          label="Название"
-          [required]="true"
-          [invalid]="isColorsInvalid('name')"
-          [errorText]="isColorsInvalid('name') ? 'Минимум 2 символа' : ''"
-        >
-          <input type="text" formControlName="name" />
-        </app-ui-form-field>
-      </div>
-    </fieldset>
-
-    <fieldset class="dictionaryFormSection">
-      <legend>Цвет (HEX / RGB)</legend>
-      <div class="dictionaryFormSectionBody">
-        <app-hex-rgb-field
-          [control]="colorsForm.controls.hex"
-          [required]="true"
-          [invalid]="isColorsInvalid('hex')"
-          [errorText]="isColorsInvalid('hex') ? 'HEX в формате #RRGGBB' : ''"
-        ></app-hex-rgb-field>
-      </div>
-    </fieldset>
-
-    <fieldset
-      class="dictionaryFormSection dictionaryFormSection--autoFields"
-      aria-label="Сводка цвета, только просмотр"
+  @if (isColorsViewMode()) {
+    <app-dictionary-preview-card-no-photo
+      ariaLabel="Карточка цвета RAL"
+      [accentColor]="colorPreviewHexForColorsForm() ?? '#3b5bdb'"
+      [title]="colorsForm.controls.name.value"
+      [subtitle]="colorNameWithRal()"
+      [showStatus]="false"
     >
-      <legend>Сводка</legend>
-      <div class="dictionaryFormSectionBody dictionaryReadonlyGrid">
-        <div class="dictionaryReadonlyPair dictionaryFieldRowFull">
-          <span class="dictionaryReadonlyLabel">RAL и название (как в списках)</span>
-          <div class="dictionaryReadonlyValueRow">
-            <span
-              class="colorSwatch"
-              aria-hidden="true"
-              [style.background]="colorPreviewHexForColorsForm() ?? '#e5e7eb'"
-            ></span>
-            <span class="dictionaryReadonlyValue">{{ colorNameWithRal() }}</span>
+      <section class="dictionaryPreviewCard__panel">
+        <h3 class="dictionaryPreviewCard__panelTitle">Код и образец</h3>
+        <dl class="dictionaryPreviewCard__dl">
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>Код RAL</dt>
+            <dd>{{ colorsForm.controls.ralCode.value.trim() || '—' }}</dd>
+          </div>
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>HEX</dt>
+            <dd>
+              <span class="dictionaryPreviewCard__profileSwatchRow">
+                <span
+                  class="dictionaryPreviewCard__swatch"
+                  [style.background]="colorPreviewHexForColorsForm() ?? '#e5e7eb'"
+                ></span>
+                <span>{{ colorsForm.controls.hex.value }}</span>
+              </span>
+            </dd>
+          </div>
+        </dl>
+      </section>
+    </app-dictionary-preview-card-no-photo>
+  } @else {
+    <form id="colors-form" [formGroup]="colorsForm" (ngSubmit)="submitColors()" class="formGrid">
+      <fieldset class="dictionaryFormSection">
+        <legend>Код и название</legend>
+        <div class="dictionaryFormSectionBody">
+          <app-ui-form-field
+            label="Код RAL"
+            [invalid]="isColorsInvalidOnBlur('ralCode')"
+            [errorText]="isColorsInvalidOnBlur('ralCode') ? 'Формат: RAL 0000 или 0000; RAL DESIGN 000 00 00' : ''"
+          >
+            <input
+              type="text"
+              formControlName="ralCode"
+              placeholder="RAL 7035 / RAL DESIGN 270 30 35"
+              (focus)="onRalCodeFocus()"
+              (blur)="onRalCodeBlur()"
+            />
+          </app-ui-form-field>
+
+          <app-ui-form-field
+            label="Название"
+            [required]="true"
+            [invalid]="isColorsInvalid('name')"
+            [errorText]="isColorsInvalid('name') ? 'Минимум 2 символа' : ''"
+          >
+            <input type="text" formControlName="name" />
+          </app-ui-form-field>
+        </div>
+      </fieldset>
+
+      <fieldset class="dictionaryFormSection">
+        <legend>Цвет (HEX / RGB)</legend>
+        <div class="dictionaryFormSectionBody">
+          <app-hex-rgb-field
+            [control]="colorsForm.controls.hex"
+            [required]="true"
+            [invalid]="isColorsInvalid('hex')"
+            [errorText]="isColorsInvalid('hex') ? 'HEX в формате #RRGGBB' : ''"
+          ></app-hex-rgb-field>
+        </div>
+      </fieldset>
+
+      <fieldset
+        class="dictionaryFormSection dictionaryFormSection--autoFields"
+        aria-label="Сводка цвета, только просмотр"
+      >
+        <legend>Сводка</legend>
+        <div class="dictionaryFormSectionBody dictionaryReadonlyGrid">
+          <div class="dictionaryReadonlyPair dictionaryFieldRowFull">
+            <span class="dictionaryReadonlyLabel">RAL и название (как в списках)</span>
+            <div class="dictionaryReadonlyValueRow">
+              <span
+                class="colorSwatch"
+                aria-hidden="true"
+                [style.background]="colorPreviewHexForColorsForm() ?? '#e5e7eb'"
+              ></span>
+              <span class="dictionaryReadonlyValue">{{ colorNameWithRal() }}</span>
+            </div>
           </div>
         </div>
-      </div>
-    </fieldset>
-  </form>
+      </fieldset>
+    </form>
+  }
 </ng-template>
 
 <ng-template #colorsActionsTpl>
@@ -1712,191 +2135,308 @@
 </ng-template>
 
 <ng-template #materialCharacteristicsContentTpl>
-  <form
-    id="material-characteristics-form"
-    [formGroup]="materialCharacteristicsForm"
-    (ngSubmit)="submitMaterialCharacteristics()"
-    class="formGrid"
-  >
-    <fieldset class="dictionaryFormSection">
-      <legend>Профиль</legend>
-      <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
-        <app-ui-form-field
-          label="Название"
-          [required]="true"
-          [invalid]="isMaterialCharacteristicsInvalid('name')"
-          [errorText]="isMaterialCharacteristicsInvalid('name') ? 'Минимум 2 символа' : ''"
+  @if (isMaterialCharacteristicsViewMode()) {
+    <app-dictionary-preview-card-no-photo
+      ariaLabel="Карточка характеристики материала"
+      [accentColor]="'#3b5bdb'"
+      [title]="materialCharacteristicsForm.controls.name.value"
+      [subtitle]="materialCharacteristicsPreviewSubtitle() || null"
+      [code]="materialCharacteristicsForm.controls.code.value.trim() || null"
+      [isActive]="materialCharacteristicsForm.controls.isActive.value"
+    >
+      <section class="dictionaryPreviewCard__panel">
+        <h3 class="dictionaryPreviewCard__panelTitle">Связи</h3>
+        <dl class="dictionaryPreviewCard__dl">
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>Цвет (RAL)</dt>
+            <dd>{{ materialCharacteristicsColorOptionLabel() }}</dd>
+          </div>
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>Тип отделки / шероховатость</dt>
+            <dd>{{ materialCharacteristicsSurfaceOptionLabel() }}</dd>
+          </div>
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>Покрытие</dt>
+            <dd>{{ materialCharacteristicsCoatingOptionLabel() }}</dd>
+          </div>
+        </dl>
+      </section>
+
+      @if (
+        materialCharacteristicsForm.controls.colorId.value ||
+        materialCharacteristicsForm.controls.surfaceFinishId.value ||
+        materialCharacteristicsForm.controls.coatingId.value
+      ) {
+        <section
+          class="dictionaryPreviewCard__panel dictionaryFormSection--autoFields"
+          aria-label="Значения из связанных справочников"
         >
-          <input type="text" formControlName="name" />
-        </app-ui-form-field>
-
-        <app-ui-form-field label="Код">
-          <input type="text" formControlName="code" />
-        </app-ui-form-field>
-
-        <app-ui-form-field label="Плотность (кг/м³)">
-          <input type="number" formControlName="densityKgM3" />
-        </app-ui-form-field>
-      </div>
-    </fieldset>
-
-    <fieldset class="dictionaryFormSection">
-      <legend>Справочники — выбор записей</legend>
-      <div class="dictionaryFormSectionBody">
-        <app-ui-form-field label="Цвет (RAL)">
-          <div class="colorRefRow">
-            <select formControlName="colorId">
-              <option value="">— Не выбран —</option>
-              @for (option of colorsStore.options(); track option.id) {
-                <option [value]="option.id">{{ option.label }}</option>
-              }
-            </select>
-            <app-ui-button
-              type="button"
-              [square]="true"
-              ariaLabel="Добавить цвет RAL"
-              title="Добавить цвет RAL"
-              (clicked)="openColorsCreate(true)"
-            >
-              <span class="squareIconTone squareIconTone--affirm"><svg lucidePlus [size]="18"></svg></span>
-            </app-ui-button>
-          </div>
-        </app-ui-form-field>
-
-        <app-ui-form-field label="Тип отделки / шероховатость">
-          <div class="colorRefRow">
-            <select formControlName="surfaceFinishId">
-              <option value="">— Не выбран —</option>
-              @for (option of surfaceFinishesStore.options(); track option.id) {
-                <option [value]="option.id">{{ option.label }}</option>
-              }
-            </select>
-            <app-ui-button
-              type="button"
-              [square]="true"
-              ariaLabel="Добавить финиш"
-              title="Добавить финиш"
-              (clicked)="openSurfaceFinishesCreate(true)"
-            >
-              <span class="squareIconTone squareIconTone--affirm"><svg lucidePlus [size]="18"></svg></span>
-            </app-ui-button>
-          </div>
-        </app-ui-form-field>
-
-        <app-ui-form-field label="Покрытие">
-          <div class="colorRefRow">
-            <select formControlName="coatingId">
-              <option value="">— Не выбран —</option>
-              @for (option of coatingsStore.options(); track option.id) {
-                <option [value]="option.id">{{ option.label }}</option>
-              }
-            </select>
-            <app-ui-button
-              type="button"
-              [square]="true"
-              ariaLabel="Добавить покрытие"
-              title="Добавить покрытие"
-              (clicked)="openCoatingsCreate(true)"
-            >
-              <span class="squareIconTone squareIconTone--affirm"><svg lucidePlus [size]="18"></svg></span>
-            </app-ui-button>
-          </div>
-        </app-ui-form-field>
-      </div>
-    </fieldset>
-
-    @if (
-      materialCharacteristicsForm.controls.colorId.value ||
-      materialCharacteristicsForm.controls.surfaceFinishId.value ||
-      materialCharacteristicsForm.controls.coatingId.value
-    ) {
-      <fieldset
-        class="dictionaryFormSection dictionaryFormSection--autoFields"
-        aria-label="Значения из связанных справочников, только просмотр"
-      >
-        <legend>Из справочников</legend>
-        <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2 dictionaryReadonlyGrid">
-          <div class="dictionaryReadonlyPair">
-            <span class="dictionaryReadonlyLabel">Цвет — название</span>
-            <span class="dictionaryReadonlyValue">{{
-              (materialCharacteristicsForm.controls.colorName.value || '').trim() || '—'
-            }}</span>
-          </div>
-
-          <div class="dictionaryReadonlyPair">
-            <span class="dictionaryReadonlyLabel">Цвет — HEX</span>
-            <div class="dictionaryReadonlyValueRow">
-              <span
-                class="colorSwatch"
-                aria-hidden="true"
-                [style.background]="selectedMaterialCharacteristicColorHex() || '#e5e7eb'"
-              ></span>
+          <h3 class="dictionaryPreviewCard__panelTitle">Из справочников</h3>
+          <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2 dictionaryReadonlyGrid">
+            <div class="dictionaryReadonlyPair">
+              <span class="dictionaryReadonlyLabel">Цвет — название</span>
               <span class="dictionaryReadonlyValue">{{
-                (materialCharacteristicsForm.controls.colorHex.value || '').trim() || '—'
+                (materialCharacteristicsForm.controls.colorName.value || '').trim() || '—'
+              }}</span>
+            </div>
+
+            <div class="dictionaryReadonlyPair">
+              <span class="dictionaryReadonlyLabel">Цвет — HEX</span>
+              <div class="dictionaryReadonlyValueRow">
+                <span
+                  class="colorSwatch"
+                  aria-hidden="true"
+                  [style.background]="selectedMaterialCharacteristicColorHex() || '#e5e7eb'"
+                ></span>
+                <span class="dictionaryReadonlyValue">{{
+                  (materialCharacteristicsForm.controls.colorHex.value || '').trim() || '—'
+                }}</span>
+              </div>
+            </div>
+
+            <div class="dictionaryReadonlyPair">
+              <span class="dictionaryReadonlyLabel">Отделка — тип</span>
+              <span class="dictionaryReadonlyValue">{{
+                (materialCharacteristicsForm.controls.finishType.value || '').trim() || '—'
+              }}</span>
+            </div>
+
+            <div class="dictionaryReadonlyPair">
+              <span class="dictionaryReadonlyLabel">Отделка — шероховатость (класс)</span>
+              <span class="dictionaryReadonlyValue">{{
+                (materialCharacteristicsForm.controls.roughnessClass.value || '').trim() || '—'
+              }}</span>
+            </div>
+
+            <div class="dictionaryReadonlyPair">
+              <span class="dictionaryReadonlyLabel">Отделка — Ra, мкм</span>
+              <span class="dictionaryReadonlyValue">{{
+                materialCharacteristicsForm.controls.raMicron.value != null
+                  ? materialCharacteristicsForm.controls.raMicron.value
+                  : '—'
+              }}</span>
+            </div>
+
+            <div class="dictionaryReadonlyPair">
+              <span class="dictionaryReadonlyLabel">Покрытие — тип</span>
+              <span class="dictionaryReadonlyValue">{{
+                (materialCharacteristicsForm.controls.coatingType.value || '').trim() || '—'
+              }}</span>
+            </div>
+
+            <div class="dictionaryReadonlyPair">
+              <span class="dictionaryReadonlyLabel">Покрытие — спецификация</span>
+              <span class="dictionaryReadonlyValue">{{
+                (materialCharacteristicsForm.controls.coatingSpec.value || '').trim() || '—'
+              }}</span>
+            </div>
+
+            <div class="dictionaryReadonlyPair">
+              <span class="dictionaryReadonlyLabel">Покрытие — толщина, мкм</span>
+              <span class="dictionaryReadonlyValue">{{
+                materialCharacteristicsForm.controls.coatingThicknessMicron.value != null
+                  ? materialCharacteristicsForm.controls.coatingThicknessMicron.value
+                  : '—'
               }}</span>
             </div>
           </div>
+        </section>
+      }
 
-          <div class="dictionaryReadonlyPair">
-            <span class="dictionaryReadonlyLabel">Отделка — тип</span>
-            <span class="dictionaryReadonlyValue">{{
-              (materialCharacteristicsForm.controls.finishType.value || '').trim() || '—'
-            }}</span>
-          </div>
+      @if (materialCharacteristicsForm.controls.notes.value.trim()) {
+        <section class="dictionaryPreviewCard__notes">
+          <h3 class="dictionaryPreviewCard__panelTitle">Заметки</h3>
+          <p class="dictionaryPreviewCard__notesText">{{ materialCharacteristicsForm.controls.notes.value }}</p>
+        </section>
+      }
+    </app-dictionary-preview-card-no-photo>
+  } @else {
+    <form
+      id="material-characteristics-form"
+      [formGroup]="materialCharacteristicsForm"
+      (ngSubmit)="submitMaterialCharacteristics()"
+      class="formGrid"
+    >
+      <fieldset class="dictionaryFormSection">
+        <legend>Профиль</legend>
+        <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
+          <app-ui-form-field
+            label="Название"
+            [required]="true"
+            [invalid]="isMaterialCharacteristicsInvalid('name')"
+            [errorText]="isMaterialCharacteristicsInvalid('name') ? 'Минимум 2 символа' : ''"
+          >
+            <input type="text" formControlName="name" />
+          </app-ui-form-field>
 
-          <div class="dictionaryReadonlyPair">
-            <span class="dictionaryReadonlyLabel">Отделка — шероховатость (класс)</span>
-            <span class="dictionaryReadonlyValue">{{
-              (materialCharacteristicsForm.controls.roughnessClass.value || '').trim() || '—'
-            }}</span>
-          </div>
+          <app-ui-form-field label="Код">
+            <input type="text" formControlName="code" />
+          </app-ui-form-field>
 
-          <div class="dictionaryReadonlyPair">
-            <span class="dictionaryReadonlyLabel">Отделка — Ra, мкм</span>
-            <span class="dictionaryReadonlyValue">{{
-              materialCharacteristicsForm.controls.raMicron.value != null
-                ? materialCharacteristicsForm.controls.raMicron.value
-                : '—'
-            }}</span>
-          </div>
-
-          <div class="dictionaryReadonlyPair">
-            <span class="dictionaryReadonlyLabel">Покрытие — тип</span>
-            <span class="dictionaryReadonlyValue">{{
-              (materialCharacteristicsForm.controls.coatingType.value || '').trim() || '—'
-            }}</span>
-          </div>
-
-          <div class="dictionaryReadonlyPair">
-            <span class="dictionaryReadonlyLabel">Покрытие — спецификация</span>
-            <span class="dictionaryReadonlyValue">{{
-              (materialCharacteristicsForm.controls.coatingSpec.value || '').trim() || '—'
-            }}</span>
-          </div>
-
-          <div class="dictionaryReadonlyPair">
-            <span class="dictionaryReadonlyLabel">Покрытие — толщина, мкм</span>
-            <span class="dictionaryReadonlyValue">{{
-              materialCharacteristicsForm.controls.coatingThicknessMicron.value != null
-                ? materialCharacteristicsForm.controls.coatingThicknessMicron.value
-                : '—'
-            }}</span>
-          </div>
+          <app-ui-form-field label="Плотность (кг/м³)">
+            <input type="number" formControlName="densityKgM3" />
+          </app-ui-form-field>
         </div>
       </fieldset>
-    }
 
-    <fieldset class="dictionaryFormSection">
-      <legend>Дополнительно</legend>
-      <div class="dictionaryFormSectionBody">
-        <app-ui-form-field label="Заметки" [wide]="true">
-          <textarea rows="2" formControlName="notes"></textarea>
-        </app-ui-form-field>
+      <fieldset class="dictionaryFormSection">
+        <legend>Справочники — выбор записей</legend>
+        <div class="dictionaryFormSectionBody">
+          <app-ui-form-field label="Цвет (RAL)">
+            <div class="colorRefRow">
+              <select formControlName="colorId">
+                <option value="">— Не выбран —</option>
+                @for (option of colorsStore.options(); track option.id) {
+                  <option [value]="option.id">{{ option.label }}</option>
+                }
+              </select>
+              <app-ui-button
+                type="button"
+                [square]="true"
+                ariaLabel="Добавить цвет RAL"
+                title="Добавить цвет RAL"
+                (clicked)="openColorsCreate(true)"
+              >
+                <span class="squareIconTone squareIconTone--affirm"><svg lucidePlus [size]="18"></svg></span>
+              </app-ui-button>
+            </div>
+          </app-ui-form-field>
 
-        <app-ui-checkbox-field class="checkbox" label="Активен" formControlName="isActive"></app-ui-checkbox-field>
-      </div>
-    </fieldset>
-  </form>
+          <app-ui-form-field label="Тип отделки / шероховатость">
+            <div class="colorRefRow">
+              <select formControlName="surfaceFinishId">
+                <option value="">— Не выбран —</option>
+                @for (option of surfaceFinishesStore.options(); track option.id) {
+                  <option [value]="option.id">{{ option.label }}</option>
+                }
+              </select>
+              <app-ui-button
+                type="button"
+                [square]="true"
+                ariaLabel="Добавить финиш"
+                title="Добавить финиш"
+                (clicked)="openSurfaceFinishesCreate(true)"
+              >
+                <span class="squareIconTone squareIconTone--affirm"><svg lucidePlus [size]="18"></svg></span>
+              </app-ui-button>
+            </div>
+          </app-ui-form-field>
+
+          <app-ui-form-field label="Покрытие">
+            <div class="colorRefRow">
+              <select formControlName="coatingId">
+                <option value="">— Не выбран —</option>
+                @for (option of coatingsStore.options(); track option.id) {
+                  <option [value]="option.id">{{ option.label }}</option>
+                }
+              </select>
+              <app-ui-button
+                type="button"
+                [square]="true"
+                ariaLabel="Добавить покрытие"
+                title="Добавить покрытие"
+                (clicked)="openCoatingsCreate(true)"
+              >
+                <span class="squareIconTone squareIconTone--affirm"><svg lucidePlus [size]="18"></svg></span>
+              </app-ui-button>
+            </div>
+          </app-ui-form-field>
+        </div>
+      </fieldset>
+
+      @if (
+        materialCharacteristicsForm.controls.colorId.value ||
+        materialCharacteristicsForm.controls.surfaceFinishId.value ||
+        materialCharacteristicsForm.controls.coatingId.value
+      ) {
+        <fieldset
+          class="dictionaryFormSection dictionaryFormSection--autoFields"
+          aria-label="Значения из связанных справочников, только просмотр"
+        >
+          <legend>Из справочников</legend>
+          <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2 dictionaryReadonlyGrid">
+            <div class="dictionaryReadonlyPair">
+              <span class="dictionaryReadonlyLabel">Цвет — название</span>
+              <span class="dictionaryReadonlyValue">{{
+                (materialCharacteristicsForm.controls.colorName.value || '').trim() || '—'
+              }}</span>
+            </div>
+
+            <div class="dictionaryReadonlyPair">
+              <span class="dictionaryReadonlyLabel">Цвет — HEX</span>
+              <div class="dictionaryReadonlyValueRow">
+                <span
+                  class="colorSwatch"
+                  aria-hidden="true"
+                  [style.background]="selectedMaterialCharacteristicColorHex() || '#e5e7eb'"
+                ></span>
+                <span class="dictionaryReadonlyValue">{{
+                  (materialCharacteristicsForm.controls.colorHex.value || '').trim() || '—'
+                }}</span>
+              </div>
+            </div>
+
+            <div class="dictionaryReadonlyPair">
+              <span class="dictionaryReadonlyLabel">Отделка — тип</span>
+              <span class="dictionaryReadonlyValue">{{
+                (materialCharacteristicsForm.controls.finishType.value || '').trim() || '—'
+              }}</span>
+            </div>
+
+            <div class="dictionaryReadonlyPair">
+              <span class="dictionaryReadonlyLabel">Отделка — шероховатость (класс)</span>
+              <span class="dictionaryReadonlyValue">{{
+                (materialCharacteristicsForm.controls.roughnessClass.value || '').trim() || '—'
+              }}</span>
+            </div>
+
+            <div class="dictionaryReadonlyPair">
+              <span class="dictionaryReadonlyLabel">Отделка — Ra, мкм</span>
+              <span class="dictionaryReadonlyValue">{{
+                materialCharacteristicsForm.controls.raMicron.value != null
+                  ? materialCharacteristicsForm.controls.raMicron.value
+                  : '—'
+              }}</span>
+            </div>
+
+            <div class="dictionaryReadonlyPair">
+              <span class="dictionaryReadonlyLabel">Покрытие — тип</span>
+              <span class="dictionaryReadonlyValue">{{
+                (materialCharacteristicsForm.controls.coatingType.value || '').trim() || '—'
+              }}</span>
+            </div>
+
+            <div class="dictionaryReadonlyPair">
+              <span class="dictionaryReadonlyLabel">Покрытие — спецификация</span>
+              <span class="dictionaryReadonlyValue">{{
+                (materialCharacteristicsForm.controls.coatingSpec.value || '').trim() || '—'
+              }}</span>
+            </div>
+
+            <div class="dictionaryReadonlyPair">
+              <span class="dictionaryReadonlyLabel">Покрытие — толщина, мкм</span>
+              <span class="dictionaryReadonlyValue">{{
+                materialCharacteristicsForm.controls.coatingThicknessMicron.value != null
+                  ? materialCharacteristicsForm.controls.coatingThicknessMicron.value
+                  : '—'
+              }}</span>
+            </div>
+          </div>
+        </fieldset>
+      }
+
+      <fieldset class="dictionaryFormSection">
+        <legend>Дополнительно</legend>
+        <div class="dictionaryFormSectionBody">
+          <app-ui-form-field label="Заметки" [wide]="true">
+            <textarea rows="2" formControlName="notes"></textarea>
+          </app-ui-form-field>
+
+          <app-ui-checkbox-field class="checkbox" label="Активен" formControlName="isActive"></app-ui-checkbox-field>
+        </div>
+      </fieldset>
+    </form>
+  }
 </ng-template>
 
 <ng-template #materialCharacteristicsActionsTpl>
@@ -1930,93 +2470,135 @@
 ></ui-modal>
 
 <ng-template #geometriesContentTpl>
-  <form id="geometries-form" [formGroup]="geometriesForm" (ngSubmit)="submitGeometries()" class="formGrid geometriesFormPanel">
-    <fieldset class="dictionaryFormSection">
-      <legend>Наименование и тип</legend>
-      <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
-        <app-ui-form-field
-          label="Название"
-          [required]="true"
-          [invalid]="isGeometriesInvalid('name')"
-          [errorText]="isGeometriesInvalid('name') ? 'Минимум 2 символа' : ''"
-        >
-          <input type="text" formControlName="name" />
-        </app-ui-form-field>
+  @if (isGeometriesViewMode()) {
+    <app-dictionary-preview-card-no-photo
+      ariaLabel="Карточка геометрии"
+      [accentColor]="'#3b5bdb'"
+      [title]="geometriesForm.controls.name.value"
+      [subtitle]="geometryShapeLabelForView()"
+      [isActive]="geometriesForm.controls.isActive.value"
+    >
+      <section class="dictionaryPreviewCard__panel">
+        <h3 class="dictionaryPreviewCard__panelTitle">Параметры, мм</h3>
+        <dl class="dictionaryPreviewCard__dl">
+          <div *ngIf="geometriesDimensionVisible('diameterMm')" class="dictionaryPreviewCard__dlRow">
+            <dt>{{ geometryDiameterFieldLabel }}</dt>
+            <dd>{{ formatGeometryMmValue(geometriesForm.controls.diameterMm.value) }}</dd>
+          </div>
+          <div *ngIf="geometriesDimensionVisible('thicknessMm')" class="dictionaryPreviewCard__dlRow">
+            <dt>Толщина (мм)</dt>
+            <dd>{{ formatGeometryMmValue(geometriesForm.controls.thicknessMm.value) }}</dd>
+          </div>
+          <div *ngIf="geometriesDimensionVisible('heightMm')" class="dictionaryPreviewCard__dlRow">
+            <dt>Высота (мм)</dt>
+            <dd>{{ formatGeometryMmValue(geometriesForm.controls.heightMm.value) }}</dd>
+          </div>
+          <div *ngIf="geometriesDimensionVisible('widthMm')" class="dictionaryPreviewCard__dlRow">
+            <dt>Ширина (мм)</dt>
+            <dd>{{ formatGeometryMmValue(geometriesForm.controls.widthMm.value) }}</dd>
+          </div>
+          <div *ngIf="geometriesDimensionVisible('lengthMm')" class="dictionaryPreviewCard__dlRow">
+            <dt>Длина (мм)</dt>
+            <dd>{{ formatGeometryMmValue(geometriesForm.controls.lengthMm.value) }}</dd>
+          </div>
+        </dl>
+      </section>
+      @if (geometriesForm.controls.notes.value.trim()) {
+        <section class="dictionaryPreviewCard__notes">
+          <h3 class="dictionaryPreviewCard__panelTitle">Заметки</h3>
+          <p class="dictionaryPreviewCard__notesText">{{ geometriesForm.controls.notes.value }}</p>
+        </section>
+      }
+    </app-dictionary-preview-card-no-photo>
+  } @else {
+    <form id="geometries-form" [formGroup]="geometriesForm" (ngSubmit)="submitGeometries()" class="formGrid geometriesFormPanel">
+      <fieldset class="dictionaryFormSection">
+        <legend>Наименование и тип</legend>
+        <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
+          <app-ui-form-field
+            label="Название"
+            [required]="true"
+            [invalid]="isGeometriesInvalid('name')"
+            [errorText]="isGeometriesInvalid('name') ? 'Минимум 2 символа' : ''"
+          >
+            <input type="text" formControlName="name" />
+          </app-ui-form-field>
 
-        <app-ui-form-field
-          label="Тип геометрии"
-          [required]="true"
-          [invalid]="isGeometriesInvalid('shapeKey')"
-          [errorText]="isGeometriesInvalid('shapeKey') ? 'Укажите тип' : ''"
-        >
-          <select formControlName="shapeKey">
-            <option *ngFor="let s of shapeOptions" [value]="s.value">{{ s.label }}</option>
-          </select>
-        </app-ui-form-field>
-      </div>
-    </fieldset>
+          <app-ui-form-field
+            label="Тип геометрии"
+            [required]="true"
+            [invalid]="isGeometriesInvalid('shapeKey')"
+            [errorText]="isGeometriesInvalid('shapeKey') ? 'Укажите тип' : ''"
+          >
+            <select formControlName="shapeKey">
+              <option *ngFor="let s of shapeOptions" [value]="s.value">{{ s.label }}</option>
+            </select>
+          </app-ui-form-field>
+        </div>
+      </fieldset>
 
-    <fieldset class="geometryParams">
-      <legend>Параметры, мм</legend>
-      <div class="geometryDimsGrid">
-        <app-ui-form-field
-          *ngIf="geometriesDimensionVisible('diameterMm')"
-          [label]="geometryDiameterFieldLabel"
-          [invalid]="isGeometriesInvalid('diameterMm')"
-          [errorText]="isGeometriesInvalid('diameterMm') ? 'Проверьте значение' : ''"
-        >
-          <input type="number" formControlName="diameterMm" />
-        </app-ui-form-field>
+      <fieldset class="geometryParams">
+        <legend>Параметры, мм</legend>
+        <div class="geometryDimsGrid">
+          <app-ui-form-field
+            *ngIf="geometriesDimensionVisible('diameterMm')"
+            [label]="geometryDiameterFieldLabel"
+            [invalid]="isGeometriesInvalid('diameterMm')"
+            [errorText]="isGeometriesInvalid('diameterMm') ? 'Проверьте значение' : ''"
+          >
+            <input type="number" formControlName="diameterMm" />
+          </app-ui-form-field>
 
-        <app-ui-form-field
-          *ngIf="geometriesDimensionVisible('thicknessMm')"
-          label="Толщина (мм)"
-          [invalid]="isGeometriesInvalid('thicknessMm')"
-          [errorText]="isGeometriesInvalid('thicknessMm') ? 'Проверьте значение' : ''"
-        >
-          <input type="number" formControlName="thicknessMm" />
-        </app-ui-form-field>
+          <app-ui-form-field
+            *ngIf="geometriesDimensionVisible('thicknessMm')"
+            label="Толщина (мм)"
+            [invalid]="isGeometriesInvalid('thicknessMm')"
+            [errorText]="isGeometriesInvalid('thicknessMm') ? 'Проверьте значение' : ''"
+          >
+            <input type="number" formControlName="thicknessMm" />
+          </app-ui-form-field>
 
-        <app-ui-form-field
-          *ngIf="geometriesDimensionVisible('heightMm')"
-          label="Высота (мм)"
-          [invalid]="isGeometriesInvalid('heightMm')"
-          [errorText]="isGeometriesInvalid('heightMm') ? 'Проверьте значение' : ''"
-        >
-          <input type="number" formControlName="heightMm" />
-        </app-ui-form-field>
+          <app-ui-form-field
+            *ngIf="geometriesDimensionVisible('heightMm')"
+            label="Высота (мм)"
+            [invalid]="isGeometriesInvalid('heightMm')"
+            [errorText]="isGeometriesInvalid('heightMm') ? 'Проверьте значение' : ''"
+          >
+            <input type="number" formControlName="heightMm" />
+          </app-ui-form-field>
 
-        <app-ui-form-field
-          *ngIf="geometriesDimensionVisible('widthMm')"
-          label="Ширина (мм)"
-          [invalid]="isGeometriesInvalid('widthMm')"
-          [errorText]="isGeometriesInvalid('widthMm') ? 'Проверьте значение' : ''"
-        >
-          <input type="number" formControlName="widthMm" />
-        </app-ui-form-field>
+          <app-ui-form-field
+            *ngIf="geometriesDimensionVisible('widthMm')"
+            label="Ширина (мм)"
+            [invalid]="isGeometriesInvalid('widthMm')"
+            [errorText]="isGeometriesInvalid('widthMm') ? 'Проверьте значение' : ''"
+          >
+            <input type="number" formControlName="widthMm" />
+          </app-ui-form-field>
 
-        <app-ui-form-field
-          *ngIf="geometriesDimensionVisible('lengthMm')"
-          label="Длина (мм)"
-          [invalid]="isGeometriesInvalid('lengthMm')"
-          [errorText]="isGeometriesInvalid('lengthMm') ? 'Проверьте значение' : ''"
-        >
-          <input type="number" formControlName="lengthMm" />
-        </app-ui-form-field>
-      </div>
-    </fieldset>
+          <app-ui-form-field
+            *ngIf="geometriesDimensionVisible('lengthMm')"
+            label="Длина (мм)"
+            [invalid]="isGeometriesInvalid('lengthMm')"
+            [errorText]="isGeometriesInvalid('lengthMm') ? 'Проверьте значение' : ''"
+          >
+            <input type="number" formControlName="lengthMm" />
+          </app-ui-form-field>
+        </div>
+      </fieldset>
 
-    <fieldset class="dictionaryFormSection">
-      <legend>Дополнительно</legend>
-      <div class="dictionaryFormSectionBody">
-        <app-ui-form-field label="Заметки" [wide]="true">
-          <textarea rows="2" formControlName="notes"></textarea>
-        </app-ui-form-field>
+      <fieldset class="dictionaryFormSection">
+        <legend>Дополнительно</legend>
+        <div class="dictionaryFormSectionBody">
+          <app-ui-form-field label="Заметки" [wide]="true">
+            <textarea rows="2" formControlName="notes"></textarea>
+          </app-ui-form-field>
 
-        <app-ui-checkbox-field class="checkbox" label="Активна" formControlName="isActive"></app-ui-checkbox-field>
-      </div>
-    </fieldset>
-  </form>
+          <app-ui-checkbox-field class="checkbox" label="Активна" formControlName="isActive"></app-ui-checkbox-field>
+        </div>
+      </fieldset>
+    </form>
+  }
 </ng-template>
 
 <ng-template #geometriesActionsTpl>
@@ -2045,41 +2627,58 @@
 ></ui-modal>
 
 <ng-template #unitsContentTpl>
-  <form id="units-form" [formGroup]="unitsForm" (ngSubmit)="submitUnits()" class="formGrid">
-    <fieldset class="dictionaryFormSection">
-      <legend>Обозначение</legend>
-      <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
-        <app-ui-form-field
-          label="Название"
-          [required]="true"
-          [invalid]="isUnitsInvalid('name')"
-          [errorText]="isUnitsInvalid('name') ? 'Введите название' : ''"
-        >
-          <input type="text" formControlName="name" />
-        </app-ui-form-field>
+  @if (isUnitsViewMode()) {
+    <app-dictionary-preview-card-no-photo
+      ariaLabel="Карточка единицы измерения"
+      [accentColor]="'#3b5bdb'"
+      [title]="unitsForm.controls.name.value"
+      [code]="unitsForm.controls.code.value"
+      [isActive]="unitsForm.controls.isActive.value"
+    >
+      @if (unitsForm.controls.notes.value.trim()) {
+        <section class="dictionaryPreviewCard__notes">
+          <h3 class="dictionaryPreviewCard__panelTitle">Комментарий</h3>
+          <p class="dictionaryPreviewCard__notesText">{{ unitsForm.controls.notes.value }}</p>
+        </section>
+      }
+    </app-dictionary-preview-card-no-photo>
+  } @else {
+    <form id="units-form" [formGroup]="unitsForm" (ngSubmit)="submitUnits()" class="formGrid">
+      <fieldset class="dictionaryFormSection">
+        <legend>Обозначение</legend>
+        <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
+          <app-ui-form-field
+            label="Название"
+            [required]="true"
+            [invalid]="isUnitsInvalid('name')"
+            [errorText]="isUnitsInvalid('name') ? 'Введите название' : ''"
+          >
+            <input type="text" formControlName="name" />
+          </app-ui-form-field>
 
-        <app-ui-form-field
-          label="Код"
-          [required]="true"
-          [invalid]="isUnitsInvalid('code')"
-          [errorText]="isUnitsInvalid('code') ? 'Минимум 2 символа' : ''"
-        >
-          <input type="text" formControlName="code" />
-        </app-ui-form-field>
-      </div>
-    </fieldset>
+          <app-ui-form-field
+            label="Код"
+            [required]="true"
+            [invalid]="isUnitsInvalid('code')"
+            [errorText]="isUnitsInvalid('code') ? 'Минимум 2 символа' : ''"
+          >
+            <input type="text" formControlName="code" />
+          </app-ui-form-field>
+        </div>
+      </fieldset>
 
-    <fieldset class="dictionaryFormSection">
-      <legend>Дополнительно</legend>
-      <div class="dictionaryFormSectionBody">
-        <app-ui-form-field label="Комментарий" [wide]="true">
-          <textarea rows="2" formControlName="notes"></textarea>
-        </app-ui-form-field>
+      <fieldset class="dictionaryFormSection">
+        <legend>Дополнительно</legend>
+        <div class="dictionaryFormSectionBody">
+          <app-ui-form-field label="Комментарий" [wide]="true">
+            <textarea rows="2" formControlName="notes"></textarea>
+          </app-ui-form-field>
 
-        <app-ui-checkbox-field class="checkbox" label="Активна" formControlName="isActive"></app-ui-checkbox-field>
-      </div>
-    </fieldset>
-  </form>
+          <app-ui-checkbox-field class="checkbox" label="Активна" formControlName="isActive"></app-ui-checkbox-field>
+        </div>
+      </fieldset>
+    </form>
+  }
 </ng-template>
 
 <ng-template #unitsActionsTpl>
