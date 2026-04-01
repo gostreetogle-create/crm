@@ -11,7 +11,6 @@
           [formGroup]="form"
           aria-label="Параметры листа и позиции КП"
         >
-          <h2 class="kp-builder__positions-title">Позиции</h2>
           <div class="kp-builder__positions-actions">
             <label class="kp-builder__rows-inline">
               <span class="kp-builder__rows-inline-label">Строк на листе</span>
@@ -33,9 +32,6 @@
         </div>
 
         <section class="kp-builder__preview-wrap" aria-label="Предпросмотр коммерческого предложения">
-          <p class="kp-builder__preview-hint kp-no-print">
-            Каждый блок — ровно A4. Печать: отключите колонтитулы в диалоге браузера.
-          </p>
           <div
             class="kp-builder__preview"
             #previewHost
@@ -44,6 +40,13 @@
             <div class="kp-builder__preview-zoom">
               <app-kp-document-template
                 [linesForm]="lines()"
+                [organizations]="organizations()"
+                [clients]="clients()"
+                [recipientCtrl]="form.controls.recipient"
+                [organizationSearchCtrl]="form.controls.organizationSearch"
+                [organizationContactIdCtrl]="form.controls.organizationContactId"
+                [vatPercentCtrl]="form.controls.vatPercent"
+                [vatAmountCtrl]="form.controls.vatAmount"
                 [contentPaddingTop]="contentPaddingTop"
                 [contentPaddingTopPage2]="contentPaddingTopPage2"
                 [rowsPerPage]="rowsPerPageNumber()"

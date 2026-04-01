@@ -43,6 +43,219 @@
   padding-bottom: 10mm;
 }
 
+/* Блок под заголовком КП: выбор организации (экран) + реквизиты (экран и печать) */
+.kp-sheet__orgStrip {
+  margin-bottom: 8px;
+  text-align: left;
+}
+
+.kp-sheet__orgPick {
+  margin-bottom: 4px;
+}
+
+.kp-sheet__orgContactPick {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  margin-top: 6px;
+  max-width: min(16rem, 100%);
+}
+
+.kp-sheet__orgContactPick-caption {
+  font-size: 9.5pt;
+  font-weight: 600;
+  color: #101828;
+}
+
+.kp-sheet__orgContactPick-select {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 6px 10px;
+  font: inherit;
+  font-size: 9.5pt;
+  border-radius: 4px;
+  border: 1px solid rgba(16, 24, 40, 0.22);
+  background: rgba(255, 255, 255, 0.96);
+  color: inherit;
+}
+
+.kp-sheet__orgPickLabel {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  font-size: 9.5pt;
+  font-weight: 600;
+  color: #101828;
+}
+
+/* Комбобокс: поиск внутри выпадающей панели (аналог select с фильтром) */
+.kp-sheet__recipientCombo {
+  position: relative;
+  width: 100%;
+  /* Не на всю ширину таблицы — компактное поле выбора получателя */
+  max-width: min(16rem, 100%);
+}
+
+.kp-sheet__recipientCombo-caption {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 9.5pt;
+  font-weight: 600;
+  color: #101828;
+}
+
+.kp-sheet__recipientCombo-inner {
+  position: relative;
+}
+
+.kp-sheet__recipientCombo-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 10px;
+  font: inherit;
+  font-size: 9.5pt;
+  text-align: left;
+  border-radius: 4px;
+  border: 1px solid rgba(16, 24, 40, 0.22);
+  background: rgba(255, 255, 255, 0.96);
+  color: inherit;
+  cursor: pointer;
+}
+
+.kp-sheet__recipientCombo-trigger:hover {
+  border-color: rgba(16, 24, 40, 0.35);
+}
+
+.kp-sheet__recipientCombo-value {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kp-sheet__recipientCombo-chevron {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+.kp-sheet__recipientCombo-dropdown {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  max-height: min(40vh, 16rem);
+  border-radius: 4px;
+  border: 1px solid rgba(16, 24, 40, 0.2);
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(16, 24, 40, 0.12);
+}
+
+.kp-sheet__recipientCombo-search {
+  flex-shrink: 0;
+  padding: 8px;
+  border-bottom: 1px solid rgba(16, 24, 40, 0.1);
+}
+
+.kp-sheet__recipientCombo-searchInput {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 6px 8px;
+  font: inherit;
+  font-size: 9pt;
+  border-radius: 4px;
+  border: 1px solid rgba(16, 24, 40, 0.22);
+  background: rgba(255, 255, 255, 0.98);
+  color: inherit;
+}
+
+.kp-sheet__recipientCombo-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.kp-sheet__recipientCombo-groupTitle {
+  padding: 6px 10px 4px;
+  font-size: 8pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgba(16, 24, 40, 0.55);
+}
+
+.kp-sheet__recipientCombo-option {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 7px 10px;
+  font: inherit;
+  font-size: 9.5pt;
+  text-align: left;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.kp-sheet__recipientCombo-option:hover,
+.kp-sheet__recipientCombo-option:focus-visible {
+  background: rgba(59, 130, 246, 0.1);
+  outline: none;
+}
+
+.kp-sheet__recipientCombo-option--muted {
+  color: rgba(16, 24, 40, 0.55);
+  font-style: italic;
+}
+
+.kp-sheet__recipientCombo-empty {
+  padding: 12px 10px;
+  font-size: 9pt;
+  color: rgba(16, 24, 40, 0.5);
+  text-align: center;
+}
+
+.kp-sheet__orgDetails {
+  text-align: left;
+  font-size: 9.5pt;
+  line-height: 1.42;
+  color: #101828;
+}
+
+.kp-sheet__orgLine {
+  margin: 0;
+  padding: 0;
+}
+
+.kp-sheet__orgLine--intro {
+  font-weight: 600;
+}
+
+.kp-sheet__orgLine--name {
+  font-weight: 600;
+}
+
+.kp-sheet__orgPrefix {
+  font-weight: 600;
+  margin-right: 0.35em;
+}
+
+.kp-sheet__orgLine--contact {
+  font-weight: 500;
+}
+
 .kp-sheet__table-wrap {
   margin-top: 0;
 }
@@ -51,6 +264,8 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 9.5pt;
+  /* Тонкая сетка таблицы (линии у ячеек, collapse склеивает общие границы) */
+  --kp-table-grid: rgba(16, 24, 40, 0.13);
 }
 
 .kp-sheet__table thead {
@@ -59,35 +274,45 @@
 
 .kp-sheet__table th,
 .kp-sheet__table td {
-  border: none;
-  border-bottom: 1px solid rgba(16, 24, 40, 0.14);
-  padding: 8px 10px 8px 0;
+  border: 1px solid var(--kp-table-grid);
+  padding: 6px 8px;
   vertical-align: top;
 }
 
 .kp-sheet__table th {
   font-weight: 600;
-  text-align: left;
-  border-bottom: 1px solid rgba(16, 24, 40, 0.22);
+}
+
+/* Заголовки колонок — по центру */
+.kp-sheet__table thead th {
+  text-align: center;
+  vertical-align: middle;
 }
 
 .kp-sheet__col-n {
-  width: 32px;
+  width: 28px;
+}
+
+.kp-sheet__col-image {
+  width: 56px;
   text-align: center;
+  vertical-align: middle;
 }
 
 .kp-sheet__col-qty {
-  width: 64px;
-  text-align: right;
+  width: 56px;
 }
 
 .kp-sheet__col-unit {
-  width: 48px;
+  width: 44px;
 }
 
 .kp-sheet__col-price,
 .kp-sheet__col-sum {
-  width: 88px;
+  width: 80px;
+}
+
+.kp-sheet__table tbody .kp-sheet__num {
   text-align: right;
 }
 
@@ -131,6 +356,18 @@
   min-width: 120px;
 }
 
+.kp-sheet__col-qtyCell,
+.kp-sheet__col-unitCell {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.kp-sheet__cell-input--qty,
+.kp-sheet__cell-input--unit {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
 .kp-sheet__cell-input--unit {
   min-width: 2.5rem;
 }
@@ -138,6 +375,58 @@
 .kp-sheet__cell-input--num {
   text-align: right;
   font-variant-numeric: tabular-nums;
+}
+
+.kp-sheet__priceWithRub {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  width: 100%;
+  min-width: 0;
+}
+
+.kp-sheet__cell-input--priceField {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.kp-sheet__rubSuffix {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.kp-sheet__sumWithRub {
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 0.2em;
+  width: 100%;
+}
+
+.kp-sheet__sumValue {
+  font-variant-numeric: tabular-nums;
+}
+
+.kp-sheet__cell-input--url {
+  font-size: 8pt;
+  min-width: 0;
+}
+
+.kp-sheet__imageCell {
+  margin-bottom: 4px;
+}
+
+.kp-sheet__thumb {
+  display: block;
+  max-width: 48px;
+  max-height: 40px;
+  width: auto;
+  height: auto;
+  margin: 0 auto;
+  object-fit: contain;
+  border-radius: 4px;
+  border: 1px solid rgba(16, 24, 40, 0.12);
 }
 
 .kp-sheet__num {
@@ -150,13 +439,87 @@
   page-break-inside: avoid;
 }
 
-.kp-sheet__total {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  margin-top: 12px;
+/* Итого и НДС: общая сетка — суммы в одной колонке, правый край совпадает */
+.kp-sheet__totalsBlock {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  column-gap: 0.18em;
+  row-gap: 1px;
+  margin-top: 5px;
+  width: 100%;
+}
+
+.kp-sheet__totalLead {
+  justify-self: end;
+  text-align: right;
   font-size: 11pt;
   font-weight: 600;
+}
+
+.kp-sheet__totalLead--grand {
+  white-space: nowrap;
+}
+
+.kp-sheet__totalLead--vat {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.03em;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  font-size: 10.5pt;
+  font-weight: 500;
+}
+
+.kp-sheet__totalAmount {
+  justify-self: end;
+  text-align: right;
+  font-size: 11pt;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.kp-sheet__vatAmountWrap {
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 0.1em;
+  font-size: 10.5pt;
+  font-weight: 500;
+}
+
+.kp-sheet__vatLabel {
+  white-space: nowrap;
+}
+
+.kp-sheet__vatInput--pct {
+  /* Узкое поле под ставку — меньше «пустоты» между текстом и цифрами */
+  width: 3ch;
+  min-width: 1.25rem;
+  max-width: 4.5rem;
+  text-align: center;
+  padding: 0 1px;
+}
+
+.kp-sheet__vatInput--sum {
+  width: 6.25rem;
+  min-width: 0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  padding: 2px 4px;
+}
+
+/* «22%:» плотнее к полю ставки */
+.kp-sheet__vatPctMark {
+  margin-left: -0.02em;
+}
+
+.kp-sheet__vatColon {
+  margin-left: 0;
 }
 
 @page {
@@ -211,7 +574,9 @@
   }
 
   /* Поля ввода в печати выглядят как обычный текст */
-  .kp-sheet__cell-input {
+  .kp-sheet__cell-input,
+  .kp-sheet__totalLead--vat .kp-sheet__cell-input,
+  .kp-sheet__vatAmountWrap .kp-sheet__cell-input {
     border: none !important;
     border-radius: 0 !important;
     background: transparent !important;
@@ -219,6 +584,14 @@
     outline: none !important;
     box-shadow: none !important;
     color: inherit !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .kp-sheet__table,
+  .kp-sheet__table th,
+  .kp-sheet__table td {
+    border-color: rgba(16, 24, 40, 0.16) !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }

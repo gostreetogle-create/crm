@@ -27,6 +27,16 @@ import {
   UsersHttpRepository,
   UsersMockRepository,
 } from '@srm/users-data-access';
+import {
+  ORGANIZATIONS_REPOSITORY,
+  OrganizationsHttpRepository,
+  OrganizationsMockRepository,
+} from '@srm/organizations-data-access';
+import {
+  CLIENTS_REPOSITORY,
+  ClientsHttpRepository,
+  ClientsMockRepository,
+} from '@srm/clients-data-access';
 import { authBearerInterceptor, SessionAuthService } from '@srm/auth-session-angular';
 import { RolesStore } from '@srm/dictionaries-state';
 import { appRoutes } from './app.routes';
@@ -92,6 +102,25 @@ export const appConfig: ApplicationConfig = {
       useFactory: (apiConfig: ApiConfig, mockRepo: UsersMockRepository, httpRepo: UsersHttpRepository) =>
         apiConfig.useMockRepositories ? mockRepo : httpRepo,
       deps: [API_CONFIG, UsersMockRepository, UsersHttpRepository],
+    },
+    OrganizationsMockRepository,
+    OrganizationsHttpRepository,
+    {
+      provide: ORGANIZATIONS_REPOSITORY,
+      useFactory: (
+        apiConfig: ApiConfig,
+        mockRepo: OrganizationsMockRepository,
+        httpRepo: OrganizationsHttpRepository,
+      ) => (apiConfig.useMockRepositories ? mockRepo : httpRepo),
+      deps: [API_CONFIG, OrganizationsMockRepository, OrganizationsHttpRepository],
+    },
+    ClientsMockRepository,
+    ClientsHttpRepository,
+    {
+      provide: CLIENTS_REPOSITORY,
+      useFactory: (apiConfig: ApiConfig, mockRepo: ClientsMockRepository, httpRepo: ClientsHttpRepository) =>
+        apiConfig.useMockRepositories ? mockRepo : httpRepo,
+      deps: [API_CONFIG, ClientsMockRepository, ClientsHttpRepository],
     },
   ],
 };

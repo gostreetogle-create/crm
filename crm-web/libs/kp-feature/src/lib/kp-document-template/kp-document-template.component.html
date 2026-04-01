@@ -1,5 +1,5 @@
 <div class="kp-stack">
-  @for (chunk of pageChunks(); track chunk.globalStart; let chunkIndex = $index) {
+  @for (chunk of pageChunks(); track chunk.displayOffset; let chunkIndex = $index) {
     <section
       class="kp-sheet"
       [class.kp-sheet--continuation]="!chunk.useFirstBackground"
@@ -11,24 +11,206 @@
         class="kp-sheet__content"
         [style.padding-top]="chunk.useFirstBackground ? contentPaddingTop : contentPaddingTopPage2"
       >
+        @if (chunk.useFirstBackground && recipientCtrl) {
+          <div class="kp-sheet__orgStrip">
+            <div class="kp-sheet__orgPick kp-no-print">
+              <div class="kp-sheet__recipientCombo" #recipientCombo>
+                <span class="kp-sheet__recipientCombo-caption" id="kp-recipient-label">Организация или контактное лицо</span>
+                <div class="kp-sheet__recipientCombo-inner">
+                  <button
+                    type="button"
+                    class="kp-sheet__recipientCombo-trigger"
+                    [attr.aria-expanded]="recipientPanelOpen()"
+                    aria-haspopup="dialog"
+                    [attr.aria-controls]="'kp-recipient-panel'"
+                    aria-labelledby="kp-recipient-label"
+                    (click)="toggleRecipientPanel($event)"
+                  >
+                    <span class="kp-sheet__recipientCombo-value">{{ recipientDisplayLabel() }}</span>
+                    <span class="kp-sheet__recipientCombo-chevron" aria-hidden="true">▾</span>
+                  </button>
+                  @if (recipientPanelOpen()) {
+                    <div
+                      class="kp-sheet__recipientCombo-dropdown"
+                      id="kp-recipient-panel"
+                      aria-labelledby="kp-recipient-label"
+                      (click)="$event.stopPropagation()"
+                    >
+                      @if (organizationSearchCtrl) {
+                        <div class="kp-sheet__recipientCombo-search">
+                          <input
+                            type="search"
+                            class="kp-sheet__recipientCombo-searchInput"
+                            [formControl]="organizationSearchCtrl"
+                            autocomplete="off"
+                            placeholder="Поиск по названию, ФИО, телефону…"
+                            aria-label="Поиск в списке получателей"
+                            (click)="$event.stopPropagation()"
+                            (keydown)="$event.stopPropagation()"
+                          />
+                        </div>
+                      }
+                      <div class="kp-sheet__recipientCombo-scroll">
+                        <button
+                          type="button"
+                          class="kp-sheet__recipientCombo-option kp-sheet__recipientCombo-option--muted"
+                          (click)="pickRecipient('', $event)"
+                        >
+                          — не выбрано —
+                        </button>
+                        @if (filteredOrganizations().length) {
+                          <div class="kp-sheet__recipientCombo-groupTitle" role="presentation">Организации</div>
+                          @for (org of filteredOrganizations(); track org.id) {
+                            <button
+                              type="button"
+                              class="kp-sheet__recipientCombo-option"
+                              (click)="pickRecipient(orgOptionValue(org), $event)"
+                            >
+                              {{ organizationOptionLabel(org) }}
+                            </button>
+                          }
+                        }
+                        @if (filteredClients().length) {
+                          <div class="kp-sheet__recipientCombo-groupTitle" role="presentation">Контактные лица</div>
+                          @for (c of filteredClients(); track c.id) {
+                            <button
+                              type="button"
+                              class="kp-sheet__recipientCombo-option"
+                              (click)="pickRecipient(clientOptionValue(c), $event)"
+                            >
+                              {{ clientLabel(c) }}
+                            </button>
+                          }
+                        }
+                        @if (!filteredOrganizations().length && !filteredClients().length) {
+                          <div class="kp-sheet__recipientCombo-empty" role="presentation">Ничего не найдено</div>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+              @if (selectedOrganization(); as orgPick) {
+                @if (organizationContactIdCtrl && contactsLinkedToOrganization(orgPick).length > 0) {
+                  <div class="kp-sheet__orgContactPick">
+                    <span class="kp-sheet__orgContactPick-caption" id="kp-org-contact-label">Контакт для КП</span>
+                    <select
+                      class="kp-sheet__orgContactPick-select"
+                      [formControl]="organizationContactIdCtrl"
+                      aria-labelledby="kp-org-contact-label"
+                    >
+                      <option value="">— не выбрано —</option>
+                      @for (c of contactsLinkedToOrganization(orgPick); track c.id) {
+                        <option [value]="c.id">{{ clientLabel(c) }}</option>
+                      }
+                    </select>
+                  </div>
+                }
+              }
+            </div>
+            @if (selectedOrganization(); as org) {
+              <div class="kp-sheet__orgDetails" aria-live="polite">
+                <div class="kp-sheet__orgLine kp-sheet__orgLine--intro">Коммерческое предложение для:</div>
+                <div class="kp-sheet__orgLine kp-sheet__orgLine--name">{{ org.name }}</div>
+                @if (org.inn?.trim()) {
+                  <div class="kp-sheet__orgLine">
+                    <span class="kp-sheet__orgPrefix">ИНН:</span>
+                    {{ org.inn }}
+                  </div>
+                }
+                @if (org.email?.trim()) {
+                  <div class="kp-sheet__orgLine">
+                    <span class="kp-sheet__orgPrefix">&#64;Почта:</span>
+                    {{ org.email }}
+                  </div>
+                }
+                @if (org.phone?.trim()) {
+                  <div class="kp-sheet__orgLine">
+                    <span class="kp-sheet__orgPrefix">Тел.</span>
+                    {{ org.phone }}
+                  </div>
+                }
+                @if (selectedOrganizationContact(); as c) {
+                  <div class="kp-sheet__orgLine">
+                    <span class="kp-sheet__orgPrefix">Контакт:</span>
+                    {{ clientLabel(c) }}
+                  </div>
+                  @if (c.phone.trim()) {
+                    <div class="kp-sheet__orgLine">
+                      <span class="kp-sheet__orgPrefix">Тел.</span>
+                      {{ c.phone }}
+                    </div>
+                  }
+                }
+              </div>
+            } @else if (selectedContact(); as person) {
+              <div class="kp-sheet__orgDetails" aria-live="polite">
+                <div class="kp-sheet__orgLine kp-sheet__orgLine--intro">Коммерческое предложение для:</div>
+                <div class="kp-sheet__orgLine kp-sheet__orgLine--name">{{ clientLabel(person) }}</div>
+                @if (person.phone.trim()) {
+                  <div class="kp-sheet__orgLine">
+                    <span class="kp-sheet__orgPrefix">Тел.</span>
+                    {{ person.phone }}
+                  </div>
+                }
+                @if (person.email.trim()) {
+                  <div class="kp-sheet__orgLine">
+                    <span class="kp-sheet__orgPrefix">&#64;Почта:</span>
+                    {{ person.email }}
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
         <section class="kp-sheet__table-wrap">
           <table class="kp-sheet__table">
             <thead>
               <tr>
                 <th class="kp-sheet__col-n">№</th>
+                @if (showPhotoColumn()) {
+                  <th class="kp-sheet__col-image">Фото</th>
+                }
                 <th class="kp-sheet__col-name">Наименование</th>
                 <th class="kp-sheet__col-qty">Кол-во</th>
                 <th class="kp-sheet__col-unit">Ед.</th>
-                <th class="kp-sheet__col-price">Цена, ₽</th>
-                <th class="kp-sheet__col-sum">Сумма, ₽</th>
+                <th class="kp-sheet__col-price">Цена</th>
+                <th class="kp-sheet__col-sum">Сумма</th>
                 <th class="kp-sheet__col-actions kp-no-print" scope="col" aria-hidden="true"></th>
               </tr>
             </thead>
             <tbody>
-              @for (rowRef of rowRefsForChunk(chunk); track rowRef.idx) {
+              @for (rowRef of rowRefsForChunk(chunk); track rowRef.idx; let pos = $index) {
                 @let globalIdx = rowRef.idx;
-                <tr class="kp-sheet__row" [formGroup]="lineGroupAt(globalIdx)">
-                  <td class="kp-sheet__col-num-cell">{{ globalIdx + 1 }}</td>
+                <tr class="kp-sheet__row" [class.kp-sheet__row--with-image]="!!imageSrcForDisplay(globalIdx)" [formGroup]="lineGroupAt(globalIdx)">
+                  <td class="kp-sheet__col-num-cell">
+                    @if (!showPhotoColumn()) {
+                      <input type="hidden" formControlName="imageUrl" />
+                    }
+                    {{ chunk.displayOffset + pos + 1 }}
+                  </td>
+                  @if (showPhotoColumn()) {
+                    <td class="kp-sheet__col-image">
+                      <div class="kp-sheet__imageCell kp-no-print">
+                        <input
+                          type="url"
+                          formControlName="imageUrl"
+                          class="kp-sheet__cell-input kp-sheet__cell-input--url"
+                          placeholder="https://…"
+                          autocomplete="off"
+                          aria-label="URL изображения"
+                        />
+                      </div>
+                      @if (imageSrcForDisplay(globalIdx)) {
+                        <img
+                          class="kp-sheet__thumb"
+                          [src]="imageSrcForDisplay(globalIdx)"
+                          alt=""
+                          loading="lazy"
+                        />
+                      }
+                    </td>
+                  }
                   <td>
                     <input
                       type="text"
@@ -37,16 +219,16 @@
                       aria-label="Наименование"
                     />
                   </td>
-                  <td class="kp-sheet__num">
+                  <td class="kp-sheet__col-qtyCell">
                     <input
                       type="text"
                       formControlName="qty"
-                      class="kp-sheet__cell-input kp-sheet__cell-input--num"
+                      class="kp-sheet__cell-input kp-sheet__cell-input--qty"
                       inputmode="decimal"
                       aria-label="Количество"
                     />
                   </td>
-                  <td>
+                  <td class="kp-sheet__col-unitCell">
                     <input
                       type="text"
                       formControlName="unit"
@@ -54,16 +236,24 @@
                       aria-label="Единица"
                     />
                   </td>
-                  <td class="kp-sheet__num">
-                    <input
-                      type="text"
-                      formControlName="price"
-                      class="kp-sheet__cell-input kp-sheet__cell-input--num"
-                      inputmode="decimal"
-                      aria-label="Цена"
-                    />
+                  <td class="kp-sheet__num kp-sheet__col-priceCell">
+                    <div class="kp-sheet__priceWithRub">
+                      <input
+                        type="text"
+                        formControlName="price"
+                        class="kp-sheet__cell-input kp-sheet__cell-input--num kp-sheet__cell-input--priceField"
+                        inputmode="decimal"
+                        aria-label="Цена"
+                      />
+                      <span class="kp-sheet__rubSuffix" aria-hidden="true">₽</span>
+                    </div>
                   </td>
-                  <td class="kp-sheet__num">{{ lineSumAt(globalIdx) | number: '1.2-2' }}</td>
+                  <td class="kp-sheet__num kp-sheet__col-sumCell">
+                    <span class="kp-sheet__sumWithRub">
+                      <span class="kp-sheet__sumValue">{{ lineSumAt(globalIdx) | number: '1.2-2' }}</span>
+                      <span class="kp-sheet__rubSuffix" aria-hidden="true">₽</span>
+                    </span>
+                  </td>
                   <td class="kp-sheet__actions kp-no-print">
                     <app-ui-button
                       type="button"
@@ -82,9 +272,33 @@
           </table>
 
           @if (showTotalOnChunk(chunkIndex)) {
-            <div class="kp-sheet__total">
-              <span>Итого:</span>
-              <span>{{ computedTotal() | number: '1.2-2' }} ₽</span>
+            <div class="kp-sheet__totalsBlock">
+              <span class="kp-sheet__totalLead kp-sheet__totalLead--grand">Итого:</span>
+              <span class="kp-sheet__totalAmount">{{ computedTotal() | number: '1.2-2' }} ₽</span>
+              @if (vatPercentCtrl && vatAmountCtrl) {
+                <div class="kp-sheet__totalLead kp-sheet__totalLead--vat">
+                  <span class="kp-sheet__vatLabel">В том числе НДС</span>
+                  <input
+                    type="text"
+                    class="kp-sheet__cell-input kp-sheet__vatInput--pct"
+                    [formControl]="vatPercentCtrl"
+                    inputmode="decimal"
+                    aria-label="Процент НДС"
+                  />
+                  <span class="kp-sheet__vatPctMark" aria-hidden="true">%</span>
+                  <span class="kp-sheet__vatColon" aria-hidden="true">:</span>
+                </div>
+                <div class="kp-sheet__totalAmount kp-sheet__vatAmountWrap">
+                  <input
+                    type="text"
+                    class="kp-sheet__cell-input kp-sheet__vatInput--sum"
+                    [formControl]="vatAmountCtrl"
+                    inputmode="decimal"
+                    aria-label="Сумма НДС"
+                  />
+                  <span class="kp-sheet__rubSuffix" aria-hidden="true">₽</span>
+                </div>
+              }
             </div>
           }
         </section>
