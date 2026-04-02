@@ -1,6 +1,6 @@
 # Название файла: .md — Обзор backend-map (автогенерация)
 
-> **Сгенерировано:** `2026-03-31T13:55:48.802Z`  
+> **Сгенерировано:** `2026-04-02T14:43:55.535Z`  
 > **Не править вручную.** Источник правды — JSON в этой же папке. Обновление: `node scripts/generate-backend-map-overview.cjs`
 
 ---
@@ -15,7 +15,7 @@
 
 | Файл | Версия | Назначение (_meta.purpose) |
 |---|---|---|
-| entities_from_dictionaries.json | 1.2 | Сущности (логические таблицы/агрегаты): имя на русском, описание домена, список полей для проектирования БД и форм. |
+| entities_from_dictionaries.json | 1.3 | Сущности (логические таблицы/агрегаты): имя на русском, описание домена, список полей для проектирования БД и форм. |
 | material_geometry_new_model/material_geometry_entities.json | 0.1 | Новая модель: сущности для справочников material/geometry/detail. |
 | small_dictionaries.json | 1.2 | Малые справочники (кирпичики): перечисления со стабильным machine key и человекочитаемым названием. Их используют поля сущностей в entities_from_dictionaries.json (через ref в description или суффикс Key в имени поля). |
 
@@ -175,7 +175,7 @@
 
 #### `material` — Материал
 
-*Справочник; listPrice — закупка для costPrice.*
+*Справочник складской позиции (CRM): характеристика вещества + геометрия + цена за единицу; listPrice/purchasePrice — закупка.*
 
 | key | rus | type | required | description |
 | --- | --- | --- | --- | --- |
@@ -187,6 +187,7 @@
 | listPrice | Цена закупки | float | нет | Участвует в расчёте Product.costPrice |
 | isActive | Активен | boolean | нет | — |
 | unitId | Единица измерения | uuid | нет | Опционально: отдельная сущность Unit или поле |
+| supplierOrganizationId | Поставщик (организация) | uuid | нет | CRM: ссылка на Organization как контрагента закупки; FK, onDelete SetNull |
 
 #### `mount_type` — Вид монтажа
 
@@ -317,6 +318,40 @@
 | productId | Товар | uuid | да | — |
 | partTypeId | Тип детали | uuid | нет | — |
 | materialId | Материал | uuid | нет | — |
+
+#### `production_detail` — Деталь (производство)
+
+*Справочник «Детали» (CRM): независимая позиция со снимком полей материала и вида работ; итоги materialTotalRub/workTotalRub/lineTotalRub считаются на сервере (см. production-detail-pricing).*
+
+| key | rus | type | required | description |
+| --- | --- | --- | --- | --- |
+| id | Идентификатор | uuid | да | PK |
+| name | Наименование | string | да | — |
+| code | Код | string | нет | — |
+| qty | Количество | float | да | Множитель для расчёта итогов |
+| notes | Заметки | string | нет | — |
+| isActive | Активна | boolean | да | — |
+| sourceMaterialId | Источник — материал | uuid | нет | FK → Material, опционально; пресет для снимка |
+| sourceWorkTypeId | Источник — вид работ | uuid | нет | FK → ProductionWorkType, опционально |
+| snapshotMaterialName | Снимок: название материала | string | нет | — |
+| snapshotMaterialCode | Снимок: код материала | string | нет | — |
+| snapshotUnitCode | Снимок: код ЕИ | string | нет | — |
+| snapshotUnitName | Снимок: название ЕИ | string | нет | — |
+| snapshotPurchasePriceRub | Снимок: цена закупки ₽ | float | нет | — |
+| snapshotDensityKgM3 | Снимок: плотность кг/м³ | float | нет | — |
+| snapshotHeightMm | Снимок: высота мм | float | нет | — |
+| snapshotLengthMm | Снимок: длина мм | float | нет | — |
+| snapshotWidthMm | Снимок: ширина мм | float | нет | — |
+| snapshotDiameterMm | Снимок: диаметр мм | float | нет | — |
+| snapshotThicknessMm | Снимок: толщина мм | float | нет | — |
+| snapshotCharacteristicName | Снимок: характеристика (текст) | string | нет | — |
+| snapshotWorkTypeName | Снимок: вид работ (название) | string | нет | — |
+| snapshotWorkShortLabel | Снимок: сокращение работ | string | нет | — |
+| snapshotHourlyRateRub | Снимок: ставка ₽/ч | float | нет | — |
+| workTimeHours | Часы работ | float | нет | — |
+| materialTotalRub | Итого материал ₽ | float | нет | Серверный расчёт, денорм |
+| workTotalRub | Итого работа ₽ | float | нет | Серверный расчёт, денорм |
+| lineTotalRub | Итого по строке ₽ | float | нет | Серверный расчёт, денорм |
 
 #### `proposal_item` — Строка КП (снимок)
 

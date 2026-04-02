@@ -24,6 +24,7 @@ describe('dictionaries-page-table-columns contracts', () => {
         'characteristic',
         'geometry',
         'unit',
+        'supplier',
         'priceLabel',
         'isActiveLabel',
       ]),

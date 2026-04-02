@@ -11,6 +11,7 @@ const InputSchema = z.object({
   purchasePriceRub: z.union([z.number(), z.null(), z.undefined()]).optional(),
   materialCharacteristicId: z.string().min(1),
   geometryId: z.string().min(1),
+  supplierOrganizationId: z.union([z.string(), z.null(), z.undefined()]).optional(),
   notes: z.union([z.string(), z.null(), z.undefined()]).optional(),
   isActive: z.boolean(),
 });
@@ -23,6 +24,10 @@ function dataFromParsed(p: z.infer<typeof InputSchema>) {
     purchasePriceRub: p.purchasePriceRub ?? null,
     materialCharacteristicId: p.materialCharacteristicId,
     geometryId: p.geometryId,
+    supplierOrganizationId:
+      p.supplierOrganizationId != null && String(p.supplierOrganizationId).trim()
+        ? String(p.supplierOrganizationId).trim()
+        : null,
     notes: p.notes != null && String(p.notes).trim() ? String(p.notes).trim() : null,
     isActive: p.isActive,
   };
@@ -36,10 +41,12 @@ function mapMaterial(m: {
   purchasePriceRub: number | null;
   materialCharacteristicId: string;
   geometryId: string;
+  supplierOrganizationId: string | null;
   notes: string | null;
   isActive: boolean;
-  unit: { name: string } | null;
+  unit: { name: string; code: string | null } | null;
   geometry: { name: string } | null;
+  supplierOrganization: { name: string; shortName: string | null } | null;
 }): Record<string, unknown> {
   const o: Record<string, unknown> = {
     id: m.id,
@@ -50,9 +57,17 @@ function mapMaterial(m: {
   };
   if (m.code) o.code = m.code;
   if (m.unitId) o.unitId = m.unitId;
-  if (m.unit) o.unitName = m.unit.name;
+  if (m.unit) {
+    o.unitName = m.unit.name;
+    if (m.unit.code) o.unitCode = m.unit.code;
+  }
   if (m.purchasePriceRub != null) o.purchasePriceRub = m.purchasePriceRub;
   if (m.geometry) o.geometryName = m.geometry.name;
+  if (m.supplierOrganizationId) o.supplierOrganizationId = m.supplierOrganizationId;
+  if (m.supplierOrganization) {
+    const sn = m.supplierOrganization.shortName?.trim();
+    o.supplierOrganizationLabel = sn || m.supplierOrganization.name;
+  }
   if (m.notes) o.notes = m.notes;
   return o;
 }
@@ -61,7 +76,7 @@ materialsRouter.get('/', async (_req, res, next) => {
   try {
     const rows = await prisma.material.findMany({
       orderBy: { name: 'asc' },
-      include: { unit: true, geometry: true },
+      include: { unit: true, geometry: true, supplierOrganization: true },
     });
     res.json(rows.map(mapMaterial));
   } catch (e) {
@@ -78,7 +93,7 @@ materialsRouter.post('/', async (req, res, next) => {
     }
     const row = await prisma.material.create({
       data: dataFromParsed(parsed.data),
-      include: { unit: true, geometry: true },
+      include: { unit: true, geometry: true, supplierOrganization: true },
     });
     res.status(201).json(mapMaterial(row));
   } catch (e) {
@@ -98,7 +113,7 @@ materialsRouter.put('/:id', async (req, res, next) => {
       const row = await prisma.material.update({
         where: { id },
         data: dataFromParsed(parsed.data),
-        include: { unit: true, geometry: true },
+        include: { unit: true, geometry: true, supplierOrganization: true },
       });
       res.json(mapMaterial(row));
     } catch (err: unknown) {

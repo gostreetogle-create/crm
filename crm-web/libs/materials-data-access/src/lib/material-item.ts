@@ -14,6 +14,12 @@ export type MaterialItem = {
   unitName?: string;
   /** Закупочная цена, ₽ за `unitId`. */
   purchasePriceRub?: number;
+  /** Поставщик (организация), опционально. */
+  supplierOrganizationId?: string;
+  /** Подпись поставщика для таблицы. */
+  supplierOrganizationLabel?: string;
+  /** Код единицы измерения (из API). */
+  unitCode?: string;
   /** Профиль (плотность, цвет, финиш, покрытие) — в справочнике характеристик. */
   materialCharacteristicId: string;
   /** Форма и габариты — отдельный справочник. */

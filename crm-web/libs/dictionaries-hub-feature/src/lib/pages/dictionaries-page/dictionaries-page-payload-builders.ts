@@ -2,6 +2,7 @@
  * Сборка DTO из значений форм (без доступа к store), вынесено из `dictionaries-page.ts`.
  */
 import type { MaterialItemInput } from '@srm/materials-data-access';
+import type { ProductionDetailItemInput } from '@srm/production-details-data-access';
 import type { MaterialCharacteristicItemInput } from '@srm/material-characteristics-data-access';
 import type { ClientItemInput } from '@srm/clients-data-access';
 import type { OrganizationItemInput } from '@srm/organizations-data-access';
@@ -10,6 +11,59 @@ import { normalizeRalCode, organizationKindToLegalForm } from './dictionaries-pa
 function roundedMoney(raw: unknown): number {
   const n = typeof raw === 'number' ? raw : Number(raw);
   return Number.isFinite(n) ? Math.round(n) : 0;
+}
+
+export function productionDetailsPayloadFromValues(v: {
+  name: string;
+  code: string;
+  qty: number | null;
+  notes: string;
+  isActive: boolean;
+  sourceMaterialId: string;
+  sourceWorkTypeId: string;
+  snapshotMaterialName: string;
+  snapshotMaterialCode: string;
+  snapshotUnitCode: string;
+  snapshotUnitName: string;
+  snapshotPurchasePriceRub: number | null;
+  snapshotDensityKgM3: number | null;
+  snapshotHeightMm: number | null;
+  snapshotLengthMm: number | null;
+  snapshotWidthMm: number | null;
+  snapshotDiameterMm: number | null;
+  snapshotThicknessMm: number | null;
+  snapshotCharacteristicName: string;
+  snapshotWorkTypeName: string;
+  snapshotWorkShortLabel: string;
+  snapshotHourlyRateRub: number | null;
+  workTimeHours: number | null;
+}): ProductionDetailItemInput {
+  const qty = v.qty != null && v.qty > 0 ? v.qty : 1;
+  return {
+    name: v.name.trim(),
+    code: v.code.trim() || null,
+    qty,
+    notes: v.notes.trim() || null,
+    isActive: v.isActive,
+    sourceMaterialId: v.sourceMaterialId.trim() || null,
+    sourceWorkTypeId: v.sourceWorkTypeId.trim() || null,
+    snapshotMaterialName: v.snapshotMaterialName.trim() || null,
+    snapshotMaterialCode: v.snapshotMaterialCode.trim() || null,
+    snapshotUnitCode: v.snapshotUnitCode.trim() || null,
+    snapshotUnitName: v.snapshotUnitName.trim() || null,
+    snapshotPurchasePriceRub: v.snapshotPurchasePriceRub,
+    snapshotDensityKgM3: v.snapshotDensityKgM3,
+    snapshotHeightMm: v.snapshotHeightMm,
+    snapshotLengthMm: v.snapshotLengthMm,
+    snapshotWidthMm: v.snapshotWidthMm,
+    snapshotDiameterMm: v.snapshotDiameterMm,
+    snapshotThicknessMm: v.snapshotThicknessMm,
+    snapshotCharacteristicName: v.snapshotCharacteristicName.trim() || null,
+    snapshotWorkTypeName: v.snapshotWorkTypeName.trim() || null,
+    snapshotWorkShortLabel: v.snapshotWorkShortLabel.trim() || null,
+    snapshotHourlyRateRub: v.snapshotHourlyRateRub,
+    workTimeHours: v.workTimeHours,
+  };
 }
 
 export function workTypesPayloadFromValues(v: {
@@ -34,6 +88,7 @@ export function materialsPayloadFromValues(v: {
   geometryName?: string;
   unitId: string | undefined;
   unitName?: string;
+  supplierOrganizationId?: string;
   purchasePriceRub: unknown;
   notes: string;
   isActive: boolean;
@@ -46,6 +101,7 @@ export function materialsPayloadFromValues(v: {
     geometryName: v.geometryName,
     unitId: v.unitId || undefined,
     unitName: v.unitName,
+    supplierOrganizationId: v.supplierOrganizationId?.trim() || undefined,
     purchasePriceRub: roundedMoney(v.purchasePriceRub),
     notes: v.notes.trim() || undefined,
     isActive: v.isActive,

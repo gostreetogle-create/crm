@@ -167,6 +167,22 @@
       (dismiss)="navigateBackFromStandaloneDictionaryCreate()"
     />
   </app-dictionary-standalone-create-shell>
+  } @else if (standaloneCreateKey() === 'productionDetails') {
+  <app-dictionary-standalone-create-shell
+    [pageTitle]="standaloneDictionaryTitle('productionDetails')"
+    (backClicked)="navigateBackFromStandaloneDictionaryCreate()"
+  >
+    <ng-container *ngTemplateOutlet="productionDetailsContentTpl"></ng-container>
+    <app-ui-modal-form-actions
+      standaloneFormActions
+      [viewMode]="isProductionDetailsViewMode()"
+      [formId]="'production-details-form'"
+      [submitLabel]="
+        productionDetailsStore.isEditMode() ? 'Сохранить изменения' : 'Создать деталь'
+      "
+      (dismiss)="navigateBackFromStandaloneDictionaryCreate()"
+    />
+  </app-dictionary-standalone-create-shell>
   } @else if (isNewMaterialPageRoute()) {
   <app-new-material-fullscreen-page
     [pageTitle]="'Новый материал'"
@@ -353,6 +369,41 @@
         (duplicate)="duplicateWorkType($event)"
         (edit)="openWorkTypesEdit($event)"
         (delete)="deleteWorkType($event)"
+      ></crud-layout>
+        }
+
+            @case ('productionDetails') {
+      <crud-layout
+        title="Детали"
+        [showHeader]="false"
+        [showCardLabel]="false"
+        [showNameSearch]="true"
+        [showCreateAction]="false"
+        [canCreate]="permissions.crud().canCreate"
+        createAriaLabel="Добавить деталь"
+        createTitle="Добавить деталь"
+        [columns]="productionDetailsColumnsForTile()"
+        [data]="productionDetailsStore.productionDetailsData()"
+        [loading]="productionDetailsStore.loading()"
+        [maxTableBodyRows]="null"
+        [tableBodyMaxHeight]="hubBoardDetailTableMaxHeight"
+        [showExcelActions]="true"
+        [canDownloadTemplate]="permissions.can('excel.template')"
+        [canImportExcel]="permissions.can('excel.import')"
+        [canExportExcel]="permissions.can('excel.export')"
+        [canView]="true"
+        [canDuplicate]="permissions.crud().canDuplicate"
+        [canEdit]="permissions.crud().canEdit"
+        [canDelete]="permissions.crud().canDelete"
+        deleteConfirmMessage="Удалить деталь?"
+        (create)="openProductionDetailsCreate()"
+        (downloadTemplate)="downloadProductionDetailsTemplateExcel()"
+        (importExcel)="onProductionDetailsExcelImported($event)"
+        (exportExcel)="exportProductionDetailsExcel()"
+        (view)="openProductionDetailsView($event)"
+        (duplicate)="duplicateProductionDetail($event)"
+        (edit)="openProductionDetailsEdit($event)"
+        (delete)="deleteProductionDetail($event)"
       ></crud-layout>
         }
 
@@ -1047,12 +1098,251 @@
 </ng-template>
 
 <ui-modal
+  *ngIf="isProductionDetailsModalOpen()"
+  [title]="
+    isProductionDetailsViewMode()
+      ? 'Просмотр детали'
+      : productionDetailsStore.isEditMode()
+        ? 'Редактирование детали'
+        : 'Новая деталь'
+  "
+  [content]="productionDetailsContentTpl"
+  [actions]="productionDetailsActionsTpl"
+  (close)="closeProductionDetailsModal()"
+  [closeOnBackdrop]="isProductionDetailsViewMode()"
+  size="xl"
+></ui-modal>
+
+<ng-template #productionDetailsContentTpl>
+  @if (isProductionDetailsViewMode()) {
+    <app-dictionary-preview-card-no-photo
+      ariaLabel="Карточка детали"
+      [accentColor]="'#3b5bdb'"
+      [title]="productionDetailsForm.controls.name.value"
+      [subtitle]="'Кол-во: ' + productionDetailsForm.controls.qty.value"
+      [isActive]="productionDetailsForm.controls.isActive.value"
+      activeLabel="Активна"
+      inactiveLabel="Неактивна"
+    >
+      <section class="dictionaryPreviewCard__panel">
+        <h3 class="dictionaryPreviewCard__panelTitle">Итоги (расчёт)</h3>
+        <dl class="dictionaryPreviewCard__dl">
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>Материал</dt>
+            <dd>{{ productionDetailTotalsPreview().materialTotalRub }} ₽</dd>
+          </div>
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>Работа</dt>
+            <dd>{{ productionDetailTotalsPreview().workTotalRub }} ₽</dd>
+          </div>
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>Всего</dt>
+            <dd>{{ productionDetailTotalsPreview().lineTotalRub }} ₽</dd>
+          </div>
+        </dl>
+      </section>
+    </app-dictionary-preview-card-no-photo>
+  } @else {
+    <form
+      id="production-details-form"
+      [formGroup]="productionDetailsForm"
+      (ngSubmit)="submitProductionDetails()"
+      class="formGrid"
+    >
+      <fieldset class="dictionaryFormSection">
+        <legend>Позиция</legend>
+        <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
+          <app-ui-form-field
+            label="Наименование"
+            [required]="true"
+            [invalid]="isProductionDetailsInvalid('name')"
+            [errorText]="productionDetailsNameErrorText()"
+          >
+            <input type="text" formControlName="name" placeholder="Напр. Кронштейн К-12" />
+          </app-ui-form-field>
+          <app-ui-form-field label="Код">
+            <input type="text" formControlName="code" />
+          </app-ui-form-field>
+          <app-ui-form-field
+            label="Количество"
+            [required]="true"
+            [invalid]="isProductionDetailsInvalid('qty')"
+            [errorText]="
+              isProductionDetailsInvalid('qty') ? 'Укажите количество больше 0' : ''
+            "
+          >
+            <input type="number" formControlName="qty" min="0.0001" step="any" />
+          </app-ui-form-field>
+          <app-ui-form-field label="Заметки" [wide]="true">
+            <textarea rows="2" formControlName="notes"></textarea>
+          </app-ui-form-field>
+          <app-ui-checkbox-field class="checkbox" label="Активна" formControlName="isActive"></app-ui-checkbox-field>
+        </div>
+      </fieldset>
+
+      <fieldset class="dictionaryFormSection">
+        <legend>Пресеты из справочников</legend>
+        <p class="muted dictionaryFieldRowFull">
+          Выберите материал или вид работ — поля снимка заполнятся автоматически; при необходимости скорректируйте
+          вручную ниже.
+        </p>
+        <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
+          <app-ui-form-field class="dictionaryFieldRowFull" label="Материал (пресет)">
+            <div class="colorRefRow">
+              <select
+                formControlName="sourceMaterialId"
+                (change)="onProductionDetailMaterialPresetChange($any($event.target).value)"
+              >
+                <option value="">— не из материала —</option>
+                @for (m of materialsStore.items(); track m.id) {
+                  @if (m.isActive) {
+                    <option [value]="m.id">{{ m.name }}</option>
+                  }
+                }
+              </select>
+              @if (permissions.crud().canCreate && !isProductionDetailsViewMode()) {
+                <app-ui-button
+                  type="button"
+                  [square]="true"
+                  ariaLabel="Новый материал"
+                  title="Создать материал (модалка поверх)"
+                  (clicked)="openMaterialsCreateFromProductionDetails()"
+                >
+                  <span class="squareIconTone squareIconTone--affirm"><svg lucidePlus [size]="18"></svg></span>
+                </app-ui-button>
+              }
+            </div>
+          </app-ui-form-field>
+
+          <app-ui-form-field class="dictionaryFieldRowFull" label="Вид работ (пресет)">
+            <div class="colorRefRow">
+              <select
+                formControlName="sourceWorkTypeId"
+                (change)="onProductionDetailWorkTypePresetChange($any($event.target).value)"
+              >
+                <option value="">— не из вида работ —</option>
+                @for (w of productionWorkTypesStore.items(); track w.id) {
+                  @if (w.isActive) {
+                    <option [value]="w.id">{{ w.name }} ({{ w.shortLabel }})</option>
+                  }
+                }
+              </select>
+              @if (permissions.crud().canCreate && !isProductionDetailsViewMode()) {
+                <app-ui-button
+                  type="button"
+                  [square]="true"
+                  ariaLabel="Новый вид работ"
+                  title="Открыть создание вида работ"
+                  (clicked)="navigateToStandaloneWorkTypesFromProductionDetails()"
+                >
+                  <span class="squareIconTone squareIconTone--affirm"><svg lucidePlus [size]="18"></svg></span>
+                </app-ui-button>
+              }
+            </div>
+          </app-ui-form-field>
+        </div>
+      </fieldset>
+
+      <fieldset class="dictionaryFormSection">
+        <legend>Снимок (материал и геометрия)</legend>
+        <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
+          <app-ui-form-field label="Материал (название снимка)">
+            <input type="text" formControlName="snapshotMaterialName" />
+          </app-ui-form-field>
+          <app-ui-form-field label="Код снимка">
+            <input type="text" formControlName="snapshotMaterialCode" />
+          </app-ui-form-field>
+          <app-ui-form-field label="ЕИ код">
+            <input type="text" formControlName="snapshotUnitCode" />
+          </app-ui-form-field>
+          <app-ui-form-field label="ЕИ название">
+            <input type="text" formControlName="snapshotUnitName" />
+          </app-ui-form-field>
+          <app-ui-form-field label="Цена закупки, ₽">
+            <input type="number" formControlName="snapshotPurchasePriceRub" step="any" />
+          </app-ui-form-field>
+          <app-ui-form-field label="Плотность, кг/м³">
+            <input type="number" formControlName="snapshotDensityKgM3" step="any" />
+          </app-ui-form-field>
+          <app-ui-form-field label="Высота, мм">
+            <input type="number" formControlName="snapshotHeightMm" step="any" />
+          </app-ui-form-field>
+          <app-ui-form-field label="Длина, мм">
+            <input type="number" formControlName="snapshotLengthMm" step="any" />
+          </app-ui-form-field>
+          <app-ui-form-field label="Ширина, мм">
+            <input type="number" formControlName="snapshotWidthMm" step="any" />
+          </app-ui-form-field>
+          <app-ui-form-field label="Диаметр, мм">
+            <input type="number" formControlName="snapshotDiameterMm" step="any" />
+          </app-ui-form-field>
+          <app-ui-form-field label="Толщина, мм">
+            <input type="number" formControlName="snapshotThicknessMm" step="any" />
+          </app-ui-form-field>
+          <app-ui-form-field class="dictionaryFieldRowFull" label="Характеристика (текст)">
+            <input type="text" formControlName="snapshotCharacteristicName" />
+          </app-ui-form-field>
+        </div>
+      </fieldset>
+
+      <fieldset class="dictionaryFormSection">
+        <legend>Снимок (работа)</legend>
+        <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
+          <app-ui-form-field label="Вид работ (название)">
+            <input type="text" formControlName="snapshotWorkTypeName" />
+          </app-ui-form-field>
+          <app-ui-form-field label="Сокращение работ">
+            <input type="text" formControlName="snapshotWorkShortLabel" />
+          </app-ui-form-field>
+          <app-ui-form-field label="Ставка, ₽/ч">
+            <input type="number" formControlName="snapshotHourlyRateRub" step="any" />
+          </app-ui-form-field>
+          <app-ui-form-field label="Часы работ">
+            <input type="number" formControlName="workTimeHours" step="any" />
+          </app-ui-form-field>
+        </div>
+      </fieldset>
+
+      <fieldset class="dictionaryFormSection">
+        <legend>Итоги (предпросмотр)</legend>
+        <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2 dictionaryReadonlyGrid">
+          <div class="dictionaryReadonlyPair">
+            <span class="dictionaryReadonlyLabel">Материал, ₽</span>
+            <span class="dictionaryReadonlyValue">{{ productionDetailTotalsPreview().materialTotalRub }}</span>
+          </div>
+          <div class="dictionaryReadonlyPair">
+            <span class="dictionaryReadonlyLabel">Работа, ₽</span>
+            <span class="dictionaryReadonlyValue">{{ productionDetailTotalsPreview().workTotalRub }}</span>
+          </div>
+          <div class="dictionaryReadonlyPair dictionaryFieldRowFull">
+            <span class="dictionaryReadonlyLabel">Всего, ₽</span>
+            <span class="dictionaryReadonlyValue">{{ productionDetailTotalsPreview().lineTotalRub }}</span>
+          </div>
+        </div>
+      </fieldset>
+    </form>
+  }
+</ng-template>
+
+<ng-template #productionDetailsActionsTpl>
+  <app-ui-modal-form-actions
+    [viewMode]="isProductionDetailsViewMode()"
+    [formId]="'production-details-form'"
+    [submitLabel]="
+      productionDetailsStore.isEditMode() ? 'Сохранить изменения' : 'Создать деталь'
+    "
+    (dismiss)="closeProductionDetailsModal()"
+  />
+</ng-template>
+
+<ui-modal
   *ngIf="isMaterialsModalOpen()"
   [title]="materialsModalTitle()"
   [content]="materialsContentTpl"
   [actions]="materialsActionsTpl"
   (close)="closeMaterialsModal()"
   [closeOnBackdrop]="isMaterialsViewMode()"
+  [backdropZIndex]="materialsFormModalBackdropZIndex()"
   size="xl"
 ></ui-modal>
 
@@ -1096,6 +1386,10 @@
           <div class="dictionaryPreviewCard__dlRow">
             <dt>Единица</dt>
             <dd>{{ materialViewUnitLabel() }}</dd>
+          </div>
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>Поставщик</dt>
+            <dd>{{ materialViewSupplierLabel() }}</dd>
           </div>
         </dl>
       </section>
@@ -1248,6 +1542,31 @@
                 ariaLabel="Добавить единицу измерения"
                 title="Добавить единицу измерения"
                 (clicked)="openUnitsCreate(true)"
+              >
+                <span class="squareIconTone squareIconTone--affirm"><svg lucidePlus [size]="18"></svg></span>
+              </app-ui-button>
+            }
+          </div>
+        </app-ui-form-field>
+
+        <app-ui-form-field
+          class="dictionaryFieldRowFull"
+          label="Поставщик"
+        >
+          <div class="colorRefRow">
+            <select formControlName="supplierOrganizationId">
+              <option value="">— не указан —</option>
+              @for (opt of organizationsStore.options(); track opt.id) {
+                <option [value]="opt.id">{{ opt.label }}</option>
+              }
+            </select>
+            @if ((isMaterialsModalOpen() || isNewMaterialPageRoute()) && permissions.crud().canCreate && !isMaterialsViewMode()) {
+              <app-ui-button
+                type="button"
+                [square]="true"
+                ariaLabel="Новая организация-поставщик"
+                title="Создать организацию (модалка поверх формы материала)"
+                (clicked)="openOrganizationsCreateFromMaterials()"
               >
                 <span class="squareIconTone squareIconTone--affirm"><svg lucidePlus [size]="18"></svg></span>
               </app-ui-button>
@@ -1625,6 +1944,7 @@
   [actions]="organizationsActionsTpl"
   (close)="closeOrganizationsModal()"
   [closeOnBackdrop]="isOrganizationsViewMode()"
+  [backdropZIndex]="organizationsFormModalBackdropZIndex()"
   size="xl"
 ></ui-modal>
 

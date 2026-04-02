@@ -2,6 +2,7 @@ import {
   colorsPayloadFromFormRaw,
   geometriesPayloadFromValues,
   materialsPayloadFromValues,
+  productionDetailsPayloadFromValues,
   workTypesPayloadFromValues,
 } from './dictionaries-page-payload-builders';
 
@@ -48,6 +49,60 @@ describe('dictionaries-page-payload-builders', () => {
       notes: undefined,
       isActive: true,
     });
+  });
+
+  it('builds materials payload with supplier organization id trimmed', () => {
+    const result = materialsPayloadFromValues({
+      name: 'X',
+      code: '',
+      materialCharacteristicId: 'mc-1',
+      geometryId: 'g-1',
+      unitId: 'u-1',
+      supplierOrganizationId: '  org-uuid-1  ',
+      purchasePriceRub: 100,
+      notes: '',
+      isActive: true,
+    });
+
+    expect(result.supplierOrganizationId).toBe('org-uuid-1');
+  });
+
+  it('builds production details payload with qty default and trimmed snapshots', () => {
+    const result = productionDetailsPayloadFromValues({
+      name: '  Кронштейн  ',
+      code: ' K1 ',
+      qty: 0,
+      notes: '  ',
+      isActive: true,
+      sourceMaterialId: '',
+      sourceWorkTypeId: '  ',
+      snapshotMaterialName: ' Сталь ',
+      snapshotMaterialCode: '',
+      snapshotUnitCode: 'kg',
+      snapshotUnitName: ' кг ',
+      snapshotPurchasePriceRub: 10,
+      snapshotDensityKgM3: 7800,
+      snapshotHeightMm: null,
+      snapshotLengthMm: 100,
+      snapshotWidthMm: 50,
+      snapshotDiameterMm: null,
+      snapshotThicknessMm: null,
+      snapshotCharacteristicName: '  ',
+      snapshotWorkTypeName: ' Сварка ',
+      snapshotWorkShortLabel: ' Св ',
+      snapshotHourlyRateRub: 600,
+      workTimeHours: 0.5,
+    });
+
+    expect(result.name).toBe('Кронштейн');
+    expect(result.code).toBe('K1');
+    expect(result.qty).toBe(1);
+    expect(result.sourceMaterialId).toBeNull();
+    expect(result.sourceWorkTypeId).toBeNull();
+    expect(result.snapshotMaterialName).toBe('Сталь');
+    expect(result.snapshotUnitName).toBe('кг');
+    expect(result.snapshotCharacteristicName).toBeNull();
+    expect(result.snapshotWorkTypeName).toBe('Сварка');
   });
 
   it('builds geometries payload with null numeric values removed', () => {

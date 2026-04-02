@@ -311,8 +311,9 @@
   text-align: left;
 }
 
-.crudTable th {
-  text-align: center;
+/* Заголовки выровнены как ячейки (td слева). Иначе короткий текст th по центру широкой колонки визуально «не там», где данные. */
+.crudTable th:not(.actionsCol):not(.crudHubHeadMerged) {
+  text-align: left;
 }
 
 .crudTable tbody tr {

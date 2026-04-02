@@ -21,6 +21,7 @@ import {
   MaterialCharacteristicsStore,
   MaterialsStore,
   OrganizationsStore,
+  ProductionDetailsStore,
   ProductionWorkTypesStore,
   SurfaceFinishesStore,
   UnitsStore,
@@ -48,6 +49,11 @@ import {
 import { ORGANIZATIONS_REPOSITORY } from '@srm/organizations-data-access';
 import { OrganizationsHttpRepository } from '@srm/organizations-data-access';
 import { OrganizationsMockRepository } from '@srm/organizations-data-access';
+import {
+  PRODUCTION_DETAILS_REPOSITORY,
+  ProductionDetailsHttpRepository,
+  ProductionDetailsMockRepository,
+} from '@srm/production-details-data-access';
 import {
   PRODUCTION_WORK_TYPES_REPOSITORY,
   ProductionWorkTypesHttpRepository,
@@ -161,6 +167,18 @@ export const DICTIONARIES_ROUTE_PROVIDERS: Provider[] = [
       httpRepo: ProductionWorkTypesHttpRepository,
     ) => selectRepository({ apiConfig, mockRepo, httpRepo }),
     deps: [API_CONFIG, ProductionWorkTypesMockRepository, ProductionWorkTypesHttpRepository],
+  },
+  ProductionDetailsMockRepository,
+  ProductionDetailsHttpRepository,
+  ProductionDetailsStore,
+  {
+    provide: PRODUCTION_DETAILS_REPOSITORY,
+    useFactory: (
+      apiConfig: ApiConfig,
+      mockRepo: ProductionDetailsMockRepository,
+      httpRepo: ProductionDetailsHttpRepository,
+    ) => selectRepository({ apiConfig, mockRepo, httpRepo }),
+    deps: [API_CONFIG, ProductionDetailsMockRepository, ProductionDetailsHttpRepository],
   },
   ClientsMockRepository,
   ClientsHttpRepository,

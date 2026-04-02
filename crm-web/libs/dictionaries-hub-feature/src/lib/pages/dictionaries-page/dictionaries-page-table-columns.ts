@@ -39,6 +39,7 @@ export const MATERIALS_COLUMNS_FULL: TableColumn[] = [
   { key: 'characteristic', label: 'Характеристика' },
   { key: 'geometry', label: 'Геометрия' },
   { key: 'unit', label: 'Ед.' },
+  { key: 'supplier', label: 'Поставщик' },
   { key: 'priceLabel', label: 'Цена' },
   { key: 'densityKgM3', label: 'Плотность' },
   { key: 'color', label: 'Цвет', swatchHexKey: 'colorHex' },
@@ -49,6 +50,16 @@ export const MATERIALS_COLUMNS_FULL: TableColumn[] = [
   { key: 'coatingSpec', label: 'Спецификация' },
   { key: 'coatingThicknessMicron', label: 'Толщ., мкм' },
   { key: 'notes', label: 'Заметка' },
+  { key: 'isActiveLabel', label: 'Активен' },
+];
+
+export const PRODUCTION_DETAILS_COLUMNS: TableColumn[] = [{ key: 'hubLine', label: 'Деталь' }];
+
+export const PRODUCTION_DETAILS_COLUMNS_FULL: TableColumn[] = [
+  { key: 'name', label: 'Название' },
+  { key: 'lineTotalLabel', label: 'Итого ₽' },
+  { key: 'materialTotalLabel', label: 'Материал ₽' },
+  { key: 'workTotalLabel', label: 'Работы ₽' },
   { key: 'isActiveLabel', label: 'Активен' },
 ];
 

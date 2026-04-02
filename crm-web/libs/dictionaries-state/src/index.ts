@@ -11,3 +11,4 @@ export * from './lib/organizations.store';
 export * from './lib/roles.store';
 export * from './lib/users.store';
 export * from './lib/kp-photos.store';
+export * from './lib/production-details.store';

@@ -23,6 +23,11 @@
             "glob": "**/*",
             "input": "public/branding/kp",
             "output": "/branding/kp"
+          },
+          {
+            "glob": "**/*",
+            "input": "public/kp-media",
+            "output": "/kp-media"
           }
         ],
         "styles": ["src/styles.scss", "srm-front/src/styles.scss"]

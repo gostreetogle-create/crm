@@ -62,6 +62,7 @@ export const MaterialsStore = signalStore(
               characteristic: charLabel,
               geometry: geomLabel,
               unit: item.unitName || '—',
+              supplier: item.supplierOrganizationLabel?.trim() || '—',
               priceLabel:
                 item.purchasePriceRub != null ? `${item.purchasePriceRub} ₽` : '—',
               densityKgM3: ch?.densityKgM3 != null ? String(ch.densityKgM3) : '—',

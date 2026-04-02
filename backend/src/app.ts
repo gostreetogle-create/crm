@@ -13,6 +13,7 @@ import { materialCharacteristicsRouter } from "./routes/material-characteristics
 import { materialsRouter } from "./routes/materials.routes.js";
 import { materialGeometryRouter } from "./routes/material-geometry.routes.js";
 import { productionWorkTypesRouter } from "./routes/production-work-types.routes.js";
+import { productionDetailsRouter } from "./routes/production-details.routes.js";
 import { rolesRouter } from "./routes/roles.routes.js";
 import { surfaceFinishesRouter } from "./routes/surface-finishes.routes.js";
 import { unitsRouter } from "./routes/units.routes.js";
@@ -61,6 +62,7 @@ export function createApp() {
   authed.use("/coatings", coatingsRouter);
   authed.use("/geometries", geometriesRouter);
   authed.use("/production-work-types", productionWorkTypesRouter);
+  authed.use("/production-details", productionDetailsRouter);
   authed.use("/clients", clientsRouter);
   authed.use("/organizations", organizationsRouter);
   authed.use("/commercial-offers", commercialOffersRouter);

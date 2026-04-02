@@ -26,7 +26,7 @@
       "После правок — node scripts/generate-backend-map-overview.cjs (синхронизация OVERVIEW.generated.md)."
     ]
   },
-  "version": "1.2",
+  "version": "1.3",
   "entities": {
     "category": {
       "name": "Категория",
@@ -76,7 +76,7 @@
     },
     "material": {
       "name": "Материал",
-      "description": "Справочник; listPrice — закупка для costPrice.",
+      "description": "Справочник складской позиции (CRM): характеристика вещества + геометрия + цена за единицу; listPrice/purchasePrice — закупка.",
       "fields": [
         {
           "key": "id",
@@ -127,6 +127,188 @@
           "type": "uuid",
           "required": false,
           "description": "Опционально: отдельная сущность Unit или поле"
+        },
+        {
+          "key": "supplierOrganizationId",
+          "rus": "Поставщик (организация)",
+          "type": "uuid",
+          "required": false,
+          "description": "CRM: ссылка на Organization как контрагента закупки; FK, onDelete SetNull"
+        }
+      ]
+    },
+    "production_detail": {
+      "name": "Деталь (производство)",
+      "description": "Справочник «Детали» (CRM): независимая позиция со снимком полей материала и вида работ; итоги materialTotalRub/workTotalRub/lineTotalRub считаются на сервере (см. production-detail-pricing).",
+      "fields": [
+        {
+          "key": "id",
+          "rus": "Идентификатор",
+          "type": "uuid",
+          "required": true,
+          "description": "PK"
+        },
+        {
+          "key": "name",
+          "rus": "Наименование",
+          "type": "string",
+          "required": true
+        },
+        {
+          "key": "code",
+          "rus": "Код",
+          "type": "string",
+          "required": false
+        },
+        {
+          "key": "qty",
+          "rus": "Количество",
+          "type": "float",
+          "required": true,
+          "description": "Множитель для расчёта итогов"
+        },
+        {
+          "key": "notes",
+          "rus": "Заметки",
+          "type": "string",
+          "required": false
+        },
+        {
+          "key": "isActive",
+          "rus": "Активна",
+          "type": "boolean",
+          "required": true
+        },
+        {
+          "key": "sourceMaterialId",
+          "rus": "Источник — материал",
+          "type": "uuid",
+          "required": false,
+          "description": "FK → Material, опционально; пресет для снимка"
+        },
+        {
+          "key": "sourceWorkTypeId",
+          "rus": "Источник — вид работ",
+          "type": "uuid",
+          "required": false,
+          "description": "FK → ProductionWorkType, опционально"
+        },
+        {
+          "key": "snapshotMaterialName",
+          "rus": "Снимок: название материала",
+          "type": "string",
+          "required": false
+        },
+        {
+          "key": "snapshotMaterialCode",
+          "rus": "Снимок: код материала",
+          "type": "string",
+          "required": false
+        },
+        {
+          "key": "snapshotUnitCode",
+          "rus": "Снимок: код ЕИ",
+          "type": "string",
+          "required": false
+        },
+        {
+          "key": "snapshotUnitName",
+          "rus": "Снимок: название ЕИ",
+          "type": "string",
+          "required": false
+        },
+        {
+          "key": "snapshotPurchasePriceRub",
+          "rus": "Снимок: цена закупки ₽",
+          "type": "float",
+          "required": false
+        },
+        {
+          "key": "snapshotDensityKgM3",
+          "rus": "Снимок: плотность кг/м³",
+          "type": "float",
+          "required": false
+        },
+        {
+          "key": "snapshotHeightMm",
+          "rus": "Снимок: высота мм",
+          "type": "float",
+          "required": false
+        },
+        {
+          "key": "snapshotLengthMm",
+          "rus": "Снимок: длина мм",
+          "type": "float",
+          "required": false
+        },
+        {
+          "key": "snapshotWidthMm",
+          "rus": "Снимок: ширина мм",
+          "type": "float",
+          "required": false
+        },
+        {
+          "key": "snapshotDiameterMm",
+          "rus": "Снимок: диаметр мм",
+          "type": "float",
+          "required": false
+        },
+        {
+          "key": "snapshotThicknessMm",
+          "rus": "Снимок: толщина мм",
+          "type": "float",
+          "required": false
+        },
+        {
+          "key": "snapshotCharacteristicName",
+          "rus": "Снимок: характеристика (текст)",
+          "type": "string",
+          "required": false
+        },
+        {
+          "key": "snapshotWorkTypeName",
+          "rus": "Снимок: вид работ (название)",
+          "type": "string",
+          "required": false
+        },
+        {
+          "key": "snapshotWorkShortLabel",
+          "rus": "Снимок: сокращение работ",
+          "type": "string",
+          "required": false
+        },
+        {
+          "key": "snapshotHourlyRateRub",
+          "rus": "Снимок: ставка ₽/ч",
+          "type": "float",
+          "required": false
+        },
+        {
+          "key": "workTimeHours",
+          "rus": "Часы работ",
+          "type": "float",
+          "required": false
+        },
+        {
+          "key": "materialTotalRub",
+          "rus": "Итого материал ₽",
+          "type": "float",
+          "required": false,
+          "description": "Серверный расчёт, денорм"
+        },
+        {
+          "key": "workTotalRub",
+          "rus": "Итого работа ₽",
+          "type": "float",
+          "required": false,
+          "description": "Серверный расчёт, денорм"
+        },
+        {
+          "key": "lineTotalRub",
+          "rus": "Итого по строке ₽",
+          "type": "float",
+          "required": false,
+          "description": "Серверный расчёт, денорм"
         }
       ]
     },

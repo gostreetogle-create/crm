@@ -60,6 +60,8 @@ import {
   USERS_COLUMNS_FULL,
   WORK_TYPES_COLUMNS,
   WORK_TYPES_COLUMNS_FULL,
+  PRODUCTION_DETAILS_COLUMNS,
+  PRODUCTION_DETAILS_COLUMNS_FULL,
 } from './dictionaries-page-table-columns';
 import {
   mapLegalFormToOrganizationKind,
@@ -76,6 +78,7 @@ import {
   kpPhotosPayloadFromValues,
   materialCharacteristicsPayloadFromValues,
   materialsPayloadFromValues,
+  productionDetailsPayloadFromValues,
   organizationsPayloadFromFields,
   surfaceFinishPayloadFromValues,
   unitsPayloadFromValues,
@@ -90,6 +93,7 @@ import {
   MaterialCharacteristicsStore,
   MaterialsStore,
   OrganizationsStore,
+  ProductionDetailsStore,
   ProductionWorkTypesStore,
   RolesStore,
   SurfaceFinishesStore,
@@ -111,8 +115,10 @@ import {
   planMissingReferencesForMaterialCharacteristicsImport,
   SEEDED_ROLE_CODES_LOWER,
   slugifyRoleCodeFromName,
+  computeProductionDetailTotals,
 } from '@srm/dictionaries-utils';
 import type { MaterialItem, MaterialItemInput } from '@srm/materials-data-access';
+import type { ProductionDetailItemInput } from '@srm/production-details-data-access';
 import { type ClientItemInput, formatClientFio } from '@srm/clients-data-access';
 import { OrganizationItem, OrganizationItemInput } from '@srm/organizations-data-access';
 import {
@@ -281,6 +287,7 @@ export class DictionariesPage implements OnDestroy {
   readonly coatingsStore = inject(CoatingsStore);
   readonly surfaceFinishesStore = inject(SurfaceFinishesStore);
   readonly productionWorkTypesStore = inject(ProductionWorkTypesStore);
+  readonly productionDetailsStore = inject(ProductionDetailsStore);
   readonly clientsStore = inject(ClientsStore);
   readonly organizationsStore = inject(OrganizationsStore);
   readonly materialCharacteristicsStore = inject(MaterialCharacteristicsStore);
@@ -292,6 +299,8 @@ export class DictionariesPage implements OnDestroy {
   );
 
   readonly isWorkTypesModalOpen = signal(false);
+  readonly isProductionDetailsModalOpen = signal(false);
+  readonly isProductionDetailsViewMode = signal(false);
   readonly isMaterialCharacteristicsModalOpen = signal(false);
   readonly isMaterialCharacteristicsViewMode = signal(false);
   readonly isMaterialsModalOpen = signal(false);
@@ -363,6 +372,10 @@ export class DictionariesPage implements OnDestroy {
   readonly usersSubmitAttempted = signal(false);
   readonly colorQuickAddForMaterialCharacteristics = signal(false);
   readonly unitQuickAddForMaterials = signal(false);
+  /** После «+» у поставщика в форме материала — подставить созданную организацию в `supplierOrganizationId`. */
+  readonly organizationQuickAddForMaterials = signal(false);
+  /** Материал создан из формы детали (модалка поверх) — подставить в пресет «по материалу». */
+  readonly materialQuickAddForProductionDetails = signal(false);
   /** Каскад: модалка «Материал» открыта, плитка справочника — поверх (z-index). */
   readonly materialCharacteristicsHubStackAboveModal = signal(false);
   /** Модалка «Новая геометрия» открыта из формы материала — поднять слой выше модалки материала. */
@@ -472,6 +485,18 @@ export class DictionariesPage implements OnDestroy {
     return UI_MODAL_Z_INDEX_ABOVE_CASCADE_HUB;
   });
 
+  /** Модалка материала поверх модалки «Деталь» (создание материала из пресета). */
+  readonly materialsFormModalBackdropZIndex = computed((): number | null => {
+    if (!this.materialQuickAddForProductionDetails() || !this.isProductionDetailsModalOpen()) return null;
+    return UI_MODAL_Z_INDEX_ABOVE_CASCADE_HUB;
+  });
+
+  /** Организация из «+» у поставщика — выше модалки материала (уже 1800). */
+  readonly organizationsFormModalBackdropZIndex = computed((): number | null => {
+    if (!this.organizationQuickAddForMaterials() || !this.isMaterialsModalOpen()) return null;
+    return UI_MODAL_Z_INDEX_ABOVE_CASCADE_HUB + 100;
+  });
+
   readonly excelImportTone = computed((): 'info' | 'success' | 'error' => {
     const s = this.excelImportStatus();
     if (!s) return 'info';
@@ -502,6 +527,8 @@ export class DictionariesPage implements OnDestroy {
 
   readonly workTypesColumns = WORK_TYPES_COLUMNS;
   readonly workTypesColumnsFull = WORK_TYPES_COLUMNS_FULL;
+  readonly productionDetailsColumns = PRODUCTION_DETAILS_COLUMNS;
+  readonly productionDetailsColumnsFull = PRODUCTION_DETAILS_COLUMNS_FULL;
   readonly materialCharacteristicsColumnsPreview = MATERIAL_CHARACTERISTICS_COLUMNS_PREVIEW;
   readonly materialCharacteristicsColumnsFull = MATERIAL_CHARACTERISTICS_COLUMNS_FULL;
   readonly materialsColumnsPreview = MATERIALS_COLUMNS_PREVIEW;
@@ -551,6 +578,11 @@ export class DictionariesPage implements OnDestroy {
   }
 
   readonly workTypesColumnsForTile = this.columnsForTile('workTypes', this.workTypesColumns, this.workTypesColumnsFull);
+  readonly productionDetailsColumnsForTile = this.columnsForTile(
+    'productionDetails',
+    this.productionDetailsColumns,
+    this.productionDetailsColumnsFull,
+  );
   readonly unitsColumnsForTile = this.columnsForTile('units', this.unitsColumns, this.unitsColumnsFull);
   readonly kpPhotosColumnsForTile = this.columnsForTile('kpPhotos', this.kpPhotosColumns, this.kpPhotosColumnsFull);
   readonly clientsColumnsForTile = this.columnsForTile('clients', this.clientsColumns, this.clientsColumnsFull);
@@ -624,9 +656,36 @@ export class DictionariesPage implements OnDestroy {
     materialCharacteristicId: ['', Validators.required],
     geometryId: ['', Validators.required],
     unitId: ['', Validators.required],
+    supplierOrganizationId: [''],
     purchasePriceRub: [0, [Validators.required, Validators.min(1)]],
     notes: [''],
     isActive: [true],
+  });
+
+  readonly productionDetailsForm = this.fb.nonNullable.group({
+    name: ['', [Validators.required, Validators.minLength(2)]],
+    code: [''],
+    qty: [1 as number, [Validators.required, Validators.min(0.0001)]],
+    notes: [''],
+    isActive: [true],
+    sourceMaterialId: [''],
+    sourceWorkTypeId: [''],
+    snapshotMaterialName: [''],
+    snapshotMaterialCode: [''],
+    snapshotUnitCode: [''],
+    snapshotUnitName: [''],
+    snapshotPurchasePriceRub: [null as number | null],
+    snapshotDensityKgM3: [null as number | null],
+    snapshotHeightMm: [null as number | null],
+    snapshotLengthMm: [null as number | null],
+    snapshotWidthMm: [null as number | null],
+    snapshotDiameterMm: [null as number | null],
+    snapshotThicknessMm: [null as number | null],
+    snapshotCharacteristicName: [''],
+    snapshotWorkTypeName: [''],
+    snapshotWorkShortLabel: [''],
+    snapshotHourlyRateRub: [null as number | null],
+    workTimeHours: [null as number | null],
   });
 
   readonly materialCharacteristicsForm = this.fb.nonNullable.group({
@@ -847,6 +906,7 @@ export class DictionariesPage implements OnDestroy {
     this.coatingsStore.loadItems();
     this.surfaceFinishesStore.loadItems();
     this.productionWorkTypesStore.loadItems();
+    this.productionDetailsStore.loadItems();
     this.clientsStore.loadItems();
     this.organizationsStore.loadItems();
 
@@ -1014,6 +1074,27 @@ export class DictionariesPage implements OnDestroy {
     );
   }
 
+  isProductionDetailsInvalid(controlName: keyof typeof this.productionDetailsForm.controls): boolean {
+    const control = this.productionDetailsForm.controls[controlName];
+    return (
+      control.invalid &&
+      (control.touched || control.dirty || this.productionDetailsStore.formSubmitAttempted())
+    );
+  }
+
+  productionDetailsNameErrorText(): string {
+    const c = this.productionDetailsForm.controls.name;
+    if (
+      !c.invalid ||
+      !(c.touched || c.dirty || this.productionDetailsStore.formSubmitAttempted())
+    ) {
+      return '';
+    }
+    if (c.hasError('required')) return 'Укажите наименование';
+    if (c.hasError('minlength')) return 'Минимум 2 символа';
+    return 'Проверьте наименование';
+  }
+
   private buildWorkTypesPayload() {
     const c = this.workTypesForm.controls;
     return workTypesPayloadFromValues({
@@ -1037,6 +1118,259 @@ export class DictionariesPage implements OnDestroy {
     return 'Проверьте ставку';
   }
 
+  openProductionDetailsCreate(): void {
+    if (!this.permissions.crud().canCreate) return;
+    this.navigateToStandaloneDictionaryCreate('productionDetails');
+  }
+
+  closeProductionDetailsModal(): void {
+    this.productionDetailsStore.resetForm();
+    this.isProductionDetailsViewMode.set(false);
+    this.isProductionDetailsModalOpen.set(false);
+  }
+
+  private resetProductionDetailsCreateForm(): void {
+    this.isProductionDetailsViewMode.set(false);
+    this.productionDetailsForm.enable({ emitEvent: false });
+    this.productionDetailsStore.startCreate();
+    this.productionDetailsForm.reset({
+      name: '',
+      code: '',
+      qty: 1,
+      notes: '',
+      isActive: true,
+      sourceMaterialId: '',
+      sourceWorkTypeId: '',
+      snapshotMaterialName: '',
+      snapshotMaterialCode: '',
+      snapshotUnitCode: '',
+      snapshotUnitName: '',
+      snapshotPurchasePriceRub: null,
+      snapshotDensityKgM3: null,
+      snapshotHeightMm: null,
+      snapshotLengthMm: null,
+      snapshotWidthMm: null,
+      snapshotDiameterMm: null,
+      snapshotThicknessMm: null,
+      snapshotCharacteristicName: '',
+      snapshotWorkTypeName: '',
+      snapshotWorkShortLabel: '',
+      snapshotHourlyRateRub: null,
+      workTimeHours: null,
+    });
+  }
+
+  openProductionDetailsEdit(id: string): void {
+    if (!this.permissions.crud().canEdit) return;
+    this.isProductionDetailsViewMode.set(false);
+    this.productionDetailsForm.enable({ emitEvent: false });
+    const item = this.productionDetailsStore.items().find((x) => x.id === id);
+    if (!item) return;
+    this.productionDetailsStore.startEdit(item.id);
+    this.productionDetailsForm.reset({
+      name: item.name ?? '',
+      code: item.code ?? '',
+      qty: item.qty ?? 1,
+      notes: item.notes ?? '',
+      isActive: item.isActive,
+      sourceMaterialId: item.sourceMaterialId ?? '',
+      sourceWorkTypeId: item.sourceWorkTypeId ?? '',
+      snapshotMaterialName: item.snapshotMaterialName ?? '',
+      snapshotMaterialCode: item.snapshotMaterialCode ?? '',
+      snapshotUnitCode: item.snapshotUnitCode ?? '',
+      snapshotUnitName: item.snapshotUnitName ?? '',
+      snapshotPurchasePriceRub: item.snapshotPurchasePriceRub ?? null,
+      snapshotDensityKgM3: item.snapshotDensityKgM3 ?? null,
+      snapshotHeightMm: item.snapshotHeightMm ?? null,
+      snapshotLengthMm: item.snapshotLengthMm ?? null,
+      snapshotWidthMm: item.snapshotWidthMm ?? null,
+      snapshotDiameterMm: item.snapshotDiameterMm ?? null,
+      snapshotThicknessMm: item.snapshotThicknessMm ?? null,
+      snapshotCharacteristicName: item.snapshotCharacteristicName ?? '',
+      snapshotWorkTypeName: item.snapshotWorkTypeName ?? '',
+      snapshotWorkShortLabel: item.snapshotWorkShortLabel ?? '',
+      snapshotHourlyRateRub: item.snapshotHourlyRateRub ?? null,
+      workTimeHours: item.workTimeHours ?? null,
+    });
+    this.isProductionDetailsModalOpen.set(true);
+  }
+
+  openProductionDetailsView(id: string): void {
+    const item = this.productionDetailsStore.items().find((x) => x.id === id);
+    if (!item) return;
+    this.productionDetailsStore.resetForm();
+    this.productionDetailsForm.reset({
+      name: item.name ?? '',
+      code: item.code ?? '',
+      qty: item.qty ?? 1,
+      notes: item.notes ?? '',
+      isActive: item.isActive,
+      sourceMaterialId: item.sourceMaterialId ?? '',
+      sourceWorkTypeId: item.sourceWorkTypeId ?? '',
+      snapshotMaterialName: item.snapshotMaterialName ?? '',
+      snapshotMaterialCode: item.snapshotMaterialCode ?? '',
+      snapshotUnitCode: item.snapshotUnitCode ?? '',
+      snapshotUnitName: item.snapshotUnitName ?? '',
+      snapshotPurchasePriceRub: item.snapshotPurchasePriceRub ?? null,
+      snapshotDensityKgM3: item.snapshotDensityKgM3 ?? null,
+      snapshotHeightMm: item.snapshotHeightMm ?? null,
+      snapshotLengthMm: item.snapshotLengthMm ?? null,
+      snapshotWidthMm: item.snapshotWidthMm ?? null,
+      snapshotDiameterMm: item.snapshotDiameterMm ?? null,
+      snapshotThicknessMm: item.snapshotThicknessMm ?? null,
+      snapshotCharacteristicName: item.snapshotCharacteristicName ?? '',
+      snapshotWorkTypeName: item.snapshotWorkTypeName ?? '',
+      snapshotWorkShortLabel: item.snapshotWorkShortLabel ?? '',
+      snapshotHourlyRateRub: item.snapshotHourlyRateRub ?? null,
+      workTimeHours: item.workTimeHours ?? null,
+    });
+    this.productionDetailsForm.disable({ emitEvent: false });
+    this.isProductionDetailsViewMode.set(true);
+    this.isProductionDetailsModalOpen.set(true);
+  }
+
+  duplicateProductionDetail(id: string): void {
+    if (!this.permissions.can('crud.duplicate')) return;
+    const item = this.productionDetailsStore.items().find((x) => x.id === id);
+    if (!item) return;
+    this.isProductionDetailsViewMode.set(false);
+    this.productionDetailsForm.enable({ emitEvent: false });
+    this.productionDetailsStore.startCreate();
+    this.productionDetailsForm.reset({
+      name: item.name ? `${item.name} (копия)` : '',
+      code: item.code ?? '',
+      qty: item.qty ?? 1,
+      notes: item.notes ?? '',
+      isActive: item.isActive,
+      sourceMaterialId: '',
+      sourceWorkTypeId: '',
+      snapshotMaterialName: item.snapshotMaterialName ?? '',
+      snapshotMaterialCode: item.snapshotMaterialCode ?? '',
+      snapshotUnitCode: item.snapshotUnitCode ?? '',
+      snapshotUnitName: item.snapshotUnitName ?? '',
+      snapshotPurchasePriceRub: item.snapshotPurchasePriceRub ?? null,
+      snapshotDensityKgM3: item.snapshotDensityKgM3 ?? null,
+      snapshotHeightMm: item.snapshotHeightMm ?? null,
+      snapshotLengthMm: item.snapshotLengthMm ?? null,
+      snapshotWidthMm: item.snapshotWidthMm ?? null,
+      snapshotDiameterMm: item.snapshotDiameterMm ?? null,
+      snapshotThicknessMm: item.snapshotThicknessMm ?? null,
+      snapshotCharacteristicName: item.snapshotCharacteristicName ?? '',
+      snapshotWorkTypeName: item.snapshotWorkTypeName ?? '',
+      snapshotWorkShortLabel: item.snapshotWorkShortLabel ?? '',
+      snapshotHourlyRateRub: item.snapshotHourlyRateRub ?? null,
+      workTimeHours: item.workTimeHours ?? null,
+    });
+    this.isProductionDetailsModalOpen.set(true);
+  }
+
+  deleteProductionDetail(id: string): void {
+    if (!this.permissions.crud().canDelete) return;
+    this.productionDetailsStore.delete(id);
+  }
+
+  submitProductionDetails(): void {
+    const payload = this.buildProductionDetailsPayload();
+    if (this.productionDetailsForm.invalid) {
+      this.productionDetailsStore.submit({ value: payload, isValid: false });
+      this.productionDetailsForm.markAllAsTouched();
+      scrollToFirstInvalidControlInForm('production-details-form', this.doc);
+      return;
+    }
+    this.productionDetailsStore.submit({ value: payload, isValid: true });
+    this.closeProductionDetailsModal();
+    this.finishStandaloneDictionaryCreateIfMatch('productionDetails');
+  }
+
+  productionDetailTotalsPreview(): ReturnType<typeof computeProductionDetailTotals> {
+    const c = this.productionDetailsForm.getRawValue();
+    return computeProductionDetailTotals({
+      qty: c.qty ?? 1,
+      snapshotPurchasePriceRub: c.snapshotPurchasePriceRub,
+      snapshotUnitCode: c.snapshotUnitCode,
+      snapshotUnitName: c.snapshotUnitName,
+      snapshotDensityKgM3: c.snapshotDensityKgM3,
+      snapshotHeightMm: c.snapshotHeightMm,
+      snapshotLengthMm: c.snapshotLengthMm,
+      snapshotWidthMm: c.snapshotWidthMm,
+      snapshotDiameterMm: c.snapshotDiameterMm,
+      snapshotThicknessMm: c.snapshotThicknessMm,
+      snapshotHourlyRateRub: c.snapshotHourlyRateRub,
+      workTimeHours: c.workTimeHours,
+    });
+  }
+
+  onProductionDetailMaterialPresetChange(materialId: string): void {
+    if (!materialId) {
+      this.productionDetailsForm.patchValue({ sourceMaterialId: '' });
+      return;
+    }
+    const m = this.materialsStore.items().find((x) => x.id === materialId);
+    if (!m) return;
+    const ch = this.materialCharacteristicsStore.items().find((x) => x.id === m.materialCharacteristicId);
+    const g = this.geometriesStore.items().find((x) => x.id === m.geometryId);
+    const u = this.unitsStore.items().find((x) => x.id === m.unitId);
+    this.productionDetailsForm.patchValue({
+      sourceMaterialId: materialId,
+      snapshotMaterialName: m.name,
+      snapshotMaterialCode: m.code ?? '',
+      snapshotUnitCode: u?.code ?? '',
+      snapshotUnitName: u ? `${u.name}` : m.unitName ?? '',
+      snapshotPurchasePriceRub: m.purchasePriceRub ?? null,
+      snapshotDensityKgM3: ch?.densityKgM3 ?? null,
+      snapshotHeightMm: g?.heightMm ?? null,
+      snapshotLengthMm: g?.lengthMm ?? null,
+      snapshotWidthMm: g?.widthMm ?? null,
+      snapshotDiameterMm: g?.diameterMm ?? null,
+      snapshotThicknessMm: g?.thicknessMm ?? null,
+      snapshotCharacteristicName: ch?.name ?? '',
+    });
+  }
+
+  onProductionDetailWorkTypePresetChange(workTypeId: string): void {
+    if (!workTypeId) {
+      this.productionDetailsForm.patchValue({ sourceWorkTypeId: '' });
+      return;
+    }
+    const w = this.productionWorkTypesStore.items().find((x) => x.id === workTypeId);
+    if (!w) return;
+    this.productionDetailsForm.patchValue({
+      sourceWorkTypeId: workTypeId,
+      snapshotWorkTypeName: w.name,
+      snapshotWorkShortLabel: w.shortLabel,
+      snapshotHourlyRateRub: w.hourlyRateRub,
+    });
+  }
+
+  private buildProductionDetailsPayload() {
+    const c = this.productionDetailsForm.controls;
+    return productionDetailsPayloadFromValues({
+      name: c.name.value,
+      code: c.code.value,
+      qty: c.qty.value,
+      notes: c.notes.value,
+      isActive: c.isActive.value,
+      sourceMaterialId: c.sourceMaterialId.value,
+      sourceWorkTypeId: c.sourceWorkTypeId.value,
+      snapshotMaterialName: c.snapshotMaterialName.value,
+      snapshotMaterialCode: c.snapshotMaterialCode.value,
+      snapshotUnitCode: c.snapshotUnitCode.value,
+      snapshotUnitName: c.snapshotUnitName.value,
+      snapshotPurchasePriceRub: c.snapshotPurchasePriceRub.value,
+      snapshotDensityKgM3: c.snapshotDensityKgM3.value,
+      snapshotHeightMm: c.snapshotHeightMm.value,
+      snapshotLengthMm: c.snapshotLengthMm.value,
+      snapshotWidthMm: c.snapshotWidthMm.value,
+      snapshotDiameterMm: c.snapshotDiameterMm.value,
+      snapshotThicknessMm: c.snapshotThicknessMm.value,
+      snapshotCharacteristicName: c.snapshotCharacteristicName.value,
+      snapshotWorkTypeName: c.snapshotWorkTypeName.value,
+      snapshotWorkShortLabel: c.snapshotWorkShortLabel.value,
+      snapshotHourlyRateRub: c.snapshotHourlyRateRub.value,
+      workTimeHours: c.workTimeHours.value,
+    });
+  }
+
   private resetMaterialsCreateForm(): void {
     this.isMaterialsViewMode.set(false);
     this.materialsForm.enable({ emitEvent: false });
@@ -1047,6 +1381,7 @@ export class DictionariesPage implements OnDestroy {
       materialCharacteristicId: '',
       geometryId: '',
       unitId: '',
+      supplierOrganizationId: '',
       purchasePriceRub: 0,
       notes: '',
       isActive: true,
@@ -1086,6 +1421,8 @@ export class DictionariesPage implements OnDestroy {
     this.geometriesModalStackAboveMaterials.set(false);
     this.coatingQuickAddForMaterialCharacteristics.set(false);
     this.surfaceQuickAddForMaterialCharacteristics.set(false);
+    this.organizationQuickAddForMaterials.set(false);
+    this.materialQuickAddForProductionDetails.set(false);
   }
 
   /**
@@ -1138,6 +1475,7 @@ export class DictionariesPage implements OnDestroy {
       roles: () => this.closeRolesModal(),
       users: () => this.closeUsersModal(),
       kpPhotos: () => this.closeKpPhotosModal(),
+      productionDetails: () => this.closeProductionDetailsModal(),
     });
     this.resetAllDictionaryHubQuickAddFlags();
     this.location.back();
@@ -1165,6 +1503,19 @@ export class DictionariesPage implements OnDestroy {
     this.isMaterialsModalOpen.set(true);
   }
 
+  /** «+» у пресета материала в форме детали: модалка материала поверх детали. */
+  openMaterialsCreateFromProductionDetails(): void {
+    if (!this.isProductionDetailsModalOpen()) return;
+    if (!this.permissions.crud().canCreate) return;
+    this.materialQuickAddForProductionDetails.set(true);
+    this.openMaterialsCreate();
+  }
+
+  navigateToStandaloneWorkTypesFromProductionDetails(): void {
+    if (!this.permissions.crud().canCreate) return;
+    this.navigateToStandaloneDictionaryCreate('workTypes');
+  }
+
   openMaterialsEdit(id: string): void {
     if (!this.permissions.crud().canEdit) return;
     this.isMaterialsViewMode.set(false);
@@ -1178,6 +1529,7 @@ export class DictionariesPage implements OnDestroy {
       materialCharacteristicId: item.materialCharacteristicId ?? '',
       geometryId: item.geometryId ?? '',
       unitId: item.unitId ?? '',
+      supplierOrganizationId: item.supplierOrganizationId ?? '',
       purchasePriceRub: item.purchasePriceRub ?? 0,
       notes: item.notes ?? '',
       isActive: item.isActive,
@@ -1196,6 +1548,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   closeMaterialsModal(): void {
+    this.materialQuickAddForProductionDetails.set(false);
     if (this.isNewMaterialCharacteristicPageRoute() && !this.isMaterialCharacteristicsModalOpen()) {
       this.materialsStore.resetForm();
       this.isMaterialsViewMode.set(false);
@@ -1217,6 +1570,10 @@ export class DictionariesPage implements OnDestroy {
       scrollToFirstInvalidControlInForm('materials-form', this.doc);
       return;
     }
+    const quickPd =
+      this.materialQuickAddForProductionDetails() &&
+      !this.isNewMaterialPageRoute() &&
+      !this.isNewMaterialCharacteristicPageRoute();
     this.materialsStore.submit({ value: payload, isValid: true });
     if (this.isNewMaterialPageRoute()) {
       this.scheduleAfterStandaloneMaterialCreate(payload);
@@ -1227,6 +1584,9 @@ export class DictionariesPage implements OnDestroy {
       this.isMaterialsViewMode.set(false);
       this.isMaterialsModalOpen.set(false);
       return;
+    }
+    if (quickPd) {
+      this.scheduleMaterialQuickAddForProductionAfterSubmit(payload);
     }
     this.closeMaterialsModal();
   }
@@ -1249,6 +1609,7 @@ export class DictionariesPage implements OnDestroy {
       materialCharacteristicId: item.materialCharacteristicId ?? '',
       geometryId: item.geometryId ?? '',
       unitId: item.unitId ?? '',
+      supplierOrganizationId: item.supplierOrganizationId ?? '',
       purchasePriceRub: item.purchasePriceRub ?? 0,
       notes: item.notes ?? '',
       isActive: item.isActive,
@@ -1267,6 +1628,7 @@ export class DictionariesPage implements OnDestroy {
       materialCharacteristicId: item.materialCharacteristicId ?? '',
       geometryId: item.geometryId ?? '',
       unitId: item.unitId ?? '',
+      supplierOrganizationId: item.supplierOrganizationId ?? '',
       purchasePriceRub: item.purchasePriceRub ?? 0,
       notes: item.notes ?? '',
       isActive: item.isActive,
@@ -1500,6 +1862,11 @@ export class DictionariesPage implements OnDestroy {
     });
   }
 
+  private initProductionDetailsStandaloneCreate(): void {
+    if (!this.permissions.crud().canCreate) return;
+    this.resetProductionDetailsCreateForm();
+  }
+
   private initStandaloneDictionaryCreateFromRoute(): void {
     const sc = this.route.snapshot.data['standaloneCreate'];
     if (!isStandaloneDictionaryCreateKey(sc)) {
@@ -1517,6 +1884,7 @@ export class DictionariesPage implements OnDestroy {
       roles: () => this.initRolesStandaloneCreate(),
       users: () => this.initUsersStandaloneCreate(),
       kpPhotos: () => this.initKpPhotosStandaloneCreate(),
+      productionDetails: () => this.initProductionDetailsStandaloneCreate(),
     };
     inits[sc]();
   }
@@ -1645,6 +2013,44 @@ export class DictionariesPage implements OnDestroy {
       } else {
         this.closeMaterialBundleModal();
         this.location.back();
+      }
+    };
+    queueMicrotask(tick);
+  }
+
+  /** После создания материала из формы «Деталь» — подставить пресет по новому id. */
+  private scheduleMaterialQuickAddForProductionAfterSubmit(payload: MaterialItemInput): void {
+    const snapshotKey = this.materialItemSnapshotKeyFromPayload(payload);
+    let attempts = 0;
+    const maxAttempts = 40;
+    const tick = (): void => {
+      const created = this.materialsStore.items().find((m) => this.materialItemMatchesSnapshot(m, snapshotKey));
+      if (created) {
+        this.onProductionDetailMaterialPresetChange(created.id);
+        return;
+      }
+      if (attempts++ < maxAttempts) {
+        setTimeout(tick, 50);
+      }
+    };
+    queueMicrotask(tick);
+  }
+
+  /** После создания организации из «+» у поставщика в материале — подставить id поставщика. */
+  private scheduleOrganizationQuickAddForMaterialsAfterSubmit(orgMatchKey: string): void {
+    let attempts = 0;
+    const maxAttempts = 40;
+    const tick = (): void => {
+      const created = this.organizationsStore.items().find(
+        (o) =>
+          `${(o.inn ?? '').trim().toLowerCase()}|${(o.name ?? '').trim().toLowerCase()}` === orgMatchKey,
+      );
+      if (created) {
+        this.materialsForm.controls.supplierOrganizationId.setValue(created.id);
+        return;
+      }
+      if (attempts++ < maxAttempts) {
+        setTimeout(tick, 50);
       }
     };
     queueMicrotask(tick);
@@ -3123,6 +3529,41 @@ export class DictionariesPage implements OnDestroy {
     this.navigateToStandaloneDictionaryCreate('organizations');
   }
 
+  /** «+» у поставщика в форме материала: модалка организации поверх материала. */
+  openOrganizationsCreateFromMaterials(): void {
+    if (!this.isMaterialsModalOpen() && !this.isNewMaterialPageRoute()) return;
+    if (!this.permissions.crud().canCreate) return;
+    this.organizationQuickAddForMaterials.set(true);
+    this.isOrganizationsViewMode.set(false);
+    this.organizationsForm.enable({ emitEvent: false });
+    this.organizationsStore.startCreate();
+    this.organizationsForm.reset({
+      organizationKind: 'OOO',
+      name: '',
+      shortName: '',
+      inn: '',
+      kpp: '',
+      ogrn: '',
+      okpo: '',
+      phone: '',
+      email: '',
+      website: '',
+      legalAddress: '',
+      postalAddress: '',
+      bankName: '',
+      bankBik: '',
+      bankAccount: '',
+      bankCorrAccount: '',
+      signerName: '',
+      signerPosition: '',
+      notes: '',
+      contactIds: [],
+      contactPicker: '',
+      isActive: true,
+    });
+    this.isOrganizationsModalOpen.set(true);
+  }
+
   openOrganizationsEdit(id: string): void {
     if (!this.permissions.crud().canEdit) return;
     this.isOrganizationsViewMode.set(false);
@@ -3158,6 +3599,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   closeOrganizationsModal(): void {
+    this.organizationQuickAddForMaterials.set(false);
     this.organizationsStore.resetForm();
     this.isOrganizationsViewMode.set(false);
     this.isOrganizationsModalOpen.set(false);
@@ -3171,7 +3613,16 @@ export class DictionariesPage implements OnDestroy {
       scrollToFirstInvalidControlInForm('organizations-form', this.doc);
       return;
     }
+    const quickOrg =
+      this.organizationQuickAddForMaterials() &&
+      !this.organizationsStore.isEditMode();
+    const orgMatchKey = quickOrg
+      ? `${(payload.inn ?? '').trim().toLowerCase()}|${payload.name.trim().toLowerCase()}`
+      : '';
     this.organizationsStore.submit({ value: payload, isValid: true });
+    if (quickOrg && orgMatchKey) {
+      this.scheduleOrganizationQuickAddForMaterialsAfterSubmit(orgMatchKey);
+    }
     this.closeOrganizationsModal();
     this.finishStandaloneDictionaryCreateIfMatch('organizations');
   }
@@ -3338,6 +3789,12 @@ export class DictionariesPage implements OnDestroy {
   materialViewUnitLabel(): string {
     const id = this.materialsForm.controls.unitId.value;
     return this.unitsStore.options().find((o) => o.id === id)?.label ?? '—';
+  }
+
+  materialViewSupplierLabel(): string {
+    const id = this.materialsForm.controls.supplierOrganizationId.value?.trim() ?? '';
+    if (!id) return '—';
+    return this.organizationsStore.options().find((o) => o.id === id)?.label ?? '—';
   }
 
   materialViewUnitShort(): string {
@@ -3802,6 +4259,24 @@ export class DictionariesPage implements OnDestroy {
     }
   }
 
+  async onProductionDetailsExcelImported(file: File): Promise<void> {
+    this.excelImportBegin();
+    try {
+      const rows = await this.excelRowsFromFile(file);
+      const parsed = this.validateAndMapProductionDetailsRows(rows);
+      if (!parsed.ok) {
+        this.excelImportStatus.set(`Импорт отклонен: ${parsed.errors.join(' | ')}`);
+        return;
+      }
+      this.productionDetailsStore.createMany(parsed.rows);
+      this.excelImportStatus.set(
+        `Импортировано: ${parsed.rows.length} строк. Данные обновлены в справочнике.`,
+      );
+    } catch {
+      this.excelImportStatus.set('Импорт отклонен: не удалось прочитать файл.');
+    }
+  }
+
   async onSurfaceFinishesExcelImported(file: File): Promise<void> {
     this.excelImportBegin();
     try {
@@ -3896,6 +4371,7 @@ export class DictionariesPage implements OnDestroy {
       'ID единицы': '',
       'Код ЕИ': 'kg',
       'Название единицы': '',
+      'ID поставщика': '',
       'Цена ₽': 95,
       Заметки: '',
       Активен: 'да',
@@ -3919,6 +4395,7 @@ export class DictionariesPage implements OnDestroy {
       'ID единицы',
       'Код ЕИ',
       'Название единицы',
+      'ID поставщика',
       'Цена ₽',
       'Заметки',
       'Активен',
@@ -3943,6 +4420,7 @@ export class DictionariesPage implements OnDestroy {
       'ID единицы': unit?.id ?? '',
       'Код ЕИ': unit?.code ?? '',
       'Название единицы': unit?.name ?? '',
+      'ID поставщика': item.supplierOrganizationId ?? '',
       'Цена ₽': item.purchasePriceRub ?? '',
       Заметки: item.notes?.trim() ?? '',
       Активен: item.isActive ? 'да' : 'нет',
@@ -4234,6 +4712,117 @@ export class DictionariesPage implements OnDestroy {
           },
         ],
         ['Наименование', 'Короткое обозначение', 'Ставка руб/ч', 'Активна']
+      )
+    ) {
+      this.excelImportStatus.set('Шаблон Excel скачан. Файл в папке загрузок.');
+    }
+  }
+
+  private productionDetailsExcelHeaders(): string[] {
+    return [
+      'ID',
+      'Название',
+      'Код',
+      'Кол-во',
+      'Заметки',
+      'Активен',
+      'ID источник материала',
+      'ID источник вида работ',
+      'Материал название',
+      'Материал код',
+      'ЕИ код',
+      'ЕИ название',
+      'Цена закуп ₽',
+      'Плотность кг/м³',
+      'В мм',
+      'Дл мм',
+      'Ш мм',
+      'Диам мм',
+      'Толщ мм',
+      'Характеристика',
+      'Вид работ',
+      'Сокращение работ',
+      'Ставка ₽/ч',
+      'Часы работ',
+      'Итого материал ₽',
+      'Итого работа ₽',
+      'Итого ₽',
+    ];
+  }
+
+  async exportProductionDetailsExcel(): Promise<void> {
+    const headers = this.productionDetailsExcelHeaders();
+    const rows = this.productionDetailsStore.items().map((x) => ({
+      ID: x.id,
+      Название: x.name,
+      Код: x.code ?? '',
+      'Кол-во': x.qty,
+      Заметки: x.notes ?? '',
+      Активен: x.isActive ? 'да' : 'нет',
+      'ID источник материала': x.sourceMaterialId ?? '',
+      'ID источник вида работ': x.sourceWorkTypeId ?? '',
+      'Материал название': x.snapshotMaterialName ?? '',
+      'Материал код': x.snapshotMaterialCode ?? '',
+      'ЕИ код': x.snapshotUnitCode ?? '',
+      'ЕИ название': x.snapshotUnitName ?? '',
+      'Цена закуп ₽': x.snapshotPurchasePriceRub ?? '',
+      'Плотность кг/м³': x.snapshotDensityKgM3 ?? '',
+      'В мм': x.snapshotHeightMm ?? '',
+      'Дл мм': x.snapshotLengthMm ?? '',
+      'Ш мм': x.snapshotWidthMm ?? '',
+      'Диам мм': x.snapshotDiameterMm ?? '',
+      'Толщ мм': x.snapshotThicknessMm ?? '',
+      Характеристика: x.snapshotCharacteristicName ?? '',
+      'Вид работ': x.snapshotWorkTypeName ?? '',
+      'Сокращение работ': x.snapshotWorkShortLabel ?? '',
+      'Ставка ₽/ч': x.snapshotHourlyRateRub ?? '',
+      'Часы работ': x.workTimeHours ?? '',
+      'Итого материал ₽': x.materialTotalRub ?? '',
+      'Итого работа ₽': x.workTotalRub ?? '',
+      'Итого ₽': x.lineTotalRub ?? '',
+    }));
+    if (await this.exportRowsToExcel('production-details.xlsx', 'ProductionDetails', rows, headers)) {
+      this.excelImportStatus.set(`Экспортировано: ${rows.length} строк. Файл в папке загрузок.`);
+    }
+  }
+
+  async downloadProductionDetailsTemplateExcel(): Promise<void> {
+    const headers = this.productionDetailsExcelHeaders();
+    const sample: Record<string, string | number> = {
+      ID: '',
+      Название: 'Деталь — пример',
+      Код: 'DET-001',
+      'Кол-во': 1,
+      Заметки: '',
+      Активен: 'да',
+      'ID источник материала': '',
+      'ID источник вида работ': '',
+      'Материал название': '',
+      'Материал код': '',
+      'ЕИ код': 'pcs',
+      'ЕИ название': 'шт',
+      'Цена закуп ₽': 100,
+      'Плотность кг/м³': '',
+      'В мм': '',
+      'Дл мм': 1000,
+      'Ш мм': '',
+      'Диам мм': '',
+      'Толщ мм': '',
+      Характеристика: '',
+      'Вид работ': '',
+      'Сокращение работ': '',
+      'Ставка ₽/ч': 1500,
+      'Часы работ': 0.5,
+      'Итого материал ₽': '',
+      'Итого работа ₽': '',
+      'Итого ₽': '',
+    };
+    if (
+      await this.exportRowsToExcel(
+        'production-details-template.xlsx',
+        'ProductionDetails_TEMPLATE',
+        [sample],
+        headers,
       )
     ) {
       this.excelImportStatus.set('Шаблон Excel скачан. Файл в папке загрузок.');
@@ -4725,6 +5314,7 @@ export class DictionariesPage implements OnDestroy {
       geometryName: g?.name,
       unitId: uid || undefined,
       unitName: u ? `${u.name} (${u.code ?? '—'})` : undefined,
+      supplierOrganizationId: c.supplierOrganizationId.value || undefined,
       purchasePriceRub: c.purchasePriceRub.value,
       notes: c.notes.value,
       isActive: c.isActive.value,
@@ -5044,6 +5634,15 @@ export class DictionariesPage implements OnDestroy {
         return;
       }
 
+      const supplierOrgId = String(row['ID поставщика'] ?? '').trim();
+      if (supplierOrgId) {
+        const org = this.organizationsStore.items().find((o) => o.id === supplierOrgId);
+        if (!org) {
+          errors.push(`Строка ${rowNo}: «ID поставщика» — нет организации с таким id в справочнике.`);
+          return;
+        }
+      }
+
       if (priceRaw === null || Math.round(priceRaw) < 1) {
         errors.push(`Строка ${rowNo}: «Цена ₽» — целое число не меньше 1.`);
         return;
@@ -5065,6 +5664,7 @@ export class DictionariesPage implements OnDestroy {
         geometryName: geo.name,
         unitId: unitRef.id,
         unitName: unitRef.label,
+        supplierOrganizationId: supplierOrgId || undefined,
         purchasePriceRub: Math.round(priceRaw),
         notes: notes || undefined,
         isActive: isActiveRow,
@@ -5616,6 +6216,104 @@ export class DictionariesPage implements OnDestroy {
       existingNames.add(nameKey);
 
       mapped.push({ name, shortLabel, hourlyRateRub, isActive });
+    });
+
+    if (errors.length) return { ok: false, rows: mapped, errors: errors.slice(0, 6) };
+    return { ok: true, rows: mapped, errors: [] };
+  }
+
+  private isUuidString(raw: string): boolean {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      raw.trim(),
+    );
+  }
+
+  private validateAndMapProductionDetailsRows(rows: ReadonlyArray<Record<string, unknown>>): {
+    ok: boolean;
+    rows: ProductionDetailItemInput[];
+    errors: string[];
+  } {
+    const errors: string[] = [];
+    const mapped: ProductionDetailItemInput[] = [];
+
+    if (!rows.length) return { ok: false, rows: mapped, errors: ['Пустой файл.'] };
+
+    const firstKeys = Object.keys(rows[0] ?? {});
+    if (!firstKeys.includes('Название')) {
+      return { ok: false, rows: mapped, errors: ['Нужна колонка «Название».'] };
+    }
+
+    const matIds = new Set(this.materialsStore.items().map((m) => m.id));
+    const wtIds = new Set(this.productionWorkTypesStore.items().map((w) => w.id));
+
+    rows.forEach((row, idx) => {
+      const rowNo = idx + 2;
+      const name = String(row['Название'] ?? '').trim();
+      const qtyRaw = parseNumberOrNull(row['Кол-во']);
+      const qty = qtyRaw != null && qtyRaw > 0 ? qtyRaw : 1;
+      const code = String(row['Код'] ?? '').trim();
+      const notes = String(row['Заметки'] ?? '').trim();
+      const isActive = this.parseExcelBool(row['Активен'], true);
+
+      const srcMat = String(row['ID источник материала'] ?? '').trim();
+      const srcWt = String(row['ID источник вида работ'] ?? '').trim();
+
+      if (!name || name.length < 2) {
+        errors.push(`Строка ${rowNo}: укажите «Название» (минимум 2 символа).`);
+        return;
+      }
+      if (qtyRaw !== null && qtyRaw <= 0) {
+        errors.push(`Строка ${rowNo}: «Кол-во» должно быть больше 0.`);
+        return;
+      }
+
+      if (srcMat) {
+        if (!this.isUuidString(srcMat)) {
+          errors.push(`Строка ${rowNo}: «ID источник материала» — неверный формат UUID.`);
+          return;
+        }
+        if (!matIds.has(srcMat)) {
+          errors.push(`Строка ${rowNo}: материал с таким id не найден в справочнике.`);
+          return;
+        }
+      }
+      if (srcWt) {
+        if (!this.isUuidString(srcWt)) {
+          errors.push(`Строка ${rowNo}: «ID источник вида работ» — неверный формат UUID.`);
+          return;
+        }
+        if (!wtIds.has(srcWt)) {
+          errors.push(`Строка ${rowNo}: вид работ с таким id не найден в справочнике.`);
+          return;
+        }
+      }
+
+      const payload = productionDetailsPayloadFromValues({
+        name,
+        code,
+        qty,
+        notes,
+        isActive,
+        sourceMaterialId: srcMat,
+        sourceWorkTypeId: srcWt,
+        snapshotMaterialName: String(row['Материал название'] ?? ''),
+        snapshotMaterialCode: String(row['Материал код'] ?? ''),
+        snapshotUnitCode: String(row['ЕИ код'] ?? ''),
+        snapshotUnitName: String(row['ЕИ название'] ?? ''),
+        snapshotPurchasePriceRub: parseNumberOrNull(row['Цена закуп ₽']),
+        snapshotDensityKgM3: parseNumberOrNull(row['Плотность кг/м³']),
+        snapshotHeightMm: parseNumberOrNull(row['В мм']),
+        snapshotLengthMm: parseNumberOrNull(row['Дл мм']),
+        snapshotWidthMm: parseNumberOrNull(row['Ш мм']),
+        snapshotDiameterMm: parseNumberOrNull(row['Диам мм']),
+        snapshotThicknessMm: parseNumberOrNull(row['Толщ мм']),
+        snapshotCharacteristicName: String(row['Характеристика'] ?? ''),
+        snapshotWorkTypeName: String(row['Вид работ'] ?? ''),
+        snapshotWorkShortLabel: String(row['Сокращение работ'] ?? ''),
+        snapshotHourlyRateRub: parseNumberOrNull(row['Ставка ₽/ч']),
+        workTimeHours: parseNumberOrNull(row['Часы работ']),
+      });
+      mapped.push(payload);
     });
 
     if (errors.length) return { ok: false, rows: mapped, errors: errors.slice(0, 6) };

@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import XLSX from 'xlsx';
 import { prisma } from '../prisma.js';
+import { computeProductionDetailTotals } from '../production-detail-pricing.js';
 
 type ExcelSheetReport = {
   inputRows: number;
@@ -41,6 +42,7 @@ const EXCEL_SHEET_DISPLAY_NAMES_RU: Readonly<Record<string, string>> = {
   KpPhotos: 'Фото КП',
   MaterialCharacteristics: 'Характеристики материалов',
   Materials: 'Материалы',
+  ProductionDetails: 'Детали',
 };
 
 function excelSheetDisplayNameRu(sheetKey: string): string {
@@ -401,8 +403,36 @@ type MaterialDto = {
   purchasePriceRub: number | null;
   materialCharacteristicId: string;
   geometryId: string;
+  supplierOrganizationId: string | null;
   notes: string | null;
   isActive: boolean;
+};
+
+type ProductionDetailDto = {
+  id?: string;
+  name: string;
+  code: string | null;
+  qty: number;
+  notes: string | null;
+  isActive: boolean;
+  sourceMaterialId: string | null;
+  sourceWorkTypeId: string | null;
+  snapshotMaterialName: string | null;
+  snapshotMaterialCode: string | null;
+  snapshotUnitCode: string | null;
+  snapshotUnitName: string | null;
+  snapshotPurchasePriceRub: number | null;
+  snapshotDensityKgM3: number | null;
+  snapshotHeightMm: number | null;
+  snapshotLengthMm: number | null;
+  snapshotWidthMm: number | null;
+  snapshotDiameterMm: number | null;
+  snapshotThicknessMm: number | null;
+  snapshotCharacteristicName: string | null;
+  snapshotWorkTypeName: string | null;
+  snapshotWorkShortLabel: string | null;
+  snapshotHourlyRateRub: number | null;
+  workTimeHours: number | null;
 };
 
 // Geometry parsing copied/simplified from the frontend logic:
@@ -1682,7 +1712,20 @@ function initAdapters(): void {
 
   adapters.push({
     sheetName: 'Materials',
-    headers: ['ID материала', 'Название', 'Код', 'ID характеристики', 'ID геометрии', 'ID единицы', 'Код ЕИ', 'Название единицы', 'Цена ₽', 'Заметки', 'Активен'],
+    headers: [
+      'ID материала',
+      'Название',
+      'Код',
+      'ID характеристики',
+      'ID геометрии',
+      'ID единицы',
+      'Код ЕИ',
+      'Название единицы',
+      'Цена ₽',
+      'ID поставщика',
+      'Заметки',
+      'Активен',
+    ],
     templateSampleRows: [
       {
         'ID материала': '',
@@ -1697,6 +1740,7 @@ function initAdapters(): void {
         'Код ЕИ': 'kg',
         'Название единицы': '',
         'Цена ₽': 95,
+        'ID поставщика': '',
         Заметки: '',
         Активен: 'да',
       },
@@ -1712,6 +1756,7 @@ function initAdapters(): void {
       const geometryId = parseUuid(raw['ID геометрии']);
       const unitId = parseUuid(raw['ID единицы']);
       const purchasePriceRubRaw = parseNumberOrNull(raw['Цена ₽']);
+      const supplierOrganizationId = parseUuid(raw['ID поставщика']);
       const notes = sTrim(raw['Заметки']) || null;
       const isActive = parseActiveOrDefault(raw['Активен'], true);
 
@@ -1739,6 +1784,11 @@ function initAdapters(): void {
         errors.push({ excelRow, field: 'ID единицы', message: 'Не найдена единица измерения с указанным ID.' });
       }
 
+      const orgCache = ctx.existingByIdCache?.organization;
+      if (supplierOrganizationId && orgCache && !orgCache.has(supplierOrganizationId)) {
+        errors.push({ excelRow, field: 'ID поставщика', message: 'Не найдена организация с указанным ID.' });
+      }
+
       if (errors.length) return { ok: false, skipped: true, warnings, errors };
 
       return {
@@ -1751,6 +1801,7 @@ function initAdapters(): void {
           purchasePriceRub: purchasePriceRubRaw === null ? null : Math.round(purchasePriceRubRaw),
           materialCharacteristicId: materialCharacteristicId!,
           geometryId: geometryId!,
+          supplierOrganizationId: supplierOrganizationId ?? null,
           notes,
           isActive,
         } satisfies MaterialDto,
@@ -1773,6 +1824,7 @@ function initAdapters(): void {
                 purchasePriceRub: dto.purchasePriceRub,
                 materialCharacteristicId: dto.materialCharacteristicId,
                 geometryId: dto.geometryId,
+                supplierOrganizationId: dto.supplierOrganizationId,
                 notes: dto.notes,
                 isActive: dto.isActive,
               },
@@ -1788,6 +1840,7 @@ function initAdapters(): void {
                 purchasePriceRub: dto.purchasePriceRub,
                 materialCharacteristicId: dto.materialCharacteristicId,
                 geometryId: dto.geometryId,
+                supplierOrganizationId: dto.supplierOrganizationId,
                 notes: dto.notes,
                 isActive: dto.isActive,
               },
@@ -1797,6 +1850,197 @@ function initAdapters(): void {
         } catch {
           report.skipped += 1;
           report.errors.push({ excelRow: (dto as any).__excelRow ?? 0, message: 'DB error при импорте materials' });
+        }
+      }
+    },
+  });
+
+  const productionDetailHeaders = [
+    'ID',
+    'Название',
+    'Код',
+    'Кол-во',
+    'Заметки',
+    'Активен',
+    'ID источник материала',
+    'ID источник вида работ',
+    'Материал название',
+    'Материал код',
+    'ЕИ код',
+    'ЕИ название',
+    'Цена закуп ₽',
+    'Плотность кг/м³',
+    'В мм',
+    'Дл мм',
+    'Ш мм',
+    'Диам мм',
+    'Толщ мм',
+    'Характеристика',
+    'Вид работ',
+    'Сокращение работ',
+    'Ставка ₽/ч',
+    'Часы работ',
+    'Итого материал ₽',
+    'Итого работа ₽',
+    'Итого ₽',
+  ] as const;
+
+  adapters.push({
+    sheetName: 'ProductionDetails',
+    headers: [...productionDetailHeaders],
+    templateSampleRows: [
+      {
+        ID: '',
+        Название: 'Деталь — пример',
+        Код: 'DET-001',
+        'Кол-во': 1,
+        Заметки: '',
+        Активен: 'да',
+        'ID источник материала': '',
+        'ID источник вида работ': '',
+        'Материал название': '',
+        'Материал код': '',
+        'ЕИ код': 'pcs',
+        'ЕИ название': 'шт',
+        'Цена закуп ₽': 100,
+        'Плотность кг/м³': '',
+        'В мм': '',
+        'Дл мм': 1000,
+        'Ш мм': '',
+        'Диам мм': '',
+        'Толщ мм': '',
+        Характеристика: '',
+        'Вид работ': '',
+        'Сокращение работ': '',
+        'Ставка ₽/ч': 1500,
+        'Часы работ': 0.5,
+        'Итого материал ₽': '',
+        'Итого работа ₽': '',
+        'Итого ₽': '',
+      },
+    ],
+    parseRow: (raw, excelRow, ctx) => {
+      const warnings: ExcelSheetReport['warnings'] = [];
+      const errors: ExcelSheetReport['errors'] = [];
+
+      const id = parseUuid(raw['ID']) ?? undefined;
+      const name = sTrim(raw['Название']);
+      const code = sTrim(raw['Код']) || null;
+      const qtyRaw = parseNumberOrNull(raw['Кол-во']);
+      const qty = qtyRaw != null && qtyRaw > 0 ? qtyRaw : 1;
+      const notes = sTrim(raw['Заметки']) || null;
+      const isActive = parseActiveOrDefault(raw['Активен'], true);
+      const sourceMaterialId = parseUuid(raw['ID источник материала']);
+      const sourceWorkTypeId = parseUuid(raw['ID источник вида работ']);
+
+      const matCache = ctx.existingByIdCache?.material;
+      if (sourceMaterialId && matCache && !matCache.has(sourceMaterialId)) {
+        errors.push({ excelRow, field: 'ID источник материала', message: 'Не найден материал с указанным ID.' });
+      }
+      const wtCache = ctx.existingByIdCache?.productionWorkType;
+      if (sourceWorkTypeId && wtCache && !wtCache.has(sourceWorkTypeId)) {
+        errors.push({ excelRow, field: 'ID источник вида работ', message: 'Не найден вид работ с указанным ID.' });
+      }
+
+      if (!name) errors.push({ excelRow, field: 'Название', message: 'Название обязательно.' });
+
+      if (errors.length) return { ok: false, skipped: true, warnings, errors };
+
+      return {
+        ok: true,
+        dto: {
+          id,
+          name,
+          code,
+          qty,
+          notes,
+          isActive,
+          sourceMaterialId: sourceMaterialId ?? null,
+          sourceWorkTypeId: sourceWorkTypeId ?? null,
+          snapshotMaterialName: sTrim(raw['Материал название']) || null,
+          snapshotMaterialCode: sTrim(raw['Материал код']) || null,
+          snapshotUnitCode: sTrim(raw['ЕИ код']) || null,
+          snapshotUnitName: sTrim(raw['ЕИ название']) || null,
+          snapshotPurchasePriceRub: parseNumberOrNull(raw['Цена закуп ₽']),
+          snapshotDensityKgM3: parseNumberOrNull(raw['Плотность кг/м³']),
+          snapshotHeightMm: parseNumberOrNull(raw['В мм']),
+          snapshotLengthMm: parseNumberOrNull(raw['Дл мм']),
+          snapshotWidthMm: parseNumberOrNull(raw['Ш мм']),
+          snapshotDiameterMm: parseNumberOrNull(raw['Диам мм']),
+          snapshotThicknessMm: parseNumberOrNull(raw['Толщ мм']),
+          snapshotCharacteristicName: sTrim(raw['Характеристика']) || null,
+          snapshotWorkTypeName: sTrim(raw['Вид работ']) || null,
+          snapshotWorkShortLabel: sTrim(raw['Сокращение работ']) || null,
+          snapshotHourlyRateRub: parseNumberOrNull(raw['Ставка ₽/ч']),
+          workTimeHours: parseNumberOrNull(raw['Часы работ']),
+        } satisfies ProductionDetailDto,
+        warnings,
+      };
+    },
+    upsert: async (dtos, report, ctx) => {
+      const ids = dtos.map((d) => d.id).filter(Boolean) as string[];
+      const existing = ids.length
+        ? await ctx.prismaTx.productionDetail.findMany({ where: { id: { in: ids } }, select: { id: true } })
+        : [];
+      const existingIds = new Set(existing.map((x) => x.id));
+      for (const dto of dtos) {
+        try {
+          const totals = computeProductionDetailTotals({
+            qty: dto.qty,
+            snapshotPurchasePriceRub: dto.snapshotPurchasePriceRub,
+            snapshotUnitCode: dto.snapshotUnitCode,
+            snapshotUnitName: dto.snapshotUnitName,
+            snapshotDensityKgM3: dto.snapshotDensityKgM3,
+            snapshotHeightMm: dto.snapshotHeightMm,
+            snapshotLengthMm: dto.snapshotLengthMm,
+            snapshotWidthMm: dto.snapshotWidthMm,
+            snapshotDiameterMm: dto.snapshotDiameterMm,
+            snapshotThicknessMm: dto.snapshotThicknessMm,
+            snapshotHourlyRateRub: dto.snapshotHourlyRateRub,
+            workTimeHours: dto.workTimeHours,
+          });
+          const data = {
+            name: dto.name,
+            code: dto.code,
+            qty: dto.qty,
+            notes: dto.notes,
+            isActive: dto.isActive,
+            sourceMaterialId: dto.sourceMaterialId,
+            sourceWorkTypeId: dto.sourceWorkTypeId,
+            snapshotMaterialName: dto.snapshotMaterialName,
+            snapshotMaterialCode: dto.snapshotMaterialCode,
+            snapshotUnitCode: dto.snapshotUnitCode,
+            snapshotUnitName: dto.snapshotUnitName,
+            snapshotPurchasePriceRub: dto.snapshotPurchasePriceRub,
+            snapshotDensityKgM3: dto.snapshotDensityKgM3,
+            snapshotHeightMm: dto.snapshotHeightMm,
+            snapshotLengthMm: dto.snapshotLengthMm,
+            snapshotWidthMm: dto.snapshotWidthMm,
+            snapshotDiameterMm: dto.snapshotDiameterMm,
+            snapshotThicknessMm: dto.snapshotThicknessMm,
+            snapshotCharacteristicName: dto.snapshotCharacteristicName,
+            snapshotWorkTypeName: dto.snapshotWorkTypeName,
+            snapshotWorkShortLabel: dto.snapshotWorkShortLabel,
+            snapshotHourlyRateRub: dto.snapshotHourlyRateRub,
+            workTimeHours: dto.workTimeHours,
+            materialTotalRub: totals.materialTotalRub,
+            workTotalRub: totals.workTotalRub,
+            lineTotalRub: totals.lineTotalRub,
+          };
+          const isCreate = !dto.id || !existingIds.has(dto.id);
+          if (isCreate) {
+            await ctx.prismaTx.productionDetail.create({ data });
+            report.created += 1;
+          } else {
+            await ctx.prismaTx.productionDetail.update({ where: { id: dto.id }, data });
+            report.updated += 1;
+          }
+        } catch {
+          report.skipped += 1;
+          report.errors.push({
+            excelRow: (dto as any).__excelRow ?? 0,
+            message: 'DB error при импорте production details',
+          });
         }
       }
     },
@@ -2015,7 +2259,10 @@ export async function buildUnifiedExcelExportBuffer(): Promise<Buffer> {
         break;
       }
       case 'Materials': {
-        const items = await prisma.material.findMany({ orderBy: { name: 'asc' }, include: { unit: true, geometry: true } });
+        const items = await prisma.material.findMany({
+          orderBy: { name: 'asc' },
+          include: { unit: true, geometry: true, supplierOrganization: true },
+        });
         rows = items.map((x) => ({
           'ID материала': x.id,
           Название: x.name,
@@ -2029,8 +2276,42 @@ export async function buildUnifiedExcelExportBuffer(): Promise<Buffer> {
           'Код ЕИ': (x.unit as any)?.code ?? '',
           'Название единицы': (x.unit as any)?.name ?? '',
           'Цена ₽': x.purchasePriceRub ?? '',
+          'ID поставщика': x.supplierOrganizationId ?? '',
           Заметки: x.notes ?? '',
           Активен: x.isActive ? 'да' : 'нет',
+        }));
+        break;
+      }
+      case 'ProductionDetails': {
+        const items = await prisma.productionDetail.findMany({ orderBy: { name: 'asc' } });
+        rows = items.map((x) => ({
+          ID: x.id,
+          Название: x.name,
+          Код: x.code ?? '',
+          'Кол-во': x.qty,
+          Заметки: x.notes ?? '',
+          Активен: x.isActive ? 'да' : 'нет',
+          'ID источник материала': x.sourceMaterialId ?? '',
+          'ID источник вида работ': x.sourceWorkTypeId ?? '',
+          'Материал название': x.snapshotMaterialName ?? '',
+          'Материал код': x.snapshotMaterialCode ?? '',
+          'ЕИ код': x.snapshotUnitCode ?? '',
+          'ЕИ название': x.snapshotUnitName ?? '',
+          'Цена закуп ₽': x.snapshotPurchasePriceRub ?? '',
+          'Плотность кг/м³': x.snapshotDensityKgM3 ?? '',
+          'В мм': x.snapshotHeightMm ?? '',
+          'Дл мм': x.snapshotLengthMm ?? '',
+          'Ш мм': x.snapshotWidthMm ?? '',
+          'Диам мм': x.snapshotDiameterMm ?? '',
+          'Толщ мм': x.snapshotThicknessMm ?? '',
+          Характеристика: x.snapshotCharacteristicName ?? '',
+          'Вид работ': x.snapshotWorkTypeName ?? '',
+          'Сокращение работ': x.snapshotWorkShortLabel ?? '',
+          'Ставка ₽/ч': x.snapshotHourlyRateRub ?? '',
+          'Часы работ': x.workTimeHours ?? '',
+          'Итого материал ₽': x.materialTotalRub ?? '',
+          'Итого работа ₽': x.workTotalRub ?? '',
+          'Итого ₽': x.lineTotalRub ?? '',
         }));
         break;
       }
@@ -2064,6 +2345,8 @@ export async function importUnifiedExcelFromBuffer(buffer: Buffer): Promise<Exce
     unitRows,
     geometryRows,
     materialCharacteristicRows,
+    materialRows,
+    productionWorkTypeRows,
   ] = await Promise.all([
     prisma.organization.findMany({ select: { id: true } }),
     prisma.color.findMany({ select: { id: true } }),
@@ -2072,6 +2355,8 @@ export async function importUnifiedExcelFromBuffer(buffer: Buffer): Promise<Exce
     prisma.unit.findMany({ select: { id: true } }),
     prisma.geometry.findMany({ select: { id: true } }),
     prisma.materialCharacteristic.findMany({ select: { id: true } }),
+    prisma.material.findMany({ select: { id: true } }),
+    prisma.productionWorkType.findMany({ select: { id: true } }),
   ]);
 
   // We read workbook only once.
@@ -2095,6 +2380,8 @@ export async function importUnifiedExcelFromBuffer(buffer: Buffer): Promise<Exce
       unit: new Set(unitRows.map((x) => x.id)),
       geometry: new Set(geometryRows.map((x) => x.id)),
       materialCharacteristic: new Set(materialCharacteristicRows.map((x) => x.id)),
+      material: new Set(materialRows.map((x) => x.id)),
+      productionWorkType: new Set(productionWorkTypeRows.map((x) => x.id)),
     },
   };
 

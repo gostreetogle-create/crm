@@ -21,6 +21,7 @@ export type PermissionKey =
   | 'dict.hub.roles'
   | 'dict.hub.users'
   | 'dict.hub.kp_photos'
+  | 'dict.hub.production_details'
   | 'crud.create'
   | 'crud.edit'
   | 'crud.delete'

@@ -79,6 +79,8 @@ model ProductionWorkType {
   isActive      Boolean  @default(true)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  productionDetailSources ProductionDetail[] @relation("ProductionDetailSourceWorkType")
 }
 
 model Client {
@@ -131,6 +133,7 @@ model Organization {
   contacts OrganizationContact[]
   commercialOffers CommercialOffer[]
   kpPhotos KpPhoto[]
+  materialSuppliers Material[] @relation("MaterialSupplier")
 }
 
 /// Изображения для вставки в коммерческое предложение (привязка к организации).
@@ -255,12 +258,59 @@ model Material {
   purchasePriceRub         Float?
   materialCharacteristicId String
   geometryId               String
+  supplierOrganizationId   String?
   notes                    String?
   isActive                 Boolean  @default(true)
   createdAt                DateTime @default(now())
   updatedAt                DateTime @updatedAt
 
-  unit           Unit?                  @relation(fields: [unitId], references: [id], onDelete: SetNull)
-  characteristic MaterialCharacteristic @relation(fields: [materialCharacteristicId], references: [id], onDelete: Restrict)
-  geometry       Geometry               @relation(fields: [geometryId], references: [id], onDelete: Restrict)
+  unit                 Unit?                  @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  characteristic       MaterialCharacteristic @relation(fields: [materialCharacteristicId], references: [id], onDelete: Restrict)
+  geometry             Geometry               @relation(fields: [geometryId], references: [id], onDelete: Restrict)
+  supplierOrganization Organization?          @relation("MaterialSupplier", fields: [supplierOrganizationId], references: [id], onDelete: SetNull)
+  productionDetailSources ProductionDetail[]  @relation("ProductionDetailSourceMaterial")
+}
+
+/// Справочник «Детали»: независимая позиция со снимком полей материала и вида работ (редактируемый снимок).
+model ProductionDetail {
+  id       String  @id @default(uuid())
+  name     String
+  code     String?
+  qty      Float   @default(1)
+  notes    String?
+  isActive Boolean @default(true)
+
+  sourceMaterialId String?
+  sourceWorkTypeId String?
+
+  snapshotMaterialName         String?
+  snapshotMaterialCode         String?
+  snapshotUnitCode             String?
+  snapshotUnitName             String?
+  snapshotPurchasePriceRub     Float?
+  snapshotDensityKgM3          Float?
+  snapshotHeightMm             Float?
+  snapshotLengthMm             Float?
+  snapshotWidthMm              Float?
+  snapshotDiameterMm           Float?
+  snapshotThicknessMm          Float?
+  snapshotCharacteristicName   String?
+
+  snapshotWorkTypeName   String?
+  snapshotWorkShortLabel String?
+  snapshotHourlyRateRub  Float?
+  workTimeHours          Float?
+
+  materialTotalRub Float?
+  workTotalRub     Float?
+  lineTotalRub     Float?
+
+  sourceMaterial Material?            @relation("ProductionDetailSourceMaterial", fields: [sourceMaterialId], references: [id], onDelete: SetNull)
+  sourceWorkType ProductionWorkType?  @relation("ProductionDetailSourceWorkType", fields: [sourceWorkTypeId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sourceMaterialId])
+  @@index([sourceWorkTypeId])
 }
