@@ -10,11 +10,18 @@ import {
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import type { ClientItem } from '@srm/clients-data-access';
-import { formatClientFio } from '@srm/clients-data-access';
 import { DICTIONARIES_HUB_BASE, STANDALONE_DICTIONARY_CREATE } from '@srm/dictionaries-hub-feature';
 import type { OrganizationItem } from '@srm/organizations-data-access';
 import { LucidePlus } from '@lucide/angular';
 import { UiButtonComponent } from '@srm/ui-kit';
+import {
+  filterKpClients,
+  filterKpOrganizations,
+  getKpClientLabel,
+  getKpOrganizationOptionLabel,
+  getKpRecipientDisplayLabel,
+  parseKpRecipient,
+} from '../kp-utils';
 import {
   KP_RECIPIENT_CONTACT_PREFIX,
   KP_RECIPIENT_ORG_PREFIX,
@@ -51,8 +58,7 @@ export class KpRecipientToolbarComponent {
   }
 
   organizationOptionLabel(org: OrganizationItem): string {
-    const s = org.shortName?.trim();
-    return s || org.name;
+    return getKpOrganizationOptionLabel(org);
   }
 
   orgOptionValue(org: OrganizationItem): string {
@@ -67,20 +73,12 @@ export class KpRecipientToolbarComponent {
     | { type: 'org'; id: string }
     | { type: 'contact'; id: string }
     | null {
-    const raw = String(this.recipientCtrl?.value ?? '').trim();
-    if (!raw) {
-      return null;
-    }
-    if (raw.startsWith(KP_RECIPIENT_ORG_PREFIX)) {
-      const id = raw.slice(KP_RECIPIENT_ORG_PREFIX.length).trim();
-      return id ? { type: 'org', id } : null;
-    }
-    if (raw.startsWith(KP_RECIPIENT_CONTACT_PREFIX)) {
-      const id = raw.slice(KP_RECIPIENT_CONTACT_PREFIX.length).trim();
-      return id ? { type: 'contact', id } : null;
-    }
-    const legacyOrg = this.organizations.find((o) => o.id === raw);
-    return legacyOrg ? { type: 'org', id: raw } : null;
+    return parseKpRecipient(
+      String(this.recipientCtrl?.value ?? '').trim(),
+      this.organizations,
+      KP_RECIPIENT_ORG_PREFIX,
+      KP_RECIPIENT_CONTACT_PREFIX,
+    );
   }
 
   selectedOrganization(): OrganizationItem | null {
@@ -92,46 +90,15 @@ export class KpRecipientToolbarComponent {
   }
 
   filteredOrganizations(): OrganizationItem[] {
-    const q = (this.organizationSearchCtrl?.value ?? '').trim().toLowerCase();
-    const list = this.organizations.filter((o) => o.isActive);
-    const filtered = !q
-      ? [...list]
-      : list.filter(
-          (o) =>
-            o.name.toLowerCase().includes(q) || (o.shortName?.toLowerCase().includes(q) ?? false),
-        );
-    const sel = this.selectedOrganization();
-    if (sel && q && !filtered.some((o) => o.id === sel.id)) {
-      return [sel, ...filtered];
-    }
-    return filtered;
+    return filterKpOrganizations(this.organizations, this.organizationSearchCtrl?.value, this.selectedOrganization());
   }
 
   filteredClients(): ClientItem[] {
-    const q = (this.organizationSearchCtrl?.value ?? '').trim().toLowerCase();
-    const list = this.clients.filter((c) => c.isActive);
-    const match = (c: ClientItem) => {
-      if (!q) {
-        return true;
-      }
-      const fio = formatClientFio(c).toLowerCase();
-      return (
-        fio.includes(q) ||
-        (c.email?.toLowerCase().includes(q) ?? false) ||
-        (c.phone?.includes(q) ?? false) ||
-        (c.address?.toLowerCase().includes(q) ?? false)
-      );
-    };
-    let filtered = list.filter(match);
-    const sel = this.selectedContact();
-    if (sel && q && !filtered.some((c) => c.id === sel.id)) {
-      filtered = [sel, ...filtered];
-    }
-    return filtered;
+    return filterKpClients(this.clients, this.organizationSearchCtrl?.value, this.selectedContact());
   }
 
   clientLabel(c: ClientItem): string {
-    return formatClientFio(c);
+    return getKpClientLabel(c);
   }
 
   selectedContact(): ClientItem | null {
@@ -158,15 +125,7 @@ export class KpRecipientToolbarComponent {
   }
 
   recipientDisplayLabel(): string {
-    const org = this.selectedOrganization();
-    if (org) {
-      return this.organizationOptionLabel(org);
-    }
-    const c = this.selectedContact();
-    if (c) {
-      return this.clientLabel(c);
-    }
-    return '— не выбрано —';
+    return getKpRecipientDisplayLabel(this.selectedOrganization(), this.selectedContact());
   }
 
   toggleRecipientPanel(ev?: Event): void {

@@ -31,6 +31,24 @@
   page-break-before: always;
 }
 
+/* Номер листа при переносе таблицы на несколько страниц (экран и печать) */
+.kp-sheet__pageMark {
+  position: absolute;
+  z-index: 2;
+  right: 10mm;
+  bottom: 6mm;
+  margin: 0;
+  padding: 0;
+  max-width: 42%;
+  text-align: right;
+  font-size: 9.75pt;
+  line-height: 1.3;
+  font-variant-numeric: tabular-nums;
+  color: rgba(16, 24, 40, 0.58);
+  pointer-events: none;
+  user-select: none;
+}
+
 .kp-sheet__content {
   position: relative;
   z-index: 1;

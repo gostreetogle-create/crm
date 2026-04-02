@@ -55,7 +55,8 @@
   display: grid;
   grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
   gap: 1rem;
-  align-items: start;
+  /* `start` оставлял правую колонку «низкой»; превью с flex:1 и min-height:0 схлопывалось до пустоты после F5. */
+  align-items: stretch;
   width: 100%;
 }
 
@@ -78,6 +79,7 @@
   gap: 0.25rem;
   min-width: 0;
   min-height: 0;
+  height: 100%;
 }
 
 .kp-builder__preview-wrap {
@@ -96,6 +98,8 @@
   box-sizing: border-box;
   flex: 1 1 auto;
   min-height: 0;
+  /* На широком экране без явного min-height блок мог оставаться с нулевой видимой высотой до взаимодействия. */
+  min-height: min(42vh, 560px);
   overflow: auto;
   display: flex;
   justify-content: flex-start;

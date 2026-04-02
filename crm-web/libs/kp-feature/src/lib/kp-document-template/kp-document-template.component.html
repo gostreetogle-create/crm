@@ -9,6 +9,14 @@
           : backgroundImageCssUrl(resolvedBgPage2())
       "
     >
+      @if (totalKpPages() > 1) {
+        <div
+          class="kp-sheet__pageMark"
+          [attr.aria-label]="'Страница ' + (chunkIndex + 1) + ' из ' + totalKpPages()"
+        >
+          Стр. {{ chunkIndex + 1 }} из {{ totalKpPages() }}
+        </div>
+      }
       <div
         class="kp-sheet__content"
         [style.padding-top]="chunk.useFirstBackground ? contentPaddingTop : contentPaddingTopPage2"

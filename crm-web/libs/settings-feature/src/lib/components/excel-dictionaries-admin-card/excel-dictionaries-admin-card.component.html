@@ -1,0 +1,119 @@
+<app-content-card title="Единый Excel импорт/экспорт">
+  <p class="lead">
+    Один файл с несколькими вкладками: заполните данные и импортируйте обратно. Система проверит формат,
+    применит <code>upsert</code> по <strong>ID</strong> и вернёт отчёт по пропущенным строкам/полям.
+  </p>
+
+  @if (errorText()) {
+    <p class="errorBanner" role="alert">{{ errorText() }}</p>
+  }
+
+  <section class="section" aria-labelledby="excel-toolbar">
+    <div class="toolbar">
+      <app-ui-button
+        type="button"
+        [disabled]="busy() || !canTemplate()"
+        (clicked)="downloadTemplate()"
+      >
+        Скачать шаблон
+      </app-ui-button>
+
+      <app-ui-button
+        variant="soft"
+        type="button"
+        [disabled]="busy() || !canExport()"
+        (clicked)="downloadExport()"
+      >
+        Экспортировать данные
+      </app-ui-button>
+
+      <label class="fileField">
+        <span class="fileFieldLabel">Импорт Excel</span>
+        <input
+          type="file"
+          accept=".xlsx,.xls"
+          [disabled]="busy() || !canImport()"
+          (change)="onFilePicked($event)"
+        />
+      </label>
+    </div>
+
+    @if (busy()) {
+      <p class="muted small">Обработка…</p>
+    }
+  </section>
+
+  @if (report()) {
+    <section class="section" aria-labelledby="excel-report">
+      <h3 class="sectionTitle" id="excel-report">Отчёт</h3>
+
+      <p class="muted small">
+        Обработка: <strong>{{ report()!.totalProcessedRows }}</strong> строк. Ошибки будут показаны ниже
+        по каждой вкладке.
+      </p>
+
+      <div class="tableWrap">
+        <table class="reportTable">
+          <thead>
+            <tr>
+              <th>Вкладка</th>
+              <th>Создано</th>
+              <th>Обновлено</th>
+              <th>Пропущено</th>
+              <th>Предупреждения</th>
+              <th>Ошибки</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (entry of sheetEntries(); track entry.sheetName) {
+              <tr>
+                <td class="cellSheet"><code>{{ entry.sheetName }}</code></td>
+                <td>{{ entry.sheet.created }}</td>
+                <td>{{ entry.sheet.updated }}</td>
+                <td>{{ entry.sheet.skipped }}</td>
+                <td>{{ entry.sheet.warnings.length }}</td>
+                <td>{{ entry.sheet.errors.length }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="detailsWrap">
+        @for (entry of sheetEntries(); track entry.sheetName) {
+          @if (entry.sheet.errors.length || entry.sheet.warnings.length) {
+            <details class="sheetDetails">
+              <summary>{{ entry.sheetName }}: {{ entry.sheet.errors.length }} ошибок, {{ entry.sheet.warnings.length }} предупреждений</summary>
+              <div class="detailsBlock">
+                @if (entry.sheet.warnings.length) {
+                  <h4 class="detailsTitle">Предупреждения</h4>
+                  <ul class="msgList">
+                    @for (w of entry.sheet.warnings.slice(0, 50); track $index) {
+                      <li>{{ formatRowMsg(w.excelRow, w.message) }}</li>
+                    }
+                  </ul>
+                  @if (entry.sheet.warnings.length > 50) {
+                    <p class="muted small">… и ещё {{ entry.sheet.warnings.length - 50 }}.</p>
+                  }
+                }
+
+                @if (entry.sheet.errors.length) {
+                  <h4 class="detailsTitle">Ошибки</h4>
+                  <ul class="msgList">
+                    @for (e of entry.sheet.errors.slice(0, 50); track $index) {
+                      <li>{{ formatRowMsg(e.excelRow, e.message) }}</li>
+                    }
+                  </ul>
+                  @if (entry.sheet.errors.length > 50) {
+                    <p class="muted small">… и ещё {{ entry.sheet.errors.length - 50 }}.</p>
+                  }
+                }
+              </div>
+            </details>
+          }
+        }
+      </div>
+    </section>
+  }
+</app-content-card>
+

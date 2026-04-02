@@ -1,11 +1,11 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { CommercialOfferStatus } from '@prisma/client';
+import * as Prisma from '@prisma/client';
 import { prisma } from '../lib/prisma.js';
 
 export const commercialOffersRouter = Router();
 
-const StatusSchema = z.nativeEnum(CommercialOfferStatus);
+const StatusSchema = z.nativeEnum(Prisma.CommercialOfferStatus);
 
 const InputSchema = z.object({
   number: z.union([z.string(), z.null(), z.undefined()]).optional(),
@@ -43,7 +43,7 @@ type OfferRow = {
   id: string;
   number: string | null;
   title: string | null;
-  status: CommercialOfferStatus;
+  status: Prisma.CommercialOfferStatus;
   organizationId: string | null;
   clientId: string | null;
   validUntil: Date | null;
@@ -121,7 +121,7 @@ commercialOffersRouter.post('/', async (req, res, next) => {
       data: {
         number: cleanString(d.number),
         title: cleanString(d.title),
-        status: d.status ?? CommercialOfferStatus.DRAFT,
+        status: d.status ?? Prisma.CommercialOfferStatus.DRAFT,
         organizationId: cleanOptionalId(d.organizationId),
         clientId: cleanOptionalId(d.clientId),
         validUntil: parseValidUntil(d.validUntil),

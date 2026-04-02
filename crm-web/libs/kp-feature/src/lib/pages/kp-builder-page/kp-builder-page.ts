@@ -2,18 +2,19 @@ import {
   AfterViewInit,
   Component,
   DestroyRef,
+  effect,
   ElementRef,
+  inject,
+  Injector,
+  NgZone,
   OnDestroy,
   OnInit,
-  inject,
-  NgZone,
+  afterNextRender,
   signal,
   ViewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormArray, FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { CLIENTS_REPOSITORY, type ClientItem } from '@srm/clients-data-access';
-import { ORGANIZATIONS_REPOSITORY, type OrganizationItem } from '@srm/organizations-data-access';
 import { KP_RECIPIENT_ORG_PREFIX } from '../../kp-document-template/kp-document-template.component';
 import { PageShellComponent, UiButtonComponent } from '@srm/ui-kit';
 import { KpCatalogVitrineComponent } from '../../kp-catalog-vitrine/kp-catalog-vitrine.component';
@@ -22,8 +23,11 @@ import {
   KpDocumentTemplateComponent,
   type KpLineItem,
 } from '../../kp-document-template/kp-document-template.component';
+import { calcKpTotalFromLines, calcKpVatAmountFromTotalWithoutRounding, picsumImageUrl } from '../../kp-utils';
 import { KpRecipientToolbarComponent } from '../../kp-recipient-toolbar/kp-recipient-toolbar.component';
 import { LucidePrinter } from '@lucide/angular';
+import { resolveKpOrganizationContactId } from '../../kp-utils';
+import { KpBuilderFacade } from '../../kp-builder-state/kp-builder.facade';
 
 @Component({
   selector: 'app-kp-builder-page',
@@ -43,15 +47,15 @@ import { LucidePrinter } from '@lucide/angular';
 export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly ngZone = inject(NgZone);
-  private readonly organizationsRepository = inject(ORGANIZATIONS_REPOSITORY);
-  private readonly clientsRepository = inject(CLIENTS_REPOSITORY);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly injector = inject(Injector);
+  private readonly kpBuilderFacade = inject(KpBuilderFacade);
 
   /** Справочник организаций для выпадающего списка в шаблоне КП. */
-  readonly organizations = signal<OrganizationItem[]>([]);
+  readonly organizations = this.kpBuilderFacade.organizations;
 
   /** Контактные лица (для выбора по организации). */
-  readonly clients = signal<ClientItem[]>([]);
+  readonly clients = this.kpBuilderFacade.clients;
 
   @ViewChild('previewHost', { read: ElementRef }) previewHost?: ElementRef<HTMLElement>;
 
@@ -92,6 +96,19 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
     ]),
   });
 
+  /**
+   * Нормализация legacy recipient после загрузки организаций + синхронизация контакта.
+   * Должен создаваться в injection context (поле класса), не в `ngOnInit`.
+   */
+  private readonly recipientLegacyEffect = effect(() => {
+    const active = this.organizations();
+    const raw = this.form.controls.recipient.value?.trim() ?? '';
+    if (raw && !raw.includes(':') && active.some((o) => o.id === raw)) {
+      this.form.controls.recipient.patchValue(`${KP_RECIPIENT_ORG_PREFIX}${raw}`, { emitEvent: false });
+    }
+    this.syncOrganizationContactId();
+  });
+
   ngOnInit(): void {
     this.form.controls.vatPercent.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -100,24 +117,8 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
       .valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.recalculateVatAmountFromTotal());
     this.recalculateVatAmountFromTotal();
-    this.organizationsRepository
-      .getItems()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((items) => {
-        const active = items.filter((o) => o.isActive);
-        this.organizations.set(active);
-        const raw = this.form.controls.recipient.value?.trim() ?? '';
-        if (raw && !raw.includes(':')) {
-          if (active.some((o) => o.id === raw)) {
-            this.form.controls.recipient.patchValue(`${KP_RECIPIENT_ORG_PREFIX}${raw}`, { emitEvent: false });
-          }
-        }
-        this.syncOrganizationContactId();
-      });
-    this.clientsRepository
-      .getItems()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((items) => this.clients.set(items.filter((c) => c.isActive)));
+
+    this.kpBuilderFacade.init(this.destroyRef);
 
     this.form.controls.recipient.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -127,29 +128,14 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
   /** Сброс/подстановка контакта организации при смене получателя. */
   private syncOrganizationContactId(): void {
     const recipient = this.form.controls.recipient.value?.trim() ?? '';
-    const orgId = recipient.startsWith(KP_RECIPIENT_ORG_PREFIX)
-      ? recipient.slice(KP_RECIPIENT_ORG_PREFIX.length).trim()
-      : '';
     const contactCtrl = this.form.controls.organizationContactId;
-    if (!orgId) {
-      contactCtrl.setValue('', { emitEvent: false });
-      return;
-    }
-    const org = this.organizations().find((o) => o.id === orgId);
-    const linked = org?.contactIds ?? [];
-    if (linked.length === 0) {
-      contactCtrl.setValue('', { emitEvent: false });
-      return;
-    }
     const cur = contactCtrl.value?.trim() ?? '';
-    if (linked.length === 1) {
-      contactCtrl.setValue(linked[0], { emitEvent: false });
+    const resolved = resolveKpOrganizationContactId(recipient, this.organizations(), cur, KP_RECIPIENT_ORG_PREFIX);
+    if (resolved === null) {
+      // Несколько контактов: если текущий валиден — ничего не меняем.
       return;
     }
-    if (cur && linked.includes(cur)) {
-      return;
-    }
-    contactCtrl.setValue('', { emitEvent: false });
+    contactCtrl.setValue(resolved, { emitEvent: false });
   }
 
   print(): void {
@@ -162,6 +148,8 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
+    let zeroWidthRetries = 0;
+
     const update = () => {
       const el = this.previewHost?.nativeElement;
       if (!el) {
@@ -171,6 +159,20 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
       const pl = parseFloat(cs.paddingLeft) || 0;
       const pr = parseFloat(cs.paddingRight) || 0;
       const innerW = Math.max(0, el.clientWidth - pl - pr);
+      // Иногда при первом рендере ширина контейнера временно равна 0 — не ставим zoom,
+      // иначе лист визуально «пропадает». Повторяем после layout (rAF), не более нескольких раз.
+      if (innerW <= 1) {
+        if (zeroWidthRetries < 24) {
+          zeroWidthRetries += 1;
+          this.ngZone.runOutsideAngular(() => {
+            requestAnimationFrame(() => {
+              this.ngZone.run(() => update());
+            });
+          });
+        }
+        return;
+      }
+      zeroWidthRetries = 0;
       const sheetW = this.mmToPx(210);
       const z = sheetW > 0 ? Math.max(0.12, Math.min(2.5, innerW / sheetW)) : 0.68;
       this.previewZoom.set(z);
@@ -183,6 +185,12 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
       this.resizeObserver.observe(host);
     });
     queueMicrotask(() => this.ngZone.run(() => update()));
+    afterNextRender(
+      () => {
+        this.ngZone.run(() => update());
+      },
+      { injector: this.injector },
+    );
   }
 
   ngOnDestroy(): void {
@@ -216,7 +224,7 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
 
   /** Добавить позицию из витрины в таблицу КП и в PDF. */
   addFromVitrine(p: KpCatalogProduct): void {
-    const imageUrl = `https://picsum.photos/seed/${p.imageSeed}/200/200`;
+    const imageUrl = picsumImageUrl(p.imageSeed, 200, 200);
     this.lines().push(this.lineGroup(p.title, '1', 'шт.', String(p.price), imageUrl));
   }
 
@@ -235,27 +243,8 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
    * «Всего к оплате» в шаблоне = T + сумма НДС.
    */
   private recalculateVatAmountFromTotal(): void {
-    const total = this.totalFromLines();
-    const p = this.parsePercent(this.form.controls.vatPercent.value);
-    const vat = total * (p / 100);
+    const total = calcKpTotalFromLines(this.lines().getRawValue() as KpLineItem[]);
+    const vat = calcKpVatAmountFromTotalWithoutRounding(total, this.form.controls.vatPercent.value);
     this.form.controls.vatAmount.patchValue(vat.toFixed(2), { emitEvent: false });
-  }
-
-  private totalFromLines(): number {
-    const rows = this.lines().getRawValue() as KpLineItem[];
-    return rows.reduce((acc, line) => acc + this.lineSum(line), 0);
-  }
-
-  private lineSum(line: KpLineItem): number {
-    const q = Number(String(line.qty).replace(/\s/g, '').replace(',', '.'));
-    const pr = Number(String(line.price).replace(/\s/g, '').replace(',', '.'));
-    const qty = Number.isFinite(q) ? q : 0;
-    const price = Number.isFinite(pr) ? pr : 0;
-    return qty * price;
-  }
-
-  private parsePercent(raw: string | undefined): number {
-    const n = Number(String(raw ?? '').replace(/\s/g, '').replace(',', '.'));
-    return Number.isFinite(n) && n >= 0 ? n : 22;
   }
 }

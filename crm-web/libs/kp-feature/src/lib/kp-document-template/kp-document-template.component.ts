@@ -6,6 +6,20 @@ import { formatClientFio } from '@srm/clients-data-access';
 import type { OrganizationItem } from '@srm/organizations-data-access';
 import { LucidePlus, LucideTrash2 } from '@lucide/angular';
 import { UiButtonComponent } from '@srm/ui-kit';
+import {
+  calcKpComputedTotal,
+  calcKpLineSum,
+  calcKpTotalPayable,
+  effectiveRowsPerPage,
+  backgroundImageCssUrl as backgroundImageCssUrlUtil,
+  orderedRowIndicesWithPhotoFirst,
+  normalizeKpImageSrcForDisplay,
+  pageChunksFromOrderedRowIndices,
+  parseKpNumber,
+  parseKpRecipient,
+  parseKpVatAmount,
+  shouldShowPhotoColumn,
+} from '../kp-utils';
 
 /** Строка табличной части КП. */
 export type KpLineItem = {
@@ -95,8 +109,7 @@ export class KpDocumentTemplateComponent {
 
   /** CSS `url("...")` с кавычками — нужно для `data:` и `blob:`. */
   backgroundImageCssUrl(href: string): string {
-    const escaped = href.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-    return `url("${escaped}")`;
+    return backgroundImageCssUrlUtil(href);
   }
 
   /**
@@ -106,20 +119,12 @@ export class KpDocumentTemplateComponent {
     | { type: 'org'; id: string }
     | { type: 'contact'; id: string }
     | null {
-    const raw = String(this.recipientCtrl?.value ?? '').trim();
-    if (!raw) {
-      return null;
-    }
-    if (raw.startsWith(KP_RECIPIENT_ORG_PREFIX)) {
-      const id = raw.slice(KP_RECIPIENT_ORG_PREFIX.length).trim();
-      return id ? { type: 'org', id } : null;
-    }
-    if (raw.startsWith(KP_RECIPIENT_CONTACT_PREFIX)) {
-      const id = raw.slice(KP_RECIPIENT_CONTACT_PREFIX.length).trim();
-      return id ? { type: 'contact', id } : null;
-    }
-    const legacyOrg = this.organizations.find((o) => o.id === raw);
-    return legacyOrg ? { type: 'org', id: raw } : null;
+    return parseKpRecipient(
+      String(this.recipientCtrl?.value ?? '').trim(),
+      this.organizations,
+      KP_RECIPIENT_ORG_PREFIX,
+      KP_RECIPIENT_CONTACT_PREFIX,
+    );
   }
 
   /** Текущая организация, если в списке выбрана именно она. */
@@ -161,16 +166,7 @@ export class KpDocumentTemplateComponent {
   /** Индексы FormArray в порядке вывода: сначала строки с непустым imageUrl, затем остальные (стабильный порядок внутри групп). */
   orderedRowIndices(): number[] {
     const n = this.linesForm?.length ?? 0;
-    const indices = Array.from({ length: n }, (_, i) => i);
-    const hasImg = (i: number) => this.imageUrlTrimmed(i).length > 0;
-    return indices.sort((a, b) => {
-      const ha = hasImg(a);
-      const hb = hasImg(b);
-      if (ha !== hb) {
-        return ha ? -1 : 1;
-      }
-      return a - b;
-    });
+    return orderedRowIndicesWithPhotoFirst(n, (i) => this.imageUrlTrimmed(i).length > 0);
   }
 
   imageUrlTrimmed(index: number): string {
@@ -180,24 +176,13 @@ export class KpDocumentTemplateComponent {
   /** Показ превью: только http(s) или абсолютный путь с /. */
   imageSrcForDisplay(index: number): string {
     const u = this.imageUrlTrimmed(index);
-    if (!u) {
-      return '';
-    }
-    if (u.startsWith('https://') || u.startsWith('http://') || u.startsWith('/')) {
-      return u;
-    }
-    return '';
+    return normalizeKpImageSrcForDisplay(u);
   }
 
   /** Колонка «Фото» — только если хотя бы у одной строки непустой URL (после ввода или из витрины). */
   showPhotoColumn(): boolean {
     const n = this.linesForm?.length ?? 0;
-    for (let i = 0; i < n; i++) {
-      if (this.imageUrlTrimmed(i).length > 0) {
-        return true;
-      }
-    }
-    return false;
+    return shouldShowPhotoColumn(n, (i) => this.imageUrlTrimmed(i).length > 0);
   }
 
   lineGroupAt(index: number): FormGroup {
@@ -212,41 +197,25 @@ export class KpDocumentTemplateComponent {
   }
 
   private rowsPerPageEffective(): number {
-    const raw = this.rowsPerPageCtrl ? String(this.rowsPerPageCtrl.value ?? '').trim() : '';
-    const n = raw ? Number(raw.replace(/\s/g, '').replace(',', '.')) : NaN;
-    return Number.isFinite(n) && n >= 1 ? Math.floor(n) : 12;
+    return effectiveRowsPerPage(this.rowsPerPageCtrl?.value);
   }
 
   /** Разбивка позиций по листам A4 без растягивания фона (порядок строк — orderedRowIndices). */
   pageChunks(): KpPageChunk[] {
     const R = this.rowsPerPageEffective();
-    const order = this.orderedRowIndices();
-    if (order.length === 0) {
-      return [{ formIndices: [], displayOffset: 0, useFirstBackground: true }];
-    }
-    const chunks: KpPageChunk[] = [];
-    for (let start = 0; start < order.length; start += R) {
-      chunks.push({
-        formIndices: order.slice(start, start + R),
-        displayOffset: start,
-        useFirstBackground: start === 0,
-      });
-    }
-    return chunks;
+    return pageChunksFromOrderedRowIndices(this.orderedRowIndices(), R);
   }
 
   parsePrice(raw: string): number {
-    const n = Number(String(raw).replace(/\s/g, '').replace(',', '.'));
-    return Number.isFinite(n) ? n : 0;
+    return parseKpNumber(raw);
   }
 
   parseQty(raw: string): number {
-    const n = Number(String(raw).replace(/\s/g, '').replace(',', '.'));
-    return Number.isFinite(n) ? n : 0;
+    return parseKpNumber(raw);
   }
 
   lineSum(line: KpLineItem): number {
-    return this.parseQty(line.qty) * this.parsePrice(line.price);
+    return calcKpLineSum(line);
   }
 
   /** Сумма по индексу строки — из актуального значения формы (живое обновление при вводе). */
@@ -256,25 +225,17 @@ export class KpDocumentTemplateComponent {
   }
 
   computedTotal(): number {
-    if (this.totalRub != null && Number.isFinite(this.totalRub)) {
-      return this.totalRub;
-    }
-    return this.lineItemsValue().reduce((acc, line) => acc + this.lineSum(line), 0);
+    return calcKpComputedTotal(this.totalRub, this.lineItemsValue());
   }
 
   /** Сумма НДС из поля (число). */
   parsedVatAmount(): number {
-    const raw = String(this.vatAmountCtrl?.value ?? '').trim();
-    if (!raw) {
-      return 0;
-    }
-    const n = Number(raw.replace(/\s/g, '').replace(',', '.'));
-    return Number.isFinite(n) ? n : 0;
+    return parseKpVatAmount(this.vatAmountCtrl?.value);
   }
 
   /** Всего к оплате: итог по таблице + НДС. */
   totalPayable(): number {
-    return this.computedTotal() + this.parsedVatAmount();
+    return calcKpTotalPayable(this.computedTotal(), this.parsedVatAmount());
   }
 
   showTotalOnChunk(chunkIndex: number): boolean {
@@ -293,6 +254,11 @@ export class KpDocumentTemplateComponent {
   /** Номер листа, на котором продолжение (для подписи «на стр. N»). */
   continuationSheetNumber(chunkIndex: number): number {
     return chunkIndex + 2;
+  }
+
+  /** Сколько листов в превью/печати КП (чанков таблицы). */
+  totalKpPages(): number {
+    return this.pageChunks().length;
   }
 
   /** Ссылки на индекс в FormArray для строк слайса. */

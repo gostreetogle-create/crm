@@ -9,6 +9,15 @@ import {
 } from '@srm/ui-kit';
 import { KP_CATALOG_DEMO_PRODUCTS } from './kp-catalog-demo-products';
 import type { KpCatalogProduct } from './kp-catalog-product.model';
+import {
+  calcKpCatalogProductPageCount,
+  filterSortProductsForVitrine,
+  formatKpCatalogPriceRuble,
+  picsumImageUrl,
+  sliceKpCatalogVisibleProducts,
+  tryParseKpCatalogPageSize,
+  type KpCatalogProductSort,
+} from '../kp-utils';
 
 @Component({
   selector: 'app-kp-catalog-vitrine',
@@ -40,7 +49,7 @@ export class KpCatalogVitrineComponent {
   private readonly productsInternal = signal<KpCatalogProduct[]>([...KP_CATALOG_DEMO_PRODUCTS]);
 
   readonly productSearch = signal('');
-  readonly productSort = signal<'priceDesc' | 'priceAsc'>('priceDesc');
+  readonly productSort = signal<KpCatalogProductSort>('priceDesc');
   readonly productCategory = signal<'all' | string>('all');
   readonly productPage = signal(1);
   /** Карточек на странице витрины (по умолчанию). */
@@ -66,38 +75,20 @@ export class KpCatalogVitrineComponent {
   ];
 
   readonly filteredProducts = computed(() => {
-    const term = this.productSearch().trim().toLowerCase();
-    const category = this.productCategory();
-    const sort = this.productSort();
-
-    const items = this.productsInternal()
-      .filter((p) => (category === 'all' ? true : p.category === category))
-      .filter((p) => {
-        if (!term) return true;
-        return (
-          p.title.toLowerCase().includes(term) ||
-          p.sku.toLowerCase().includes(term) ||
-          p.category.toLowerCase().includes(term)
-        );
-      })
-      .sort((a, b) => {
-        if (sort === 'priceAsc') return a.price - b.price;
-        return b.price - a.price;
-      });
-
-    return items;
+    return filterSortProductsForVitrine(
+      this.productsInternal(),
+      this.productSearch(),
+      this.productCategory(),
+      this.productSort(),
+    );
   });
 
   readonly productPageCount = computed(() =>
-    Math.max(1, Math.ceil(this.filteredProducts().length / this.productPageSize())),
+    calcKpCatalogProductPageCount(this.filteredProducts().length, this.productPageSize()),
   );
 
   readonly visibleProducts = computed(() => {
-    const size = this.productPageSize();
-    const totalPages = this.productPageCount();
-    const current = Math.min(Math.max(1, this.productPage()), totalPages);
-    const start = (current - 1) * size;
-    return this.filteredProducts().slice(start, start + size);
+    return sliceKpCatalogVisibleProducts(this.filteredProducts(), this.productPage(), this.productPageSize());
   });
 
   onProductSearch(value: string): void {
@@ -122,8 +113,8 @@ export class KpCatalogVitrineComponent {
   }
 
   onProductPageSizeChange(value: string): void {
-    const n = Number.parseInt(value, 10);
-    if (!Number.isFinite(n) || n < 1) return;
+    const n = tryParseKpCatalogPageSize(value);
+    if (n == null) return;
     this.productPageSize.set(n);
     this.productPage.set(1);
   }
@@ -133,10 +124,10 @@ export class KpCatalogVitrineComponent {
   }
 
   formatPrice(rub: number): string {
-    return rub.toLocaleString('ru-RU') + ' ₽';
+    return formatKpCatalogPriceRuble(rub);
   }
 
   imageUrl(p: KpCatalogProduct): string {
-    return `https://picsum.photos/seed/${p.imageSeed}/640/640`;
+    return picsumImageUrl(p.imageSeed, 640, 640);
   }
 }

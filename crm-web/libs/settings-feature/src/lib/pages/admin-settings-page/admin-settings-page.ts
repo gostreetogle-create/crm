@@ -11,6 +11,7 @@ import { RoleItem } from '@srm/roles-data-access';
 import { RolesStore } from '@srm/dictionaries-state';
 import { ContentCardComponent, PageShellComponent, UiButtonComponent } from '@srm/ui-kit';
 import { DbBackupsAdminCardComponent } from '../../components/db-backups-admin-card/db-backups-admin-card.component';
+import { ExcelDictionariesAdminCardComponent } from '../../components/excel-dictionaries-admin-card/excel-dictionaries-admin-card.component';
 import { FIELD_RULES_CATALOG } from '@srm/settings-core';
 import { FieldRuleRow } from '@srm/settings-core';
 
@@ -23,6 +24,7 @@ import { FieldRuleRow } from '@srm/settings-core';
     UiButtonComponent,
     RouterLink,
     DbBackupsAdminCardComponent,
+    ExcelDictionariesAdminCardComponent,
   ],
   templateUrl: './admin-settings-page.html',
   styleUrl: './admin-settings-page.scss',

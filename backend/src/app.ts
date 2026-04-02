@@ -18,6 +18,7 @@ import { surfaceFinishesRouter } from "./routes/surface-finishes.routes.js";
 import { unitsRouter } from "./routes/units.routes.js";
 import { usersRouter } from "./routes/users.routes.js";
 import { dbBackupsRouter } from "./routes/db-backups.routes.js";
+import { excelDictionariesRouter } from "./routes/excel-dictionaries.routes.js";
 import { authAuthedRouter, authPublicRouter } from "./routes/auth.routes.js";
 import { requireAdmin, requireAuth } from "./middleware/auth-jwt.js";
 import { httpErrorHandler } from "./middleware/http-error.js";
@@ -73,6 +74,7 @@ export function createApp() {
   admin.use("/users", usersRouter);
   admin.use("/roles", rolesRouter);
   admin.use("/db-backups", dbBackupsRouter);
+  admin.use("/excel-dictionaries", excelDictionariesRouter);
 
   api.use(authed);
   api.use(admin);

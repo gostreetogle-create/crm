@@ -2,10 +2,36 @@ import { HttpInterceptorFn } from '@angular/common/http';
 import { readAuthTokenFromStorage } from '@srm/auth-session-core';
 
 export const authBearerInterceptor: HttpInterceptorFn = (req, next) => {
-  if (!req.url.startsWith('/api/')) {
+  const isApiRequest = (() => {
+    if (req.url.startsWith('/api/')) return true;
+    // For absolute URLs (e.g. http://127.0.0.1:3000/api/...)
+    if (req.url.startsWith('http://') || req.url.startsWith('https://')) {
+      try {
+        return new URL(req.url).pathname.startsWith('/api/');
+      } catch {
+        return false;
+      }
+    }
+    return false;
+  })();
+
+  if (!isApiRequest) {
     return next(req);
   }
-  if (req.url.startsWith('/api/auth/login')) {
+
+  const apiPath = (() => {
+    if (req.url.startsWith('/')) return req.url;
+    if (req.url.startsWith('http://') || req.url.startsWith('https://')) {
+      try {
+        return new URL(req.url).pathname;
+      } catch {
+        return '';
+      }
+    }
+    return '';
+  })();
+
+  if (apiPath === '/api/auth/login') {
     return next(req);
   }
   const token = readAuthTokenFromStorage();
