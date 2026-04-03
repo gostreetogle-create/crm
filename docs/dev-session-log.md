@@ -51,6 +51,7 @@
 | 22 | 2026-04-01 | КП: один контакт организации в превью и печати, пересчёт суммы НДС при смене ставки %, доработки шаблона и маршрутов (app.config) | crm-web | `61b4e7f` |
 | 23 | 2026-04-01 | КП: тулбар получателя, НДС/«всего к оплате», подсказка продолжения таблицы, справочник фото КП (Prisma, API, хаб, kp-photos-data-access) | crm-web, backend | `5152b1f` |
 | 24 | 2026-04-02 | Справочники: детали производства и поставщик у материалов, Excel, статика фото КП в `public/kp-media` (`/kp-media/...`), правки таблицы CRUD и маппинга деталей, backend-map | crm-web, backend, deploy, docs | `abfb8b9` |
+| 25 | 2026-04-03 | API справочников вместо моков, JWT-сессия, матрица RBAC (AppSetting, sanitize GET/PUT), ensureRolesLoaded и синк матрицы, админ UI и доки authz; миграция app_setting, Excel-валидации хаба | crm-web, backend, deploy, docs, .cursor | `aa99277` |
 
 ---
 
