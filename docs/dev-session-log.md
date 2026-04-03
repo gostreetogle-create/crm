@@ -54,6 +54,7 @@
 | 25 | 2026-04-03 | API справочников вместо моков, JWT-сессия, матрица RBAC (AppSetting, sanitize GET/PUT), ensureRolesLoaded и синк матрицы, админ UI и доки authz; миграция app_setting, Excel-валидации хаба | crm-web, backend, deploy, docs, .cursor | `aa99277` |
 | 26 | 2026-04-03 | Справочник изделий (Product/ProductLine, API, хаб, Excel), доработки единого импорта excel-dictionaries, промпт для ИИ и кнопка копирования, crud-layout/ui-spec-table и доки | crm-web, backend, docs | `60c476a` |
 | 27 | 2026-04-03 | Сборка web Docker: COPY backend/shared для @srm/canonical-roles; исправление [square] у кнопки копирования промпта Excel | deploy, crm-web | `b725d6f` |
+| 28 | 2026-04-04 | Docker web: Nx/heap/workers + verbose, compose defaults и NODE_BUILD_HEAP_MB; docs/dev-local-ports; srm-front dev → :3000 + proxy; KP brand link | deploy, docs, crm-web | `217e694` |
 
 ---
 
