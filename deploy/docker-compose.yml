@@ -41,7 +41,7 @@ services:
     volumes:
       - crm_backups:/var/lib/crm/backups
     ports:
-      - "${BACKEND_PORT}:3000"
+      - "${BACKEND_PORT:-3000}:3000"
     healthcheck:
       # 127.0.0.1 — надёжнее localhost на некоторых образах; migrate+seed на слабом VPS могут занять минуту+.
       test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:3000/health > /dev/null || exit 1']
@@ -56,13 +56,15 @@ services:
       dockerfile: deploy/Dockerfile.web
       args:
         WEB_BUILD_ID: ${WEB_BUILD_ID:-unknown}
+        # При нехватке RAM на сервере: задать в deploy/.env, например NODE_BUILD_HEAP_MB=3072 и добавить swap.
+        NODE_BUILD_HEAP_MB: ${NODE_BUILD_HEAP_MB:-4096}
     container_name: crm_web
     restart: unless-stopped
     depends_on:
       backend:
         condition: service_healthy
     ports:
-      - "${WEB_PORT}:80"
+      - "${WEB_PORT:-8080}:80"
     healthcheck:
       test: ['CMD-SHELL', 'wget -qO- http://localhost/ > /dev/null || exit 1']
       interval: 10s

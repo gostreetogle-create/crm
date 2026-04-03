@@ -13,10 +13,16 @@ COPY crm-web/ ./crm-web/
 COPY backend/shared ./backend/shared
 WORKDIR /app/crm-web
 ARG WEB_BUILD_ID=unknown
+ARG NODE_BUILD_HEAP_MB=4096
 ENV WEB_BUILD_ID=${WEB_BUILD_ID}
-RUN npm run build -- crm-web
+# VPS/Docker: Nx daemon в контейнере часто лишний; без heap/worker limits — долгий «Building…» и тихий OOM (exit 1).
+ENV NX_DAEMON=false
+ENV NODE_OPTIONS=--max-old-space-size=${NODE_BUILD_HEAP_MB}
+ENV NG_BUILD_MAX_WORKERS=2
+RUN npm run build -- crm-web --verbose
 
 FROM nginx:1.27-alpine AS runtime
+ARG WEB_BUILD_ID=unknown
 WORKDIR /usr/share/nginx/html
 RUN apk add --no-cache wget
 COPY deploy/nginx.conf /etc/nginx/conf.d/default.conf

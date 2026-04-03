@@ -49,6 +49,9 @@ export type KpPageChunk = {
 export const KP_PAGE1_BACKGROUND = '/branding/kp/kp-1str.png';
 export const KP_PAGE2_BACKGROUND = '/branding/kp/kp-2str.png';
 
+/** URL в сохранённом PDF (печать → PDF); в превью редактора переход по клику отключён. */
+export const KP_BRAND_SITE_HREF = 'https://sportin-yug.com/';
+
 /** Значение в `recipientCtrl`: организация. */
 export const KP_RECIPIENT_ORG_PREFIX = 'org:';
 /** Значение в `recipientCtrl`: контактное лицо. */
@@ -62,6 +65,9 @@ export const KP_RECIPIENT_CONTACT_PREFIX = 'contact:';
   styleUrl: './kp-document-template.component.scss',
 })
 export class KpDocumentTemplateComponent {
+  /** Сайт в шапке КП: ссылка активна только при печати/PDF (см. стили `.kp-sheet__brandLink`). */
+  readonly kpBrandSiteHref = KP_BRAND_SITE_HREF;
+
   /** Добавить строку в таблицу КП (кнопка под таблицей в превью). */
   @Output() readonly addLineClick = new EventEmitter<void>();
 

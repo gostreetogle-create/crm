@@ -11,7 +11,7 @@ alwaysApply: true
 
 Без работающей БД API отдаёт **500** (`/api/auth/me`, `/api/roles`) или **503** (админ-роуты с проверкой роли при недоступной БД). Сначала убедись, что Postgres доступен по `DATABASE_URL` из `backend/.env`.
 
-- Если используется Docker (часто контейнер **`crm_postgres`**, порт на хосте может быть **5433** → см. `deploy/docker-compose.yml` и `POSTGRES_PORT`):  
+- Если используется Docker (контейнер **`crm_postgres`**, канон порта на хосте **5432** → `deploy/docker-compose.yml`, `POSTGRES_PORT`, `docs/dev-local-ports.md`):  
   - `docker start crm_postgres` — если контейнер уже есть, но остановлен;  
   - или из корня репо: `docker compose -f deploy/docker-compose.yml up -d postgres` — если нужно создать/поднять сервис.
 - Подожди несколько секунд после старта, затем проверяй API.

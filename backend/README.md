@@ -8,7 +8,7 @@ Express + TypeScript + Prisma + PostgreSQL.
    - Через Docker из репозитория:  
      `docker compose -f ../deploy/docker-compose.yml up -d postgres`  
      Имя контейнера по умолчанию: **`crm_postgres`**. Если контейнер уже есть, но остановлен: **`docker start crm_postgres`**.  
-     Порт на хосте может быть **5432** или **5433** (см. `POSTGRES_PORT` / `compose`), он **должен совпадать** с URL в `DATABASE_URL`.
+     Канон: порт на хосте **5432** (`POSTGRES_PORT` в `deploy/.env`); он **должен совпадать** с URL в `DATABASE_URL`. Таблица портов: `docs/dev-local-ports.md`.
 2. Миграции и сиды:  
    `npx prisma migrate dev`  
    `npx prisma db seed` (идемпотентно: канонические роли из **`backend/shared/canonical-roles.seed.json`** через `prisma/seed-roles.ts`, пользователь `admin`/`admin`, опционально `director`/`director` — см. `SEED_DIRECTOR_USER` в `.env.example`; затем единицы измерения и демо-данные справочников при пустых таблицах)

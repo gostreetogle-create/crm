@@ -2,11 +2,12 @@ import {
   APP_INITIALIZER,
   ApplicationConfig,
   ErrorHandler,
+  isDevMode,
   provideBrowserGlobalErrorListeners,
 } from '@angular/core';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
-import { API_CONFIG, DEFAULT_API_CONFIG, SRM_SHELL_ACTIVE } from '@srm/platform-core';
+import { API_CONFIG, SRM_SHELL_ACTIVE } from '@srm/platform-core';
 import {
   AUTHZ_ROLE_CONTEXT,
   AUTHZ_SESSION_ACCESS,
@@ -33,6 +34,21 @@ function authAppInitializerFactory(session: SessionAuthService): () => Promise<v
   return () => session.hydrateSession();
 }
 
+/**
+ * Локальный `nx serve`: прокси /api часто не подхватывается → 404 на :4200.
+ * В dev на localhost шлём запросы сразу на API (:3000); в prod — относительные URL (тот же origin).
+ */
+function srmApiConfigFactory(): { baseUrl: string } {
+  if (!isDevMode() || typeof window === 'undefined') {
+    return { baseUrl: '' };
+  }
+  const { hostname } = window.location;
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return { baseUrl: 'http://127.0.0.1:3000' };
+  }
+  return { baseUrl: '' };
+}
+
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
@@ -46,7 +62,7 @@ export const appConfig: ApplicationConfig = {
       deps: [SessionAuthService],
     },
     provideRouter(appRoutes),
-    { provide: API_CONFIG, useValue: DEFAULT_API_CONFIG },
+    { provide: API_CONFIG, useFactory: srmApiConfigFactory },
     {
       provide: AUTHZ_SYSTEM_ROLE_IDS,
       useValue: {
