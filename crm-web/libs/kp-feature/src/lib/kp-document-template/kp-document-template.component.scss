@@ -49,18 +49,6 @@
   user-select: none;
 }
 
-/*
- * Ссылка на сайт в зоне логотипа (первая страница):
- * — на экране скрыта → нет перехода при правке КП;
- * — в @media print элемент показывается → Chrome / Edge / Firefox чаще кладут URI в «Печать → PDF».
- * Исключения возможны у отдельных версий Safari / мобильной печати; 100% гарантия только у отдельно сгенерированного PDF.
- */
-@media screen {
-  .kp-sheet__brandLink {
-    display: none !important;
-  }
-}
-
 .kp-sheet__content {
   position: relative;
   z-index: 1;
@@ -240,10 +228,6 @@
   justify-content: center;
   padding: 0;
   margin: 0;
-  transition:
-    background-color 120ms ease,
-    border-color 120ms ease,
-    box-shadow 120ms ease;
   cursor: pointer;
   font: inherit;
   color: var(--danger);
@@ -497,26 +481,6 @@
 
   .kp-sheet__content {
     overflow: visible;
-  }
-
-  .kp-sheet__brandLink {
-    display: block !important;
-    position: absolute;
-    z-index: 2;
-    top: 10mm;
-    left: 12mm;
-    width: 82mm;
-    height: 50mm;
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-    border: none;
-    background: transparent;
-    text-decoration: none;
-    color: transparent;
-    overflow: hidden;
-    print-color-adjust: exact;
-    -webkit-print-color-adjust: exact;
   }
 
   .kp-sheet__table thead {

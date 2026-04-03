@@ -2,6 +2,8 @@
 
 Фронт **всегда** ходит в API по HTTP (`*HttpRepository` в DI); in-memory репозитории и флаг `useMockRepositories` **удалены**. Данные в UI — из **PostgreSQL** через backend.
 
+Глобальный аудит **скорости сборки, Docker и размера бандла** (без новых технологий): `docs/frontend/performance-and-build-checklist.md` — в каноне `development-workflow.md` этот чеклист идёт **первым** в запланированный день проверки.
+
 ## Конфиг API
 
 - Файл: `crm-web/libs/platform-core/src/lib/api-config.ts`

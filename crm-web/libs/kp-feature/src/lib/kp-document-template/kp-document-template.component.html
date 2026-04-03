@@ -17,15 +17,6 @@
           Стр. {{ chunkIndex + 1 }} из {{ totalKpPages() }}
         </div>
       }
-      @if (chunk.useFirstBackground) {
-        <a
-          class="kp-sheet__brandLink"
-          [href]="kpBrandSiteHref"
-          rel="noopener noreferrer"
-          tabindex="-1"
-          aria-hidden="true"
-          >&#8203;</a>
-      }
       <div
         class="kp-sheet__content"
         [style.padding-top]="chunk.useFirstBackground ? contentPaddingTop : contentPaddingTopPage2"
