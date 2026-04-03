@@ -56,6 +56,7 @@
 | 27 | 2026-04-03 | Сборка web Docker: COPY backend/shared для @srm/canonical-roles; исправление [square] у кнопки копирования промпта Excel | deploy, crm-web | `b725d6f` |
 | 28 | 2026-04-04 | Docker web: Nx/heap/workers + verbose, compose defaults и NODE_BUILD_HEAP_MB; docs/dev-local-ports; srm-front dev → :3000 + proxy; KP brand link | deploy, docs, crm-web | `217e694` |
 | 29 | 2026-04-04 | Docker backend: strip CRLF entrypoint, COPY shared для seed, .gitattributes; .env.example CORS для compose | deploy | `aa548b6` |
+| 30 | 2026-04-04 | Чеклист perf/build (~200 строк), первым в development-workflow; KP без PDF-ссылки; runbook ссылка | docs, crm-web | `7f99ee5` |
 
 ---
 
