@@ -9,6 +9,8 @@ FROM node:20-alpine AS build
 WORKDIR /app
 COPY --from=deps /app/crm-web/node_modules ./crm-web/node_modules
 COPY crm-web/ ./crm-web/
+# tsconfig path @srm/canonical-roles → ../backend/shared/… (см. crm-web/tsconfig.base.json)
+COPY backend/shared ./backend/shared
 WORKDIR /app/crm-web
 ARG WEB_BUILD_ID=unknown
 ENV WEB_BUILD_ID=${WEB_BUILD_ID}

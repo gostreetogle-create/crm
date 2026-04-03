@@ -10,7 +10,7 @@
       <app-ui-button
         type="button"
         variant="soft"
-        square
+        [square]="true"
         ariaLabel="Скопировать промпт для ИИ в буфер обмена"
         title="Скопировать промпт"
         (clicked)="copyAiPromptToClipboard()"
