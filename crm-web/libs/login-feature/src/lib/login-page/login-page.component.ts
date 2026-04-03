@@ -3,11 +3,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { UiButtonComponent, UiFormFieldComponent } from '@srm/ui-kit';
-import {
-  DEV_BOOTSTRAP_PASSWORD,
-  DEV_BOOTSTRAP_USERNAME,
-  SessionAuthService,
-} from '@srm/auth-session-angular';
+import { SessionAuthService } from '@srm/auth-session-angular';
 
 @Component({
   selector: 'app-login-page',
@@ -23,9 +19,6 @@ export class LoginPage {
   private readonly destroyRef = inject(DestroyRef);
   readonly session = inject(SessionAuthService);
 
-  readonly devUser = DEV_BOOTSTRAP_USERNAME;
-  readonly devPass = DEV_BOOTSTRAP_PASSWORD;
-
   readonly form = this.fb.nonNullable.group({
     username: ['', [Validators.required, Validators.minLength(1)]],
     password: ['', [Validators.required, Validators.minLength(1)]],
@@ -34,23 +27,12 @@ export class LoginPage {
   errorText = '';
 
   constructor() {
-    // `permissionGuard` может редиректить на `/` с `?accessDenied=...` после успешного логина.
-    // Поэтому реагируем на смену query-params, а не только на snapshot в конструкторе.
-    this.route.queryParamMap
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((p) => {
-        const accessDenied = p.get('accessDenied');
-        this.errorText = accessDenied
-          ? 'У вас нет прав для открытия этой страницы. Попросите администратора настроить матрицу.'
-          : '';
-      });
-
-    if (this.session.useMockAuth()) {
-      this.form.patchValue({
-        username: DEV_BOOTSTRAP_USERNAME,
-        password: DEV_BOOTSTRAP_PASSWORD,
-      });
-    }
+    this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((p) => {
+      const accessDenied = p.get('accessDenied');
+      this.errorText = accessDenied
+        ? 'У вас нет прав для открытия этой страницы. Попросите администратора настроить матрицу.'
+        : '';
+    });
   }
 
   submit(): void {
@@ -63,9 +45,8 @@ export class LoginPage {
     const { username, password } = this.form.getRawValue();
     this.session.login(username.trim(), password).subscribe((ok) => {
       if (!ok) {
-        this.errorText = this.session.useMockAuth()
-          ? `Неверная пара логин/пароль. Для dev: ${this.devUser} / ${this.devPass}.`
-          : 'Неверная пара логин/пароль. Учётную запись создаёт администратор в «Справочники» → «Пользователи».';
+        this.errorText =
+          'Неверная пара логин/пароль. Учётную запись создаёт администратор в «Справочники» → «Пользователи».';
         return;
       }
       this.errorText = '';
@@ -75,15 +56,6 @@ export class LoginPage {
 
   logout(): void {
     this.session.logout();
-    if (this.session.useMockAuth()) {
-      this.form.reset({
-        username: DEV_BOOTSTRAP_USERNAME,
-        password: DEV_BOOTSTRAP_PASSWORD,
-      });
-    } else {
-      this.form.reset({ username: '', password: '' });
-    }
+    this.form.reset({ username: '', password: '' });
   }
 }
-
-

@@ -1,55 +1,38 @@
-import { RoleItem } from './role-item';
+import type { RoleItem } from './role-item';
+import canonicalRoles from '@srm/canonical-roles';
 
-export const ROLE_ID_SYSTEM_ADMIN = 'role-sys-admin';
-export const ROLE_ID_SYSTEM_EDITOR = 'role-sys-editor';
-export const ROLE_ID_SYSTEM_VIEWER = 'role-sys-viewer';
-export const ROLE_ID_SEED_DIRECTOR = 'role-seed-director';
-export const ROLE_ID_SEED_ACCOUNTANT = 'role-seed-accountant';
+type CanonicalRoleRow = {
+  id: string;
+  code: string;
+  name: string;
+  sortOrder: number;
+  isSystem: boolean;
+  notes: string | null;
+};
 
-/** Начальные роли; дальше — CRUD на хабе и права в «Админ-настройках». */
-export const ROLES_SEED: readonly RoleItem[] = [
-  {
-    id: ROLE_ID_SYSTEM_ADMIN,
-    code: 'admin',
-    name: 'Администратор',
-    sortOrder: 1,
-    isActive: true,
-    isSystem: true,
-  },
-  {
-    id: ROLE_ID_SEED_DIRECTOR,
-    code: 'director',
-    name: 'Директор',
-    sortOrder: 2,
-    notes: 'Пример: задайте права в «Админ-настройках».',
-    isActive: true,
-    isSystem: false,
-  },
-  {
-    id: ROLE_ID_SEED_ACCOUNTANT,
-    code: 'accountant',
-    name: 'Бухгалтер',
-    sortOrder: 3,
-    notes: 'Пример: задайте права в «Админ-настройках».',
-    isActive: true,
-    isSystem: false,
-  },
-  {
-    id: ROLE_ID_SYSTEM_EDITOR,
-    code: 'editor',
-    name: 'Редактор',
-    sortOrder: 4,
-    notes: 'Пример: права задаются в «Админ-настройках» (как у любой роли).',
-    isActive: true,
-    isSystem: false,
-  },
-  {
-    id: ROLE_ID_SYSTEM_VIEWER,
-    code: 'viewer',
-    name: 'Только просмотр',
-    sortOrder: 5,
-    notes: 'Пример: можно удалить или переименовать — не зашито в систему.',
-    isActive: true,
-    isSystem: false,
-  },
-];
+const rows = canonicalRoles as readonly CanonicalRoleRow[];
+
+function idFor(code: string): string {
+  const r = rows.find((x) => x.code === code);
+  if (!r) {
+    throw new Error(`canonical-roles.seed.json: missing role code "${code}"`);
+  }
+  return r.id;
+}
+
+export const ROLE_ID_SYSTEM_ADMIN = idFor('admin');
+export const ROLE_ID_SYSTEM_EDITOR = idFor('editor');
+export const ROLE_ID_SYSTEM_VIEWER = idFor('viewer');
+export const ROLE_ID_SEED_DIRECTOR = idFor('director');
+export const ROLE_ID_SEED_ACCOUNTANT = idFor('accountant');
+
+/** Начальные роли для UI; источник данных — `backend/shared/canonical-roles.seed.json`. */
+export const ROLES_SEED: readonly RoleItem[] = rows.map((r) => ({
+  id: r.id,
+  code: r.code,
+  name: r.name,
+  sortOrder: r.sortOrder,
+  notes: r.notes ?? undefined,
+  isActive: true,
+  isSystem: r.isSystem,
+}));

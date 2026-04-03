@@ -28,12 +28,29 @@ export async function requireAdmin(req: Request, res: Response, next: NextFuncti
       res.status(401).json({ error: 'unauthorized' });
       return;
     }
-    const role = await prisma.role.findUnique({ where: { id: req.auth.roleId } });
-    if (!role || (!role.isSystem && role.code !== 'admin')) {
-      res.status(403).json({ error: 'forbidden' });
+    const auth = req.auth;
+    if (typeof auth.roleCode === 'string' && typeof auth.isSystemRole === 'boolean') {
+      const allowed = auth.isSystemRole || auth.roleCode === 'admin';
+      if (!allowed) {
+        res.status(403).json({ error: 'forbidden' });
+        return;
+      }
+      next();
       return;
     }
-    next();
+
+    try {
+      const role = await prisma.role.findUnique({ where: { id: auth.roleId } });
+      if (!role || (!role.isSystem && role.code !== 'admin')) {
+        res.status(403).json({ error: 'forbidden' });
+        return;
+      }
+      next();
+    } catch (dbErr) {
+      // eslint-disable-next-line no-console
+      console.error('[requireAdmin] DB error', dbErr);
+      res.status(503).json({ error: 'db_unavailable', message: 'Не удалось проверить роль (БД).' });
+    }
   } catch (e) {
     next(e);
   }

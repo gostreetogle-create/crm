@@ -1,17 +1,7 @@
 import type { Provider } from '@angular/core';
 import { DictionariesMaterialStandaloneFlowService } from './dictionaries-material-standalone-flow.service';
-import { selectRepository } from '@srm/platform-core';
-import { API_CONFIG, type ApiConfig } from '@srm/platform-core';
-import {
-  COLORS_REPOSITORY,
-  ColorsHttpRepository,
-  ColorsMockRepository,
-} from '@srm/colors-data-access';
-import {
-  CLIENTS_REPOSITORY,
-  ClientsHttpRepository,
-  ClientsMockRepository,
-} from '@srm/clients-data-access';
+import { COLORS_REPOSITORY, ColorsHttpRepository } from '@srm/colors-data-access';
+import { CLIENTS_REPOSITORY, ClientsHttpRepository } from '@srm/clients-data-access';
 import {
   ClientsStore,
   CoatingsStore,
@@ -26,54 +16,28 @@ import {
   SurfaceFinishesStore,
   UnitsStore,
 } from '@srm/dictionaries-state';
-import {
-  COATINGS_REPOSITORY,
-  CoatingsHttpRepository,
-  CoatingsMockRepository,
-} from '@srm/coatings-data-access';
-import {
-  GEOMETRIES_REPOSITORY,
-  GeometriesHttpRepository,
-  GeometriesMockRepository,
-} from '@srm/geometries-data-access';
+import { COATINGS_REPOSITORY, CoatingsHttpRepository } from '@srm/coatings-data-access';
+import { GEOMETRIES_REPOSITORY, GeometriesHttpRepository } from '@srm/geometries-data-access';
 import {
   MATERIAL_CHARACTERISTICS_REPOSITORY,
   MaterialCharacteristicsHttpRepository,
-  MaterialCharacteristicsMockRepository,
 } from '@srm/material-characteristics-data-access';
-import {
-  MATERIALS_REPOSITORY,
-  MaterialsHttpRepository,
-  MaterialsMockRepository,
-} from '@srm/materials-data-access';
-import { ORGANIZATIONS_REPOSITORY } from '@srm/organizations-data-access';
-import { OrganizationsHttpRepository } from '@srm/organizations-data-access';
-import { OrganizationsMockRepository } from '@srm/organizations-data-access';
+import { MATERIALS_REPOSITORY, MaterialsHttpRepository } from '@srm/materials-data-access';
+import { ORGANIZATIONS_REPOSITORY, OrganizationsHttpRepository } from '@srm/organizations-data-access';
 import {
   PRODUCTION_DETAILS_REPOSITORY,
   ProductionDetailsHttpRepository,
-  ProductionDetailsMockRepository,
 } from '@srm/production-details-data-access';
 import {
   PRODUCTION_WORK_TYPES_REPOSITORY,
   ProductionWorkTypesHttpRepository,
-  ProductionWorkTypesMockRepository,
 } from '@srm/production-work-types-data-access';
 import {
   SURFACE_FINISHES_REPOSITORY,
   SurfaceFinishesHttpRepository,
-  SurfaceFinishesMockRepository,
 } from '@srm/surface-finishes-data-access';
-import {
-  KP_PHOTOS_REPOSITORY,
-  KpPhotosHttpRepository,
-  KpPhotosMockRepository,
-} from '@srm/kp-photos-data-access';
-import {
-  UNITS_REPOSITORY,
-  UnitsHttpRepository,
-  UnitsMockRepository,
-} from '@srm/units-data-access';
+import { KP_PHOTOS_REPOSITORY, KpPhotosHttpRepository } from '@srm/kp-photos-data-access';
+import { UNITS_REPOSITORY, UnitsHttpRepository } from '@srm/units-data-access';
 
 /**
  * Route-level providers for the unified dictionaries hub (`/справочники`).
@@ -81,136 +45,49 @@ import {
  */
 export const DICTIONARIES_ROUTE_PROVIDERS: Provider[] = [
   DictionariesMaterialStandaloneFlowService,
-  MaterialsMockRepository,
   MaterialsHttpRepository,
   MaterialsStore,
-  {
-    provide: MATERIALS_REPOSITORY,
-    useFactory: (
-      apiConfig: ApiConfig,
-      mockRepo: MaterialsMockRepository,
-      httpRepo: MaterialsHttpRepository,
-    ) => selectRepository({ apiConfig, mockRepo, httpRepo }),
-    deps: [API_CONFIG, MaterialsMockRepository, MaterialsHttpRepository],
-  },
-  MaterialCharacteristicsMockRepository,
+  { provide: MATERIALS_REPOSITORY, useExisting: MaterialsHttpRepository },
   MaterialCharacteristicsHttpRepository,
   MaterialCharacteristicsStore,
   {
     provide: MATERIAL_CHARACTERISTICS_REPOSITORY,
-    useFactory: (
-      apiConfig: ApiConfig,
-      mockRepo: MaterialCharacteristicsMockRepository,
-      httpRepo: MaterialCharacteristicsHttpRepository,
-    ) => selectRepository({ apiConfig, mockRepo, httpRepo }),
-    deps: [API_CONFIG, MaterialCharacteristicsMockRepository, MaterialCharacteristicsHttpRepository],
+    useExisting: MaterialCharacteristicsHttpRepository,
   },
-  GeometriesMockRepository,
   GeometriesHttpRepository,
   GeometriesStore,
-  {
-    provide: GEOMETRIES_REPOSITORY,
-    useFactory: (
-      apiConfig: ApiConfig,
-      mockRepo: GeometriesMockRepository,
-      httpRepo: GeometriesHttpRepository,
-    ) => selectRepository({ apiConfig, mockRepo, httpRepo }),
-    deps: [API_CONFIG, GeometriesMockRepository, GeometriesHttpRepository],
-  },
-  UnitsMockRepository,
+  { provide: GEOMETRIES_REPOSITORY, useExisting: GeometriesHttpRepository },
   UnitsHttpRepository,
   UnitsStore,
-  {
-    provide: UNITS_REPOSITORY,
-    useFactory: (apiConfig: ApiConfig, mockRepo: UnitsMockRepository, httpRepo: UnitsHttpRepository) =>
-      selectRepository({ apiConfig, mockRepo, httpRepo }),
-    deps: [API_CONFIG, UnitsMockRepository, UnitsHttpRepository],
-  },
-  ColorsMockRepository,
+  { provide: UNITS_REPOSITORY, useExisting: UnitsHttpRepository },
   ColorsHttpRepository,
   ColorsStore,
-  {
-    provide: COLORS_REPOSITORY,
-    useFactory: (apiConfig: ApiConfig, mockRepo: ColorsMockRepository, httpRepo: ColorsHttpRepository) =>
-      selectRepository({ apiConfig, mockRepo, httpRepo }),
-    deps: [API_CONFIG, ColorsMockRepository, ColorsHttpRepository],
-  },
-  CoatingsMockRepository,
+  { provide: COLORS_REPOSITORY, useExisting: ColorsHttpRepository },
   CoatingsHttpRepository,
   CoatingsStore,
-  {
-    provide: COATINGS_REPOSITORY,
-    useFactory: (apiConfig: ApiConfig, mockRepo: CoatingsMockRepository, httpRepo: CoatingsHttpRepository) =>
-      selectRepository({ apiConfig, mockRepo, httpRepo }),
-    deps: [API_CONFIG, CoatingsMockRepository, CoatingsHttpRepository],
-  },
-  SurfaceFinishesMockRepository,
+  { provide: COATINGS_REPOSITORY, useExisting: CoatingsHttpRepository },
   SurfaceFinishesHttpRepository,
   SurfaceFinishesStore,
-  {
-    provide: SURFACE_FINISHES_REPOSITORY,
-    useFactory: (
-      apiConfig: ApiConfig,
-      mockRepo: SurfaceFinishesMockRepository,
-      httpRepo: SurfaceFinishesHttpRepository,
-    ) => selectRepository({ apiConfig, mockRepo, httpRepo }),
-    deps: [API_CONFIG, SurfaceFinishesMockRepository, SurfaceFinishesHttpRepository],
-  },
-  ProductionWorkTypesMockRepository,
+  { provide: SURFACE_FINISHES_REPOSITORY, useExisting: SurfaceFinishesHttpRepository },
   ProductionWorkTypesHttpRepository,
   ProductionWorkTypesStore,
   {
     provide: PRODUCTION_WORK_TYPES_REPOSITORY,
-    useFactory: (
-      apiConfig: ApiConfig,
-      mockRepo: ProductionWorkTypesMockRepository,
-      httpRepo: ProductionWorkTypesHttpRepository,
-    ) => selectRepository({ apiConfig, mockRepo, httpRepo }),
-    deps: [API_CONFIG, ProductionWorkTypesMockRepository, ProductionWorkTypesHttpRepository],
+    useExisting: ProductionWorkTypesHttpRepository,
   },
-  ProductionDetailsMockRepository,
   ProductionDetailsHttpRepository,
   ProductionDetailsStore,
   {
     provide: PRODUCTION_DETAILS_REPOSITORY,
-    useFactory: (
-      apiConfig: ApiConfig,
-      mockRepo: ProductionDetailsMockRepository,
-      httpRepo: ProductionDetailsHttpRepository,
-    ) => selectRepository({ apiConfig, mockRepo, httpRepo }),
-    deps: [API_CONFIG, ProductionDetailsMockRepository, ProductionDetailsHttpRepository],
+    useExisting: ProductionDetailsHttpRepository,
   },
-  ClientsMockRepository,
   ClientsHttpRepository,
   ClientsStore,
-  {
-    provide: CLIENTS_REPOSITORY,
-    useFactory: (apiConfig: ApiConfig, mockRepo: ClientsMockRepository, httpRepo: ClientsHttpRepository) =>
-      selectRepository({ apiConfig, mockRepo, httpRepo }),
-    deps: [API_CONFIG, ClientsMockRepository, ClientsHttpRepository],
-  },
-  OrganizationsMockRepository,
+  { provide: CLIENTS_REPOSITORY, useExisting: ClientsHttpRepository },
   OrganizationsHttpRepository,
   OrganizationsStore,
-  {
-    provide: ORGANIZATIONS_REPOSITORY,
-    useFactory: (
-      apiConfig: ApiConfig,
-      mockRepo: OrganizationsMockRepository,
-      httpRepo: OrganizationsHttpRepository,
-    ) => selectRepository({ apiConfig, mockRepo, httpRepo }),
-    deps: [API_CONFIG, OrganizationsMockRepository, OrganizationsHttpRepository],
-  },
-  KpPhotosMockRepository,
+  { provide: ORGANIZATIONS_REPOSITORY, useExisting: OrganizationsHttpRepository },
   KpPhotosHttpRepository,
   KpPhotosStore,
-  {
-    provide: KP_PHOTOS_REPOSITORY,
-    useFactory: (apiConfig: ApiConfig, mockRepo: KpPhotosMockRepository, httpRepo: KpPhotosHttpRepository) =>
-      selectRepository({ apiConfig, mockRepo, httpRepo }),
-    deps: [API_CONFIG, KpPhotosMockRepository, KpPhotosHttpRepository],
-  },
+  { provide: KP_PHOTOS_REPOSITORY, useExisting: KpPhotosHttpRepository },
 ];
-
-
-

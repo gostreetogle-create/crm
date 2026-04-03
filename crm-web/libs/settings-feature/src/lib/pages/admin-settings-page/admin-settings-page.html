@@ -4,13 +4,18 @@
 
   <app-content-card title="Админ-настройки: права доступа">
     <p class="lead">
-      Матрица разрешений для текущего браузера: <strong>страницы</strong>,
-      <strong>плитки на хабе «Справочники»</strong>, <strong>кнопки в карточках</strong> и <strong>Excel</strong>.
-      Роли — из справочника «Роли». <strong>Суперадминистратор</strong> в таблице не показывается: у него всегда полный
-      доступ, матрица на него не действует.       Для остальных ролей по умолчанию права пустые, пока вы не отметите
-      галочки; «К канону» снимает сохранённые переопределения и возвращает к этому пустому умолчанию. Порядок колонок
-      совпадает с полем <strong>Порядок</strong> в справочнике «Роли» (меньше число — левее). Матрица хранится в
-      <code>localStorage</code> до сброса.
+      Матрица разрешений: <strong>страницы</strong>, <strong>плитки на хабе «Справочники»</strong>,
+      <strong>кнопки в карточках</strong> и <strong>Excel</strong>. Роли — из справочника «Роли».
+      <strong>Суперадминистратор</strong> в таблице не показывается: у него всегда полный доступ, матрица на него не
+      действует. Для остальных: пока <strong>нет</strong> сохранённого переопределения для роли, действуют
+      <strong>дефолты по коду роли</strong> из канона (например раздел «Справочники» и плитки хаба для
+      <code>director</code>, <code>viewer</code> и т.д.). Как только вы сохранили набор галочек для роли — он
+      становится единственным источником прав для этой роли (полная замена дефолта). Кнопка
+      <strong>«Сбросить галочки»</strong> в колонке роли <strong>снимает все галочки</strong> для этой роли (явный
+      пустой набор прав, без доступа к разделам и действиям). Порядок колонок — поле <strong>Порядок</strong> в «Роли».
+      После входа матрица подтягивается с <strong>сервера</strong> (источник истины); в браузере — только кэш для
+      быстрого UI. При выходе кэш сбрасывается. Изменения галочек — в кэш и (с правом
+      <code>page.admin.settings</code>) на сервер (debounced).
     </p>
     <p class="muted">
       Проверить интерфейс «как под другой ролью» в этом браузере — в
@@ -29,10 +34,23 @@
       </app-ui-button>
     </div>
     <p class="matrixGlobalHint">
-      В каждой таблице столбцы ролей одинаковые. «К канону» убирает сохранённые переопределения для роли: снова
-      действует пустое умолчанию (все галочки сняты), пока вы снова не сохраните матрицу. Кнопка неактивна, если для
-      роли нет своего переопределения в браузере.
+      В каждой таблице столбцы ролей одинаковые. <strong>Сбросить галочки</strong> в колонке — снять все отметки у
+      этой роли (права не остаются). Кнопка неактивна, если галочек уже нет.
+      <strong>Важно:</strong> если снять «Раздел „Справочники“» (<code>page.dictionaries</code>), плитки хаба
+      (<code>dict.hub.*</code>) для этой роли сбрасываются автоматически — без раздела плитки не показываются.
     </p>
+
+    <div class="authzDiagnostics">
+      <app-ui-button variant="soft" type="button" [disabled]="diagnosticsLoading()" (clicked)="runDiagnostics()">
+        Проверка целостности (сервер)
+      </app-ui-button>
+      @if (diagnosticsError(); as err) {
+        <p class="diagnosticsErr" role="alert">{{ err }}</p>
+      }
+      @if (diagnosticsJson(); as json) {
+        <pre class="diagnosticsPre" [attr.aria-label]="'Отчёт диагностики'">{{ json }}</pre>
+      }
+    </div>
 
     <div class="matrixSections" [attr.data-matrix-rev]="matrixRev()">
       @for (section of matrixSections; track section.group) {
@@ -50,14 +68,19 @@
                     <th scope="col" class="roleHead">
                       <div class="roleHeadStack">
                         <span class="roleHeadLabel">{{ roleLabel(role) }}</span>
+                        <code class="roleHeadId" [title]="'roleId: совпадает с User.roleId и ключом в матрице'">{{
+                          role.id
+                        }}</code>
                         <span class="roleHeadSort">Пор. {{ role.sortOrder }}</span>
                         <button
                           type="button"
                           class="roleResetBtn"
-                          [disabled]="!canResetRoleColumn(role)"
-                          (click)="resetRoleColumn(role)"
+                          [disabled]="!canClearRoleColumn(role)"
+                          (click)="clearRoleColumnCheckboxes(role)"
+                          title="Снять все галочки в этой колонке (роль без прав)"
+                          [attr.aria-label]="'Снять все галочки для роли «' + role.name + '»'"
                         >
-                          К канону
+                          Сбросить галочки
                         </button>
                       </div>
                     </th>
@@ -76,6 +99,7 @@
                         <input
                           type="checkbox"
                           [checked]="permissions.hasPermissionForRole(roleColumnId(role), key)"
+                          [disabled]="isDictHubCheckboxDisabled(role, key)"
                           (change)="onMatrixToggle(role, key, $event)"
                           [attr.aria-label]="section.titleRu + ' — ' + role.name + ': ' + key"
                         />

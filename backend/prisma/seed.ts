@@ -1,22 +1,37 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { SEED_CANONICAL_ROLES } from './seed-roles';
 
 const prisma = new PrismaClient();
 
-/** Роль + пользователь `admin` / `admin` — всегда (идемпотентно), без привязки к «первому» прогону сида. */
-async function ensureSeedAdminRoleAndUser(): Promise<void> {
-  await prisma.role.upsert({
-    where: { id: 'role-sys-admin' },
-    create: {
-      id: 'role-sys-admin',
-      code: 'admin',
-      name: 'Администратор',
-      sortOrder: 1,
-      isActive: true,
-      isSystem: true,
-    },
-    update: {},
-  });
+/** Канонические роли (один источник — `seed-roles.ts`). */
+async function ensureSeedRoles(): Promise<void> {
+  for (const r of SEED_CANONICAL_ROLES) {
+    await prisma.role.upsert({
+      where: { id: r.id },
+      create: {
+        id: r.id,
+        code: r.code,
+        name: r.name,
+        sortOrder: r.sortOrder,
+        isActive: true,
+        isSystem: r.isSystem,
+        notes: r.notes,
+      },
+      update: {
+        code: r.code,
+        name: r.name,
+        sortOrder: r.sortOrder,
+        isSystem: r.isSystem,
+        isActive: true,
+        notes: r.notes,
+      },
+    });
+  }
+}
+
+/** Пользователь `admin` / `admin` — всегда (идемпотентно). */
+async function ensureSeedAdminUser(): Promise<void> {
   const adminHash = await bcrypt.hash('admin', 10);
   await prisma.user.upsert({
     where: { login: 'admin' },
@@ -33,8 +48,34 @@ async function ensureSeedAdminRoleAndUser(): Promise<void> {
   });
 }
 
+/**
+ * Тестовый пользователь роли «Директор» (логин `director`, пароль `director`).
+ * Отключение: `SEED_DIRECTOR_USER=0` (в docker-compose для backend задано по умолчанию).
+ */
+async function ensureSeedDirectorUser(): Promise<void> {
+  if (process.env.SEED_DIRECTOR_USER === '0') {
+    return;
+  }
+  const hash = await bcrypt.hash('director', 10);
+  await prisma.user.upsert({
+    where: { login: 'director' },
+    create: {
+      id: 'user-seed-director',
+      login: 'director',
+      passwordHash: hash,
+      fullName: 'Директор (тест)',
+      email: 'director@example.local',
+      phone: '',
+      roleId: 'role-seed-director',
+    },
+    update: { passwordHash: hash, roleId: 'role-seed-director' },
+  });
+}
+
 async function main(): Promise<void> {
-  await ensureSeedAdminRoleAndUser();
+  await ensureSeedRoles();
+  await ensureSeedAdminUser();
+  await ensureSeedDirectorUser();
 
   if ((await prisma.unit.count()) === 0) {
     await prisma.unit.createMany({

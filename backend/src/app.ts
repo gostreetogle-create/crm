@@ -14,10 +14,15 @@ import { materialsRouter } from "./routes/materials.routes.js";
 import { materialGeometryRouter } from "./routes/material-geometry.routes.js";
 import { productionWorkTypesRouter } from "./routes/production-work-types.routes.js";
 import { productionDetailsRouter } from "./routes/production-details.routes.js";
-import { rolesRouter } from "./routes/roles.routes.js";
+import { rolesReadRouter, rolesWriteRouter } from "./routes/roles.routes.js";
+import {
+  authzMatrixDiagnosticsRouter,
+  authzMatrixReadRouter,
+  authzMatrixWriteRouter,
+} from "./routes/authz-matrix.routes.js";
 import { surfaceFinishesRouter } from "./routes/surface-finishes.routes.js";
 import { unitsRouter } from "./routes/units.routes.js";
-import { usersRouter } from "./routes/users.routes.js";
+import { usersReadRouter, usersWriteRouter } from "./routes/users.routes.js";
 import { dbBackupsRouter } from "./routes/db-backups.routes.js";
 import { excelDictionariesRouter } from "./routes/excel-dictionaries.routes.js";
 import { authAuthedRouter, authPublicRouter } from "./routes/auth.routes.js";
@@ -69,14 +74,19 @@ export function createApp() {
   authed.use("/kp-photos", kpPhotosRouter);
   authed.use("/material-characteristics", materialCharacteristicsRouter);
   authed.use("/materials", materialsRouter);
+  authed.use("/roles", rolesReadRouter);
+  authed.use("/authz-matrix", authzMatrixReadRouter);
+  authed.use("/users", usersReadRouter);
 
   const admin = express.Router();
   admin.use(requireAuth);
   admin.use(requireAdmin);
-  admin.use("/users", usersRouter);
-  admin.use("/roles", rolesRouter);
+  admin.use("/users", usersWriteRouter);
+  admin.use("/roles", rolesWriteRouter);
   admin.use("/db-backups", dbBackupsRouter);
   admin.use("/excel-dictionaries", excelDictionariesRouter);
+  admin.use("/authz-matrix", authzMatrixDiagnosticsRouter);
+  admin.use("/authz-matrix", authzMatrixWriteRouter);
 
   api.use(authed);
   api.use(admin);

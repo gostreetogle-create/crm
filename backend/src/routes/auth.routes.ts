@@ -67,10 +67,17 @@ authPublicRouter.post("/login", loginLimiter, async (req, res, next) => {
       res.status(401).json({ error: "invalid_credentials" });
       return;
     }
+    const role = await prisma.role.findUnique({ where: { id: row.roleId } });
+    if (!role) {
+      res.status(401).json({ error: "invalid_credentials" });
+      return;
+    }
     const token = await signAccessToken({
       userId: row.id,
       login: row.login,
       roleId: row.roleId,
+      roleCode: role.code,
+      isSystemRole: role.isSystem,
     });
     res.json({ token, user: userToJson(row) });
   } catch (e) {

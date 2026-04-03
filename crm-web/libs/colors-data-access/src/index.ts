@@ -4,4 +4,3 @@ export {
   type ColorsRepository,
 } from './lib/colors.repository';
 export { ColorsHttpRepository } from './lib/colors.http-repository';
-export { ColorsMockRepository } from './lib/colors.mock-repository';

@@ -5,6 +5,8 @@ declare global {
         userId: string;
         login: string;
         roleId: string;
+        roleCode?: string;
+        isSystemRole?: boolean;
       };
     }
   }

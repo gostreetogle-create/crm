@@ -56,17 +56,10 @@
           </div>
         </form>
 
-        @if (session.useMockAuth()) {
-          <p class="loginHint">
-            Режим без API: для просмотра UI — логин <strong>{{ devUser }}</strong>, пароль
-            <strong>{{ devPass }}</strong>.
-          </p>
-        } @else {
-          <p class="loginHint">
-            Локально после <code>npx prisma db seed</code> — вход <code>admin</code> / <code>admin</code> (как в сиде БД),
-            если пароль не меняли.
-          </p>
-        }
+        <p class="loginHint">
+          Локально после <code>npx prisma db seed</code> — вход <code>admin</code> / <code>admin</code> (как в сиде БД),
+          если пароль не меняли.
+        </p>
       }
     </section>
   </div>

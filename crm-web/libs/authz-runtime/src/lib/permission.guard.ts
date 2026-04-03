@@ -1,4 +1,4 @@
-import { inject } from '@angular/core';
+import { inject, isDevMode } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { PermissionsService } from './permissions.service';
 import { PermissionKey } from '@srm/authz-core';
@@ -25,6 +25,15 @@ export const permissionGuard: CanActivateFn = (route) => {
     mode === 'any' ? permissions.hasAny(keys) : keys.every((k) => permissions.can(k));
   if (allowed) {
     return true;
+  }
+  if (isDevMode()) {
+    const missing = keys.filter((k) => !permissions.can(k));
+    console.debug('[permissionGuard] denied', {
+      keys,
+      mode: mode ?? 'all',
+      missing,
+      roleId: permissions.role(),
+    });
   }
   const router = inject(Router);
   const fallback = route.data['fallbackRoute'] as string | undefined;

@@ -20,6 +20,42 @@
   text-decoration-thickness: 2px;
 }
 
+.authzDiagnostics {
+  margin: var(--ui-space-3) 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-2);
+  align-items: flex-start;
+}
+
+.diagnosticsErr {
+  margin: 0;
+  color: var(--color-danger, #b91c1c);
+  font-size: var(--font-size-small);
+}
+
+.diagnosticsPre {
+  margin: 0;
+  padding: var(--ui-space-2);
+  max-width: min(100%, 56rem);
+  max-height: 18rem;
+  overflow: auto;
+  font-size: 11px;
+  line-height: 1.35;
+  background: var(--surface-elevated, rgba(0, 0, 0, 0.04));
+  border-radius: var(--radius-sm, 6px);
+  border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.08));
+}
+
+.roleHeadId {
+  display: block;
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--text-muted);
+  word-break: break-all;
+  margin-top: 2px;
+}
+
 .matrixToolbar {
   margin: var(--ui-space-2) 0;
 }

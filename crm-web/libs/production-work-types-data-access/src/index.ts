@@ -7,4 +7,3 @@ export {
   type ProductionWorkTypesRepository,
 } from './lib/production-work-types.repository';
 export { ProductionWorkTypesHttpRepository } from './lib/production-work-types.http-repository';
-export { ProductionWorkTypesMockRepository } from './lib/production-work-types.mock-repository';

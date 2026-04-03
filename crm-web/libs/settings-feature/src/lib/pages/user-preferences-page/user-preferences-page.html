@@ -41,30 +41,6 @@
       </div>
     </section>
 
-    @if (session.useMockAuth()) {
-      <section class="prefSection prefSection--muted" aria-labelledby="pref-role-title">
-        <div class="prefSectionHead">
-          <h3 id="pref-role-title" class="prefSectionTitle">Роль только в этой вкладке браузера</h3>
-          <p class="prefSectionHint">
-            Только в режиме без API: <strong>локальная имитация</strong> интерфейса под другой ролью. На учётные записи
-            сотрудников <strong>не влияет</strong>.
-          </p>
-        </div>
-        <div class="roleSession">
-          <label class="roleLabel" for="pref-role">Просмотр от имени роли</label>
-          <select
-            id="pref-role"
-            class="roleSelect"
-            (change)="onRoleChange($any($event.target).value)"
-          >
-            @for (option of roleOptions(); track option.id) {
-              <option [value]="option.id" [selected]="option.id === permissions.role()">{{ option.label }}</option>
-            }
-          </select>
-        </div>
-      </section>
-    }
-
     <section class="prefSection prefSection--muted" aria-labelledby="pref-account-title">
       <h3 id="pref-account-title" class="prefSectionTitle">Учётная запись</h3>
       <p class="prefSectionHint">

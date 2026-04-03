@@ -134,7 +134,7 @@
     <app-ui-modal-form-actions
       standaloneFormActions
       [viewMode]="isRolesViewMode()"
-      [formId]="'roles-form'"
+      [formId]="rolesFormDomId()"
       [submitLabel]="rolesEditingId() ? 'Сохранить изменения' : 'Создать роль'"
       (dismiss)="navigateBackFromStandaloneDictionaryCreate()"
     />
@@ -821,7 +821,7 @@
       }
     </app-dictionary-preview-card-no-photo>
   } @else {
-    <form id="roles-form" [formGroup]="rolesForm" (ngSubmit)="submitRoles()" class="formGrid">
+    <form [attr.id]="rolesFormDomId()" [formGroup]="rolesForm" (ngSubmit)="submitRoles()" class="formGrid">
       <fieldset class="dictionaryFormSection">
         <legend>Роль</legend>
         <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
@@ -866,7 +866,7 @@
 <ng-template #rolesActionsTpl>
   <app-ui-modal-form-actions
     [viewMode]="isRolesViewMode()"
-    [formId]="'roles-form'"
+    [formId]="rolesFormDomId()"
     [submitLabel]="rolesEditingId() ? 'Сохранить изменения' : 'Создать роль'"
     (dismiss)="closeRolesModal()"
   />

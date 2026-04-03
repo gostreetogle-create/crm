@@ -2,7 +2,11 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
 
-export const rolesRouter = Router();
+/** Чтение списка ролей — любой авторизованный пользователь (UI, матрица прав). */
+export const rolesReadRouter = Router();
+
+/** Создание/изменение/удаление — только админ (как раньше под `requireAdmin`). */
+export const rolesWriteRouter = Router();
 
 const InputSchema = z.object({
   code: z.string().trim().min(1),
@@ -35,7 +39,8 @@ function toJson(row: {
 
 function dataFromParsed(p: z.infer<typeof InputSchema>) {
   return {
-    code: p.code,
+    /** Единый регистр с каноном `DEFAULT_ROLE_PERMISSIONS_BY_CODE` на фронте. */
+    code: p.code.toLowerCase(),
     name: p.name,
     sortOrder: p.sortOrder,
     notes: p.notes != null && String(p.notes).trim() ? String(p.notes).trim() : null,
@@ -44,7 +49,7 @@ function dataFromParsed(p: z.infer<typeof InputSchema>) {
   };
 }
 
-rolesRouter.get('/', async (_req, res, next) => {
+rolesReadRouter.get('/', async (_req, res, next) => {
   try {
     const rows = await prisma.role.findMany({ orderBy: { sortOrder: 'asc' } });
     res.json(rows.map(toJson));
@@ -53,7 +58,7 @@ rolesRouter.get('/', async (_req, res, next) => {
   }
 });
 
-rolesRouter.post('/', async (req, res, next) => {
+rolesWriteRouter.post('/', async (req, res, next) => {
   try {
     const parsed = InputSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -75,7 +80,7 @@ rolesRouter.post('/', async (req, res, next) => {
   }
 });
 
-rolesRouter.put('/:id', async (req, res, next) => {
+rolesWriteRouter.put('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
     const parsed = InputSchema.safeParse(req.body);
@@ -105,7 +110,7 @@ rolesRouter.put('/:id', async (req, res, next) => {
   }
 });
 
-rolesRouter.delete('/:id', async (req, res, next) => {
+rolesWriteRouter.delete('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
     try {

@@ -3,7 +3,11 @@ import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
 
-export const usersRouter = Router();
+/** Список пользователей — любой авторизованный (плитка «Пользователи» на хабе не только у admin). */
+export const usersReadRouter = Router();
+
+/** Создание/изменение/удаление — только admin (как раньше под `requireAdmin`). */
+export const usersWriteRouter = Router();
 
 const CreateSchema = z.object({
   login: z.string().trim().min(1),
@@ -42,7 +46,7 @@ function toJson(row: {
   };
 }
 
-usersRouter.get('/', async (_req, res, next) => {
+usersReadRouter.get('/', async (_req, res, next) => {
   try {
     const rows = await prisma.user.findMany({ orderBy: { login: 'asc' } });
     res.json(rows.map(toJson));
@@ -51,7 +55,7 @@ usersRouter.get('/', async (_req, res, next) => {
   }
 });
 
-usersRouter.post('/', async (req, res, next) => {
+usersWriteRouter.post('/', async (req, res, next) => {
   try {
     const parsed = CreateSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -77,7 +81,7 @@ usersRouter.post('/', async (req, res, next) => {
   }
 });
 
-usersRouter.put('/:id', async (req, res, next) => {
+usersWriteRouter.put('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
     const parsed = UpdateSchema.safeParse(req.body);
@@ -119,7 +123,7 @@ usersRouter.put('/:id', async (req, res, next) => {
   }
 });
 
-usersRouter.delete('/:id', async (req, res, next) => {
+usersWriteRouter.delete('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
     try {

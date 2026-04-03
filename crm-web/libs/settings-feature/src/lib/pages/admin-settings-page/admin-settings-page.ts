@@ -1,5 +1,8 @@
-import { Component, computed, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
+import { API_CONFIG } from '@srm/platform-core';
 import {
   AUTHZ_MATRIX_UI_SECTIONS,
   PERMISSION_CATALOG,
@@ -32,6 +35,12 @@ import { FieldRuleRow } from '@srm/settings-core';
 export class AdminSettingsPage {
   readonly permissions = inject(PermissionsService);
   readonly rolesStore = inject(RolesStore);
+  private readonly http = inject(HttpClient);
+  private readonly apiConfig = inject(API_CONFIG);
+
+  readonly diagnosticsJson = signal<string | null>(null);
+  readonly diagnosticsLoading = signal(false);
+  readonly diagnosticsError = signal<string | null>(null);
   readonly rules: readonly FieldRuleRow[] = FIELD_RULES_CATALOG;
   /** Суперадмин в матрице не показываем — у него всегда полный доступ. */
   readonly matrixRoles = computed(() =>
@@ -55,8 +64,17 @@ export class AdminSettingsPage {
     return role.id;
   }
 
-  canResetRoleColumn(role: RoleItem): boolean {
-    return this.permissions.roleHasExplicitMatrixOverride(role.id);
+  /** Кнопка «снять все галочки» — есть что снимать. */
+  canClearRoleColumn(role: RoleItem): boolean {
+    return this.permissions.effectiveKeysForRole(role.id).length > 0;
+  }
+
+  /** Без раздела «Справочники» плитки хаба недоступны — чекбоксы dict.hub.* блокируем. */
+  isDictHubCheckboxDisabled(role: RoleItem, key: PermissionKey): boolean {
+    if (!key.startsWith('dict.hub.')) {
+      return false;
+    }
+    return !this.permissions.hasPermissionForRole(role.id, 'page.dictionaries');
   }
 
   onMatrixToggle(role: RoleItem, key: PermissionKey, ev: Event): void {
@@ -67,12 +85,26 @@ export class AdminSettingsPage {
     this.permissions.setMatrixPermission(role.id, key, input.checked);
   }
 
-  resetRoleColumn(role: RoleItem): void {
-    this.permissions.resetRoleMatrixToDefault(role.id);
+  clearRoleColumnCheckboxes(role: RoleItem): void {
+    this.permissions.clearAllMatrixPermissionsForRole(role.id);
   }
 
   resetAllMatrix(): void {
     this.permissions.resetAllMatrixOverrides();
+  }
+
+  async runDiagnostics(): Promise<void> {
+    this.diagnosticsLoading.set(true);
+    this.diagnosticsError.set(null);
+    try {
+      const base = this.apiConfig.baseUrl.replace(/\/$/, '');
+      const res = await firstValueFrom(this.http.get<unknown>(`${base}/api/authz-matrix/diagnostics`));
+      this.diagnosticsJson.set(JSON.stringify(res, null, 2));
+    } catch (e: unknown) {
+      this.diagnosticsError.set(e instanceof Error ? e.message : String(e));
+    } finally {
+      this.diagnosticsLoading.set(false);
+    }
   }
 }
 

@@ -1,35 +1,56 @@
-# Runbook: включение реального backend
+# Runbook: backend и фронт (без моков)
 
-Как переключить фронт с моков на HTTP там, где уже есть реализация.
+Фронт **всегда** ходит в API по HTTP (`*HttpRepository` в DI); in-memory репозитории и флаг `useMockRepositories` **удалены**. Данные в UI — из **PostgreSQL** через backend.
 
-## Переключатель
+## Конфиг API
 
-- Файл: `crm-web/src/app/core/api/api-config.ts`
-- Поля: `useMockRepositories`, `baseUrl`
+- Файл: `crm-web/libs/platform-core/src/lib/api-config.ts`
+- Поле: `baseUrl` (по умолчанию `''` — тот же origin; в dev запросы `/api/*` уходят на backend через прокси).
 
-## Локальная разработка (рекомендуется)
+## Локальная разработка: три уровня
 
-1. Поднять PostgreSQL и backend (см. `backend/README.md`).
-2. В `api-config.ts`:
-   - `useMockRepositories: false`
-   - `baseUrl: ''` — запросы на `/api/*` идут через **прокси** `crm-web/proxy.conf.json` на `http://127.0.0.1:3000`.
+Полный стек в dev:
 
-## Проверка единиц измерения (первый реальный ресурс)
+1. **PostgreSQL** — доступен по `DATABASE_URL` в `backend/.env` (см. `backend/.env.example`).
+2. **Backend** (`backend/`): `npm run dev` → `http://localhost:3000`
+3. **Фронт** (`crm-web/`): `npm start` / `nx serve` → `http://localhost:4200`  
+   Прокси: `crm-web/proxy.conf.json` перенаправляет `/api` на `127.0.0.1:3000`.
 
-1. Backend: `GET http://localhost:3000/api/units` возвращает массив объектов `UnitItem` (`id`, `name`, `code?`, `notes?`, `isActive`).
-2. Создание/редактирование плитки «Единицы измерения» на `/dictionaries` работает без ошибок в консоли.
+Фразы вроде «запусти сайт» / «подними dev» в этом репозитории означают **Postgres + backend + фронт** (если не сказано иначе). Подробно для ассистента: `.cursor/rules/local-dev-launch.mdc`.
+
+### PostgreSQL в Docker
+
+Типичный сценарий: `deploy/docker-compose.yml` поднимает Postgres; имя контейнера часто **`crm_postgres`**, порт на хосте задаётся переменной (часто **`5433`** → `5432` внутри контейнера). Команды из корня репозитория:
+
+```bash
+docker compose -f deploy/docker-compose.yml up -d postgres
+```
+
+Если контейнер уже создан, но остановлен:
+
+```bash
+docker start crm_postgres
+```
+
+Убедись, что `DATABASE_URL` в `backend/.env` указывает на **тот же хост и порт**, что проброшены из Docker (например `localhost:5433`, если так настроено).
+
+### Проверка
+
+- `GET http://localhost:3000/api/health` → `{ "ok": true }`
+- После входа: справочники и CRUD без сетевых ошибок в консоли.
+
+### Если API отдаёт 500 или 503
+
+- **500** на `/api/auth/me`, `/api/roles` и др.: чаще всего **Prisma не может подключиться к БД** (Postgres не запущен или неверный `DATABASE_URL`). Проверь контейнер/службу Postgres и лог `npm run dev` в `backend/` — там будет сообщение вида `Can't reach database server at ...`.
+- **503** на админ-эндпоинтах (например бэкапы): при старых JWT без полей роли в токене проверка админа может ходить в БД; при недоступной БД — **503** с `db_unavailable`. После входа заново выдаётся JWT с полями роли; главное — **поднять Postgres**.
 
 ## Прод (один домен, nginx из `deploy/`)
 
 - Статика и API с одного origin: `baseUrl: ''`, backend за прокси `location /api/`.
-- Если по каким-то причинам API на **другом origin**, задать `baseUrl: 'https://api.example.com'` (или порт backend) и проверить CORS.
-
-## Откат
-
-- `useMockRepositories: true`, `baseUrl: ''` — снова моки (в т.ч. `UnitsMockRepository`).
+- Если API на **другом origin**: задать `baseUrl: 'https://api.example.com'` и проверить CORS в `backend`.
 
 ## Несовместимый ответ API
 
-1. Не ломать UI ради бэка.
+1. Не ломать UI ради бэка без необходимости.
 2. Маппинг править в соответствующем `*.http-repository.ts`.
 3. Зафиксировать контракт в `docs/frontend/api-contracts.md`.

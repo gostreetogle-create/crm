@@ -22,9 +22,11 @@ export class UsersStore {
       .pipe(takeUntilDestroyed(inject(DestroyRef)))
       .pipe(
         catchError((err) => {
-          // На этапе логина/первого редиректа доступ к `/api/users` может требовать admin.
-          // В этом случае просто оставляем пустой список (UI переключит роль/права после login).
-          console.warn('[UsersStore] Failed to load users (will use empty list):', err);
+          // Нет JWT / сеть — пустой список. GET /api/users доступен любому авторизованному; мутации — только admin.
+          const status = typeof err?.status === 'number' ? err.status : null;
+          if (status !== 401) {
+            console.warn('[UsersStore] Failed to load users (will use empty list):', err);
+          }
           return of([] as UserItem[]);
         }),
       )

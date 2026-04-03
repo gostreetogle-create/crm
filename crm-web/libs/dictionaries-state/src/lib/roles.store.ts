@@ -1,7 +1,19 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { catchError, concatMap, from, of, switchMap, take, throwError } from 'rxjs';
+import {
+  catchError,
+  concatMap,
+  firstValueFrom,
+  from,
+  Observable,
+  of,
+  switchMap,
+  take,
+  tap,
+  throwError,
+} from 'rxjs';
+import { toArray } from 'rxjs/operators';
 import { readAuthTokenFromStorage } from '@srm/auth-session-core';
 import { RoleItem, RoleItemInput } from '@srm/roles-data-access';
 import { ROLES_REPOSITORY } from '@srm/roles-data-access';
@@ -12,6 +24,8 @@ export class RolesStore {
   private readonly repo = inject(ROLES_REPOSITORY);
   private readonly destroyRef = inject(DestroyRef);
   readonly items = signal<RoleItem[]>([]);
+  /** Дедупликация параллельных запросов (hydrate + конструктор). */
+  private loadItemsPromise: Promise<void> | null = null;
 
   constructor() {
     const snap = this.repo.getSnapshot?.();
@@ -21,29 +35,42 @@ export class RolesStore {
     if (!this.hasAuthToken()) {
       return;
     }
-    this.loadItems();
+    void this.ensureRolesLoaded();
   }
 
   loadItems(): void {
-    this.repo
-      .getItems()
-      .pipe(takeUntilDestroyed(inject(DestroyRef)))
-      .pipe(
-        catchError((err) => {
-          // До входа (без JWT) `/api/roles` ожидаемо отвечает 401 — это не ошибка приложения.
-          // Логируем только неожиданные кейсы, чтобы не пугать шумом в консоли.
-          const status = typeof err?.status === 'number' ? err.status : null;
-          if (status !== 401) {
-            console.warn('[RolesStore] Failed to load roles (will use empty list):', err);
-          }
-          return of([] as RoleItem[]);
-        }),
-      )
-      .subscribe((items) => this.items.set(items));
+    void this.ensureRolesLoaded();
+  }
+
+  /**
+   * Один запрос к `/api/roles` при первом входе; нужен до `syncMatrixFromServer`, чтобы prune/матрица
+   * согласовались со справочником.
+   */
+  ensureRolesLoaded(): Promise<void> {
+    if (this.items().length > 0) {
+      return Promise.resolve();
+    }
+    if (!this.loadItemsPromise) {
+      this.loadItemsPromise = firstValueFrom(
+        this.repo.getItems().pipe(
+          catchError((err) => {
+            const status = typeof err?.status === 'number' ? err.status : null;
+            if (status !== 401) {
+              console.warn('[RolesStore] Failed to load roles (will use empty list):', err);
+            }
+            return of([] as RoleItem[]);
+          }),
+        ),
+      ).then((items) => {
+        this.items.set(items);
+      });
+    }
+    return this.loadItemsPromise;
   }
 
   clearItems(): void {
     this.items.set([]);
+    this.loadItemsPromise = null;
   }
 
   readonly rolesData = computed(() =>
@@ -72,66 +99,63 @@ export class RolesStore {
     return this.items().find((x) => x.id === id);
   }
 
-  create(input: RoleItemInput): void {
-    this.repo
-      .create(input)
-      .pipe(
-        catchError((err: unknown) => {
-          // Код роли уже есть в БД (например admin из сида), а локальный список ещё пустой — подтягиваем с сервера.
-          if (err instanceof HttpErrorResponse && err.status === 409) {
-            return of(null);
-          }
-          return throwError(() => err);
-        }),
-        switchMap(() => this.repo.getItems().pipe(take(1))),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe((items) => this.items.set(items));
+  /**
+   * Создание роли. Подписка — у вызывающего (чтобы можно было `finalize` / один POST).
+   * После успеха список обновляется из API.
+   */
+  create(input: RoleItemInput): Observable<RoleItem[]> {
+    return this.repo.create(input).pipe(
+      catchError((err: unknown) => {
+        // Код роли уже есть в БД (например admin из сида), а локальный список ещё пустой — подтягиваем с сервера.
+        if (err instanceof HttpErrorResponse && err.status === 409) {
+          return of(null);
+        }
+        return throwError(() => err);
+      }),
+      switchMap(() => this.repo.getItems().pipe(take(1))),
+      tap((items) => this.items.set(items)),
+    );
   }
 
-  update(id: string, input: RoleItemInput): void {
-    this.repo
-      .update(id, input)
-      .pipe(
-        catchError((err: unknown) => {
-          if (err instanceof HttpErrorResponse && err.status === 409) {
-            return of(null);
-          }
-          return throwError(() => err);
-        }),
-        switchMap(() => this.repo.getItems().pipe(take(1))),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe((items) => this.items.set(items));
+  update(id: string, input: RoleItemInput): Observable<RoleItem[]> {
+    return this.repo.update(id, input).pipe(
+      catchError((err: unknown) => {
+        if (err instanceof HttpErrorResponse && err.status === 409) {
+          return of(null);
+        }
+        return throwError(() => err);
+      }),
+      switchMap(() => this.repo.getItems().pipe(take(1))),
+      tap((items) => this.items.set(items)),
+    );
   }
 
-  remove(id: string): void {
-    this.repo
-      .remove(id)
-      .pipe(
-        switchMap(() => this.repo.getItems().pipe(take(1))),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe((items) => this.items.set(items));
+  remove(id: string): Observable<RoleItem[]> {
+    return this.repo.remove(id).pipe(
+      switchMap(() => this.repo.getItems().pipe(take(1))),
+      tap((items) => this.items.set(items)),
+    );
   }
 
-  createMany(rows: readonly RoleItemInput[]): void {
-    from(rows)
-      .pipe(
-        concatMap((row) =>
-          this.repo.create(row).pipe(
-            catchError((err: unknown) => {
-              if (err instanceof HttpErrorResponse && err.status === 409) {
-                return of(null);
-              }
-              return throwError(() => err);
-            }),
-          ),
+  /**
+   * Импорт: последовательные POST, затем один GET списка (раньше после каждой строки дергался getItems).
+   */
+  createMany(rows: readonly RoleItemInput[]): Observable<RoleItem[]> {
+    return from(rows).pipe(
+      concatMap((row) =>
+        this.repo.create(row).pipe(
+          catchError((err: unknown) => {
+            if (err instanceof HttpErrorResponse && err.status === 409) {
+              return of(null);
+            }
+            return throwError(() => err);
+          }),
         ),
-        switchMap(() => this.repo.getItems().pipe(take(1))),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe((items) => this.items.set(items));
+      ),
+      toArray(),
+      switchMap(() => this.repo.getItems().pipe(take(1))),
+      tap((items) => this.items.set(items)),
+    );
   }
 
   private hasAuthToken(): boolean {

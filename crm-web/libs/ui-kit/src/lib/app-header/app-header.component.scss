@@ -2,12 +2,50 @@
   display: block;
 }
 
-.appHeader {
+.appHeaderShell {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   z-index: 1100;
+  display: flex;
+  flex-direction: column;
+}
+
+.matrixSyncBanner {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 14px;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--warn, #b45309) 18%, var(--surface));
+  border-bottom: 1px solid color-mix(in srgb, var(--warn, #b45309) 35%, transparent);
+}
+
+.matrixSyncBannerText {
+  min-width: 0;
+}
+
+.matrixSyncBannerDismiss {
+  flex-shrink: 0;
+  margin-left: auto;
+  padding: 4px 10px;
+  font: inherit;
+  cursor: pointer;
+  border: 1px solid color-mix(in srgb, var(--border-color) 80%, transparent);
+  border-radius: var(--radius-sm, 6px);
+  background: var(--surface);
+  color: var(--text-primary);
+}
+
+.matrixSyncBannerDismiss:hover {
+  background: color-mix(in srgb, var(--surface) 85%, var(--text-primary));
+}
+
+.appHeader {
   display: grid;
   grid-template-columns: auto 1fr auto;
   gap: var(--ui-nav-gap);
@@ -128,6 +166,11 @@
   border: 1px solid transparent;
   border-radius: var(--radius-pill);
   cursor: pointer;
+  transition:
+    color 0.2s ease,
+    text-shadow 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease;
 }
 
 .logoutBtn:hover {
@@ -139,5 +182,40 @@
 .logoutBtn:focus-visible {
   outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
   outline-offset: 2px;
+}
+
+/* Индикатор связи с API: неоновый зелёный — ответил /api/health */
+.logoutBtn.logoutBtn--online {
+  color: #4cff54;
+  text-shadow:
+    0 0 6px rgba(76, 255, 84, 0.95),
+    0 0 14px rgba(76, 255, 84, 0.65),
+    0 0 24px rgba(76, 255, 84, 0.35);
+}
+
+.logoutBtn.logoutBtn--online:hover {
+  color: #6dff73;
+  text-shadow:
+    0 0 8px rgba(109, 255, 115, 0.95),
+    0 0 18px rgba(109, 255, 115, 0.55);
+  border-color: color-mix(in srgb, #4cff54 35%, var(--border-color));
+  background: color-mix(in srgb, #4cff54 10%, var(--surface-soft));
+}
+
+/* Оранжевый — сервер не ответил или до первой проверки */
+.logoutBtn.logoutBtn--offline {
+  color: #ff9a2e;
+  text-shadow:
+    0 0 6px rgba(255, 154, 46, 0.75),
+    0 0 12px rgba(255, 154, 46, 0.4);
+}
+
+.logoutBtn.logoutBtn--offline:hover {
+  color: #ffb04a;
+  text-shadow:
+    0 0 8px rgba(255, 176, 74, 0.85),
+    0 0 16px rgba(255, 176, 74, 0.45);
+  border-color: color-mix(in srgb, #ff9a2e 40%, var(--border-color));
+  background: color-mix(in srgb, #ff9a2e 12%, var(--surface-soft));
 }
 

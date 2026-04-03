@@ -4,4 +4,3 @@ export {
   type ProductionDetailsRepository,
 } from './lib/production-details.repository';
 export { ProductionDetailsHttpRepository } from './lib/production-details.http-repository';
-export { ProductionDetailsMockRepository } from './lib/production-details.mock-repository';

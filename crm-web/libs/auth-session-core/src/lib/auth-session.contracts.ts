@@ -2,9 +2,6 @@ export const AUTH_TOKEN_STORAGE_KEY = 'crm.auth.token';
 export const LEGACY_AUTH_STORAGE_KEY = 'crm.authenticated';
 export const AUTH_TOKEN_COOKIE_MAX_AGE_SEC = 60 * 60 * 24 * 30;
 
-export const DEV_BOOTSTRAP_USERNAME = 'admin';
-export const DEV_BOOTSTRAP_PASSWORD = 'admin';
-
 export type AuthUserDto = {
   id: string;
   login: string;

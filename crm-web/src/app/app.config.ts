@@ -6,7 +6,7 @@ import {
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
 import { appRoutes } from './app.routes';
-import { API_CONFIG, ApiConfig, DEFAULT_API_CONFIG } from '@srm/platform-core';
+import { API_CONFIG, DEFAULT_API_CONFIG } from '@srm/platform-core';
 import {
   AUTHZ_ROLE_CONTEXT,
   AUTHZ_SESSION_ACCESS,
@@ -20,23 +20,10 @@ import {
   ROLE_ID_SYSTEM_VIEWER,
   ROLES_REPOSITORY,
   RolesHttpRepository,
-  RolesMockRepository,
 } from '@srm/roles-data-access';
-import {
-  USERS_REPOSITORY,
-  UsersHttpRepository,
-  UsersMockRepository,
-} from '@srm/users-data-access';
-import {
-  ORGANIZATIONS_REPOSITORY,
-  OrganizationsHttpRepository,
-  OrganizationsMockRepository,
-} from '@srm/organizations-data-access';
-import {
-  CLIENTS_REPOSITORY,
-  ClientsHttpRepository,
-  ClientsMockRepository,
-} from '@srm/clients-data-access';
+import { USERS_REPOSITORY, UsersHttpRepository } from '@srm/users-data-access';
+import { ORGANIZATIONS_REPOSITORY, OrganizationsHttpRepository } from '@srm/organizations-data-access';
+import { CLIENTS_REPOSITORY, ClientsHttpRepository } from '@srm/clients-data-access';
 import { authBearerInterceptor, SessionAuthService } from '@srm/auth-session-angular';
 import { RolesStore } from '@srm/dictionaries-state';
 
@@ -83,43 +70,13 @@ export const appConfig: ApplicationConfig = {
       }),
       deps: [SessionAuthService],
     },
-    RolesMockRepository,
     RolesHttpRepository,
-    {
-      provide: ROLES_REPOSITORY,
-      useFactory: (apiConfig: ApiConfig, mockRepo: RolesMockRepository, httpRepo: RolesHttpRepository) =>
-        apiConfig.useMockRepositories ? mockRepo : httpRepo,
-      deps: [API_CONFIG, RolesMockRepository, RolesHttpRepository],
-    },
-    UsersMockRepository,
+    { provide: ROLES_REPOSITORY, useExisting: RolesHttpRepository },
     UsersHttpRepository,
-    {
-      provide: USERS_REPOSITORY,
-      useFactory: (apiConfig: ApiConfig, mockRepo: UsersMockRepository, httpRepo: UsersHttpRepository) =>
-        apiConfig.useMockRepositories ? mockRepo : httpRepo,
-      deps: [API_CONFIG, UsersMockRepository, UsersHttpRepository],
-    },
-    OrganizationsMockRepository,
+    { provide: USERS_REPOSITORY, useExisting: UsersHttpRepository },
     OrganizationsHttpRepository,
-    {
-      provide: ORGANIZATIONS_REPOSITORY,
-      useFactory: (
-        apiConfig: ApiConfig,
-        mockRepo: OrganizationsMockRepository,
-        httpRepo: OrganizationsHttpRepository,
-      ) => (apiConfig.useMockRepositories ? mockRepo : httpRepo),
-      deps: [API_CONFIG, OrganizationsMockRepository, OrganizationsHttpRepository],
-    },
-    ClientsMockRepository,
+    { provide: ORGANIZATIONS_REPOSITORY, useExisting: OrganizationsHttpRepository },
     ClientsHttpRepository,
-    {
-      provide: CLIENTS_REPOSITORY,
-      useFactory: (apiConfig: ApiConfig, mockRepo: ClientsMockRepository, httpRepo: ClientsHttpRepository) =>
-        apiConfig.useMockRepositories ? mockRepo : httpRepo,
-      deps: [API_CONFIG, ClientsMockRepository, ClientsHttpRepository],
-    },
+    { provide: CLIENTS_REPOSITORY, useExisting: ClientsHttpRepository },
   ],
 };
-
-
-

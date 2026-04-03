@@ -1,4 +1,11 @@
-<header class="appHeader">
+<div class="appHeaderShell">
+  @if (permissions.matrixSyncError(); as matrixErr) {
+    <div class="matrixSyncBanner" role="alert">
+      <span class="matrixSyncBannerText">Не удалось обновить матрицу прав с сервера. {{ matrixErr }}</span>
+      <button type="button" class="matrixSyncBannerDismiss" (click)="dismissMatrixSyncError()">Скрыть</button>
+    </div>
+  }
+  <header class="appHeader">
   <a routerLink="/" class="brand" aria-label="Sporting Yoga — CRM, на главный экран">
     <img
       class="brandLogo"
@@ -41,7 +48,19 @@
       </a>
     }
     <ng-content></ng-content>
-    <button type="button" class="logoutBtn" (click)="logout()">Выйти</button>
+    <button
+      type="button"
+      class="logoutBtn"
+      [class.logoutBtn--online]="serverOnline() === true"
+      [class.logoutBtn--offline]="serverOnline() !== true"
+      [attr.title]="
+        serverOnline() === true ? 'API доступен' : 'API недоступен или не отвечает'
+      "
+      (click)="logout()"
+    >
+      Выйти
+    </button>
   </div>
-</header>
+  </header>
+</div>
 

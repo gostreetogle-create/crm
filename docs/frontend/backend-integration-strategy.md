@@ -1,36 +1,18 @@
-# Backend integration strategy (when backend is not ready)
+# Интеграция с backend (текущее состояние)
 
-Сейчас backend отсутствует, поэтому используем правильную промежуточную архитектуру:
+Мок-репозитории и переключатель `useMockRepositories` **сняты**. Источник данных в приложении — **HTTP-репозитории** → Express API → **Prisma / PostgreSQL**.
 
-## Contract-first + repository adapter
+## Паттерн
 
-1. Контракт модели:
-   - `crm-web/src/app/features/material-geometry/model/material-geometry-model.ts`
-2. Интерфейс источника данных:
-   - `crm-web/src/app/features/material-geometry/data/material-geometry.repository.ts`
-3. Текущая реализация (mock):
-   - `crm-web/src/app/features/material-geometry/data/material-geometry.mock-repository.ts`
-4. Реальная реализация (HTTP):
-   - `crm-web/src/app/features/material-geometry/data/material-geometry.http-repository.ts`
-5. API-конфиг:
-   - `crm-web/src/app/core/api/api-config.ts`
-6. Подключение в DI:
-   - `crm-web/src/app/app.config.ts` через factory и `API_CONFIG.useMockRepositories`
+- Контракт модели и `*Repository` (интерфейс) в `crm-web/libs/*-data-access/`.
+- Реализация: `*HttpRepository` (`@Injectable`, `HttpClient`, `API_CONFIG.baseUrl`).
+- Подключение в DI: `provide: TOKEN, useExisting: XxxHttpRepository` (см. `crm-web/src/app/app.config.ts`, `crm-web/libs/dictionaries-hub-feature/.../dictionaries-route.providers.ts`).
+- Авторизация: `SessionAuthService` — только через `/api/auth/login` и `/api/auth/me` (локальный вход без API не используется).
 
-## Почему это правильно
+## Локальный запуск
 
-- UI уже не привязан к hardcoded массивам внутри page.
-- Когда backend появится, нужно только добавить `http`-репозиторий и заменить provider.
-- Страница и shared UI при этом не переписываются.
+См. **`docs/frontend/backend-enable-runbook.md`** (два процесса: backend + `nx serve`).
 
-## Как перейти на реальный API потом
+## История
 
-1. В `crm-web/src/app/core/api/api-config.ts` установить:
-   - `useMockRepositories: false`
-   - `baseUrl: '<url backend>'` (или оставить пустым при proxy)
-2. Убедиться, что backend реализует endpoint `GET /material-geometry/model`.
-3. Сохранить shape ответа совместимым с `MaterialGeometryModel`.
-
-Подробный пошаговый сценарий и откат:
-- `docs/frontend/backend-enable-runbook.md`
-
+Раньше описывался переход с моков на HTTP; сейчас канон — сразу API и БД. Устаревшие ссылки на `api-config.ts` в корне `src/app/core/` и на `*MockRepository` в документах не использовать.

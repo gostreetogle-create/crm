@@ -9,6 +9,8 @@
 
 Для полного AI-аудита и пошагового внедрения UI/UX (формат для нетехнического владельца): [`ai-ui-audit-agent-prompt.ru.md`](./ai-ui-audit-agent-prompt.ru.md).
 
+**Локальный запуск (Postgres + backend + `nx serve`):** [`backend-enable-runbook.md`](./backend-enable-runbook.md); для ассистента в Cursor — `.cursor/rules/local-dev-launch.mdc`.
+
 ## Стандарт выполнения каждой задачи
 
 1. Сначала обновляем/создаём контракт (тип/интерфейс/модель), потом UI и только потом детали.
@@ -35,7 +37,7 @@
    - **пользовательский UI справочников — только хаб `/dictionaries`** (редиректы со старых путей не считаются отдельным экраном); ориентир порядка: `docs/frontend/dictionaries-crud-playbook.md` (раздел «Порядок: единый хаб»),
    - роут приложения для пользователя — `/dictionaries`; DI (репозиторий + store) подключается в `app.routes.ts` внутри этого route в той же задаче,
    - ориентир по реализации: `docs/frontend/dictionaries-crud-playbook.md`,
-   - RBAC (ключи прав, матрица, роли): `docs/frontend/rbac-and-admin-settings.md`; справочник пользователей на хабе: `docs/frontend/users-dictionary.md`.
+   - RBAC (ключи прав, матрица, роли): **`docs/frontend/authz-roles-architecture.md`**, операции и диагностика — `docs/frontend/authz-matrix-runbook.md`; устаревший обзор: `docs/frontend/rbac-and-admin-settings.md`. Справочник пользователей на хабе: `docs/frontend/users-dictionary.md`.
    - запрещены точечные правки "только в одном месте": правка паттерна обязана пройти по всем связанным карточкам/экранам в том же изменении.
 6. После изменений обязательно:
    - `nx build crm-web`,

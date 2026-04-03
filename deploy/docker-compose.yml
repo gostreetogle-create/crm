@@ -33,6 +33,8 @@ services:
       PORT: 3000
       CORS_ORIGIN: ${CORS_ORIGIN}
       JWT_SECRET: ${JWT_SECRET}
+      # Не создавать слабого пользователя director/director при seed в контейнере.
+      SEED_DIRECTOR_USER: "0"
       # Должен совпадать с паролем пользователя crm в уже существующем volume Postgres (смена CRM_POSTGRES_PASSWORD в .env без сброса volume ломает подключение).
       DATABASE_URL: postgresql://crm:${CRM_POSTGRES_PASSWORD:-crm}@postgres:5432/crm?schema=public
       BACKUP_DIR: /var/lib/crm/backups

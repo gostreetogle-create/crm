@@ -13,7 +13,17 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { LucidePlus, LucideX } from '@lucide/angular';
 import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
-import { Observable, Subscription, filter, firstValueFrom, forkJoin, map, of, startWith } from 'rxjs';
+import {
+  Observable,
+  Subscription,
+  filter,
+  finalize,
+  firstValueFrom,
+  forkJoin,
+  map,
+  of,
+  startWith,
+} from 'rxjs';
 import { PermissionsService } from '@srm/authz-runtime';
 import { permissionKeyForDictionaryHubTile } from '@srm/authz-core';
 import { DictionaryStandaloneCreateShellComponent } from '../../components/dictionary-standalone-create-shell/dictionary-standalone-create-shell.component';
@@ -84,6 +94,19 @@ import {
   unitsPayloadFromValues,
   workTypesPayloadFromValues,
 } from './dictionaries-page-payload-builders';
+import { validateAndMapColorRows as validateAndMapColorRowsFn } from './dictionaries-page-excel-validate-colors';
+import { validateAndMapMaterialsRows as validateAndMapMaterialsRowsFn } from './dictionaries-page-excel-validate-materials';
+import { validateAndMapMaterialCharacteristicsRows as validateAndMapMaterialCharacteristicsRowsFn } from './dictionaries-page-excel-validate-material-characteristics';
+import { validateAndMapGeometriesRows as validateAndMapGeometriesRowsFn } from './dictionaries-page-excel-validate-geometries';
+import { validateAndMapWorkTypesRows as validateAndMapWorkTypesRowsFn } from './dictionaries-page-excel-validate-work-types';
+import { validateAndMapProductionDetailsRows as validateAndMapProductionDetailsRowsFn } from './dictionaries-page-excel-validate-production-details';
+import { validateAndMapUnitsRows as validateAndMapUnitsRowsFn } from './dictionaries-page-excel-validate-units';
+import { validateAndMapRolesRows as validateAndMapRolesRowsFn } from './dictionaries-page-excel-validate-roles';
+import { validateAndMapUsersRows as validateAndMapUsersRowsFn } from './dictionaries-page-excel-validate-users';
+import { validateAndMapSurfaceFinishesRows as validateAndMapSurfaceFinishesRowsFn } from './dictionaries-page-excel-validate-surface-finishes';
+import { validateAndMapCoatingsRows as validateAndMapCoatingsRowsFn } from './dictionaries-page-excel-validate-coatings';
+import { validateAndMapClientsRows as validateAndMapClientsRowsFn } from './dictionaries-page-excel-validate-clients';
+import { validateAndMapOrganizationsRows as validateAndMapOrganizationsRowsFn } from './dictionaries-page-excel-validate-organizations';
 import {
   ClientsStore,
   CoatingsStore,
@@ -366,6 +389,12 @@ export class DictionariesPage implements OnDestroy {
   readonly isRolesViewMode = signal(false);
   readonly rolesEditingId = signal<string | null>(null);
   readonly rolesSubmitAttempted = signal(false);
+  /**
+   * Уникальный id формы ролей: одна и та же разметка (#rolesContentTpl) в модалке и на standalone-маршруте.
+   * Дублирующий id="roles-form" в DOM давал лишние сабмиты и несколько POST на одно действие.
+   */
+  readonly rolesFormDomId = signal('roles-form--modal');
+  private rolesSubmitInFlight = false;
   readonly isUsersModalOpen = signal(false);
   readonly isUsersViewMode = signal(false);
   readonly usersEditingId = signal<string | null>(null);
@@ -1813,6 +1842,8 @@ export class DictionariesPage implements OnDestroy {
 
   private initRolesStandaloneCreate(): void {
     if (!this.permissions.crud().canCreate) return;
+    this.closeRolesModal();
+    this.rolesFormDomId.set('roles-form--standalone');
     this.isRolesViewMode.set(false);
     this.rolesEditingId.set(null);
     this.rolesForm.enable({ emitEvent: false });
@@ -2534,6 +2565,7 @@ export class DictionariesPage implements OnDestroy {
     if (!this.permissions.crud().canEdit) return;
     const item = this.rolesStore.roleById(id);
     if (!item) return;
+    this.rolesFormDomId.set('roles-form--modal');
     this.isRolesViewMode.set(false);
     this.rolesEditingId.set(id);
     this.rolesSubmitAttempted.set(false);
@@ -2571,6 +2603,7 @@ export class DictionariesPage implements OnDestroy {
     this.rolesEditingId.set(null);
     this.rolesSubmitAttempted.set(false);
     this.isRolesModalOpen.set(false);
+    this.rolesFormDomId.set('roles-form--modal');
   }
 
   private buildRolesPayload(): RoleItemInput {
@@ -2621,37 +2654,49 @@ export class DictionariesPage implements OnDestroy {
   }
 
   submitRoles(): void {
+    if (this.rolesSubmitInFlight) {
+      return;
+    }
     if (this.rolesForm.invalid) {
       this.rolesSubmitAttempted.set(true);
       this.rolesForm.markAllAsTouched();
-      scrollToFirstInvalidControlInForm('roles-form', this.doc);
+      scrollToFirstInvalidControlInForm(this.rolesFormDomId(), this.doc);
       return;
     }
     const payload = this.buildRolesPayload();
     const editId = this.rolesEditingId();
-    if (editId) {
-      this.rolesStore.update(editId, payload);
-    } else {
-      this.rolesStore.create(payload);
-    }
-    this.closeRolesModal();
-    this.finishStandaloneDictionaryCreateIfMatchCreateOnly('roles', editId);
+    this.rolesSubmitInFlight = true;
+    const op$ = editId ? this.rolesStore.update(editId, payload) : this.rolesStore.create(payload);
+    this.sub.add(
+      op$.pipe(finalize(() => (this.rolesSubmitInFlight = false))).subscribe({
+        next: () => {
+          this.closeRolesModal();
+          this.finishStandaloneDictionaryCreateIfMatchCreateOnly('roles', editId);
+        },
+      }),
+    );
   }
 
   deleteRole(id: string): void {
     if (!this.permissions.crud().canDelete) return;
     const item = this.rolesStore.roleById(id);
     if (!item || item.isSystem) return;
-    this.rolesStore.remove(id);
-    if (this.permissions.role() === id) {
-      this.permissions.setRole(ROLE_ID_SYSTEM_ADMIN);
-    }
+    this.sub.add(
+      this.rolesStore.remove(id).subscribe({
+        next: () => {
+          if (this.permissions.role() === id) {
+            this.permissions.setRole(ROLE_ID_SYSTEM_ADMIN);
+          }
+        },
+      }),
+    );
   }
 
   duplicateRole(id: string): void {
     if (!this.permissions.can('crud.duplicate')) return;
     const item = this.rolesStore.roleById(id);
     if (!item || item.isSystem) return;
+    this.rolesFormDomId.set('roles-form--modal');
     this.isRolesViewMode.set(false);
     this.rolesEditingId.set(null);
     this.rolesSubmitAttempted.set(false);
@@ -4214,7 +4259,7 @@ export class DictionariesPage implements OnDestroy {
         this.excelImportStatus.set(`Импорт отклонен: ${parsed.errors.join(' | ')}`);
         return;
       }
-      this.rolesStore.createMany(parsed.rows);
+      await firstValueFrom(this.rolesStore.createMany(parsed.rows));
       this.excelImportStatus.set(
         `Импортировано: ${parsed.rows.length} строк. Данные обновлены в справочнике.`,
       );
@@ -5467,68 +5512,7 @@ export class DictionariesPage implements OnDestroy {
     rows: Array<{ ralCode?: string; name: string; hex: string; rgb: { r: number; g: number; b: number } }>;
     errors: string[];
   } {
-    const errors: string[] = [];
-    const mapped: Array<{ ralCode?: string; name: string; hex: string; rgb: { r: number; g: number; b: number } }> =
-      [];
-    if (!rows.length) return { ok: false, rows: mapped, errors: ['Пустой файл.'] };
-
-    const requiredHeaders = ['RAL', 'Название', 'HEX', 'RGB'];
-    const firstKeys = Object.keys(rows[0] ?? {});
-    const missingHeaders = requiredHeaders.filter((h) => !firstKeys.includes(h));
-    if (missingHeaders.length) {
-      return {
-        ok: false,
-        rows: mapped,
-        errors: [`Нет колонок: ${missingHeaders.join(', ')}`],
-      };
-    }
-
-    rows.forEach((row, idx) => {
-      const rowNo = idx + 2;
-      const ralRaw = String(row['RAL'] ?? '');
-      const ralCode = normalizeRalCode(ralRaw);
-      const name = String(row['Название'] ?? '').trim();
-      const hex = String(row['HEX'] ?? '').trim().toUpperCase();
-      const rgbRaw = String(row['RGB'] ?? '').trim();
-      if (!name || !hex || !rgbRaw) {
-        errors.push(`Строка ${rowNo}: заполните Название/HEX/RGB.`);
-        return;
-      }
-      if (ralRaw.trim() && !ralCode) {
-        errors.push(`Строка ${rowNo}: RAL должен быть в формате RAL 0000 или 0000.`);
-        return;
-      }
-      if (!/^#([A-F0-9]{6})$/.test(hex)) {
-        errors.push(`Строка ${rowNo}: HEX должен быть #RRGGBB.`);
-        return;
-      }
-      const rgbParts = rgbRaw
-        .split(/[,\s;]+/)
-        .map((x) => x.trim())
-        .filter(Boolean);
-      if (rgbParts.length !== 3 || rgbParts.some((x) => !/^\d+$/.test(x))) {
-        errors.push(`Строка ${rowNo}: RGB должен быть в формате R,G,B.`);
-        return;
-      }
-      const [r, g, b] = rgbParts.map((x) => Number.parseInt(x, 10));
-      if ([r, g, b].some((v) => Number.isNaN(v) || v < 0 || v > 255)) {
-        errors.push(`Строка ${rowNo}: RGB вне диапазона 0..255.`);
-        return;
-      }
-      const check = {
-        r: Number.parseInt(hex.slice(1, 3), 16),
-        g: Number.parseInt(hex.slice(3, 5), 16),
-        b: Number.parseInt(hex.slice(5, 7), 16),
-      };
-      if (check.r !== r || check.g !== g || check.b !== b) {
-        errors.push(`Строка ${rowNo}: RGB не соответствует HEX.`);
-        return;
-      }
-      mapped.push({ ralCode, name, hex, rgb: { r, g, b } });
-    });
-
-    if (errors.length) return { ok: false, rows: mapped, errors: errors.slice(0, 6) };
-    return { ok: true, rows: mapped, errors: [] };
+    return validateAndMapColorRowsFn.call(this, rows);
   }
 
   private ralCodeValidator(control: AbstractControl<string>): ValidationErrors | null {
@@ -5554,125 +5538,7 @@ export class DictionariesPage implements OnDestroy {
     rows: MaterialItemInput[];
     errors: string[];
   } {
-    const errors: string[] = [];
-    const mapped: MaterialItemInput[] = [];
-
-    if (!rows.length) return { ok: false, rows: mapped, errors: ['Пустой файл.'] };
-
-    const firstKeys = Object.keys(rows[0] ?? {});
-    if (!firstKeys.includes('Название') || !firstKeys.includes('Цена ₽')) {
-      return {
-        ok: false,
-        rows: mapped,
-        errors: ['Нужны колонки «Название» и «Цена ₽».'],
-      };
-    }
-
-    const mcByCode = new Map(
-      this.materialCharacteristicsStore
-        .items()
-        .map((x) => [(x.code ?? '').trim().toLowerCase(), x] as const)
-    );
-    const mcById = new Map(this.materialCharacteristicsStore.items().map((x) => [x.id, x] as const));
-
-    rows.forEach((row, idx) => {
-      const rowNo = idx + 2;
-      const name = String(row['Название'] ?? '').trim();
-      const code = String(row['Код'] ?? '').trim();
-      const mcId = String(row['ID характеристики'] ?? '').trim();
-      const mcCode = String(row['Код характеристики'] ?? '').trim();
-      const geoId = String(row['ID геометрии'] ?? '').trim();
-      const geometryName = String(row['Название геометрии'] ?? '').trim();
-      const unitId = String(row['ID единицы'] ?? '').trim();
-      const unitCode = String(row['Код ЕИ'] ?? '').trim();
-      const priceRaw = parseNumberOrNull(row['Цена ₽']);
-      const notes = String(row['Заметки'] ?? '').trim();
-      const activeRaw = String(row['Активен'] ?? '')
-        .trim()
-        .toLowerCase();
-
-      if (!name) {
-        errors.push(`Строка ${rowNo}: укажите название позиции.`);
-        return;
-      }
-
-      let ch = mcId ? mcById.get(mcId) : undefined;
-      if (!ch && mcCode) {
-        ch = mcByCode.get(mcCode.toLowerCase());
-      }
-      if (!ch || !ch.isActive) {
-        errors.push(
-          `Строка ${rowNo}: укажите «ID характеристики» или «Код характеристики» активной записи справочника характеристик.`,
-        );
-        return;
-      }
-
-      let geo = geoId
-        ? this.geometriesStore.items().find((g) => g.id === geoId && g.isActive)
-        : undefined;
-      if (!geo && geometryName) {
-        geo = this.geometriesStore
-          .items()
-          .find((g) => g.isActive && g.name.trim().toLowerCase() === geometryName.toLowerCase());
-      }
-      if (!geo) {
-        errors.push(
-          `Строка ${rowNo}: укажите «ID геометрии» или «Название геометрии» (как у активной записи «Форма и габариты»).`,
-        );
-        return;
-      }
-
-      let unitRef: { id: string; label: string } | null = null;
-      if (unitId) {
-        const u = this.unitsStore.items().find((x) => x.id === unitId);
-        unitRef = u ? { id: u.id, label: `${u.name} (${u.code})` } : null;
-      } else if (unitCode) {
-        unitRef = this.resolveMaterialUnitIdByCode(unitCode);
-      }
-      if (!unitRef) {
-        errors.push(`Строка ${rowNo}: укажите «ID единицы» или «Код ЕИ» из справочника единиц.`);
-        return;
-      }
-
-      const supplierOrgId = String(row['ID поставщика'] ?? '').trim();
-      if (supplierOrgId) {
-        const org = this.organizationsStore.items().find((o) => o.id === supplierOrgId);
-        if (!org) {
-          errors.push(`Строка ${rowNo}: «ID поставщика» — нет организации с таким id в справочнике.`);
-          return;
-        }
-      }
-
-      if (priceRaw === null || Math.round(priceRaw) < 1) {
-        errors.push(`Строка ${rowNo}: «Цена ₽» — целое число не меньше 1.`);
-        return;
-      }
-
-      let isActiveRow = true;
-      if (activeRaw && ['нет', 'no', 'false', '0'].includes(activeRaw)) {
-        isActiveRow = false;
-      } else if (activeRaw && !['да', 'yes', 'true', '1', ''].includes(activeRaw)) {
-        errors.push(`Строка ${rowNo}: в «Активен» укажите да или нет.`);
-        return;
-      }
-
-      mapped.push({
-        name,
-        code: code || undefined,
-        materialCharacteristicId: ch.id,
-        geometryId: geo.id,
-        geometryName: geo.name,
-        unitId: unitRef.id,
-        unitName: unitRef.label,
-        supplierOrganizationId: supplierOrgId || undefined,
-        purchasePriceRub: Math.round(priceRaw),
-        notes: notes || undefined,
-        isActive: isActiveRow,
-      });
-    });
-
-    if (errors.length) return { ok: false, rows: mapped, errors: errors.slice(0, 6) };
-    return { ok: true, rows: mapped, errors: [] };
+    return validateAndMapMaterialsRowsFn.call(this, rows);
   }
 
   private validateAndMapMaterialCharacteristicsRows(rows: ReadonlyArray<Record<string, unknown>>): {
@@ -5680,163 +5546,7 @@ export class DictionariesPage implements OnDestroy {
     drafts: MaterialCharacteristicsImportDraftRow[];
     errors: string[];
   } {
-    const errors: string[] = [];
-    const drafts: MaterialCharacteristicsImportDraftRow[] = [];
-
-    if (!rows.length) return { ok: false, drafts, errors: ['Пустой файл.'] };
-
-    const firstKeys = Object.keys(rows[0] ?? {});
-    const legacyFormat = firstKeys.includes('Цвет') && !firstKeys.includes('ID цвета');
-    const newFormat = firstKeys.includes('ID цвета');
-
-    const snap: ReferenceSnapshot = {
-      colors: this.colorsStore.items(),
-      surfaceFinishes: this.surfaceFinishesStore.items(),
-      coatings: this.coatingsStore.items(),
-    };
-
-    if (legacyFormat) {
-      const requiredHeaders = [
-        'Название',
-        'Код',
-        'Плотность',
-        'Цвет',
-        'Финиш',
-        'Покрытие',
-        'Заметки',
-        'Активен',
-      ];
-      const missingHeaders = requiredHeaders.filter((h) => !firstKeys.includes(h));
-      if (missingHeaders.length) {
-        return {
-          ok: false,
-          drafts,
-          errors: [`Нет колонок: ${missingHeaders.join(', ')}`],
-        };
-      }
-
-      rows.forEach((row, idx) => {
-        const rowNo = idx + 2;
-        const name = String(row['Название'] ?? '').trim();
-        const code = String(row['Код'] ?? '').trim();
-        const densityRaw = row['Плотность'];
-        const colorRaw = String(row['Цвет'] ?? '').trim();
-        const finishRaw = String(row['Финиш'] ?? '').trim();
-        const coatingCell = String(row['Покрытие'] ?? '').trim();
-        const notes = String(row['Заметки'] ?? '').trim();
-        const activeRaw = String(row['Активен'] ?? '')
-          .trim()
-          .toLowerCase();
-
-        if (!name || !colorRaw || !finishRaw || !coatingCell) {
-          errors.push(`Строка ${rowNo}: заполните Название/Цвет/Финиш/Покрытие.`);
-          return;
-        }
-
-        let densityKgM3: number | undefined;
-        if (densityRaw !== '' && densityRaw !== null && densityRaw !== undefined) {
-          const d = parseNumberOrNull(densityRaw);
-          if (d === null || d < 0) {
-            errors.push(`Строка ${rowNo}: Плотность должна быть числом >= 0 или пусто.`);
-            return;
-          }
-          densityKgM3 = d;
-        }
-
-        let isActiveRow = true;
-        if (!activeRaw) {
-          isActiveRow = true;
-        } else if (['да', 'yes', 'true', '1'].includes(activeRaw)) {
-          isActiveRow = true;
-        } else if (['нет', 'no', 'false', '0'].includes(activeRaw)) {
-          isActiveRow = false;
-        } else {
-          errors.push(`Строка ${rowNo}: в «Активен» укажите да или нет.`);
-          return;
-        }
-
-        drafts.push({
-          name,
-          code: code || undefined,
-          densityKgM3,
-          colorRaw,
-          finishRaw,
-          coatingCell,
-          notes: notes || undefined,
-          isActive: isActiveRow,
-        });
-      });
-    } else if (newFormat) {
-      if (!firstKeys.includes('Название')) {
-        return { ok: false, drafts, errors: ['Нужна колонка «Название».'] };
-      }
-
-      rows.forEach((row, idx) => {
-        const rowNo = idx + 2;
-        const name = String(row['Название'] ?? '').trim();
-        if (!name) {
-          errors.push(`Строка ${rowNo}: укажите название.`);
-          return;
-        }
-        const code = String(row['Код'] ?? '').trim();
-        const densityRaw = row['Плотность кг/м³'];
-        const notes = String(row['Заметки'] ?? '').trim();
-        const activeRaw = String(row['Активен'] ?? '')
-          .trim()
-          .toLowerCase();
-
-        let densityKgM3: number | undefined;
-        if (densityRaw !== '' && densityRaw !== null && densityRaw !== undefined) {
-          const d = parseNumberOrNull(densityRaw);
-          if (d === null || d < 0) {
-            errors.push(`Строка ${rowNo}: Плотность должна быть числом >= 0 или пусто.`);
-            return;
-          }
-          densityKgM3 = d;
-        }
-
-        let isActiveRow = true;
-        if (!activeRaw) {
-          isActiveRow = true;
-        } else if (['да', 'yes', 'true', '1'].includes(activeRaw)) {
-          isActiveRow = true;
-        } else if (['нет', 'no', 'false', '0'].includes(activeRaw)) {
-          isActiveRow = false;
-        } else {
-          errors.push(`Строка ${rowNo}: в «Активен» укажите да или нет.`);
-          return;
-        }
-
-        const colorRaw = this.resolveMcImportColorRaw(row, snap, rowNo, errors);
-        const finishRaw = this.resolveMcImportFinishRaw(row, snap, rowNo, errors);
-        const coatingCell = this.resolveMcImportCoatingCell(row, snap, rowNo, errors);
-        if (colorRaw === null || finishRaw === null || coatingCell === null) {
-          return;
-        }
-
-        drafts.push({
-          name,
-          code: code || undefined,
-          densityKgM3,
-          colorRaw,
-          finishRaw,
-          coatingCell,
-          notes: notes || undefined,
-          isActive: isActiveRow,
-        });
-      });
-    } else {
-      return {
-        ok: false,
-        drafts,
-        errors: [
-          'Неизвестный формат файла: для старого шаблона нужны колонки «Цвет», «Финиш», «Покрытие»; для нового скачайте шаблон с хаба (колонки «ID цвета», …).',
-        ],
-      };
-    }
-
-    if (errors.length) return { ok: false, drafts, errors: errors.slice(0, 6) };
-    return { ok: true, drafts, errors: [] };
+    return validateAndMapMaterialCharacteristicsRowsFn.call(this, rows);
   }
 
   /** Строка для сопоставления цвета: по ID из файла или текст «Название цвета». */
@@ -6010,132 +5720,7 @@ export class DictionariesPage implements OnDestroy {
     }>;
     errors: string[];
   } {
-    const errors: string[] = [];
-    const mapped: Array<{
-      name: string;
-      shapeKey: string;
-      heightMm?: number;
-      lengthMm?: number;
-      widthMm?: number;
-      diameterMm?: number;
-      thicknessMm?: number;
-      notes?: string;
-      isActive: boolean;
-    }> = [];
-
-    if (!rows.length) return { ok: false, rows: mapped, errors: ['Пустой файл.'] };
-
-    const requiredHeaders = ['Название', 'Тип', 'Параметры'];
-    const firstKeys = Object.keys(rows[0] ?? {});
-    const missingHeaders = requiredHeaders.filter((h) => !firstKeys.includes(h));
-    if (missingHeaders.length) {
-      return { ok: false, rows: mapped, errors: [`Нет колонок: ${missingHeaders.join(', ')}`] };
-    }
-
-    const allowedShapes = new Set(['rectangular', 'cylindrical', 'tube', 'plate', 'custom']);
-
-    const extractNumber = (source: string, pattern: RegExp): number | null => {
-      const match = pattern.exec(source);
-      if (!match) return null;
-      return parseNumberOrNull(match[1]);
-    };
-
-    rows.forEach((row, idx) => {
-      const rowNo = idx + 2;
-      const name = String(row['Название'] ?? '').trim();
-      const shapeKey = String(row['Тип'] ?? '').trim().toLowerCase();
-      const paramsRaw = String(row['Параметры'] ?? '').trim();
-
-      if (!name || !paramsRaw) {
-        errors.push(`Строка ${rowNo}: заполните Название и Параметры.`);
-        return;
-      }
-      if (!allowedShapes.has(shapeKey)) {
-        errors.push(`Строка ${rowNo}: Тип должен быть одним из: ${Array.from(allowedShapes).join(', ')}.`);
-        return;
-      }
-
-      const params = paramsRaw;
-      let heightMm = extractNumber(params, /В\s*([0-9.,-]+)/i);
-      let lengthMm = extractNumber(params, /Дл\s*([0-9.,-]+)/i);
-      let widthMm = extractNumber(params, /Ш\s*([0-9.,-]+)/i);
-      let diameterMm = extractNumber(params, /Диам\s*([0-9.,-]+)/i);
-      let thicknessMm = extractNumber(params, /Толщ\s*([0-9.,-]+)/i);
-
-      const legacyAny =
-        heightMm !== null ||
-        lengthMm !== null ||
-        widthMm !== null ||
-        diameterMm !== null ||
-        thicknessMm !== null;
-
-      if (!legacyAny) {
-        const c = this.tryParseCompactGeometryParams(params, shapeKey);
-        if (c) {
-          heightMm = c.heightMm;
-          lengthMm = c.lengthMm;
-          widthMm = c.widthMm;
-          diameterMm = c.diameterMm;
-          thicknessMm = c.thicknessMm;
-        }
-      }
-
-      const extractedAny = [heightMm, lengthMm, widthMm, diameterMm, thicknessMm].some((v) => v !== null);
-      if (!extractedAny) {
-        errors.push(
-          `Строка ${rowNo}: Параметры не распознаны (старый формат: «В/Дл/Ш/Диам/Толщ …» или компактно: 20×20×3×6000 мм, ⌀32×2×6000 мм и т.п.).`
-        );
-        return;
-      }
-
-      const requireIf = (cond: boolean, msg: string): void => {
-        if (!cond) errors.push(`Строка ${rowNo}: ${msg}`);
-      };
-
-      if (shapeKey === 'rectangular') {
-        requireIf(heightMm !== null, 'для rectangular нужны значения В.');
-        requireIf(lengthMm !== null, 'для rectangular нужны значения Дл.');
-        requireIf(widthMm !== null, 'для rectangular нужны значения Ш.');
-      } else if (shapeKey === 'cylindrical') {
-        requireIf(diameterMm !== null, 'для cylindrical нужны значения Диам.');
-        requireIf(lengthMm !== null, 'для cylindrical нужны значения Дл.');
-      } else if (shapeKey === 'tube') {
-        requireIf(diameterMm !== null, 'для tube нужны значения Диам.');
-        requireIf(lengthMm !== null, 'для tube нужны значения Дл.');
-        requireIf(thicknessMm !== null, 'для tube нужны значения Толщ.');
-      } else if (shapeKey === 'plate') {
-        requireIf(lengthMm !== null, 'для plate нужны значения Дл.');
-        requireIf(widthMm !== null, 'для plate нужны значения Ш.');
-        requireIf(thicknessMm !== null, 'для plate нужны значения Толщ.');
-      }
-
-      if (errors.length && errors[errors.length - 1].startsWith(`Строка ${rowNo}:`)) {
-        // если в этой строке накопились ошибки — не добавляем запись
-        const rowErrorsCount = errors.filter((e) => e.startsWith(`Строка ${rowNo}:`)).length;
-        if (rowErrorsCount) return;
-      }
-
-      const nonNegative = (v: number | null): boolean => v === null || v >= 0;
-      if (![heightMm, lengthMm, widthMm, diameterMm, thicknessMm].every(nonNegative)) {
-        errors.push(`Строка ${rowNo}: параметры должны быть >= 0.`);
-        return;
-      }
-
-      mapped.push({
-        name,
-        shapeKey,
-        heightMm: heightMm ?? undefined,
-        lengthMm: lengthMm ?? undefined,
-        widthMm: widthMm ?? undefined,
-        diameterMm: diameterMm ?? undefined,
-        thicknessMm: thicknessMm ?? undefined,
-        notes: '',
-        isActive: true,
-      });
-    });
-
-    if (errors.length) return { ok: false, rows: mapped, errors: errors.slice(0, 6) };
-    return { ok: true, rows: mapped, errors: [] };
+    return validateAndMapGeometriesRowsFn.call(this, rows);
   }
 
   private parseExcelBool(raw: unknown, defaultTrue: boolean): boolean {
@@ -6157,69 +5742,7 @@ export class DictionariesPage implements OnDestroy {
     }>;
     errors: string[];
   } {
-    const errors: string[] = [];
-    const mapped: Array<{
-      name: string;
-      shortLabel: string;
-      hourlyRateRub: number;
-      isActive: boolean;
-    }> = [];
-
-    if (!rows.length) return { ok: false, rows: mapped, errors: ['Пустой файл.'] };
-
-    const requiredHeaders = ['Наименование', 'Короткое обозначение', 'Ставка руб/ч', 'Активна'];
-    const firstKeys = Object.keys(rows[0] ?? {});
-    const missingHeaders = requiredHeaders.filter((h) => !firstKeys.includes(h));
-    if (missingHeaders.length) {
-      return { ok: false, rows: mapped, errors: [`Нет колонок: ${missingHeaders.join(', ')}`] };
-    }
-
-    const seenInFile = new Set<string>();
-    const existingNames = new Set(
-      this.productionWorkTypesStore.items().map((x) => normalizeWorkTypeName(x.name))
-    );
-
-    rows.forEach((row, idx) => {
-      const rowNo = idx + 2;
-      const name = String(row['Наименование'] ?? '').trim();
-      const shortLabel = String(row['Короткое обозначение'] ?? '').trim();
-      const rateRaw = parseNumberOrNull(row['Ставка руб/ч']);
-      const isActive = this.parseExcelBool(row['Активна'], true);
-      const nameKey = normalizeWorkTypeName(name);
-
-      if (!name || !shortLabel) {
-        errors.push(`Строка ${rowNo}: заполните Наименование и Короткое обозначение.`);
-        return;
-      }
-      if (rateRaw === null) {
-        errors.push(`Строка ${rowNo}: укажите числовую «Ставка руб/ч».`);
-        return;
-      }
-      const hourlyRateRub = Math.round(rateRaw);
-      if (hourlyRateRub < 1) {
-        errors.push(`Строка ${rowNo}: «Ставка руб/ч» — целое число не меньше 1.`);
-        return;
-      }
-      if (name.length < 2) {
-        errors.push(`Строка ${rowNo}: Наименование — минимум 2 символа.`);
-        return;
-      }
-      if (seenInFile.has(nameKey)) {
-        errors.push(`Строка ${rowNo}: наименование «${name}» повторяется в файле.`);
-        return;
-      }
-      seenInFile.add(nameKey);
-      if (existingNames.has(nameKey)) {
-        errors.push(`Строка ${rowNo}: наименование «${name}» уже есть в справочнике.`);
-        return;
-      }
-      existingNames.add(nameKey);
-
-      mapped.push({ name, shortLabel, hourlyRateRub, isActive });
-    });
-
-    if (errors.length) return { ok: false, rows: mapped, errors: errors.slice(0, 6) };
-    return { ok: true, rows: mapped, errors: [] };
+    return validateAndMapWorkTypesRowsFn.call(this, rows);
   }
 
   private isUuidString(raw: string): boolean {
@@ -6233,91 +5756,7 @@ export class DictionariesPage implements OnDestroy {
     rows: ProductionDetailItemInput[];
     errors: string[];
   } {
-    const errors: string[] = [];
-    const mapped: ProductionDetailItemInput[] = [];
-
-    if (!rows.length) return { ok: false, rows: mapped, errors: ['Пустой файл.'] };
-
-    const firstKeys = Object.keys(rows[0] ?? {});
-    if (!firstKeys.includes('Название')) {
-      return { ok: false, rows: mapped, errors: ['Нужна колонка «Название».'] };
-    }
-
-    const matIds = new Set(this.materialsStore.items().map((m) => m.id));
-    const wtIds = new Set(this.productionWorkTypesStore.items().map((w) => w.id));
-
-    rows.forEach((row, idx) => {
-      const rowNo = idx + 2;
-      const name = String(row['Название'] ?? '').trim();
-      const qtyRaw = parseNumberOrNull(row['Кол-во']);
-      const qty = qtyRaw != null && qtyRaw > 0 ? qtyRaw : 1;
-      const code = String(row['Код'] ?? '').trim();
-      const notes = String(row['Заметки'] ?? '').trim();
-      const isActive = this.parseExcelBool(row['Активен'], true);
-
-      const srcMat = String(row['ID источник материала'] ?? '').trim();
-      const srcWt = String(row['ID источник вида работ'] ?? '').trim();
-
-      if (!name || name.length < 2) {
-        errors.push(`Строка ${rowNo}: укажите «Название» (минимум 2 символа).`);
-        return;
-      }
-      if (qtyRaw !== null && qtyRaw <= 0) {
-        errors.push(`Строка ${rowNo}: «Кол-во» должно быть больше 0.`);
-        return;
-      }
-
-      if (srcMat) {
-        if (!this.isUuidString(srcMat)) {
-          errors.push(`Строка ${rowNo}: «ID источник материала» — неверный формат UUID.`);
-          return;
-        }
-        if (!matIds.has(srcMat)) {
-          errors.push(`Строка ${rowNo}: материал с таким id не найден в справочнике.`);
-          return;
-        }
-      }
-      if (srcWt) {
-        if (!this.isUuidString(srcWt)) {
-          errors.push(`Строка ${rowNo}: «ID источник вида работ» — неверный формат UUID.`);
-          return;
-        }
-        if (!wtIds.has(srcWt)) {
-          errors.push(`Строка ${rowNo}: вид работ с таким id не найден в справочнике.`);
-          return;
-        }
-      }
-
-      const payload = productionDetailsPayloadFromValues({
-        name,
-        code,
-        qty,
-        notes,
-        isActive,
-        sourceMaterialId: srcMat,
-        sourceWorkTypeId: srcWt,
-        snapshotMaterialName: String(row['Материал название'] ?? ''),
-        snapshotMaterialCode: String(row['Материал код'] ?? ''),
-        snapshotUnitCode: String(row['ЕИ код'] ?? ''),
-        snapshotUnitName: String(row['ЕИ название'] ?? ''),
-        snapshotPurchasePriceRub: parseNumberOrNull(row['Цена закуп ₽']),
-        snapshotDensityKgM3: parseNumberOrNull(row['Плотность кг/м³']),
-        snapshotHeightMm: parseNumberOrNull(row['В мм']),
-        snapshotLengthMm: parseNumberOrNull(row['Дл мм']),
-        snapshotWidthMm: parseNumberOrNull(row['Ш мм']),
-        snapshotDiameterMm: parseNumberOrNull(row['Диам мм']),
-        snapshotThicknessMm: parseNumberOrNull(row['Толщ мм']),
-        snapshotCharacteristicName: String(row['Характеристика'] ?? ''),
-        snapshotWorkTypeName: String(row['Вид работ'] ?? ''),
-        snapshotWorkShortLabel: String(row['Сокращение работ'] ?? ''),
-        snapshotHourlyRateRub: parseNumberOrNull(row['Ставка ₽/ч']),
-        workTimeHours: parseNumberOrNull(row['Часы работ']),
-      });
-      mapped.push(payload);
-    });
-
-    if (errors.length) return { ok: false, rows: mapped, errors: errors.slice(0, 6) };
-    return { ok: true, rows: mapped, errors: [] };
+    return validateAndMapProductionDetailsRowsFn.call(this, rows);
   }
 
   private validateAndMapUnitsRows(rows: ReadonlyArray<Record<string, unknown>>): {
@@ -6325,38 +5764,7 @@ export class DictionariesPage implements OnDestroy {
     rows: Array<{ name: string; code: string; notes?: string; isActive: boolean }>;
     errors: string[];
   } {
-    const errors: string[] = [];
-    const mapped: Array<{ name: string; code: string; notes?: string; isActive: boolean }> = [];
-
-    if (!rows.length) return { ok: false, rows: mapped, errors: ['Пустой файл.'] };
-
-    const requiredHeaders = ['Название', 'Код', 'Комментарий'];
-    const firstKeys = Object.keys(rows[0] ?? {});
-    const missingHeaders = requiredHeaders.filter((h) => !firstKeys.includes(h));
-    if (missingHeaders.length) {
-      return { ok: false, rows: mapped, errors: [`Нет колонок: ${missingHeaders.join(', ')}`] };
-    }
-
-    rows.forEach((row, idx) => {
-      const rowNo = idx + 2;
-      const name = String(row['Название'] ?? '').trim();
-      const code = String(row['Код'] ?? '').trim();
-      const notes = String(row['Комментарий'] ?? '').trim();
-
-      if (!name) {
-        errors.push(`Строка ${rowNo}: Название обязательно.`);
-        return;
-      }
-      if (!code || code.length < 2) {
-        errors.push(`Строка ${rowNo}: Код должен быть строкой длиной >= 2.`);
-        return;
-      }
-
-      mapped.push({ name, code, notes, isActive: true });
-    });
-
-    if (errors.length) return { ok: false, rows: mapped, errors: errors.slice(0, 6) };
-    return { ok: true, rows: mapped, errors: [] };
+    return validateAndMapUnitsRowsFn.call(this, rows);
   }
 
   private validateAndMapRolesRows(rows: ReadonlyArray<Record<string, unknown>>): {
@@ -6364,89 +5772,7 @@ export class DictionariesPage implements OnDestroy {
     rows: RoleItemInput[];
     errors: string[];
   } {
-    const errors: string[] = [];
-    const mapped: RoleItemInput[] = [];
-
-    if (!rows.length) return { ok: false, rows: mapped, errors: ['Пустой файл.'] };
-
-    const requiredHeaders = ['Код', 'Порядок', 'Название', 'Заметка', 'Активна'];
-    const firstKeys = Object.keys(rows[0] ?? {});
-    const missingHeaders = requiredHeaders.filter((h) => !firstKeys.includes(h));
-    if (missingHeaders.length) {
-      return { ok: false, rows: mapped, errors: [`Нет колонок: ${missingHeaders.join(', ')}`] };
-    }
-
-    const codeRe = /^[a-zA-Z][a-zA-Z0-9_]*$/;
-    const reservedLower = new Set(this.rolesStore.items().map((r) => r.code.trim().toLowerCase()));
-
-    rows.forEach((row, idx) => {
-      const rowNo = idx + 2;
-      let code = String(row['Код'] ?? '').trim();
-      const sortRaw = parseNumberOrNull(row['Порядок']);
-      const name = String(row['Название'] ?? '').trim();
-      const notes = String(row['Заметка'] ?? '').trim();
-      const activeRaw = String(row['Активна'] ?? 'да').trim().toLowerCase();
-
-      if (sortRaw === null || !Number.isInteger(sortRaw) || sortRaw < 1 || sortRaw > 999_999) {
-        errors.push(`Строка ${rowNo}: «Порядок» — целое число от 1 до 999999.`);
-        return;
-      }
-
-      if (!name || name.length < 2) {
-        errors.push(`Строка ${rowNo}: Название — минимум 2 символа.`);
-        return;
-      }
-
-      if (code) {
-        if (!codeRe.test(code)) {
-          errors.push(
-            `Строка ${rowNo}: Код — латиница, с буквы, далее буквы/цифры/_ (мин. длина 2), либо оставьте ячейку пустой.`,
-          );
-          return;
-        }
-        if (code.length < 2) {
-          errors.push(`Строка ${rowNo}: Код не короче 2 символов (или оставьте пустым — создастся из названия).`);
-          return;
-        }
-        if (code.toLowerCase() === 'admin') {
-          errors.push(`Строка ${rowNo}: код «admin» зарезервирован для суперадминистратора.`);
-          return;
-        }
-      } else {
-        code = allocateUniqueRoleCode(slugifyRoleCodeFromName(name), reservedLower);
-      }
-
-      let isActive = true;
-      if (['да', 'yes', 'true', '1'].includes(activeRaw)) {
-        isActive = true;
-      } else if (['нет', 'no', 'false', '0'].includes(activeRaw)) {
-        isActive = false;
-      } else {
-        errors.push(`Строка ${rowNo}: в «Активна» укажите да или нет.`);
-        return;
-      }
-
-      const ck = code.toLowerCase();
-      if (reservedLower.has(ck)) {
-        errors.push(
-          `Строка ${rowNo}: код «${code}» уже занят (в справочнике или повтор в файле выше).`,
-        );
-        return;
-      }
-      reservedLower.add(ck);
-
-      mapped.push({
-        code,
-        name,
-        sortOrder: sortRaw,
-        notes: notes || undefined,
-        isActive,
-        isSystem: false,
-      });
-    });
-
-    if (errors.length) return { ok: false, rows: mapped, errors: errors.slice(0, 6) };
-    return { ok: true, rows: mapped, errors: [] };
+    return validateAndMapRolesRowsFn.call(this, rows);
   }
 
   private validateAndMapUsersRows(rows: ReadonlyArray<Record<string, unknown>>): {
@@ -6454,76 +5780,7 @@ export class DictionariesPage implements OnDestroy {
     rows: UserItemInput[];
     errors: string[];
   } {
-    const errors: string[] = [];
-    const mapped: UserItemInput[] = [];
-
-    if (!rows.length) return { ok: false, rows: mapped, errors: ['Пустой файл.'] };
-
-    const requiredHeaders = ['Логин', 'ФИО', 'Email', 'Телефон', 'Код роли', 'Пароль'];
-    const firstKeys = Object.keys(rows[0] ?? {});
-    const missingHeaders = requiredHeaders.filter((h) => !firstKeys.includes(h));
-    if (missingHeaders.length) {
-      return { ok: false, rows: mapped, errors: [`Нет колонок: ${missingHeaders.join(', ')}`] };
-    }
-
-    const rolesByCode = new Map(
-      this.rolesStore.items().map((r) => [r.code.trim().toLowerCase(), r] as const),
-    );
-    const seenLogins = new Set<string>();
-
-    rows.forEach((row, idx) => {
-      const rowNo = idx + 2;
-      const login = String(row['Логин'] ?? '').trim();
-      const fullName = String(row['ФИО'] ?? '').trim();
-      const email = String(row['Email'] ?? '').trim();
-      const phone = String(row['Телефон'] ?? '').trim();
-      const roleCode = String(row['Код роли'] ?? '').trim();
-      const password = String(row['Пароль'] ?? '').trim();
-
-      if (!login || login.length < 2) {
-        errors.push(`Строка ${rowNo}: логин обязателен (минимум 2 символа).`);
-        return;
-      }
-      const lk = login.toLowerCase();
-      if (seenLogins.has(lk)) {
-        errors.push(`Строка ${rowNo}: логин «${login}» повторяется в файле.`);
-        return;
-      }
-      seenLogins.add(lk);
-      if (this.usersStore.items().some((u) => u.login.trim().toLowerCase() === lk)) {
-        errors.push(`Строка ${rowNo}: логин «${login}» уже есть в справочнике.`);
-        return;
-      }
-      if (!fullName || fullName.length < 2) {
-        errors.push(`Строка ${rowNo}: ФИО — минимум 2 символа.`);
-        return;
-      }
-      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        errors.push(`Строка ${rowNo}: проверьте формат email.`);
-        return;
-      }
-      const role = rolesByCode.get(roleCode.toLowerCase());
-      if (!role || !role.isActive) {
-        errors.push(`Строка ${rowNo}: неизвестный или неактивный код роли «${roleCode}».`);
-        return;
-      }
-      if (!password || password.length < 4) {
-        errors.push(`Строка ${rowNo}: пароль обязателен, минимум 4 символа.`);
-        return;
-      }
-
-      mapped.push({
-        login,
-        password,
-        fullName,
-        email,
-        phone,
-        roleId: role.id,
-      });
-    });
-
-    if (errors.length) return { ok: false, rows: mapped, errors: errors.slice(0, 6) };
-    return { ok: true, rows: mapped, errors: [] };
+    return validateAndMapUsersRowsFn.call(this, rows);
   }
 
   private validateAndMapSurfaceFinishesRows(rows: ReadonlyArray<Record<string, unknown>>): {
@@ -6531,38 +5788,7 @@ export class DictionariesPage implements OnDestroy {
     rows: Array<{ finishType: string; roughnessClass: string; raMicron?: number }>;
     errors: string[];
   } {
-    const errors: string[] = [];
-    const mapped: Array<{ finishType: string; roughnessClass: string; raMicron?: number }> = [];
-
-    if (!rows.length) return { ok: false, rows: mapped, errors: ['Пустой файл.'] };
-
-    const requiredHeaders = ['Тип финиша', 'Шероховатость', 'Ra, мкм'];
-    const firstKeys = Object.keys(rows[0] ?? {});
-    const missingHeaders = requiredHeaders.filter((h) => !firstKeys.includes(h));
-    if (missingHeaders.length) {
-      return { ok: false, rows: mapped, errors: [`Нет колонок: ${missingHeaders.join(', ')}`] };
-    }
-
-    rows.forEach((row, idx) => {
-      const rowNo = idx + 2;
-      const finishType = String(row['Тип финиша'] ?? '').trim();
-      const roughnessClass = String(row['Шероховатость'] ?? '').trim();
-      const raMicron = parseNumberOrNull(row['Ra, мкм']);
-
-      if (!finishType || !roughnessClass || raMicron === null) {
-        errors.push(`Строка ${rowNo}: заполните Тип финиша/Шероховатость/Ra, мкм.`);
-        return;
-      }
-      if (raMicron < 0) {
-        errors.push(`Строка ${rowNo}: Ra, мкм должен быть >= 0.`);
-        return;
-      }
-
-      mapped.push({ finishType, roughnessClass, raMicron });
-    });
-
-    if (errors.length) return { ok: false, rows: mapped, errors: errors.slice(0, 6) };
-    return { ok: true, rows: mapped, errors: [] };
+    return validateAndMapSurfaceFinishesRowsFn.call(this, rows);
   }
 
   private validateAndMapCoatingsRows(rows: ReadonlyArray<Record<string, unknown>>): {
@@ -6570,38 +5796,7 @@ export class DictionariesPage implements OnDestroy {
     rows: Array<{ coatingType: string; coatingSpec: string; thicknessMicron?: number }>;
     errors: string[];
   } {
-    const errors: string[] = [];
-    const mapped: Array<{ coatingType: string; coatingSpec: string; thicknessMicron?: number }> = [];
-
-    if (!rows.length) return { ok: false, rows: mapped, errors: ['Пустой файл.'] };
-
-    const requiredHeaders = ['Тип покрытия', 'Спецификация', 'Толщина, мкм'];
-    const firstKeys = Object.keys(rows[0] ?? {});
-    const missingHeaders = requiredHeaders.filter((h) => !firstKeys.includes(h));
-    if (missingHeaders.length) {
-      return { ok: false, rows: mapped, errors: [`Нет колонок: ${missingHeaders.join(', ')}`] };
-    }
-
-    rows.forEach((row, idx) => {
-      const rowNo = idx + 2;
-      const coatingType = String(row['Тип покрытия'] ?? '').trim();
-      const coatingSpec = String(row['Спецификация'] ?? '').trim();
-      const thicknessMicron = parseNumberOrNull(row['Толщина, мкм']);
-
-      if (!coatingType || !coatingSpec || thicknessMicron === null) {
-        errors.push(`Строка ${rowNo}: заполните Тип покрытия/Спецификация/Толщина, мкм.`);
-        return;
-      }
-      if (thicknessMicron < 0) {
-        errors.push(`Строка ${rowNo}: Толщина, мкм должен быть >= 0.`);
-        return;
-      }
-
-      mapped.push({ coatingType, coatingSpec, thicknessMicron });
-    });
-
-    if (errors.length) return { ok: false, rows: mapped, errors: errors.slice(0, 6) };
-    return { ok: true, rows: mapped, errors: [] };
+    return validateAndMapCoatingsRowsFn.call(this, rows);
   }
 
   private validateAndMapClientsRows(rows: ReadonlyArray<Record<string, unknown>>): {
@@ -6609,103 +5804,7 @@ export class DictionariesPage implements OnDestroy {
     rows: ClientItemInput[];
     errors: string[];
   } {
-    const errors: string[] = [];
-    const mapped: ClientItemInput[] = [];
-
-    if (!rows.length) return { ok: false, rows: mapped, errors: ['Пустой файл.'] };
-
-    const requiredHeaders = [
-      'Фамилия',
-      'Имя',
-      'Отчество',
-      'Адрес',
-      'Телефон',
-      'Email',
-      'Активен',
-      'Заметки',
-      'Паспорт серия',
-      'Паспорт номер',
-      'Кем выдан',
-      'Дата выдачи',
-    ];
-    const firstKeys = Object.keys(rows[0] ?? {});
-    const missingHeaders = requiredHeaders.filter((h) => !firstKeys.includes(h));
-    if (missingHeaders.length) {
-      return { ok: false, rows: mapped, errors: [`Нет колонок: ${missingHeaders.join(', ')}`] };
-    }
-
-    rows.forEach((row, idx) => {
-      const rowNo = idx + 2;
-      const lastName = String(row['Фамилия'] ?? '').trim();
-      const firstName = String(row['Имя'] ?? '').trim();
-      const patronymic = String(row['Отчество'] ?? '').trim();
-      const address = String(row['Адрес'] ?? '').trim();
-      const phone = String(row['Телефон'] ?? '').trim();
-      const email = String(row['Email'] ?? '').trim();
-      const markupRaw = row['Наценка %'];
-      const activeRaw = String(row['Активен'] ?? '')
-        .trim()
-        .toLowerCase();
-      const notes = String(row['Заметки'] ?? '').trim();
-      const passportSeries = String(row['Паспорт серия'] ?? '').trim();
-      const passportNumber = String(row['Паспорт номер'] ?? '').trim();
-      const passportIssuedBy = String(row['Кем выдан'] ?? '').trim();
-      const passportIssuedDate = String(row['Дата выдачи'] ?? '').trim();
-
-      if (!lastName) {
-        errors.push(`Строка ${rowNo}: укажите фамилию.`);
-        return;
-      }
-      if (!firstName) {
-        errors.push(`Строка ${rowNo}: укажите имя.`);
-        return;
-      }
-
-      let clientMarkupPercent: number | null = null;
-      if (markupRaw !== '' && markupRaw !== null && markupRaw !== undefined) {
-        const n = parseNumberOrNull(markupRaw);
-        if (n === null) {
-          errors.push(`Строка ${rowNo}: «Наценка %» должна быть числом или пусто.`);
-          return;
-        }
-        if (n < 0 || n > 1000) {
-          errors.push(`Строка ${rowNo}: наценка в диапазоне 0…1000 %.`);
-          return;
-        }
-        clientMarkupPercent = Math.round(n);
-      }
-
-      let isActiveRow = true;
-      if (!activeRaw) {
-        isActiveRow = true;
-      } else if (['да', 'yes', 'true', '1'].includes(activeRaw)) {
-        isActiveRow = true;
-      } else if (['нет', 'no', 'false', '0'].includes(activeRaw)) {
-        isActiveRow = false;
-      } else {
-        errors.push(`Строка ${rowNo}: в «Активен» укажите да или нет.`);
-        return;
-      }
-
-      mapped.push({
-        lastName,
-        firstName,
-        patronymic,
-        address,
-        phone,
-        email,
-        notes,
-        clientMarkupPercent,
-        passportSeries,
-        passportNumber,
-        passportIssuedBy,
-        passportIssuedDate,
-        isActive: isActiveRow,
-      });
-    });
-
-    if (errors.length) return { ok: false, rows: mapped, errors: errors.slice(0, 6) };
-    return { ok: true, rows: mapped, errors: [] };
+    return validateAndMapClientsRowsFn.call(this, rows);
   }
 
   private validateAndMapOrganizationsRows(rows: ReadonlyArray<Record<string, unknown>>): {
@@ -6713,94 +5812,7 @@ export class DictionariesPage implements OnDestroy {
     rows: OrganizationItemInput[];
     errors: string[];
   } {
-    const errors: string[] = [];
-    const mapped: OrganizationItemInput[] = [];
-
-    if (!rows.length) return { ok: false, rows: mapped, errors: ['Пустой файл.'] };
-
-    const requiredHeaders = this.organizationsExcelHeaders();
-    const firstKeys = Object.keys(rows[0] ?? {});
-    const missingHeaders = requiredHeaders.filter((h) => !firstKeys.includes(h));
-    if (missingHeaders.length) {
-      return { ok: false, rows: mapped, errors: [`Нет колонок: ${missingHeaders.join(', ')}`] };
-    }
-
-    rows.forEach((row, idx) => {
-      const rowNo = idx + 2;
-      const kindRaw = String(row['Вид организации'] ?? '').trim();
-      const kind = mapLegalFormToOrganizationKind(kindRaw);
-      const name = String(row['Полное наименование'] ?? '').trim();
-      const shortName = String(row['Короткое наименование'] ?? '').trim();
-      const inn = String(row['ИНН'] ?? '').trim();
-      const kpp = String(row['КПП'] ?? '').trim();
-      const ogrn = String(row['ОГРН'] ?? '').trim();
-      const okpo = String(row['ОКПО'] ?? '').trim();
-      const phone = String(row['Телефон'] ?? '').trim();
-      const email = String(row['Email'] ?? '').trim();
-      const website = String(row['Сайт'] ?? '').trim();
-      const legalAddress = String(row['Юридический адрес'] ?? '').trim();
-      const postalAddress = String(row['Почтовый адрес'] ?? '').trim();
-      const bankName = String(row['Банк'] ?? '').trim();
-      const bankBik = String(row['БИК'] ?? '').trim();
-      const bankAccount = String(row['Расчётный счёт'] ?? '').trim();
-      const bankCorrAccount = String(row['Корр. счёт'] ?? '').trim();
-      const signerName = String(row['Подписант'] ?? '').trim();
-      const signerPosition = String(row['Должность подписанта'] ?? '').trim();
-      const notes = String(row['Заметки'] ?? '').trim();
-      const activeRaw = String(row['Активен'] ?? '')
-        .trim()
-        .toLowerCase();
-
-      if (!name || name.length < 2) {
-        errors.push(`Строка ${rowNo}: укажите полное наименование (минимум 2 символа).`);
-        return;
-      }
-
-      let isActiveRow = true;
-      if (!activeRaw) {
-        isActiveRow = true;
-      } else if (['да', 'yes', 'true', '1'].includes(activeRaw)) {
-        isActiveRow = true;
-      } else if (['нет', 'no', 'false', '0'].includes(activeRaw)) {
-        isActiveRow = false;
-      } else {
-        errors.push(`Строка ${rowNo}: в «Активен» укажите да или нет.`);
-        return;
-      }
-
-      if (!kindRaw) {
-        errors.push(`Строка ${rowNo}: укажите вид организации (ООО или ИП).`);
-        return;
-      }
-
-      mapped.push({
-        name,
-        shortName: shortName || undefined,
-        legalForm: organizationKindToLegalForm(kind),
-        inn: inn || undefined,
-        kpp: kind === 'IP' ? undefined : kpp || undefined,
-        ogrn: ogrn || undefined,
-        okpo: okpo || undefined,
-        phone: phone || undefined,
-        email: email || undefined,
-        website: website || undefined,
-        legalAddress: legalAddress || undefined,
-        postalAddress: postalAddress || undefined,
-        bankName: bankName || undefined,
-        bankBik: bankBik || undefined,
-        bankAccount: bankAccount || undefined,
-        bankCorrAccount: bankCorrAccount || undefined,
-        signerName: signerName || undefined,
-        signerPosition: signerPosition || undefined,
-        notes: notes || undefined,
-        isActive: isActiveRow,
-        contactIds: [],
-        contactLabels: [],
-      });
-    });
-
-    if (errors.length) return { ok: false, rows: mapped, errors: errors.slice(0, 6) };
-    return { ok: true, rows: mapped, errors: [] };
+    return validateAndMapOrganizationsRowsFn.call(this, rows);
   }
 
   private applyGeometryShapeValidators(shape: string): void {
