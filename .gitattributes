@@ -1,0 +1,2 @@
+# Shell entrypoints for Linux containers must be LF (CRLF breaks shebang on Alpine).
+deploy/*.sh text eol=lf

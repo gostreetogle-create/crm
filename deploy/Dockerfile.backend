@@ -20,8 +20,10 @@ RUN apk add --no-cache openssl wget postgresql-client
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/prisma ./prisma
+COPY --from=build /app/shared ./shared
 COPY --from=build /app/package.json ./
 COPY deploy/entrypoint-backend.sh /entrypoint-backend.sh
-RUN chmod +x /entrypoint-backend.sh
+# Windows checkout часто даёт CRLF — без strip shebang в Alpine ломается («not found»).
+RUN sed -i 's/\r$//' /entrypoint-backend.sh && chmod +x /entrypoint-backend.sh
 EXPOSE 3000
 CMD ["/entrypoint-backend.sh"]
