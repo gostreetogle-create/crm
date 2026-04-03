@@ -26,6 +26,7 @@ export const HUB_BOARD_DICTIONARY_ROW_DEFS: readonly HubBoardDictionaryRowDef[] 
     title: 'Форма и габаритные размеры',
   },
   { section: 'Материалы и производство', sectionId: 'dictionary-hub-section-production', key: 'productionDetails', title: 'Детали' },
+  { section: 'Материалы и производство', sectionId: 'dictionary-hub-section-production', key: 'products', title: 'Изделия' },
   { section: 'Цвет, отделка и покрытия', sectionId: 'dictionary-hub-section-surface', key: 'colors', title: 'Цвета (RAL)' },
   {
     section: 'Цвет, отделка и покрытия',

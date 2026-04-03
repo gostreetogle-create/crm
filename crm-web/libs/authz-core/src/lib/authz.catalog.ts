@@ -28,6 +28,7 @@ export const PERMISSION_CATALOG: Record<
   'dict.hub.users': { labelRu: 'Плитка «Пользователи»', group: 'dict' },
   'dict.hub.kp_photos': { labelRu: 'Плитка «Фото для КП»', group: 'dict' },
   'dict.hub.production_details': { labelRu: 'Плитка «Детали»', group: 'dict' },
+  'dict.hub.products': { labelRu: 'Плитка «Изделия»', group: 'dict' },
   'crud.create': { labelRu: 'Создание записей', group: 'crud' },
   'crud.edit': { labelRu: 'Редактирование записей', group: 'crud' },
   'crud.delete': { labelRu: 'Удаление записей', group: 'crud' },

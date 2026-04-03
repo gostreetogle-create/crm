@@ -30,6 +30,7 @@ model Color {
   updatedAt DateTime @updatedAt
 
   characteristics MaterialCharacteristic[]
+  productLineColorOverrides ProductLine[]
 }
 
 model SurfaceFinish {
@@ -81,6 +82,7 @@ model ProductionWorkType {
   updatedAt     DateTime @updatedAt
 
   productionDetailSources ProductionDetail[] @relation("ProductionDetailSourceWorkType")
+  productLineWorkTypeOverrides ProductLine[] @relation("ProductLineWorkTypeOverride")
 }
 
 model Client {
@@ -315,10 +317,46 @@ model ProductionDetail {
 
   sourceMaterial Material?            @relation("ProductionDetailSourceMaterial", fields: [sourceMaterialId], references: [id], onDelete: SetNull)
   sourceWorkType ProductionWorkType?  @relation("ProductionDetailSourceWorkType", fields: [sourceWorkTypeId], references: [id], onDelete: SetNull)
+  productLines ProductLine[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([sourceMaterialId])
   @@index([sourceWorkTypeId])
+}
+
+/// Справочник «Изделия»: шапка + одна или несколько позиций деталей (с переопределением вида работ и цвета).
+model Product {
+  id        String   @id @default(uuid())
+  name      String
+  priceRub  Float?
+  costRub   Float?
+  notes     String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  lines ProductLine[]
+}
+
+/// Строка состава изделия: ссылка на деталь + опциональные переопределения вида работ и цвета (null = взять из детали/материала).
+model ProductLine {
+  id                 String   @id @default(uuid())
+  productId          String
+  sortOrder          Int      @default(0)
+  productionDetailId String
+  workTypeId         String?
+  colorId            String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  product          Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productionDetail ProductionDetail  @relation(fields: [productionDetailId], references: [id], onDelete: Restrict)
+  overrideWorkType ProductionWorkType? @relation("ProductLineWorkTypeOverride", fields: [workTypeId], references: [id], onDelete: SetNull)
+  overrideColor    Color?            @relation(fields: [colorId], references: [id], onDelete: SetNull)
+
+  @@index([productId])
+  @@index([productionDetailId])
 }

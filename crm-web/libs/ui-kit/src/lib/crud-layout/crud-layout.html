@@ -239,11 +239,28 @@
       </thead>
       <tbody>
         @for (row of crudTableBodyRows; track row['id'] ?? $index) {
-          <tr>
+          <tr
+            (click)="onExpandableRowClick(row, $event)"
+            [class.crudDataRowExpandable]="expandableRows && expandRowTemplate"
+            [class.crudDataRowExpanded]="expandableRows && expandRowTemplate && expandedRowId === rowId(row)"
+          >
             @if (columns.length === 1 && hasRowActions) {
               <td class="crudHubMergedCell" [attr.colspan]="2">
                 <div class="crudHubRow">
-                  <div class="crudHubRowText">
+                  <div
+                    class="crudHubRowText"
+                    [class.crudHubRowText--withExpand]="expandableRows && expandRowTemplate"
+                  >
+                    @if (expandableRows && expandRowTemplate) {
+                      <span class="crudExpandChevron" aria-hidden="true">
+                        <svg
+                          lucideChevronDown
+                          [size]="16"
+                          class="crudExpandChevron__icon"
+                          [class.crudExpandChevron__icon--open]="expandedRowId === rowId(row)"
+                        ></svg>
+                      </span>
+                    }
                     @if (columns[0].swatchHexKey) {
                       @let bg = swatchBackground(row, columns[0].swatchHexKey);
                       <span class="crudCellLine">
@@ -267,21 +284,50 @@
                 </div>
               </td>
             } @else {
-              @for (column of columns; track column.key) {
+              @for (column of columns; track column.key; let colIndex = $index) {
                 <td>
-                  @if (column.swatchHexKey) {
-                    @let bg = swatchBackground(row, column.swatchHexKey);
-                    <span class="crudCellLine">
-                      <span
-                        class="crudSwatch"
-                        [class.crudSwatchEmpty]="bg === 'transparent'"
-                        [style.background]="bg === 'transparent' ? 'transparent' : bg"
-                        aria-hidden="true"
-                      ></span>
-                      <span class="crudCellText">{{ row?.[column.key] ?? '—' }}</span>
-                    </span>
+                  @if (colIndex === 0 && expandableRows && expandRowTemplate) {
+                    <div class="crudCellWithExpand">
+                      <span class="crudExpandChevron" aria-hidden="true">
+                        <svg
+                          lucideChevronDown
+                          [size]="16"
+                          class="crudExpandChevron__icon"
+                          [class.crudExpandChevron__icon--open]="expandedRowId === rowId(row)"
+                        ></svg>
+                      </span>
+                      <span class="crudCellWithExpand__main">
+                        @if (column.swatchHexKey) {
+                          @let bg = swatchBackground(row, column.swatchHexKey);
+                          <span class="crudCellLine">
+                            <span
+                              class="crudSwatch"
+                              [class.crudSwatchEmpty]="bg === 'transparent'"
+                              [style.background]="bg === 'transparent' ? 'transparent' : bg"
+                              aria-hidden="true"
+                            ></span>
+                            <span class="crudCellText">{{ row?.[column.key] ?? '—' }}</span>
+                          </span>
+                        } @else {
+                          <span class="crudCellPlain">{{ row?.[column.key] ?? '—' }}</span>
+                        }
+                      </span>
+                    </div>
                   } @else {
-                    <span class="crudCellPlain">{{ row?.[column.key] ?? '—' }}</span>
+                    @if (column.swatchHexKey) {
+                      @let bg = swatchBackground(row, column.swatchHexKey);
+                      <span class="crudCellLine">
+                        <span
+                          class="crudSwatch"
+                          [class.crudSwatchEmpty]="bg === 'transparent'"
+                          [style.background]="bg === 'transparent' ? 'transparent' : bg"
+                          aria-hidden="true"
+                        ></span>
+                        <span class="crudCellText">{{ row?.[column.key] ?? '—' }}</span>
+                      </span>
+                    } @else {
+                      <span class="crudCellPlain">{{ row?.[column.key] ?? '—' }}</span>
+                    }
                   }
                 </td>
               }
@@ -294,6 +340,17 @@
               }
             }
           </tr>
+          @if (expandableRows && expandRowTemplate && expandedRowId === rowId(row)) {
+            <tr class="crudExpandDetailRow">
+              <td [attr.colspan]="expandDetailColspan">
+                <div class="crudExpandDetailInner">
+                  <ng-container
+                    *ngTemplateOutlet="expandRowTemplate; context: { $implicit: row }"
+                  ></ng-container>
+                </div>
+              </td>
+            </tr>
+          }
         }
         @if (!visibleData.length) {
           <tr>
@@ -322,7 +379,12 @@
     </article>
   }
   @for (row of crudTableBodyRows; track $index) {
-    <article class="card-item">
+    <article
+      class="card-item"
+      (click)="onExpandableRowClick(row, $event)"
+      [class.card-item--expandable]="expandableRows && expandRowTemplate"
+      [class.card-item--expanded]="expandableRows && expandRowTemplate && expandedRowId === rowId(row)"
+    >
       <div class="cardFieldsGrid" [class.cardFieldsGridDouble]="cardFieldsAreDoubleColumn">
         @for (column of columns; track column.key) {
           <div class="card-row">
@@ -346,8 +408,15 @@
           </div>
         }
       </div>
+      @if (expandableRows && expandRowTemplate && expandedRowId === rowId(row)) {
+        <div class="cardExpandDetail" (click)="$event.stopPropagation()">
+          <ng-container
+            *ngTemplateOutlet="expandRowTemplate; context: { $implicit: row }"
+          ></ng-container>
+        </div>
+      }
       @if (hasRowActions) {
-        <div class="card-actions">
+        <div class="card-actions" (click)="$event.stopPropagation()">
           @if (rowActionsLayout === 'icons') {
             @if (canView) {
               <button

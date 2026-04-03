@@ -107,7 +107,9 @@
       "@crm-web/kp-photos-data-access": ["libs/kp-photos-data-access/src/index.ts"],
       "@srm/kp-photos-data-access": ["libs/kp-photos-data-access/src/index.ts"],
       "@crm-web/production-details-data-access": ["libs/production-details-data-access/src/index.ts"],
-      "@srm/production-details-data-access": ["libs/production-details-data-access/src/index.ts"]
+      "@srm/production-details-data-access": ["libs/production-details-data-access/src/index.ts"],
+      "@crm-web/products-data-access": ["libs/products-data-access/src/index.ts"],
+      "@srm/products-data-access": ["libs/products-data-access/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

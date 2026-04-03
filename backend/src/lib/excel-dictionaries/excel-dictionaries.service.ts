@@ -43,6 +43,7 @@ const EXCEL_SHEET_DISPLAY_NAMES_RU: Readonly<Record<string, string>> = {
   MaterialCharacteristics: 'Характеристики материалов',
   Materials: 'Материалы',
   ProductionDetails: 'Детали',
+  Products: 'Изделия',
 };
 
 function excelSheetDisplayNameRu(sheetKey: string): string {
@@ -55,6 +56,15 @@ type ParseResult<TDto> =
 
 function sTrim(v: unknown): string {
   return String(v ?? '').trim();
+}
+
+/** Текст ошибки Prisma/БД для отчёта импорта Excel. */
+function importDbErrorMessage(err: unknown): string {
+  if (err instanceof Error && err.message) {
+    const m = err.message.trim();
+    return m.length > 280 ? `${m.slice(0, 277)}…` : m;
+  }
+  return String(err ?? 'unknown');
 }
 
 function isBlank(v: unknown): boolean {
@@ -204,6 +214,8 @@ function allocateUniqueRoleCode(base: string, takenLower: ReadonlySet<string>): 
 type Adapter<TDto> = {
   sheetName: string;
   headers: readonly string[];
+  /** Если задано, при импорте проверяются только эти колонки (остальные из headers могут отсутствовать). */
+  requiredHeaders?: readonly string[];
   templateSampleRows: Array<Record<string, unknown>>;
   parseRow: (raw: Record<string, unknown>, excelRow: number, ctx: ParseContext) => ParseResult<TDto>;
   upsert: (dtos: Array<TDto & { idMaybe?: string | null }>, report: ExcelSheetReport, ctx: UpsertContext) => Promise<void>;
@@ -216,6 +228,13 @@ type ParseContext = {
   passwordByUserId?: Map<string, string>;
   geometryShapeKeyAllowed?: Set<string>;
   existingByIdCache?: Record<string, Set<string>>;
+  /** Справочники для листа «Материалы»: разрешение по коду/названию. */
+  materialCharacteristicByCodeLower?: Map<string, string>;
+  materialCharacteristicByNameLower?: Map<string, string>;
+  geometryByNameLower?: Map<string, string>;
+  unitByCodeLower?: Map<string, string>;
+  activeMaterialCharacteristicIds?: Set<string>;
+  activeGeometryIds?: Set<string>;
 };
 
 type UpsertContext = {
@@ -243,8 +262,14 @@ function excelHeadersFromFirstRow(firstRow: unknown[]): string[] {
   return firstRow.map((x) => String(x ?? '').trim());
 }
 
-function validateHeaders(sheetName: string, actual: readonly string[], expected: readonly string[]) {
-  const missing = expected.filter((h) => !actual.includes(h));
+function validateHeaders(
+  sheetName: string,
+  actual: readonly string[],
+  expected: readonly string[],
+  required?: readonly string[],
+) {
+  const toCheck = required ?? expected;
+  const missing = toCheck.filter((h) => !actual.includes(h));
   if (missing.length) {
     throw new Error(`Sheet "${sheetName}": missing columns: ${missing.join(', ')}`);
   }
@@ -406,6 +431,20 @@ type MaterialDto = {
   supplierOrganizationId: string | null;
   notes: string | null;
   isActive: boolean;
+};
+
+/** Одна строка Excel «Изделия» = одна строка состава (шапка изделия повторяется). */
+type ProductLineRowDto = {
+  productId?: string;
+  productName: string;
+  priceRub: number | null;
+  costRub: number | null;
+  notes: string | null;
+  isActive: boolean;
+  sortOrder: number;
+  productionDetailId: string;
+  workTypeId: string | null;
+  colorId: string | null;
 };
 
 type ProductionDetailDto = {
@@ -578,6 +617,15 @@ function parseActiveOrDefault(raw: unknown, defaultValue: boolean): boolean {
 
 const EXPECTED_SHAPES = new Set(['rectangular', 'cylindrical', 'tube', 'plate', 'custom']);
 
+async function sumLineTotalsForDetailIdsTx(tx: { productionDetail: typeof prisma.productionDetail }, detailIds: string[]): Promise<number> {
+  if (detailIds.length === 0) return 0;
+  const rows = await tx.productionDetail.findMany({
+    where: { id: { in: detailIds } },
+    select: { lineTotalRub: true },
+  });
+  return rows.reduce((s, r) => s + (r.lineTotalRub ?? 0), 0);
+}
+
 // -------------------- public API --------------------
 
 const ADAPTERS_IN_IMPORT_ORDER: Array<Adapter<any>> = []; // filled below (needs prisma adapter types)
@@ -637,8 +685,11 @@ function initAdapters(): void {
             });
             report.updated += 1;
           }
-        } catch (err: any) {
-          report.errors.push({ excelRow: (dto as any).__excelRow ?? 0, message: 'DB error при импорте units' });
+        } catch (err) {
+          report.errors.push({
+            excelRow: (dto as any).__excelRow ?? 0,
+            message: `Импорт (единицы): ${importDbErrorMessage(err)}`,
+          });
           report.skipped += 1;
         }
       }
@@ -700,9 +751,12 @@ function initAdapters(): void {
             });
             report.updated += 1;
           }
-        } catch {
+        } catch (err) {
           report.skipped += 1;
-          report.errors.push({ excelRow: (dto as any).__excelRow ?? 0, message: 'DB error при импорте colors' });
+          report.errors.push({
+            excelRow: (dto as any).__excelRow ?? 0,
+            message: `Импорт (цвета): ${importDbErrorMessage(err)}`,
+          });
         }
       }
     },
@@ -759,41 +813,40 @@ function initAdapters(): void {
       };
     },
     upsert: async (dtos, report, ctx) => {
-      const ids = dtos.map((d) => d.id).filter(Boolean) as string[];
-      const existing = ids.length ? await ctx.prismaTx.role.findMany({ where: { id: { in: ids } }, select: { id: true } }) : [];
-      const existingIds = new Set(existing.map((x) => x.id));
       for (const dto of dtos) {
         try {
-          const isCreate = !dto.id || !existingIds.has(dto.id);
-          if (isCreate) {
-            await ctx.prismaTx.role.create({
-              data: {
-                code: dto.code,
-                name: dto.name,
-                sortOrder: dto.sortOrder,
-                notes: dto.notes,
-                isActive: dto.isActive,
-                isSystem: dto.isSystem,
-              },
+          const byId = dto.id ? await ctx.prismaTx.role.findUnique({ where: { id: dto.id } }) : null;
+          const byCode = await ctx.prismaTx.role.findUnique({ where: { code: dto.code } });
+          if (dto.id && byId && byCode && byId.id !== byCode.id) {
+            report.skipped += 1;
+            report.errors.push({
+              excelRow: (dto as any).__excelRow ?? 0,
+              message: 'Код роли уже используется другой записью.',
             });
-            report.created += 1;
-          } else {
-            await ctx.prismaTx.role.update({
-              where: { id: dto.id },
-              data: {
-                code: dto.code,
-                name: dto.name,
-                sortOrder: dto.sortOrder,
-                notes: dto.notes,
-                isActive: dto.isActive,
-                isSystem: dto.isSystem,
-              },
-            });
-            report.updated += 1;
+            continue;
           }
-        } catch {
+          const targetId = byId?.id ?? byCode?.id;
+          const data = {
+            code: dto.code,
+            name: dto.name,
+            sortOrder: dto.sortOrder,
+            notes: dto.notes,
+            isActive: dto.isActive,
+            isSystem: dto.isSystem,
+          };
+          if (targetId) {
+            await ctx.prismaTx.role.update({ where: { id: targetId }, data });
+            report.updated += 1;
+          } else {
+            await ctx.prismaTx.role.create({ data });
+            report.created += 1;
+          }
+        } catch (err) {
           report.skipped += 1;
-          report.errors.push({ excelRow: (dto as any).__excelRow ?? 0, message: 'DB error при импорте roles' });
+          report.errors.push({
+            excelRow: (dto as any).__excelRow ?? 0,
+            message: `Импорт (роли): ${importDbErrorMessage(err)}`,
+          });
         }
       }
     },
@@ -846,7 +899,14 @@ function initAdapters(): void {
 
       for (const dto of dtos) {
         try {
-          const existing = dto.id ? existingById.get(dto.id) : undefined;
+          let existing = dto.id ? existingById.get(dto.id) : undefined;
+          if (!existing) {
+            const byLogin = await ctx.prismaTx.user.findUnique({
+              where: { login: dto.login },
+              select: { id: true, passwordHash: true },
+            });
+            if (byLogin) existing = byLogin;
+          }
           const isCreate = !existing;
 
           if (isCreate) {
@@ -882,12 +942,15 @@ function initAdapters(): void {
             if (dto.password && dto.password.trim().length > 0 && dto.password !== '***') {
               data.passwordHash = await bcrypt.hash(dto.password, 10);
             }
-            await ctx.prismaTx.user.update({ where: { id: existing.id }, data });
+            await ctx.prismaTx.user.update({ where: { id: existing!.id }, data });
             report.updated += 1;
           }
-        } catch {
+        } catch (err) {
           report.skipped += 1;
-          report.errors.push({ excelRow: (dto as any).__excelRow ?? 0, message: 'DB error при импорте users' });
+          report.errors.push({
+            excelRow: (dto as any).__excelRow ?? 0,
+            message: `Импорт (пользователи): ${importDbErrorMessage(err)}`,
+          });
         }
       }
     },
@@ -938,9 +1001,12 @@ function initAdapters(): void {
             });
             report.updated += 1;
           }
-        } catch {
+        } catch (err) {
           report.skipped += 1;
-          report.errors.push({ excelRow: (dto as any).__excelRow ?? 0, message: 'DB error при импорте workTypes' });
+          report.errors.push({
+            excelRow: (dto as any).__excelRow ?? 0,
+            message: `Импорт (типы работ): ${importDbErrorMessage(err)}`,
+          });
         }
       }
     },
@@ -1058,9 +1124,12 @@ function initAdapters(): void {
             });
             report.updated += 1;
           }
-        } catch {
+        } catch (err) {
           report.skipped += 1;
-          report.errors.push({ excelRow: (dto as any).__excelRow ?? 0, message: 'DB error при импорте geometries' });
+          report.errors.push({
+            excelRow: (dto as any).__excelRow ?? 0,
+            message: `Импорт (геометрии): ${importDbErrorMessage(err)}`,
+          });
         }
       }
     },
@@ -1103,9 +1172,12 @@ function initAdapters(): void {
             });
             report.updated += 1;
           }
-        } catch {
+        } catch (err) {
           report.skipped += 1;
-          report.errors.push({ excelRow: (dto as any).__excelRow ?? 0, message: 'DB error при импорте surfaceFinishes' });
+          report.errors.push({
+            excelRow: (dto as any).__excelRow ?? 0,
+            message: `Импорт (отделки): ${importDbErrorMessage(err)}`,
+          });
         }
       }
     },
@@ -1148,9 +1220,12 @@ function initAdapters(): void {
             });
             report.updated += 1;
           }
-        } catch {
+        } catch (err) {
           report.skipped += 1;
-          report.errors.push({ excelRow: (dto as any).__excelRow ?? 0, message: 'DB error при импорте coatings' });
+          report.errors.push({
+            excelRow: (dto as any).__excelRow ?? 0,
+            message: `Импорт (покрытия): ${importDbErrorMessage(err)}`,
+          });
         }
       }
     },
@@ -1280,9 +1355,12 @@ function initAdapters(): void {
             });
             report.updated += 1;
           }
-        } catch {
+        } catch (err) {
           report.skipped += 1;
-          report.errors.push({ excelRow: (dto as any).__excelRow ?? 0, message: 'DB error при импорте clients' });
+          report.errors.push({
+            excelRow: (dto as any).__excelRow ?? 0,
+            message: `Импорт (клиенты): ${importDbErrorMessage(err)}`,
+          });
         }
       }
     },
@@ -1471,9 +1549,12 @@ function initAdapters(): void {
             });
             report.updated += 1;
           }
-        } catch {
+        } catch (err) {
           report.skipped += 1;
-          report.errors.push({ excelRow: (dto as any).__excelRow ?? 0, message: 'DB error при импорте organizations' });
+          report.errors.push({
+            excelRow: (dto as any).__excelRow ?? 0,
+            message: `Импорт (организации): ${importDbErrorMessage(err)}`,
+          });
         }
       }
     },
@@ -1482,7 +1563,8 @@ function initAdapters(): void {
   adapters.push({
     sheetName: 'KpPhotos',
     headers: ['ID', 'Название', 'ID организации', 'Название фото', 'URL фото', 'Активен'],
-    templateSampleRows: [{ ID: '', Название: 'Фон 1', 'ID организации': '', 'Название фото': 'Вид 1', 'URL фото': '', Активен: 'да' }],
+    /** Строки примера подставляются в `buildUnifiedExcelTemplateBuffer` (валидные UUID/URL из БД). */
+    templateSampleRows: [],
     parseRow: (raw, excelRow, ctx) => {
       const warnings: ExcelSheetReport['warnings'] = [];
       const errors: ExcelSheetReport['errors'] = [];
@@ -1492,14 +1574,14 @@ function initAdapters(): void {
       const photoTitle = sTrim(raw['Название фото']);
       const photoUrl = sTrim(raw['URL фото']);
       const isActive = parseActiveOrDefault(raw['Активен'], true);
-      if (!name) errors.push({ excelRow, field: 'Название', message: 'Название обязательно.' });
-      if (!organizationId) errors.push({ excelRow, field: 'ID организации', message: 'ID организации должен быть UUID.' });
+      /** Неполная строка: не ошибка — дозаполните в интерфейсе или удалите строку. */
+      if (!name || !organizationId || !photoTitle || !photoUrl) {
+        return { ok: false, skipped: true, warnings, errors: [] };
+      }
       const orgCache = ctx.existingByIdCache?.organization;
       if (organizationId && orgCache && !orgCache.has(organizationId)) {
         errors.push({ excelRow, field: 'ID организации', message: 'Не найдена организация с указанным ID.' });
       }
-      if (!photoTitle) errors.push({ excelRow, field: 'Название фото', message: 'Название фото обязательно.' });
-      if (!photoUrl) errors.push({ excelRow, field: 'URL фото', message: 'URL фото обязателен.' });
       if (errors.length) return { ok: false, skipped: true, warnings, errors };
       return {
         ok: true,
@@ -1526,9 +1608,12 @@ function initAdapters(): void {
             });
             report.updated += 1;
           }
-        } catch {
+        } catch (err) {
           report.skipped += 1;
-          report.errors.push({ excelRow: (dto as any).__excelRow ?? 0, message: 'DB error при импорте kpPhotos' });
+          report.errors.push({
+            excelRow: (dto as any).__excelRow ?? 0,
+            message: `Импорт (фото КП): ${importDbErrorMessage(err)}`,
+          });
         }
       }
     },
@@ -1699,11 +1784,11 @@ function initAdapters(): void {
             });
             report.updated += 1;
           }
-        } catch {
+        } catch (err) {
           report.skipped += 1;
           report.errors.push({
             excelRow: (dto as any).__excelRow ?? 0,
-            message: 'DB error при импорте materialCharacteristics',
+            message: `Импорт (характеристики материалов): ${importDbErrorMessage(err)}`,
           });
         }
       }
@@ -1717,76 +1802,109 @@ function initAdapters(): void {
       'Название',
       'Код',
       'ID характеристики',
+      'Код характеристики',
+      'Название характеристики',
       'ID геометрии',
+      'Название геометрии',
       'ID единицы',
       'Код ЕИ',
       'Название единицы',
-      'Цена ₽',
       'ID поставщика',
+      'Цена ₽',
       'Заметки',
       'Активен',
     ],
+    /** Старые файлы без подписей к связям тоже проходят — строки читаются по имеющимся колонкам. */
+    requiredHeaders: ['Название', 'Цена ₽'],
     templateSampleRows: [
       {
         'ID материала': '',
         Название: 'Сталь 09Г2С — профиль 60×40',
         Код: 'POS-ST-6040',
         'ID характеристики': '',
+        'Код характеристики': 'ST-09G2S',
+        'Название характеристики': '',
         'ID геометрии': '',
+        'Название геометрии': 'Профиль 60x40x2',
         'ID единицы': '',
         'Код ЕИ': 'kg',
         'Название единицы': '',
-        'Цена ₽': 95,
         'ID поставщика': '',
+        'Цена ₽': 95,
         Заметки: '',
         Активен: 'да',
       },
     ],
     parseRow: (raw, excelRow, ctx) => {
       const warnings: ExcelSheetReport['warnings'] = [];
-      const errors: ExcelSheetReport['errors'] = [];
 
       const id = parseUuid(raw['ID материала']) ?? undefined;
       const name = sTrim(raw['Название']);
       const code = sTrim(raw['Код']) || null;
-      const materialCharacteristicId = parseUuid(raw['ID характеристики']);
-      const geometryId = parseUuid(raw['ID геометрии']);
-      const unitId = parseUuid(raw['ID единицы']);
+
+      let materialCharacteristicId: string | null = parseUuid(raw['ID характеристики']);
+      const mcCode = sTrim(raw['Код характеристики']);
+      const mcName = sTrim(raw['Название характеристики']);
+      if (!materialCharacteristicId && mcCode && ctx.materialCharacteristicByCodeLower) {
+        materialCharacteristicId = ctx.materialCharacteristicByCodeLower.get(mcCode.toLowerCase()) ?? null;
+      }
+      if (!materialCharacteristicId && mcName && ctx.materialCharacteristicByNameLower) {
+        materialCharacteristicId = ctx.materialCharacteristicByNameLower.get(mcName.toLowerCase()) ?? null;
+      }
+
+      let geometryId: string | null = parseUuid(raw['ID геометрии']);
+      const geometryName = sTrim(raw['Название геометрии']);
+      if (!geometryId && geometryName && ctx.geometryByNameLower) {
+        geometryId = ctx.geometryByNameLower.get(geometryName.toLowerCase()) ?? null;
+      }
+
+      let unitId: string | null = parseUuid(raw['ID единицы']);
+      const unitCode = sTrim(raw['Код ЕИ']);
+      if (!unitId && unitCode && ctx.unitByCodeLower) {
+        unitId = ctx.unitByCodeLower.get(unitCode.toLowerCase()) ?? null;
+      }
+
       const purchasePriceRubRaw = parseNumberOrNull(raw['Цена ₽']);
       const supplierOrganizationId = parseUuid(raw['ID поставщика']);
       const notes = sTrim(raw['Заметки']) || null;
       const isActive = parseActiveOrDefault(raw['Активен'], true);
 
-      if (!name) errors.push({ excelRow, field: 'Название', message: 'Название обязательно.' });
+      const unitCache = ctx.existingByIdCache?.unit;
+      const orgCache = ctx.existingByIdCache?.organization;
+
+      /** Одна строка отчёта на строку Excel — иначе сотни повторов при незаполненном блоке. */
+      const problems: string[] = [];
+      if (!name) problems.push('нет названия');
       if (!materialCharacteristicId) {
-        errors.push({ excelRow, field: 'ID характеристики', message: 'ID характеристики должен быть UUID.' });
+        problems.push('характеристика: укажите «ID характеристики», «Код характеристики» или «Название характеристики» (как в листе «Характеристики материалов»)');
+      } else if (ctx.activeMaterialCharacteristicIds && !ctx.activeMaterialCharacteristicIds.has(materialCharacteristicId)) {
+        problems.push('характеристика: нет активной записи с таким ID');
       }
       if (!geometryId) {
-        errors.push({ excelRow, field: 'ID геометрии', message: 'ID геометрии должен быть UUID.' });
+        problems.push('геометрия: укажите «ID геометрии» или «Название геометрии» (как в листе «Геометрии»)');
+      } else if (ctx.activeGeometryIds && !ctx.activeGeometryIds.has(geometryId)) {
+        problems.push('геометрия: нет активной записи с таким ID');
       }
-      if (purchasePriceRubRaw === null || purchasePriceRubRaw < 1) errors.push({ excelRow, field: 'Цена ₽', message: 'Цена ₽ обязателена и должна быть >= 1.' });
-
-      const matCharCache = ctx.existingByIdCache?.materialCharacteristic;
-      if (materialCharacteristicId && matCharCache && !matCharCache.has(materialCharacteristicId)) {
-        errors.push({ excelRow, field: 'ID характеристики', message: 'Не найдена характеристика материала с указанным ID.' });
+      if (!unitId) {
+        problems.push('единица: укажите «ID единицы» или «Код ЕИ» (например kg) с листа «Единицы»');
+      } else if (unitCache && !unitCache.has(unitId)) {
+        problems.push('единица: не найдена запись с таким ID');
       }
-
-      const geomCache = ctx.existingByIdCache?.geometry;
-      if (geometryId && geomCache && !geomCache.has(geometryId)) {
-        errors.push({ excelRow, field: 'ID геометрии', message: 'Не найдена геометрия с указанным ID.' });
+      if (purchasePriceRubRaw === null || purchasePriceRubRaw < 1) {
+        problems.push('«Цена ₽» — число не меньше 1');
       }
-
-      const unitCache = ctx.existingByIdCache?.unit;
-      if (unitId && unitCache && !unitCache.has(unitId)) {
-        errors.push({ excelRow, field: 'ID единицы', message: 'Не найдена единица измерения с указанным ID.' });
-      }
-
-      const orgCache = ctx.existingByIdCache?.organization;
       if (supplierOrganizationId && orgCache && !orgCache.has(supplierOrganizationId)) {
-        errors.push({ excelRow, field: 'ID поставщика', message: 'Не найдена организация с указанным ID.' });
+        problems.push('поставщик: организация с таким ID не найдена');
       }
 
-      if (errors.length) return { ok: false, skipped: true, warnings, errors };
+      if (problems.length) {
+        return {
+          ok: false,
+          skipped: true,
+          warnings,
+          errors: [{ excelRow, message: problems.join('; ') + '.' }],
+        };
+      }
 
       return {
         ok: true,
@@ -1806,47 +1924,55 @@ function initAdapters(): void {
       };
     },
     upsert: async (dtos, report, ctx) => {
-      const ids = dtos.map((d) => d.id).filter(Boolean) as string[];
-      const existing = ids.length ? await ctx.prismaTx.material.findMany({ where: { id: { in: ids } }, select: { id: true } }) : [];
-      const existingIds = new Set(existing.map((x) => x.id));
+      /** Повторный импорт без «ID материала» иначе создаёт дубликаты — ищем существующую строку. */
+      const resolveTargetId = async (dto: MaterialDto): Promise<string | null> => {
+        if (dto.id) {
+          const row = await ctx.prismaTx.material.findUnique({ where: { id: dto.id }, select: { id: true } });
+          if (row) return row.id;
+        }
+        const code = dto.code?.trim();
+        if (code) {
+          const byCode = await ctx.prismaTx.material.findFirst({ where: { code }, select: { id: true } });
+          if (byCode) return byCode.id;
+        }
+        const byTriple = await ctx.prismaTx.material.findFirst({
+          where: {
+            name: dto.name,
+            materialCharacteristicId: dto.materialCharacteristicId,
+            geometryId: dto.geometryId,
+          },
+          select: { id: true },
+        });
+        return byTriple?.id ?? null;
+      };
+
       for (const dto of dtos) {
         try {
-          const isCreate = !dto.id || !existingIds.has(dto.id);
-          if (isCreate) {
-            await ctx.prismaTx.material.create({
-              data: {
-                name: dto.name,
-                code: dto.code,
-                unitId: dto.unitId,
-                purchasePriceRub: dto.purchasePriceRub,
-                materialCharacteristicId: dto.materialCharacteristicId,
-                geometryId: dto.geometryId,
-                supplierOrganizationId: dto.supplierOrganizationId,
-                notes: dto.notes,
-                isActive: dto.isActive,
-              },
-            });
-            report.created += 1;
-          } else {
-            await ctx.prismaTx.material.update({
-              where: { id: dto.id },
-              data: {
-                name: dto.name,
-                code: dto.code,
-                unitId: dto.unitId,
-                purchasePriceRub: dto.purchasePriceRub,
-                materialCharacteristicId: dto.materialCharacteristicId,
-                geometryId: dto.geometryId,
-                supplierOrganizationId: dto.supplierOrganizationId,
-                notes: dto.notes,
-                isActive: dto.isActive,
-              },
-            });
+          const targetId = await resolveTargetId(dto);
+          const data = {
+            name: dto.name,
+            code: dto.code,
+            unitId: dto.unitId,
+            purchasePriceRub: dto.purchasePriceRub,
+            materialCharacteristicId: dto.materialCharacteristicId,
+            geometryId: dto.geometryId,
+            supplierOrganizationId: dto.supplierOrganizationId,
+            notes: dto.notes,
+            isActive: dto.isActive,
+          };
+          if (targetId) {
+            await ctx.prismaTx.material.update({ where: { id: targetId }, data });
             report.updated += 1;
+          } else {
+            await ctx.prismaTx.material.create({ data });
+            report.created += 1;
           }
-        } catch {
+        } catch (err) {
           report.skipped += 1;
-          report.errors.push({ excelRow: (dto as any).__excelRow ?? 0, message: 'DB error при импорте materials' });
+          report.errors.push({
+            excelRow: (dto as any).__excelRow ?? 0,
+            message: `Импорт (материалы): ${importDbErrorMessage(err)}`,
+          });
         }
       }
     },
@@ -2032,11 +2158,171 @@ function initAdapters(): void {
             await ctx.prismaTx.productionDetail.update({ where: { id: dto.id }, data });
             report.updated += 1;
           }
-        } catch {
+        } catch (err) {
           report.skipped += 1;
           report.errors.push({
             excelRow: (dto as any).__excelRow ?? 0,
-            message: 'DB error при импорте production details',
+            message: `Импорт (детали производства): ${importDbErrorMessage(err)}`,
+          });
+        }
+      }
+    },
+  });
+
+  const productSheetHeaders = [
+    'ID изделия',
+    'Наименование изделия',
+    'Цена ₽',
+    'Себестоимость ₽',
+    'Заметки',
+    'Активен',
+    'Порядок',
+    'ID детали',
+    'ID вида работ',
+    'ID цвета',
+  ] as const;
+
+  adapters.push({
+    sheetName: 'Products',
+    headers: [...productSheetHeaders],
+    /** Строки примера подставляются в `buildUnifiedExcelTemplateBuffer` (реальный UUID детали из БД). */
+    templateSampleRows: [],
+    parseRow: (raw, excelRow, ctx) => {
+      const warnings: ExcelSheetReport['warnings'] = [];
+      const errors: ExcelSheetReport['errors'] = [];
+
+      const productId = parseUuid(raw['ID изделия']) ?? undefined;
+      const productName = sTrim(raw['Наименование изделия']);
+      const priceRub = parseNumberOrNull(raw['Цена ₽']);
+      const costRub = parseNumberOrNull(raw['Себестоимость ₽']);
+      const notes = sTrim(raw['Заметки']) || null;
+      const isActive = parseActiveOrDefault(raw['Активен'], true);
+      const sortOrderRaw = parseIntOrNull(raw['Порядок']);
+      const sortOrder = sortOrderRaw != null && sortOrderRaw >= 0 ? sortOrderRaw : 0;
+      const productionDetailId = parseUuid(raw['ID детали']);
+      const workTypeId = parseUuid(raw['ID вида работ']);
+      const colorId = parseUuid(raw['ID цвета']);
+
+      /** Строка состава без детали — не ошибка: добавьте состав изделия в интерфейсе. */
+      if (!productionDetailId) {
+        return { ok: false, skipped: true, warnings, errors: [] };
+      }
+
+      if (!productName) {
+        errors.push({ excelRow, field: 'Наименование изделия', message: 'Укажите наименование изделия.' });
+      }
+
+      const pdCache = ctx.existingByIdCache?.productionDetail;
+      if (productionDetailId && pdCache && !pdCache.has(productionDetailId)) {
+        errors.push({ excelRow, field: 'ID детали', message: 'Не найдена деталь с указанным ID.' });
+      }
+      const wtCache = ctx.existingByIdCache?.productionWorkType;
+      if (workTypeId && wtCache && !wtCache.has(workTypeId)) {
+        errors.push({ excelRow, field: 'ID вида работ', message: 'Не найден вид работ с указанным ID.' });
+      }
+      const colCache = ctx.existingByIdCache?.color;
+      if (colorId && colCache && !colCache.has(colorId)) {
+        errors.push({ excelRow, field: 'ID цвета', message: 'Не найден цвет с указанным ID.' });
+      }
+
+      if (errors.length) return { ok: false, skipped: true, warnings, errors };
+
+      return {
+        ok: true,
+        dto: {
+          productId,
+          productName,
+          priceRub,
+          costRub,
+          notes,
+          isActive,
+          sortOrder,
+          productionDetailId: productionDetailId!,
+          workTypeId: workTypeId ?? null,
+          colorId: colorId ?? null,
+        } satisfies ProductLineRowDto,
+        warnings,
+      };
+    },
+    upsert: async (dtos, report, ctx) => {
+      const groups = new Map<string, ProductLineRowDto[]>();
+      for (const dto of dtos as ProductLineRowDto[]) {
+        const key =
+          (dto.productId && dto.productId.trim()) ||
+          `n:${dto.productName.trim().toLowerCase()}`;
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key)!.push(dto);
+      }
+
+      const existingProducts = await ctx.prismaTx.product.findMany({ select: { id: true } });
+      const existingProductIds = new Set(existingProducts.map((x) => x.id));
+
+      for (const [, groupRows] of groups) {
+        groupRows.sort((a, b) => a.sortOrder - b.sortOrder);
+        const first = groupRows[0];
+        if (!first) continue;
+
+        const lines = groupRows.map((r, idx) => ({
+          sortOrder: r.sortOrder ?? idx,
+          productionDetailId: r.productionDetailId,
+          workTypeId: r.workTypeId,
+          colorId: r.colorId,
+        }));
+
+        const detailIds = lines.map((l) => l.productionDetailId);
+        const defaultSum = await sumLineTotalsForDetailIdsTx(ctx.prismaTx, detailIds);
+        const priceFinal = first.priceRub ?? defaultSum;
+        const costFinal = first.costRub ?? defaultSum;
+
+        const updateById = first.productId && existingProductIds.has(first.productId);
+
+        try {
+          if (updateById && first.productId) {
+            await ctx.prismaTx.productLine.deleteMany({ where: { productId: first.productId } });
+            await ctx.prismaTx.product.update({
+              where: { id: first.productId },
+              data: {
+                name: first.productName.trim(),
+                priceRub: priceFinal,
+                costRub: costFinal,
+                notes: first.notes,
+                isActive: first.isActive,
+                lines: {
+                  create: lines.map((line, idx) => ({
+                    sortOrder: line.sortOrder ?? idx,
+                    productionDetailId: line.productionDetailId,
+                    workTypeId: line.workTypeId,
+                    colorId: line.colorId,
+                  })),
+                },
+              },
+            });
+            report.updated += 1;
+          } else {
+            await ctx.prismaTx.product.create({
+              data: {
+                name: first.productName.trim(),
+                priceRub: priceFinal,
+                costRub: costFinal,
+                notes: first.notes,
+                isActive: first.isActive,
+                lines: {
+                  create: lines.map((line, idx) => ({
+                    sortOrder: line.sortOrder ?? idx,
+                    productionDetailId: line.productionDetailId,
+                    workTypeId: line.workTypeId,
+                    colorId: line.colorId,
+                  })),
+                },
+              },
+            });
+            report.created += 1;
+          }
+        } catch (err) {
+          report.skipped += 1;
+          report.errors.push({
+            excelRow: (groupRows[0] as any).__excelRow ?? 0,
+            message: `Импорт (изделия): ${importDbErrorMessage(err)}`,
           });
         }
       }
@@ -2063,7 +2349,48 @@ function buildWorkbookFromAdapters(adapters: Array<Adapter<any>>, rowBuilder: (a
 
 export async function buildUnifiedExcelTemplateBuffer(): Promise<Buffer> {
   const adapters = getAdapters();
-  const workbook = buildWorkbookFromAdapters(adapters, (adapter) => adapter.templateSampleRows);
+  const [firstOrg] = await prisma.organization.findMany({ orderBy: { name: 'asc' }, take: 1, select: { id: true } });
+  const [firstPd] = await prisma.productionDetail.findMany({ orderBy: { name: 'asc' }, take: 1, select: { id: true } });
+
+  const workbook = XLSX.utils.book_new();
+  for (const adapter of adapters) {
+    let rows: Array<Record<string, unknown>>;
+    if (adapter.sheetName === 'KpPhotos') {
+      rows = firstOrg
+        ? [
+            {
+              ID: '',
+              Название: 'Пример фото',
+              'ID организации': firstOrg.id,
+              'Название фото': 'Вид 1',
+              'URL фото': 'https://example.com/placeholder.jpg',
+              Активен: 'да',
+            },
+          ]
+        : [];
+    } else if (adapter.sheetName === 'Products') {
+      rows = firstPd
+        ? [
+            {
+              'ID изделия': '',
+              'Наименование изделия': 'Пример изделия',
+              'Цена ₽': 100,
+              'Себестоимость ₽': 100,
+              Заметки: '',
+              Активен: 'да',
+              Порядок: 1,
+              'ID детали': firstPd.id,
+              'ID вида работ': '',
+              'ID цвета': '',
+            },
+          ]
+        : [];
+    } else {
+      rows = [...adapter.templateSampleRows];
+    }
+    const worksheet = XLSX.utils.json_to_sheet(rows, { header: adapter.headers as string[] });
+    XLSX.utils.book_append_sheet(workbook, worksheet, excelSheetDisplayNameRu(adapter.sheetName));
+  }
   const buf = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
   return normalizeXlsxBuffer(buf);
 }
@@ -2258,22 +2585,22 @@ export async function buildUnifiedExcelExportBuffer(): Promise<Buffer> {
       case 'Materials': {
         const items = await prisma.material.findMany({
           orderBy: { name: 'asc' },
-          include: { unit: true, geometry: true, supplierOrganization: true },
+          include: { unit: true, geometry: true, supplierOrganization: true, characteristic: true },
         });
         rows = items.map((x) => ({
           'ID материала': x.id,
           Название: x.name,
           Код: x.code ?? '',
           'ID характеристики': x.materialCharacteristicId,
-          'Код характеристики': '',
-          'Название характеристики': '',
+          'Код характеристики': x.characteristic?.code ?? '',
+          'Название характеристики': x.characteristic?.name ?? '',
           'ID геометрии': x.geometryId,
-          'Название геометрии': (x.geometry as any)?.name ?? '',
+          'Название геометрии': (x.geometry as { name?: string } | null)?.name ?? '',
           'ID единицы': x.unitId ?? '',
-          'Код ЕИ': (x.unit as any)?.code ?? '',
-          'Название единицы': (x.unit as any)?.name ?? '',
-          'Цена ₽': x.purchasePriceRub ?? '',
+          'Код ЕИ': (x.unit as { code?: string } | null)?.code ?? '',
+          'Название единицы': (x.unit as { name?: string } | null)?.name ?? '',
           'ID поставщика': x.supplierOrganizationId ?? '',
+          'Цена ₽': x.purchasePriceRub ?? '',
           Заметки: x.notes ?? '',
           Активен: x.isActive ? 'да' : 'нет',
         }));
@@ -2312,6 +2639,32 @@ export async function buildUnifiedExcelExportBuffer(): Promise<Buffer> {
         }));
         break;
       }
+      case 'Products': {
+        const products = await prisma.product.findMany({
+          orderBy: { name: 'asc' },
+          include: {
+            lines: { orderBy: { sortOrder: 'asc' } },
+          },
+        });
+        rows = [];
+        for (const p of products) {
+          for (const line of p.lines) {
+            rows.push({
+              'ID изделия': p.id,
+              'Наименование изделия': p.name,
+              'Цена ₽': p.priceRub ?? '',
+              'Себестоимость ₽': p.costRub ?? '',
+              Заметки: p.notes ?? '',
+              Активен: p.isActive ? 'да' : 'нет',
+              Порядок: line.sortOrder,
+              'ID детали': line.productionDetailId,
+              'ID вида работ': line.workTypeId ?? '',
+              'ID цвета': line.colorId ?? '',
+            });
+          }
+        }
+        break;
+      }
       default: {
         rows = [];
       }
@@ -2344,6 +2697,10 @@ export async function importUnifiedExcelFromBuffer(buffer: Buffer): Promise<Exce
     materialCharacteristicRows,
     materialRows,
     productionWorkTypeRows,
+    productionDetailRows,
+    materialCharacteristicsForSheet,
+    geometriesForSheet,
+    unitsForSheet,
   ] = await Promise.all([
     prisma.organization.findMany({ select: { id: true } }),
     prisma.color.findMany({ select: { id: true } }),
@@ -2354,7 +2711,46 @@ export async function importUnifiedExcelFromBuffer(buffer: Buffer): Promise<Exce
     prisma.materialCharacteristic.findMany({ select: { id: true } }),
     prisma.material.findMany({ select: { id: true } }),
     prisma.productionWorkType.findMany({ select: { id: true } }),
+    prisma.productionDetail.findMany({ select: { id: true } }),
+    prisma.materialCharacteristic.findMany({ select: { id: true, code: true, name: true, isActive: true } }),
+    prisma.geometry.findMany({ select: { id: true, name: true, isActive: true } }),
+    prisma.unit.findMany({ select: { id: true, code: true } }),
   ]);
+
+  const materialCharacteristicByCodeLower = new Map<string, string>();
+  const materialCharacteristicByNameLower = new Map<string, string>();
+  const activeMaterialCharacteristicIds = new Set<string>();
+  for (const mc of materialCharacteristicsForSheet) {
+    if (!mc.isActive) continue;
+    activeMaterialCharacteristicIds.add(mc.id);
+    const c = (mc.code ?? '').trim();
+    if (c && !materialCharacteristicByCodeLower.has(c.toLowerCase())) {
+      materialCharacteristicByCodeLower.set(c.toLowerCase(), mc.id);
+    }
+    const n = (mc.name ?? '').trim();
+    if (n && !materialCharacteristicByNameLower.has(n.toLowerCase())) {
+      materialCharacteristicByNameLower.set(n.toLowerCase(), mc.id);
+    }
+  }
+
+  const geometryByNameLower = new Map<string, string>();
+  const activeGeometryIds = new Set<string>();
+  for (const g of geometriesForSheet) {
+    if (!g.isActive) continue;
+    activeGeometryIds.add(g.id);
+    const n = (g.name ?? '').trim();
+    if (n && !geometryByNameLower.has(n.toLowerCase())) {
+      geometryByNameLower.set(n.toLowerCase(), g.id);
+    }
+  }
+
+  const unitByCodeLower = new Map<string, string>();
+  for (const u of unitsForSheet) {
+    const c = (u.code ?? '').trim();
+    if (c && !unitByCodeLower.has(c.toLowerCase())) {
+      unitByCodeLower.set(c.toLowerCase(), u.id);
+    }
+  }
 
   // We read workbook only once.
   const workbook = XLSX.read(buffer, { type: 'buffer' });
@@ -2379,7 +2775,14 @@ export async function importUnifiedExcelFromBuffer(buffer: Buffer): Promise<Exce
       materialCharacteristic: new Set(materialCharacteristicRows.map((x) => x.id)),
       material: new Set(materialRows.map((x) => x.id)),
       productionWorkType: new Set(productionWorkTypeRows.map((x) => x.id)),
+      productionDetail: new Set(productionDetailRows.map((x) => x.id)),
     },
+    materialCharacteristicByCodeLower,
+    materialCharacteristicByNameLower,
+    geometryByNameLower,
+    unitByCodeLower,
+    activeMaterialCharacteristicIds,
+    activeGeometryIds,
   };
 
   // Parsed dto lists per adapter.
@@ -2412,7 +2815,7 @@ export async function importUnifiedExcelFromBuffer(buffer: Buffer): Promise<Exce
 
     const firstRow = table[0] as unknown[];
     const actualHeaders = excelHeadersFromFirstRow(firstRow);
-    validateHeaders(adapter.sheetName, actualHeaders, adapter.headers);
+    validateHeaders(adapter.sheetName, actualHeaders, adapter.headers, adapter.requiredHeaders);
     const headerToIndex = new Map<string, number>();
     actualHeaders.forEach((h, idx) => {
       if (h) headerToIndex.set(h, idx);
@@ -2493,6 +2896,21 @@ export async function importUnifiedExcelFromBuffer(buffer: Buffer): Promise<Exce
             excelRow,
             field: 'Логин',
             message: `Дубликат «Логин» пользователя в файле: ${dto.login}. Строка пропущена.`,
+          });
+          continue;
+        }
+        seenSecondary.add(key);
+      }
+
+      if (adapter.sheetName === 'Products') {
+        const pd = dto as ProductLineRowDto & { __excelRow?: number };
+        const key = `${pd.productId ?? ''}|${pd.productName?.trim().toLowerCase() ?? ''}|${pd.sortOrder}|${pd.productionDetailId}`;
+        if (seenSecondary.has(key)) {
+          sheetReport.skipped += 1;
+          sheetReport.warnings.push({
+            excelRow,
+            field: 'Изделие',
+            message: 'Дубликат строки в файле (то же изделие, порядок и деталь). Строка пропущена.',
           });
           continue;
         }

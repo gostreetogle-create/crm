@@ -24,7 +24,7 @@
 .ui-form-field select {
   border: 1px solid color-mix(in srgb, var(--border-color) 55%, white);
   border-radius: var(--radius-card);
-  background: var(--surface-soft);
+  background: var(--ui-form-control-bg, color-mix(in srgb, var(--accent) 6.5%, #ffffff));
   color: var(--text-primary);
   padding: var(--ui-space-1) var(--ui-input-padding-x);
   font-family: var(--font-family-base);
@@ -41,7 +41,7 @@
 .ui-form-field textarea {
   border: 1px solid color-mix(in srgb, var(--border-color) 55%, white);
   border-radius: var(--radius-card);
-  background: var(--surface-soft);
+  background: var(--ui-form-control-bg, color-mix(in srgb, var(--accent) 6.5%, #ffffff));
   color: var(--text-primary);
   padding: var(--ui-space-1) var(--ui-input-padding-x);
   font-family: var(--font-family-base);
@@ -58,6 +58,7 @@
 .ui-form-field select:focus,
 .ui-form-field textarea:focus {
   border-color: color-mix(in srgb, var(--border-color) 65%, var(--accent) 35%);
+  background: color-mix(in srgb, var(--accent) 9%, #ffffff);
   outline: 2px solid color-mix(in srgb, var(--accent) 38%, transparent);
   outline-offset: 1px;
 }

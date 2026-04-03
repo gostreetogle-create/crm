@@ -41,3 +41,17 @@
 2. Guard на mega-file не нарушен.
 3. Нет несогласованных полей между form/table/payload.
 4. Любые временные отклонения зафиксированы в `temporary-deviations-log.md`.
+
+## 6. Standalone create: сохранение и пустая таблица на хабе
+
+Симптом: пользователь нажал **Создать** на полноэкранной форме (`data.standaloneCreate`), вернулся на хаб — в таблице **«Нет данных»**, хотя запись на бэкенде могла создаться.
+
+Типичные причины:
+
+1. **Гонка с навигацией** — сразу после вызова `SignalStore.submit` (rxMethod) вызываются `close*Modal` и `location.back()`. Цепочка HTTP (`create` → `getItems`) не успевает обновить store до смены маршрута; параллельно конструктор страницы хаба вызывает `loadItems()` для всех справочников, и **последний** успешный ответ определяет содержимое списка. Итог: пустая таблица или устаревшие строки.
+2. **Забыли вызов `*Store.loadItems()`** в конструкторе/инициализации `DictionariesPage` для нового справочника — список никогда не подгружается (отдельный класс багов).
+3. **Миграции БД** не применены — в DevTools для `/api/...` часто **500** (Prisma: таблицы для новой модели ещё не созданы). Из каталога `backend/`: `npx prisma migrate status`; если есть «not yet been applied» — `npx prisma migrate deploy` (или `migrate dev` в разработке). После подтяжки ветки с новыми миграциями всегда прогонять миграции до проверки UI.
+
+**Канон исправления для п.1:** для сценария standalone после валидного submit **дождаться** завершения сохранения и обновления списка (например `await firstValueFrom(repo.create(...))`, затем `getItems()` и явный `applyLoadedItems` / эквивалент), и только потом вызывать `finishStandaloneDictionaryCreateIfMatch` / `location.back()`. Референс: изделия — `submitProducts` в `dictionaries-page.ts` и `applyLoadedItems` в `products.store.ts`.
+
+При добавлении **нового** полноэкранного create проверьте чеклист в `dictionaries-standalone-manual-checklist.md`.

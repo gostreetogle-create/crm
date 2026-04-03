@@ -526,6 +526,84 @@
   font-size: var(--font-size-small);
 }
 
+.crudDataRowExpandable {
+  cursor: pointer;
+}
+
+.crudDataRowExpandable:hover {
+  background: color-mix(in srgb, var(--surface-soft) 88%, var(--accent) 6%);
+}
+
+.crudHubRowText--withExpand {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ui-space-1);
+  min-width: 0;
+}
+
+.crudCellWithExpand {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ui-space-1);
+  min-width: 0;
+}
+
+.crudCellWithExpand__main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.crudExpandChevron {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: var(--text-muted);
+}
+
+.crudExpandChevron__icon {
+  display: block;
+  transform: rotate(-90deg);
+  transition: transform 140ms ease;
+}
+
+.crudExpandChevron__icon--open {
+  transform: rotate(0deg);
+}
+
+.crudExpandDetailRow td {
+  padding: 0 var(--ui-space-2) var(--ui-space-2);
+  border-top: none;
+  /* Согласован с золотистым блоком ui-spec-table (embed) */
+  background: linear-gradient(168deg, #fffefb 0%, #faf6ec 40%, #f0e6d4 100%);
+  vertical-align: top;
+}
+
+/* Без второй рамки: внешний вид задаёт ui-spec-table внутри. */
+.crudExpandDetailInner {
+  padding: var(--ui-space-1) 0 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  font-size: var(--font-size-small);
+  line-height: 1.45;
+}
+
+.card-item--expandable {
+  cursor: pointer;
+}
+
+.cardExpandDetail {
+  margin-top: var(--ui-space-2);
+  padding: var(--ui-space-2);
+  border-radius: var(--radius-card);
+  border: 1px solid color-mix(in srgb, #c9a227 18%, white);
+  background: linear-gradient(168deg, #fffefb 0%, #faf6ec 40%, #f0e6d4 100%);
+  box-shadow:
+    0 1px 3px color-mix(in srgb, #5c4a32 9%, transparent),
+    inset 0 1px 0 color-mix(in srgb, #fff 65%, transparent);
+  font-size: var(--font-size-small);
+  line-height: 1.45;
+}
+
 @media (max-width: 768px) {
   table {
     display: none;

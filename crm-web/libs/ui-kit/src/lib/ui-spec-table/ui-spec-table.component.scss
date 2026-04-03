@@ -1,0 +1,189 @@
+:host.uiSpecTableHost {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+.uiSpecTable {
+  margin: 0;
+}
+
+.uiSpecTable--standalone {
+  margin: var(--ui-space-2) 0;
+}
+
+/* Вложение в CRUD: тёплый золотистый градиент, чуть плотнее к низу */
+.uiSpecTable--embed {
+  padding: var(--ui-space-2);
+  border-radius: var(--radius-card);
+  border: 1px solid color-mix(in srgb, #c9a227 18%, white);
+  background: linear-gradient(
+    168deg,
+    #fffefb 0%,
+    #faf6ec 36%,
+    #f3ead8 100%
+  );
+  box-shadow:
+    0 1px 4px color-mix(in srgb, #5c4a32 10%, transparent),
+    inset 0 1px 0 color-mix(in srgb, #fff 70%, transparent);
+}
+
+.uiSpecTable--embed .uiSpecTable__caption {
+  border-bottom-color: color-mix(in srgb, #b8860b 28%, white);
+  color: color-mix(in srgb, var(--text-primary) 58%, #5c4a32);
+}
+
+.uiSpecTable--embed .uiSpecTable__table {
+  border-color: color-mix(in srgb, #a67c00 14%, white);
+  background: linear-gradient(180deg, #fffdf9 0%, #faf6f0 55%, #f5efe6 100%);
+  box-shadow: 0 1px 3px color-mix(in srgb, #4a3a28 7%, transparent);
+}
+
+.uiSpecTable--embed .uiSpecTable__th {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, #faf5ea 100%, #d4af37 6%) 0%,
+    color-mix(in srgb, #f0e8dc 100%, #c9a227 5%) 100%
+  );
+  border-bottom-color: color-mix(in srgb, #a67c00 16%, white);
+  border-right-color: color-mix(in srgb, #b8a078 22%, white);
+}
+
+.uiSpecTable--embed .uiSpecTable__bodyRow:nth-child(even) {
+  background: color-mix(in srgb, #f8f2e6 88%, #d4af37 12%);
+}
+
+.uiSpecTable--embed .uiSpecTable__td {
+  border-top-color: color-mix(in srgb, #a67c00 12%, white);
+  border-right-color: color-mix(in srgb, #b8a078 18%, white);
+}
+
+.uiSpecTable--embed .uiSpecTable__empty {
+  border-color: color-mix(in srgb, #b8860b 22%, white);
+  background: color-mix(in srgb, #fffdf8 94%, #d4af37 6%);
+}
+
+/* Подпись: светлее, без тяжёлой серой полосы */
+.uiSpecTable__caption {
+  margin: 0 0 var(--ui-space-2);
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--border-color) 28%, white);
+  font-size: var(--font-size-small);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--text-muted) 65%, var(--text-primary));
+}
+
+.uiSpecTable__empty {
+  margin: 0;
+  padding: var(--ui-space-2);
+  font-size: var(--font-size-small);
+  color: var(--text-muted);
+  text-align: center;
+  border: 1px dashed color-mix(in srgb, var(--border-color) 38%, white);
+  border-radius: var(--radius-card);
+  background: color-mix(in srgb, var(--surface) 96%, var(--accent) 2%);
+}
+
+.uiSpecTable__scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.uiSpecTable__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-small);
+  line-height: 1.45;
+  border: 1px solid color-mix(in srgb, var(--border-color) 32%, white);
+  border-radius: calc(var(--radius-card) - 1px);
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.uiSpecTable__th {
+  padding: 0.4rem var(--ui-space-2);
+  font-weight: 600;
+  font-size: var(--font-size-small);
+  color: color-mix(in srgb, var(--text-form-label) 88%, var(--text-muted));
+  text-align: start;
+  vertical-align: bottom;
+  /* Почти белая шапка — лёгкий холодный оттенок */
+  background: color-mix(in srgb, var(--surface) 94%, var(--accent) 3%);
+  border-bottom: 1px solid color-mix(in srgb, var(--border-color) 30%, white);
+  border-right: 1px solid color-mix(in srgb, var(--border-color) 22%, white);
+  white-space: nowrap;
+}
+
+.uiSpecTable__th:last-child {
+  border-right: none;
+}
+
+.uiSpecTable__th--ordinal {
+  width: 2.75rem;
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+  color: color-mix(in srgb, var(--text-muted) 75%, var(--text-primary));
+}
+
+.uiSpecTable__th--align-center {
+  text-align: center;
+}
+
+.uiSpecTable__th--align-end {
+  text-align: end;
+}
+
+/* Едва заметная зебра */
+.uiSpecTable__bodyRow:nth-child(even) {
+  background: color-mix(in srgb, var(--surface) 99.2%, var(--text-muted) 0.8%);
+}
+
+.uiSpecTable__td {
+  padding: 0.45rem var(--ui-space-2);
+  vertical-align: top;
+  border-top: 1px solid color-mix(in srgb, var(--border-color) 26%, white);
+  border-right: 1px solid color-mix(in srgb, var(--border-color) 20%, white);
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+.uiSpecTable__td:last-child {
+  border-right: none;
+}
+
+.uiSpecTable__bodyRow:first-child .uiSpecTable__td {
+  border-top: none;
+}
+
+.uiSpecTable__td--ordinal {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  color: color-mix(in srgb, var(--text-muted) 70%, var(--text-primary));
+  width: 2.75rem;
+  white-space: nowrap;
+}
+
+.uiSpecTable__td--tone-emphasis {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.uiSpecTable__td--tone-muted {
+  font-weight: 400;
+  color: color-mix(in srgb, var(--text-muted) 92%, var(--text-primary));
+}
+
+.uiSpecTable__td--tone-default {
+  font-weight: 400;
+}
+
+.uiSpecTable__td--align-center {
+  text-align: center;
+}
+
+.uiSpecTable__td--align-end {
+  text-align: end;
+}

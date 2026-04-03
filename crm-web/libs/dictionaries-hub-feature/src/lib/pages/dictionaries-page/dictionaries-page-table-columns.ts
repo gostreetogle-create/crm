@@ -63,6 +63,20 @@ export const PRODUCTION_DETAILS_COLUMNS_FULL: TableColumn[] = [
   { key: 'isActiveLabel', label: 'Активен' },
 ];
 
+export const PRODUCTS_COLUMNS: TableColumn[] = [{ key: 'hubLine', label: 'Изделие' }];
+
+export const PRODUCTS_COLUMNS_FULL: TableColumn[] = [
+  { key: 'name', label: 'Наименование' },
+  { key: 'colorLabel', label: 'Цвет' },
+  { key: 'detailNamesSummary', label: 'Детали' },
+  { key: 'workTypesSummary', label: 'Вид работ' },
+  { key: 'priceLabel', label: 'Цена ₽' },
+  { key: 'costLabel', label: 'Себестоимость ₽' },
+  { key: 'linesCountLabel', label: 'Деталей в составе' },
+  { key: 'notesLabel', label: 'Заметка' },
+  { key: 'isActiveLabel', label: 'Активен' },
+];
+
 export const GEOMETRIES_COLUMNS: TableColumn[] = [{ key: 'hubLine', label: 'Профиль' }];
 
 /** Full-view для раскрытия geometries. */

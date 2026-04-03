@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, HostListener, Input, Output, TemplateRef } from '@angular/core';
 import {
+  LucideChevronDown,
   LucideCopy,
   LucideDownload,
   LucideEye,
@@ -31,6 +32,7 @@ export type CrudTableRow = Record<string, unknown>;
   imports: [
     CommonModule,
     PageHeaderComponent,
+    LucideChevronDown,
     LucideCopy,
     LucideDownload,
     LucideEye,
@@ -88,6 +90,12 @@ export class CrudLayoutComponent {
   @Input() maxTableBodyRows: number | null = null;
   /** CSS max-height для блока таблицы (например `min(72vh, 34rem)`), с вертикальным скроллом. */
   @Input() tableBodyMaxHeight: string | null = null;
+  /**
+   * Раскрывающаяся строка под записью: клик по строке (кроме колонки действий) переключает блок.
+   * Контент — `expandRowTemplate` с контекстом `{ $implicit: row }`.
+   */
+  @Input() expandableRows = false;
+  @Input() expandRowTemplate: TemplateRef<unknown> | null = null;
   @Output() view = new EventEmitter<string>();
   @Output() create = new EventEmitter<void>();
   @Output() duplicate = new EventEmitter<string>();
@@ -102,6 +110,9 @@ export class CrudLayoutComponent {
 
   /** Открытая строка меню действий (`null` — закрыто). */
   openRowMenuIndex: number | null = null;
+
+  /** Раскрытая строка таблицы (одна за раз), по `id` записи. */
+  expandedRowId: string | null = null;
 
   /** Безопасный фон для квадрата-образца (только #RGB / #RRGGBB). */
   swatchBackground(row: Record<string, unknown> | null | undefined, hexKey: string | undefined): string {
@@ -125,6 +136,36 @@ export class CrudLayoutComponent {
 
   get hasRowActions(): boolean {
     return this.showRowActions && (this.canView || this.canDuplicate || this.canEdit || this.canDelete);
+  }
+
+  /** Colspan для вложенной строки раскрытия (учёт режима «одна колонка + действия» на хабе). */
+  get expandDetailColspan(): number {
+    if (this.columns.length === 1 && this.hasRowActions) {
+      return 2;
+    }
+    return this.columns.length + (this.hasRowActions ? 1 : 0);
+  }
+
+  rowId(row: CrudTableRow): string {
+    const id = row['id'];
+    return id != null && id !== '' ? String(id) : '';
+  }
+
+  onExpandableRowClick(row: CrudTableRow, ev: MouseEvent): void {
+    if (!this.expandableRows || !this.expandRowTemplate) return;
+    const t = ev.target as HTMLElement | null;
+    if (!t) return;
+    if (
+      t.closest('td.actionsCol') ||
+      t.closest('.crudHubRowActions') ||
+      t.closest('.card-actions') ||
+      t.closest('[data-crud-row-actions-root]')
+    ) {
+      return;
+    }
+    const sid = this.rowId(row);
+    if (!sid) return;
+    this.expandedRowId = this.expandedRowId === sid ? null : sid;
   }
 
   get cardFieldsAreDoubleColumn(): boolean {

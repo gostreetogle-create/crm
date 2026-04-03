@@ -12,6 +12,7 @@ import {
   MaterialsStore,
   OrganizationsStore,
   ProductionDetailsStore,
+  ProductsStore,
   ProductionWorkTypesStore,
   SurfaceFinishesStore,
   UnitsStore,
@@ -28,6 +29,7 @@ import {
   PRODUCTION_DETAILS_REPOSITORY,
   ProductionDetailsHttpRepository,
 } from '@srm/production-details-data-access';
+import { PRODUCTS_REPOSITORY, ProductsHttpRepository } from '@srm/products-data-access';
 import {
   PRODUCTION_WORK_TYPES_REPOSITORY,
   ProductionWorkTypesHttpRepository,
@@ -81,6 +83,9 @@ export const DICTIONARIES_ROUTE_PROVIDERS: Provider[] = [
     provide: PRODUCTION_DETAILS_REPOSITORY,
     useExisting: ProductionDetailsHttpRepository,
   },
+  ProductsHttpRepository,
+  ProductsStore,
+  { provide: PRODUCTS_REPOSITORY, useExisting: ProductsHttpRepository },
   ClientsHttpRepository,
   ClientsStore,
   { provide: CLIENTS_REPOSITORY, useExisting: ClientsHttpRepository },

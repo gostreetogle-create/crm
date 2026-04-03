@@ -23,6 +23,7 @@ export const HUB_BOARD_QUICK_CREATE = {
   users: { kind: 'standalone', key: 'users' },
   kpPhotos: { kind: 'standalone', key: 'kpPhotos' },
   productionDetails: { kind: 'standalone', key: 'productionDetails' },
+  products: { kind: 'standalone', key: 'products' },
 } as const satisfies Record<string, HubBoardQuickCreateTarget>;
 
 export type HubBoardQuickCreateKey = keyof typeof HUB_BOARD_QUICK_CREATE;

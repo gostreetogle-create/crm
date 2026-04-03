@@ -28,6 +28,8 @@
   --shadow-color: rgba(16, 24, 40, 0.04);
 
   --accent: #1f6feb;
+  /** Фон input/select/textarea в формах: очень светлый голубой вместо серого */
+  --ui-form-control-bg: color-mix(in srgb, var(--accent) 6.5%, #ffffff);
   --success: #0e9f6e;
   /* Affirmative / «как в 1С» для иконок: создать, сохранить, подтвердить */
   --icon-affirm: #319432;

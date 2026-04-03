@@ -183,6 +183,20 @@
       (dismiss)="navigateBackFromStandaloneDictionaryCreate()"
     />
   </app-dictionary-standalone-create-shell>
+  } @else if (standaloneCreateKey() === 'products') {
+  <app-dictionary-standalone-create-shell
+    [pageTitle]="standaloneDictionaryTitle('products')"
+    (backClicked)="navigateBackFromStandaloneDictionaryCreate()"
+  >
+    <ng-container *ngTemplateOutlet="productsContentTpl"></ng-container>
+    <app-ui-modal-form-actions
+      standaloneFormActions
+      [viewMode]="isProductsViewMode()"
+      [formId]="'products-form'"
+      [submitLabel]="productsStore.isEditMode() ? 'Сохранить изменения' : 'Создать изделие'"
+      (dismiss)="navigateBackFromStandaloneDictionaryCreate()"
+    />
+  </app-dictionary-standalone-create-shell>
   } @else if (isNewMaterialPageRoute()) {
   <app-new-material-fullscreen-page
     [pageTitle]="'Новый материал'"
@@ -404,6 +418,52 @@
         (duplicate)="duplicateProductionDetail($event)"
         (edit)="openProductionDetailsEdit($event)"
         (delete)="deleteProductionDetail($event)"
+      ></crud-layout>
+        }
+
+            @case ('products') {
+      <ng-template #productsExpandComposition let-row>
+        <app-ui-spec-table
+          caption="Состав изделия"
+          variant="embed"
+          emptyText="Нет строк состава."
+          [showOrdinalColumn]="true"
+          [columns]="productCompositionSpecColumns"
+          [rows]="productCompositionSpecRows($any(row)['compositionLines'])"
+        />
+      </ng-template>
+      <crud-layout
+        title="Изделия"
+        [showHeader]="false"
+        [showCardLabel]="false"
+        [showNameSearch]="true"
+        [showCreateAction]="false"
+        [canCreate]="permissions.crud().canCreate"
+        createAriaLabel="Добавить изделие"
+        createTitle="Добавить изделие"
+        [columns]="productsColumnsForTile()"
+        [data]="productsStore.productsData()"
+        [loading]="productsStore.loading()"
+        [maxTableBodyRows]="null"
+        [tableBodyMaxHeight]="hubBoardDetailTableMaxHeight"
+        [showExcelActions]="true"
+        [canDownloadTemplate]="permissions.can('excel.template')"
+        [canImportExcel]="permissions.can('excel.import')"
+        [canExportExcel]="permissions.can('excel.export')"
+        [canView]="true"
+        [canDuplicate]="false"
+        [canEdit]="permissions.crud().canEdit"
+        [canDelete]="permissions.crud().canDelete"
+        deleteConfirmMessage="Удалить изделие?"
+        [expandableRows]="true"
+        [expandRowTemplate]="productsExpandComposition"
+        (downloadTemplate)="downloadProductsTemplateExcel()"
+        (importExcel)="onProductsExcelImported($event)"
+        (exportExcel)="exportProductsExcel()"
+        (create)="openProductsCreate()"
+        (view)="openProductsView($event)"
+        (edit)="openProductsEdit($event)"
+        (delete)="deleteProduct($event)"
       ></crud-layout>
         }
 
@@ -1113,6 +1173,22 @@
   size="xl"
 ></ui-modal>
 
+<ui-modal
+  *ngIf="isProductsModalOpen()"
+  [title]="
+    isProductsViewMode()
+      ? 'Просмотр изделия'
+      : productsStore.isEditMode()
+        ? 'Редактирование изделия'
+        : 'Новое изделие'
+  "
+  [content]="productsContentTpl"
+  [actions]="productsActionsTpl"
+  (close)="closeProductsModal()"
+  [closeOnBackdrop]="isProductsViewMode()"
+  size="xl"
+></ui-modal>
+
 <ng-template #productionDetailsContentTpl>
   @if (isProductionDetailsViewMode()) {
     <app-dictionary-preview-card-no-photo
@@ -1322,6 +1398,196 @@
       </fieldset>
     </form>
   }
+</ng-template>
+
+<ng-template #productsContentTpl>
+  @if (isProductsViewMode()) {
+    @if (productViewItem(); as pv) {
+      <div class="productSpecView">
+        <header class="productSpecView__hero">
+          <div class="productSpecView__heroTop">
+            <span class="productSpecView__badge" [class.productSpecView__badge--off]="!pv.isActive">
+              {{ pv.isActive ? 'Активно' : 'Неактивно' }}
+            </span>
+          </div>
+          <h2 class="productSpecView__title">{{ pv.name }}</h2>
+          <div class="productSpecView__heroNums">
+            <span
+              ><strong>Цена</strong>
+              {{ pv.priceRub != null ? pv.priceRub + ' ₽' : '—' }}</span
+            >
+            <span
+              ><strong>Себестоимость</strong>
+              {{ pv.costRub != null ? pv.costRub + ' ₽' : '—' }}</span
+            >
+            <span
+              ><strong>Строк в составе</strong> {{ pv.lines.length }}</span
+            >
+          </div>
+        </header>
+
+        <div class="productSpecView__topGrid">
+          <section class="productSpecView__card">
+            <h3 class="productSpecView__cardTitle">Учёт</h3>
+            <dl class="productSpecView__dl">
+              <div class="productSpecView__dlRow">
+                <dt>ID</dt>
+                <dd class="productSpecView__mono">{{ pv.id }}</dd>
+              </div>
+              <div class="productSpecView__dlRow">
+                <dt>Создано</dt>
+                <dd>{{ formatProductViewDate(pv.createdAt) }}</dd>
+              </div>
+              <div class="productSpecView__dlRow">
+                <dt>Обновлено</dt>
+                <dd>{{ formatProductViewDate(pv.updatedAt) }}</dd>
+              </div>
+            </dl>
+          </section>
+
+          <section class="productSpecView__card">
+            <h3 class="productSpecView__cardTitle">Шапка и примечания</h3>
+            <dl class="productSpecView__dl">
+              <div class="productSpecView__dlRow productSpecView__dlRow--block">
+                <dt>Заметки</dt>
+                <dd>{{ (pv.notes ?? '').trim() || '—' }}</dd>
+              </div>
+            </dl>
+          </section>
+        </div>
+
+        <section class="productSpecView__card productSpecView__card--full">
+          <h3 class="productSpecView__cardTitle">Общие для строк (как в форме)</h3>
+          <p class="productSpecView__hint">
+            При сохранении подставляются во все строки состава; фактические переопределения см. в таблице ниже.
+          </p>
+          <dl class="productSpecView__dl productSpecView__dl--2col">
+            <div class="productSpecView__dlRow">
+              <dt>Вид работ</dt>
+              <dd>{{ productViewFormWorkLabel() }}</dd>
+            </div>
+            <div class="productSpecView__dlRow">
+              <dt>Цвет</dt>
+              <dd>{{ productViewFormColorLabel() }}</dd>
+            </div>
+          </dl>
+        </section>
+
+        <section class="productSpecView__card productSpecView__card--full">
+          <h3 class="productSpecView__cardTitle">Состав (спецификация)</h3>
+          <app-ui-spec-table
+            caption="Строки состава"
+            variant="embed"
+            emptyText="Нет строк состава."
+            [showOrdinalColumn]="true"
+            [columns]="productViewCompositionColumns"
+            [rows]="productViewCompositionRows()"
+          />
+        </section>
+      </div>
+    } @else {
+      <p class="productSpecView__empty" role="status">Нет данных для просмотра.</p>
+    }
+  } @else {
+    <form id="products-form" [formGroup]="productsForm" (ngSubmit)="submitProducts()" class="formGrid">
+      <fieldset class="dictionaryFormSection">
+        <legend>Изделие</legend>
+        <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
+          <app-ui-form-field label="Наименование" [required]="true">
+            <input type="text" formControlName="name" placeholder="Напр. Секция А-1" />
+          </app-ui-form-field>
+          <app-ui-form-field label="Вид работ">
+            <select formControlName="workTypeId">
+              <option value="">— не задан —</option>
+              @for (w of productionWorkTypesStore.items(); track w.id) {
+                @if (w.isActive) {
+                  <option [value]="w.id">{{ w.name }} ({{ w.shortLabel }})</option>
+                }
+              }
+            </select>
+          </app-ui-form-field>
+          <app-ui-form-field label="Цвет">
+            <select formControlName="colorId">
+              <option value="">— не задан —</option>
+              @for (c of colorsStore.items(); track c.id) {
+                <option [value]="c.id">{{ c.name }} {{ c.ralCode ? '(' + c.ralCode + ')' : '' }}</option>
+              }
+            </select>
+          </app-ui-form-field>
+          <app-ui-form-field label="Цена, ₽">
+            <input type="number" formControlName="priceRub" step="any" />
+          </app-ui-form-field>
+          <app-ui-form-field label="Себестоимость, ₽">
+            <input type="number" formControlName="costRub" step="any" />
+          </app-ui-form-field>
+          <app-ui-form-field label="Заметки" [wide]="true">
+            <textarea rows="2" formControlName="notes"></textarea>
+          </app-ui-form-field>
+          <app-ui-checkbox-field class="checkbox" label="Активно" formControlName="isActive"></app-ui-checkbox-field>
+          <div class="dictionaryFieldRowFull">
+            <app-ui-button type="button" variant="soft" (clicked)="recalcProductPriceDefaults()">
+              Подставить сумму по деталям (цена и себестоимость)
+            </app-ui-button>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="dictionaryFormSection">
+        <legend>Состав: одна или несколько деталей</legend>
+        <p class="muted dictionaryFieldRowFull">
+          В каждой строке выберите деталь. Вид работ и цвет задаются один раз в блоке «Изделие»; при пустых полях они
+          подставляются из первой выбранной детали (вид работ — из детали, цвет — из материала детали).
+        </p>
+        <div formArrayName="lines">
+          @for (line of productLinesFormArray.controls; track $index; let i = $index) {
+            <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2 productLineRow" [formGroupName]="i">
+              <app-ui-form-field label="Деталь" [required]="true">
+                <div class="colorRefRow">
+                  <select
+                    formControlName="productionDetailId"
+                    (change)="onProductLineDetailChange(i, $any($event.target).value)"
+                  >
+                    <option value="">— выберите деталь —</option>
+                    @for (d of productionDetailsStore.items(); track d.id) {
+                      @if (d.isActive) {
+                        <option [value]="d.id">{{ d.name }}</option>
+                      }
+                    }
+                  </select>
+                  @if (permissions.crud().canCreate) {
+                    <app-ui-button
+                      type="button"
+                      [square]="true"
+                      ariaLabel="Новая деталь"
+                      title="Создать деталь (отдельная страница)"
+                      (clicked)="navigateToStandaloneDictionaryCreate('productionDetails')"
+                    >
+                      <span class="squareIconTone squareIconTone--affirm"><svg lucidePlus [size]="18"></svg></span>
+                    </app-ui-button>
+                  }
+                </div>
+              </app-ui-form-field>
+              <div class="dictionaryFieldRowFull productLineRowActions">
+                <app-ui-button type="button" variant="soft" (clicked)="removeProductLine(i)">Удалить строку</app-ui-button>
+              </div>
+            </div>
+          }
+        </div>
+        <div class="dictionaryFieldRowFull">
+          <app-ui-button type="button" variant="soft" (clicked)="addProductLine()">+ Добавить деталь в состав</app-ui-button>
+        </div>
+      </fieldset>
+    </form>
+  }
+</ng-template>
+
+<ng-template #productsActionsTpl>
+  <app-ui-modal-form-actions
+    [viewMode]="isProductsViewMode()"
+    [formId]="'products-form'"
+    [submitLabel]="productsStore.isEditMode() ? 'Сохранить изменения' : 'Создать изделие'"
+    (dismiss)="closeProductsModal()"
+  />
 </ng-template>
 
 <ng-template #productionDetailsActionsTpl>

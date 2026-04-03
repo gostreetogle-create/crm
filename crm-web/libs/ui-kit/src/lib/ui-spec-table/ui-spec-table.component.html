@@ -1,0 +1,40 @@
+<figure
+  class="uiSpecTable"
+  [class.uiSpecTable--embed]="variant === 'embed'"
+  [class.uiSpecTable--standalone]="variant === 'standalone'"
+>
+  @if (caption) {
+    <figcaption class="uiSpecTable__caption">{{ caption }}</figcaption>
+  }
+
+  @if (rows.length === 0) {
+    <p class="uiSpecTable__empty" role="status">{{ emptyText }}</p>
+  } @else {
+    <div class="uiSpecTable__scroll" role="region" [attr.aria-label]="caption || 'Таблица'">
+      <table class="uiSpecTable__table">
+        <thead>
+          <tr>
+            @if (showOrdinalColumn) {
+              <th class="uiSpecTable__th uiSpecTable__th--ordinal" scope="col">№</th>
+            }
+            @for (col of columns; track col.key) {
+              <th [class]="thClass(col)" [attr.scope]="'col'">{{ col.label }}</th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of rows; track $index) {
+            <tr class="uiSpecTable__bodyRow">
+              @if (showOrdinalColumn) {
+                <td class="uiSpecTable__td uiSpecTable__td--ordinal">{{ $index + 1 }}</td>
+              }
+              @for (col of columns; track col.key) {
+                <td [class]="tdClass(col)">{{ formatCell(row[col.key]) }}</td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</figure>

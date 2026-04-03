@@ -2,7 +2,7 @@
 
 **Цель:** единые правила, чтобы не плодить дубликаты («Алюминий» / «алюминий» / лишние пробелы), предсказуемо сопоставлять Excel с справочниками и чтобы следующая команда могла **пройти все таблицы по чеклисту** до следующего крупного этапа.
 
-**Связанные документы:** поведение полей и Excel-канон — [`dictionary-field-behavior-guide.md`](./dictionary-field-behavior-guide.md); подписи UI — [`dictionaries-naming-convention.md`](./dictionaries-naming-convention.md); целевая модель материалов — [`../domain/material-and-material-characteristics.md`](../domain/material-and-material-characteristics.md); роли, маршруты и страница «Настройки» — [`rbac-and-admin-settings.md`](./rbac-and-admin-settings.md); справочник пользователей (в т.ч. Excel) — [`users-dictionary.md`](./users-dictionary.md).
+**Связанные документы:** поведение полей и Excel-канон — [`dictionary-field-behavior-guide.md`](./dictionary-field-behavior-guide.md); подписи UI — [`dictionaries-naming-convention.md`](./dictionaries-naming-convention.md); целевая модель материалов — [`../domain/material-and-material-characteristics.md`](../domain/material-and-material-characteristics.md); роли, маршруты и страница «Настройки» — [`rbac-and-admin-settings.md`](./rbac-and-admin-settings.md); справочник пользователей (в т.ч. Excel) — [`users-dictionary.md`](./users-dictionary.md); **изделия** (состав, единый Excel, те же колонки на хабе и в админском файле) — [`products-dictionary.md`](./products-dictionary.md).
 
 ---
 

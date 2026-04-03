@@ -82,7 +82,11 @@ export const MaterialsStore = signalStore(
               isActiveLabel: item.isActive ? 'Да' : 'Нет',
             };
           })
-          .sort((a, b) => String(a.name).localeCompare(String(b.name)));
+          .sort((a, b) => {
+            const byName = String(a.name).localeCompare(String(b.name), 'ru');
+            if (byName !== 0) return byName;
+            return String(a.id).localeCompare(String(b.id));
+          });
       }),
       isEditMode: computed(() => editId() !== null),
       facts: computed(() => ({

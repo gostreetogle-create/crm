@@ -12,7 +12,15 @@ import {
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { LucidePlus, LucideX } from '@lucide/angular';
-import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormArray,
+  FormBuilder,
+  FormGroup,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms';
 import {
   Observable,
   Subscription,
@@ -72,7 +80,10 @@ import {
   WORK_TYPES_COLUMNS_FULL,
   PRODUCTION_DETAILS_COLUMNS,
   PRODUCTION_DETAILS_COLUMNS_FULL,
+  PRODUCTS_COLUMNS,
+  PRODUCTS_COLUMNS_FULL,
 } from './dictionaries-page-table-columns';
+import { productPayloadFromValues } from './dictionaries-page-products';
 import {
   mapLegalFormToOrganizationKind,
   normalizeRalCode,
@@ -107,6 +118,7 @@ import { validateAndMapSurfaceFinishesRows as validateAndMapSurfaceFinishesRowsF
 import { validateAndMapCoatingsRows as validateAndMapCoatingsRowsFn } from './dictionaries-page-excel-validate-coatings';
 import { validateAndMapClientsRows as validateAndMapClientsRowsFn } from './dictionaries-page-excel-validate-clients';
 import { validateAndMapOrganizationsRows as validateAndMapOrganizationsRowsFn } from './dictionaries-page-excel-validate-organizations';
+import { validateAndMapProductsRows as validateAndMapProductsRowsFn } from './dictionaries-page-excel-validate-products';
 import {
   ClientsStore,
   CoatingsStore,
@@ -117,6 +129,7 @@ import {
   MaterialsStore,
   OrganizationsStore,
   ProductionDetailsStore,
+  ProductsStore,
   ProductionWorkTypesStore,
   RolesStore,
   SurfaceFinishesStore,
@@ -142,6 +155,13 @@ import {
 } from '@srm/dictionaries-utils';
 import type { MaterialItem, MaterialItemInput } from '@srm/materials-data-access';
 import type { ProductionDetailItemInput } from '@srm/production-details-data-access';
+import {
+  PRODUCTS_REPOSITORY,
+  type ProductItem,
+  type ProductItemInput,
+  type ProductLineDto,
+  type ProductsRepository,
+} from '@srm/products-data-access';
 import { type ClientItemInput, formatClientFio } from '@srm/clients-data-access';
 import { OrganizationItem, OrganizationItemInput } from '@srm/organizations-data-access';
 import {
@@ -173,6 +193,8 @@ import {
   UiFormGridComponent,
   UiModal as UiModalComponent,
   UiModalFormActionsComponent,
+  UiSpecTableComponent,
+  type UiSpecTableColumn,
 } from '@srm/ui-kit';
 @Component({
   selector: 'app-dictionaries-page',
@@ -199,6 +221,7 @@ import {
     LinkedDictionaryPropagationConfirmComponent,
     DictionaryStandaloneCreateShellComponent,
     NewMaterialFullscreenPageComponent,
+    UiSpecTableComponent,
   ],
   templateUrl: './dictionaries-page.html',
   styleUrl: './dictionaries-page.scss',
@@ -311,6 +334,28 @@ export class DictionariesPage implements OnDestroy {
   readonly surfaceFinishesStore = inject(SurfaceFinishesStore);
   readonly productionWorkTypesStore = inject(ProductionWorkTypesStore);
   readonly productionDetailsStore = inject(ProductionDetailsStore);
+  readonly productsStore = inject(ProductsStore);
+  private readonly productsRepository = inject<ProductsRepository>(PRODUCTS_REPOSITORY);
+
+  /** Полные данные для режима просмотра изделия (все поля и строки состава из API). */
+  readonly productViewItem = signal<ProductItem | null>(null);
+
+  /** Колонки таблицы состава в модалке «Просмотр изделия». */
+  readonly productViewCompositionColumns: UiSpecTableColumn[] = [
+    { key: 'detailName', label: 'Деталь', tone: 'emphasis' },
+    { key: 'lineTotalRub', label: 'Итого ₽', tone: 'muted', align: 'end' },
+    { key: 'workLabel', label: 'Вид работ', tone: 'muted' },
+    { key: 'colorLabel', label: 'Цвет', tone: 'muted' },
+    { key: 'sortOrder', label: 'Пор.', tone: 'muted', align: 'end' },
+    { key: 'lineId', label: 'ID строки', tone: 'muted' },
+    { key: 'detailId', label: 'ID детали', tone: 'muted' },
+    { key: 'workTypeIdRaw', label: 'workTypeId', tone: 'muted' },
+    { key: 'colorIdRaw', label: 'colorId', tone: 'muted' },
+    { key: 'srcWt', label: 'Ист. ВР', tone: 'muted' },
+    { key: 'srcMat', label: 'Ист. мат.', tone: 'muted' },
+    { key: 'ovWt', label: 'Пер. ВР', tone: 'muted' },
+    { key: 'ovCol', label: 'Пер. цвет', tone: 'muted' },
+  ];
   readonly clientsStore = inject(ClientsStore);
   readonly organizationsStore = inject(OrganizationsStore);
   readonly materialCharacteristicsStore = inject(MaterialCharacteristicsStore);
@@ -324,6 +369,8 @@ export class DictionariesPage implements OnDestroy {
   readonly isWorkTypesModalOpen = signal(false);
   readonly isProductionDetailsModalOpen = signal(false);
   readonly isProductionDetailsViewMode = signal(false);
+  readonly isProductsModalOpen = signal(false);
+  readonly isProductsViewMode = signal(false);
   readonly isMaterialCharacteristicsModalOpen = signal(false);
   readonly isMaterialCharacteristicsViewMode = signal(false);
   readonly isMaterialsModalOpen = signal(false);
@@ -558,6 +605,8 @@ export class DictionariesPage implements OnDestroy {
   readonly workTypesColumnsFull = WORK_TYPES_COLUMNS_FULL;
   readonly productionDetailsColumns = PRODUCTION_DETAILS_COLUMNS;
   readonly productionDetailsColumnsFull = PRODUCTION_DETAILS_COLUMNS_FULL;
+  readonly productsColumns = PRODUCTS_COLUMNS;
+  readonly productsColumnsFull = PRODUCTS_COLUMNS_FULL;
   readonly materialCharacteristicsColumnsPreview = MATERIAL_CHARACTERISTICS_COLUMNS_PREVIEW;
   readonly materialCharacteristicsColumnsFull = MATERIAL_CHARACTERISTICS_COLUMNS_FULL;
   readonly materialsColumnsPreview = MATERIALS_COLUMNS_PREVIEW;
@@ -612,6 +661,31 @@ export class DictionariesPage implements OnDestroy {
     this.productionDetailsColumns,
     this.productionDetailsColumnsFull,
   );
+  readonly productsColumnsForTile = this.columnsForTile('products', this.productsColumns, this.productsColumnsFull);
+
+  /** Колонки мини-таблицы состава в раскрытии строки «Изделия» (`app-ui-spec-table`). */
+  readonly productCompositionSpecColumns: UiSpecTableColumn[] = [
+    { key: 'detailName', label: 'Наименование', tone: 'emphasis' },
+    { key: 'workTypeLabel', label: 'Вид работ', tone: 'muted' },
+    { key: 'colorLabel', label: 'Цвет', tone: 'muted' },
+  ];
+
+  /** Строки для спецификации состава из поля `compositionLines` строки CRUD. */
+  productCompositionSpecRows(lines: unknown): Array<Record<string, unknown>> {
+    if (!Array.isArray(lines)) return [];
+    return lines.map((raw) => {
+      const l = raw as {
+        detailName?: unknown;
+        workTypeLabel?: unknown;
+        colorLabel?: unknown;
+      };
+      return {
+        detailName: l.detailName,
+        workTypeLabel: l.workTypeLabel,
+        colorLabel: l.colorLabel,
+      };
+    });
+  }
   readonly unitsColumnsForTile = this.columnsForTile('units', this.unitsColumns, this.unitsColumnsFull);
   readonly kpPhotosColumnsForTile = this.columnsForTile('kpPhotos', this.kpPhotosColumns, this.kpPhotosColumnsFull);
   readonly clientsColumnsForTile = this.columnsForTile('clients', this.clientsColumns, this.clientsColumnsFull);
@@ -715,6 +789,17 @@ export class DictionariesPage implements OnDestroy {
     snapshotWorkShortLabel: [''],
     snapshotHourlyRateRub: [null as number | null],
     workTimeHours: [null as number | null],
+  });
+
+  readonly productsForm = this.fb.nonNullable.group({
+    name: ['', [Validators.required, Validators.minLength(2)]],
+    workTypeId: [''],
+    colorId: [''],
+    priceRub: [null as number | null],
+    costRub: [null as number | null],
+    notes: [''],
+    isActive: [true],
+    lines: this.fb.array<FormGroup>([]),
   });
 
   readonly materialCharacteristicsForm = this.fb.nonNullable.group({
@@ -936,6 +1021,7 @@ export class DictionariesPage implements OnDestroy {
     this.surfaceFinishesStore.loadItems();
     this.productionWorkTypesStore.loadItems();
     this.productionDetailsStore.loadItems();
+    this.productsStore.loadItems();
     this.clientsStore.loadItems();
     this.organizationsStore.loadItems();
 
@@ -1156,6 +1242,321 @@ export class DictionariesPage implements OnDestroy {
     this.productionDetailsStore.resetForm();
     this.isProductionDetailsViewMode.set(false);
     this.isProductionDetailsModalOpen.set(false);
+  }
+
+  get productLinesFormArray(): FormArray {
+    return this.productsForm.get('lines') as FormArray;
+  }
+
+  closeProductsModal(): void {
+    this.productViewItem.set(null);
+    this.productsStore.resetForm();
+    this.clearProductLines();
+    this.isProductsViewMode.set(false);
+    this.isProductsModalOpen.set(false);
+  }
+
+  private clearProductLines(): void {
+    while (this.productLinesFormArray.length > 0) {
+      this.productLinesFormArray.removeAt(0);
+    }
+  }
+
+  private newProductLineGroup(init?: Partial<{ productionDetailId: string }>): FormGroup {
+    return this.fb.nonNullable.group({
+      productionDetailId: [init?.productionDetailId ?? '', Validators.required],
+    });
+  }
+
+  private defaultWorkTypeAndColorForDetail(detailId: string): { workTypeId: string; colorId: string } {
+    const d = this.productionDetailsStore.items().find((x) => x.id === detailId);
+    const workTypeId = d?.sourceWorkTypeId ?? '';
+    let colorId = '';
+    if (d?.sourceMaterialId) {
+      const mat = this.materialsStore.items().find((m) => m.id === d.sourceMaterialId);
+      if (mat) {
+        const mc = this.materialCharacteristicsStore.items().find((c) => c.id === mat.materialCharacteristicId);
+        colorId = mc?.colorId ?? '';
+      }
+    }
+    return { workTypeId, colorId };
+  }
+
+  addProductLine(initial?: Partial<{ productionDetailId: string }>): void {
+    this.productLinesFormArray.push(this.newProductLineGroup(initial));
+  }
+
+  removeProductLine(index: number): void {
+    this.productLinesFormArray.removeAt(index);
+    this.recalcProductPriceDefaults();
+  }
+
+  onProductLineDetailChange(_index: number, detailId: string): void {
+    if (!detailId) {
+      this.recalcProductPriceDefaults();
+      return;
+    }
+    const d = this.defaultWorkTypeAndColorForDetail(detailId);
+    const curWt = (this.productsForm.get('workTypeId')?.value as string | undefined)?.trim();
+    if (!curWt) {
+      this.productsForm.patchValue({ workTypeId: d.workTypeId ?? '' });
+    }
+    const curColor = (this.productsForm.get('colorId')?.value as string | undefined)?.trim();
+    if (!curColor) {
+      this.productsForm.patchValue({ colorId: d.colorId ?? '' });
+    }
+    this.recalcProductPriceDefaults();
+  }
+
+  /** Сумма lineTotalRub выбранных деталей — подставляется в цену/себестоимость по кнопке и при смене детали. */
+  recalcProductPriceDefaults(): void {
+    let sum = 0;
+    for (const ctrl of this.productLinesFormArray.controls) {
+      const id = (ctrl as FormGroup).get('productionDetailId')?.value as string;
+      if (!id) continue;
+      const det = this.productionDetailsStore.items().find((x) => x.id === id);
+      if (det?.lineTotalRub != null) {
+        sum += det.lineTotalRub;
+      }
+    }
+    this.productsForm.patchValue({ priceRub: sum, costRub: sum });
+  }
+
+  private resetProductsCreateForm(): void {
+    this.productViewItem.set(null);
+    this.isProductsViewMode.set(false);
+    this.productsForm.enable({ emitEvent: false });
+    this.productsStore.startCreate();
+    this.clearProductLines();
+    this.addProductLine();
+    this.productsForm.reset({
+      name: '',
+      workTypeId: '',
+      colorId: '',
+      priceRub: null,
+      costRub: null,
+      notes: '',
+      isActive: true,
+    });
+    this.recalcProductPriceDefaults();
+  }
+
+  openProductsCreate(): void {
+    if (!this.permissions.crud().canCreate) return;
+    this.navigateToStandaloneDictionaryCreate('products');
+  }
+
+  /** Создание из плитки «+» без перехода на отдельный URL: модалка (как часть хаба). */
+  openProductsCreateInModal(): void {
+    if (!this.permissions.crud().canCreate) return;
+    this.resetProductsCreateForm();
+    this.isProductsModalOpen.set(true);
+  }
+
+  async openProductsEdit(id: string): Promise<void> {
+    if (!this.permissions.crud().canEdit) return;
+    this.isProductsViewMode.set(false);
+    this.productsForm.enable({ emitEvent: false });
+    let item: ProductItem;
+    try {
+      item = await firstValueFrom(this.productsRepository.getById(id));
+    } catch {
+      return;
+    }
+    this.productViewItem.set(item);
+    this.productsStore.startEdit(item.id);
+    this.clearProductLines();
+    const sortedLines = item.lines.sort((a, b) => a.sortOrder - b.sortOrder);
+    for (const line of sortedLines) {
+      this.addProductLine({
+        productionDetailId: line.productionDetailId,
+      });
+    }
+    const firstColor = sortedLines[0]?.colorId ?? '';
+    const firstWorkType = sortedLines[0]?.workTypeId ?? '';
+    this.productsForm.reset({
+      name: item.name,
+      workTypeId: firstWorkType,
+      colorId: firstColor,
+      priceRub: item.priceRub,
+      costRub: item.costRub,
+      notes: item.notes ?? '',
+      isActive: item.isActive,
+    });
+    this.isProductsModalOpen.set(true);
+  }
+
+  openProductsView(id: string): void {
+    void this.openProductsEdit(id).then(() => {
+      this.isProductsViewMode.set(true);
+      this.productsForm.disable({ emitEvent: false });
+    });
+  }
+
+  deleteProduct(id: string): void {
+    if (!this.permissions.crud().canDelete) return;
+    this.productsStore.delete(id);
+  }
+
+  productLineDetailLabel(index: number): string {
+    const id = this.productLinesFormArray.at(index)?.get('productionDetailId')?.value as string | undefined;
+    if (!id) {
+      return '—';
+    }
+    return this.productionDetailsStore.items().find((d) => d.id === id)?.name ?? id;
+  }
+
+  formatProductViewDate(iso: string): string {
+    try {
+      return new Date(iso).toLocaleString('ru-RU', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    } catch {
+      return iso;
+    }
+  }
+
+  productViewCompositionRows(): Array<Record<string, unknown>> {
+    const pv = this.productViewItem();
+    if (!pv) return [];
+    const idOrDash = (v: string | null | undefined) => (v && String(v).trim() ? String(v).trim() : '—');
+    return [...pv.lines]
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+      .map((line) => ({
+        detailName: line.productionDetail.name,
+        lineTotalRub:
+          line.productionDetail.lineTotalRub != null ? `${line.productionDetail.lineTotalRub} ₽` : '—',
+        workLabel: this.productViewLineWorkLabel(line),
+        colorLabel: this.productViewLineColorLabel(line),
+        sortOrder: line.sortOrder,
+        lineId: line.id,
+        detailId: line.productionDetailId,
+        workTypeIdRaw: idOrDash(line.workTypeId),
+        colorIdRaw: idOrDash(line.colorId),
+        srcWt: idOrDash(line.productionDetail.sourceWorkTypeId),
+        srcMat: idOrDash(line.productionDetail.sourceMaterialId),
+        ovWt: line.overrideWorkType
+          ? line.overrideWorkType.shortLabel?.trim() || line.overrideWorkType.name
+          : '—',
+        ovCol: line.overrideColor
+          ? line.overrideColor.ralCode
+            ? `${line.overrideColor.name} (${line.overrideColor.ralCode})`
+            : line.overrideColor.name
+          : '—',
+      }));
+  }
+
+  productViewLineWorkLabel(line: ProductLineDto): string {
+    if (line.overrideWorkType) {
+      return line.overrideWorkType.shortLabel?.trim() || line.overrideWorkType.name;
+    }
+    if (line.workTypeId) {
+      const w = this.productionWorkTypesStore.items().find((x) => x.id === line.workTypeId);
+      if (w) return w.shortLabel?.trim() || w.name;
+    }
+    const d = this.productionDetailsStore.items().find((x) => x.id === line.productionDetailId);
+    if (d?.snapshotWorkShortLabel?.trim()) return d.snapshotWorkShortLabel.trim();
+    if (d?.snapshotWorkTypeName?.trim()) return d.snapshotWorkTypeName.trim();
+    if (d?.sourceWorkTypeId) {
+      const w = this.productionWorkTypesStore.items().find((x) => x.id === d.sourceWorkTypeId);
+      if (w) return w.shortLabel?.trim() || w.name;
+    }
+    return '—';
+  }
+
+  /** Подписи полей «Вид работ» / «Цвет» уровня формы (дублируются на все строки при сохранении). */
+  productViewFormWorkLabel(): string {
+    const id = String(this.productsForm.controls.workTypeId.value ?? '').trim();
+    if (!id) return '—';
+    const w = this.productionWorkTypesStore.items().find((x) => x.id === id);
+    return w ? `${w.name} (${w.shortLabel})` : id;
+  }
+
+  productViewFormColorLabel(): string {
+    const id = String(this.productsForm.controls.colorId.value ?? '').trim();
+    if (!id) return '—';
+    const c = this.colorsStore.items().find((x) => x.id === id);
+    return c ? (c.ralCode ? `${c.name} (${c.ralCode})` : c.name) : id;
+  }
+
+  productViewLineColorLabel(line: ProductLineDto): string {
+    if (line.overrideColor) {
+      const c = line.overrideColor;
+      return c.ralCode ? `${c.name} (${c.ralCode})` : c.name;
+    }
+    if (line.colorId) {
+      const col = this.colorsStore.items().find((x) => x.id === line.colorId);
+      if (col) return col.ralCode ? `${col.name} (${col.ralCode})` : col.name;
+    }
+    const d = this.productionDetailsStore.items().find((x) => x.id === line.productionDetailId);
+    if (d?.sourceMaterialId) {
+      const mat = this.materialsStore.items().find((m) => m.id === d.sourceMaterialId);
+      const mc = mat
+        ? this.materialCharacteristicsStore.items().find((c) => c.id === mat.materialCharacteristicId)
+        : undefined;
+      if (mc?.colorId) {
+        const col = this.colorsStore.items().find((x) => x.id === mc.colorId);
+        if (col) return col.ralCode ? `${col.name} (${col.ralCode})` : col.name;
+      }
+    }
+    return '—';
+  }
+
+  async submitProducts(): Promise<void> {
+    const raw = this.productsForm.getRawValue();
+    const lines = (raw.lines as Array<{ productionDetailId: string }>).filter((l) => l.productionDetailId);
+    if (lines.length === 0) {
+      this.productsStore.submit({
+        value: productPayloadFromValues({
+          ...raw,
+          workTypeId: String(raw.workTypeId ?? ''),
+          colorId: String(raw.colorId ?? ''),
+          lines: [],
+        }),
+        isValid: false,
+      });
+      this.productsForm.markAllAsTouched();
+      return;
+    }
+    const payload = productPayloadFromValues({
+      name: raw.name,
+      workTypeId: String(raw.workTypeId ?? ''),
+      colorId: String(raw.colorId ?? ''),
+      priceRub: raw.priceRub,
+      costRub: raw.costRub,
+      notes: raw.notes,
+      isActive: raw.isActive,
+      lines,
+    });
+    if (this.productsForm.invalid) {
+      this.productsStore.submit({ value: payload, isValid: false });
+      this.productsForm.markAllAsTouched();
+      scrollToFirstInvalidControlInForm('products-form', this.doc);
+      return;
+    }
+    try {
+      const editId = this.productsStore.editId();
+      if (editId) {
+        await firstValueFrom(this.productsRepository.update(editId, payload));
+      } else {
+        await firstValueFrom(this.productsRepository.create(payload));
+      }
+      const items = await firstValueFrom(this.productsRepository.getItems());
+      this.productsStore.applyLoadedItems(items);
+    } catch {
+      return;
+    }
+    this.closeProductsModal();
+    this.finishStandaloneDictionaryCreateIfMatch('products');
+  }
+
+  private initProductsStandaloneCreate(): void {
+    if (!this.permissions.crud().canCreate) return;
+    this.resetProductsCreateForm();
   }
 
   private resetProductionDetailsCreateForm(): void {
@@ -1505,6 +1906,7 @@ export class DictionariesPage implements OnDestroy {
       users: () => this.closeUsersModal(),
       kpPhotos: () => this.closeKpPhotosModal(),
       productionDetails: () => this.closeProductionDetailsModal(),
+      products: () => this.closeProductsModal(),
     });
     this.resetAllDictionaryHubQuickAddFlags();
     this.location.back();
@@ -1916,6 +2318,7 @@ export class DictionariesPage implements OnDestroy {
       users: () => this.initUsersStandaloneCreate(),
       kpPhotos: () => this.initKpPhotosStandaloneCreate(),
       productionDetails: () => this.initProductionDetailsStandaloneCreate(),
+      products: () => this.initProductsStandaloneCreate(),
     };
     inits[sc]();
   }
@@ -4874,6 +5277,92 @@ export class DictionariesPage implements OnDestroy {
     }
   }
 
+  private productsExcelHeaders(): string[] {
+    return [
+      'ID изделия',
+      'Наименование изделия',
+      'Цена ₽',
+      'Себестоимость ₽',
+      'Заметки',
+      'Активен',
+      'Порядок',
+      'ID детали',
+      'ID вида работ',
+      'ID цвета',
+    ];
+  }
+
+  async exportProductsExcel(): Promise<void> {
+    const headers = this.productsExcelHeaders();
+    const list = this.productsStore.items();
+    const rows: Array<Record<string, string | number>> = [];
+    for (const item of list) {
+      const full = await firstValueFrom(this.productsRepository.getById(item.id));
+      for (const line of full.lines) {
+        rows.push({
+          'ID изделия': full.id,
+          'Наименование изделия': full.name,
+          'Цена ₽': full.priceRub ?? '',
+          'Себестоимость ₽': full.costRub ?? '',
+          Заметки: full.notes ?? '',
+          Активен: full.isActive ? 'да' : 'нет',
+          Порядок: line.sortOrder,
+          'ID детали': line.productionDetailId,
+          'ID вида работ': line.workTypeId ?? '',
+          'ID цвета': line.colorId ?? '',
+        });
+      }
+    }
+    if (await this.exportRowsToExcel('products.xlsx', 'Products', rows, headers)) {
+      this.excelImportStatus.set(`Экспортировано: ${rows.length} строк состава. Файл в папке загрузок.`);
+    }
+  }
+
+  async downloadProductsTemplateExcel(): Promise<void> {
+    const headers = this.productsExcelHeaders();
+    const sample: Record<string, string | number> = {
+      'ID изделия': '',
+      'Наименование изделия': 'Пример изделия',
+      'Цена ₽': '',
+      'Себестоимость ₽': '',
+      Заметки: '',
+      Активен: 'да',
+      Порядок: 1,
+      'ID детали': '',
+      'ID вида работ': '',
+      'ID цвета': '',
+    };
+    if (await this.exportRowsToExcel('products-template.xlsx', 'Products_TEMPLATE', [sample], headers)) {
+      this.excelImportStatus.set('Шаблон Excel скачан. Файл в папке загрузок.');
+    }
+  }
+
+  async onProductsExcelImported(file: File): Promise<void> {
+    this.excelImportBegin();
+    try {
+      const rows = await this.excelRowsFromFile(file);
+      const parsed = this.validateAndMapProductsRows(rows);
+      if (!parsed.ok) {
+        this.excelImportStatus.set(`Импорт отклонен: ${parsed.errors.join(' | ')}`);
+        return;
+      }
+      for (const entry of parsed.items) {
+        if (entry.existingId) {
+          await firstValueFrom(this.productsRepository.update(entry.existingId, entry.input));
+        } else {
+          await firstValueFrom(this.productsRepository.create(entry.input));
+        }
+      }
+      const items = await firstValueFrom(this.productsRepository.getItems());
+      this.productsStore.applyLoadedItems(items);
+      this.excelImportStatus.set(
+        `Импортировано: ${parsed.items.length} изделий. Данные обновлены в справочнике.`,
+      );
+    } catch {
+      this.excelImportStatus.set('Импорт отклонен: не удалось прочитать файл.');
+    }
+  }
+
   async exportSurfaceFinishesExcel(): Promise<void> {
     const rows = this.surfaceFinishesStore.surfaceFinishesData().map((x) => ({
       'Тип финиша': x.finishType,
@@ -5813,6 +6302,14 @@ export class DictionariesPage implements OnDestroy {
     errors: string[];
   } {
     return validateAndMapOrganizationsRowsFn.call(this, rows);
+  }
+
+  private validateAndMapProductsRows(rows: ReadonlyArray<Record<string, unknown>>): {
+    ok: boolean;
+    items: Array<{ existingId?: string; input: ProductItemInput }>;
+    errors: string[];
+  } {
+    return validateAndMapProductsRowsFn.call(this, rows);
   }
 
   private applyGeometryShapeValidators(shape: string): void {

@@ -15,6 +15,7 @@ export const STANDALONE_DICTIONARY_CREATE = [
   { key: 'users', path: 'новый-пользователь', title: 'Новый пользователь' },
   { key: 'kpPhotos', path: 'новое-фото-кп', title: 'Новое фото для КП' },
   { key: 'productionDetails', path: 'новая-деталь', title: 'Новая деталь' },
+  { key: 'products', path: 'новое-изделие', title: 'Новое изделие' },
 ] as const;
 
 export type StandaloneDictionaryCreateKey = (typeof STANDALONE_DICTIONARY_CREATE)[number]['key'];

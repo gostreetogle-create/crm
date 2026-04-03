@@ -1,8 +1,44 @@
 <app-content-card title="Единый Excel импорт/экспорт">
   <p class="lead">
-    Один файл с несколькими вкладками: заполните данные и импортируйте обратно. Система проверит формат,
-    применит <code>upsert</code> по <strong>ID</strong> и вернёт отчёт по пропущенным строкам/полям.
+    Скачайте шаблон из CRM, заполните данные и импортируйте файл обратно. Ниже — готовый текст для нейросети:
+    скопируйте блок «Промпт для ИИ» и вставьте в чат вместе с файлом или описанием задачи — так проще получить
+    корректные строки под наши заголовки и правила связей.
   </p>
+
+  <div class="aiPromptWrap">
+    <div class="aiPromptToolbar">
+      <app-ui-button
+        type="button"
+        variant="soft"
+        square
+        ariaLabel="Скопировать промпт для ИИ в буфер обмена"
+        title="Скопировать промпт"
+        (clicked)="copyAiPromptToClipboard()"
+      >
+        <svg
+          class="aiPromptCopyIcon"
+          xmlns="http://www.w3.org/2000/svg"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+          <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+        </svg>
+      </app-ui-button>
+    </div>
+
+    <details class="aiPromptDetails">
+      <summary class="aiPromptSummary">Промпт для ИИ — как заполнять единый Excel для CRM</summary>
+      <pre class="aiPrompt">{{ aiFillPrompt }}</pre>
+    </details>
+  </div>
 
   @if (errorText()) {
     <p class="errorBanner" role="alert">{{ errorText() }}</p>
