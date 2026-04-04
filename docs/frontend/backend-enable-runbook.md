@@ -58,9 +58,9 @@ docker start crm_postgres
 ### Если `deploy.sh` падает на шаге сборки `web` (`nx build crm-web`)
 
 - В логе после обновления репозитория будет **`--verbose`** у Nx — ищи конкретную ошибку (TypeScript, нехватка памяти и т.д.).
-- Типично для **малых VPS**: нехватка RAM → процесс Node умирает с **exit code 1** после долгого «Building…». Решения: добавить **swap** (1–4 ГБ), в `deploy/.env` задать **`NODE_BUILD_HEAP_MB=3072`** (или меньше), пересобрать только web:  
+- Типично для **малых VPS**: нехватка RAM → процесс Node умирает с **exit code 1** после долгого «Building…» (в логе может не быть текста компилятора). Решения: **swap** (2–4 ГБ), в `deploy/.env` при необходимости **`NODE_BUILD_HEAP_MB=2048`** или **`3072`**, **`NG_BUILD_MAX_WORKERS=1`** (дефолт в compose), пересобрать web:  
   `docker compose --env-file .env build --no-cache web`
-- В `Dockerfile.web` включены **`NX_DAEMON=false`**, лимит **`NG_BUILD_MAX_WORKERS`**, лимит heap через **`NODE_BUILD_HEAP_MB`** (см. `deploy/docker-compose.yml`).
+- В `Dockerfile.web`: **`NX_DAEMON=false`**, **`NX_VERBOSE_LOGGING=true`**, **`NG_BUILD_MAX_WORKERS`** и **`NODE_BUILD_HEAP_MB`** из `deploy/docker-compose.yml` / build-args.
 
 ## Несовместимый ответ API
 

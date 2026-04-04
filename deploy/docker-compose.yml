@@ -56,8 +56,9 @@ services:
       dockerfile: deploy/Dockerfile.web
       args:
         WEB_BUILD_ID: ${WEB_BUILD_ID:-unknown}
-        # При нехватке RAM на сервере: задать в deploy/.env, например NODE_BUILD_HEAP_MB=3072 и добавить swap.
-        NODE_BUILD_HEAP_MB: ${NODE_BUILD_HEAP_MB:-4096}
+        # При нехватке RAM: NODE_BUILD_HEAP_MB (МБ), NG_BUILD_MAX_WORKERS=1, swap 2G+ — см. deploy/.env.example
+        NODE_BUILD_HEAP_MB: ${NODE_BUILD_HEAP_MB:-3072}
+        NG_BUILD_MAX_WORKERS: ${NG_BUILD_MAX_WORKERS:-1}
     container_name: crm_web
     restart: unless-stopped
     depends_on:

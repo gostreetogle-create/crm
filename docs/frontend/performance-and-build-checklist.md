@@ -23,7 +23,7 @@
 
 | Сделать | Зачем | Эффект |
 |--------|--------|--------|
-| Убедиться, что в Docker уже заданы **`NX_DAEMON=false`**, лимит **`NODE_OPTIONS` / `NG_BUILD_MAX_WORKERS`**, **`--verbose`** (см. `Dockerfile.web`) | Меньше OOM и тишины при падении на VPS | + |
+| Убедиться, что в Docker заданы **`NX_DAEMON=false`**, **`NX_VERBOSE_LOGGING`**, **`NG_BUILD_MAX_WORKERS`** (дефолт 1), heap **`NODE_BUILD_HEAP_MB`** (см. `Dockerfile.web` / `docker-compose.yml`) | Меньше OOM и «тихого» exit 1 на VPS | + |
 | На слабом VPS: **swap** 2–4 ГБ, при необходимости **`NODE_BUILD_HEAP_MB`** в `deploy/.env` | Стабильность и время не хуже обрыва | + |
 | **Не** собирать в Docker то, что можно собирать в CI и пушить артефакт (если когда-нибудь появится registry) — *пока не внедряем, только пометка* | Будущее ускорение деплоя | ~ |
 | Проверить, не копируется ли в контекст сборки лишнее (корневой `.dockerignore` при необходимости: `**/node_modules`, `dist`, `.git`) | Меньше контекста → быстрее `docker build` | + |

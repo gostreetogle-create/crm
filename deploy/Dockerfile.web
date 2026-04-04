@@ -14,12 +14,16 @@ COPY backend/shared ./backend/shared
 WORKDIR /app/crm-web
 RUN node scripts/sync-canonical-roles.cjs
 ARG WEB_BUILD_ID=unknown
-ARG NODE_BUILD_HEAP_MB=4096
+ARG NODE_BUILD_HEAP_MB=3072
+# 1 worker сильно снижает пик RAM при production optimization на VPS (2–4 GB); на мощной машине: --build-arg NG_BUILD_MAX_WORKERS=2
+ARG NG_BUILD_MAX_WORKERS=1
 ENV WEB_BUILD_ID=${WEB_BUILD_ID}
 # VPS/Docker: Nx daemon в контейнере часто лишний; без heap/worker limits — долгий «Building…» и тихий OOM (exit 1).
 ENV NX_DAEMON=false
 ENV NODE_OPTIONS=--max-old-space-size=${NODE_BUILD_HEAP_MB}
-ENV NG_BUILD_MAX_WORKERS=2
+ENV NG_BUILD_MAX_WORKERS=${NG_BUILD_MAX_WORKERS}
+# Явный вывод прогресса (иногда stderr буферизуется до падения).
+ENV NX_VERBOSE_LOGGING=true
 RUN npm run build -- crm-web --verbose
 
 FROM nginx:1.27-alpine AS runtime
