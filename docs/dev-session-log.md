@@ -64,6 +64,7 @@
 | 35 | 2026-04-04 | Прогон PR-чеклиста (gates + nx affected); синхронизация `pr-checklist`, authz-runbook, srm-front release-ready под ops/диагностику | docs/frontend | `e4fab93` |
 | 36 | 2026-04-04 | Убраны предупреждения ESLint в Excel-валидаторах справочников (`any`/`!`); безопасные пути в KP recipient toolbar | crm-web | `42c0f26` |
 | 37 | 2026-04-04 | Починка production build: методы Excel-импорта на `DictionariesPage` сделаны публичными для типизированных валидаторов; правка бэклога polish #37 | crm-web, docs/frontend | `43649c7` |
+| 38 | 2026-04-04 | GitHub Actions: `backend-ci.yml` — `npm ci` + `npm run build` при изменениях в `backend/**` | .github, backend | `aa232c3` |
 
 ---
 
