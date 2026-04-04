@@ -40,7 +40,7 @@
 | 34 | `temporary-deviations-log.md` при отклонениях | **done** (файл актуален; записей open нет) |
 | 35 | README в `dictionaries-hub-feature` | **done** |
 | 36 | Grep: устаревшие TODO по модалкам | **done** |
-| 37 | ESLint unused / мёртвый код после рефакторинга | **partial** (периодически `nx run-many -t lint`) |
+| 37 | ESLint unused / мёртвый код после рефакторинга | **partial** (Excel-валидаторы: без `any`/`!` в отдельных модулях; периодически `nx affected -t lint`) |
 | 38 | Объединить дубли стилей `.newMaterialPage` / shell | **done** |
 | 39 | Дубли `app.routes` устранены через фабрику маршрутов | **done** |
 | 40 | Строгая типизация `standaloneCreate` | **done** |

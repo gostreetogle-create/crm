@@ -5535,7 +5535,8 @@ export class DictionariesPage implements OnDestroy {
     }
   }
 
-  private organizationsExcelHeaders(): string[] {
+  /** Публично для Excel-валидатора организаций (отдельный модуль). */
+  organizationsExcelHeaders(): string[] {
     return [
       'Вид организации',
       'Полное наименование',
@@ -6012,7 +6013,8 @@ export class DictionariesPage implements OnDestroy {
     return classicOk || designOk ? null : { ralCodeFormat: true };
   }
 
-  private resolveMaterialUnitIdByCode(raw: string): { id: string; label: string } | null {
+  /** Публично для Excel-импорта материалов (отдельный модуль). */
+  resolveMaterialUnitIdByCode(raw: string): { id: string; label: string } | null {
     const key = raw.trim().toLowerCase();
     if (!key) return null;
     const u = this.unitsStore.items().find((x) => (x.code ?? '').trim().toLowerCase() === key);
@@ -6035,8 +6037,8 @@ export class DictionariesPage implements OnDestroy {
     return validateAndMapMaterialCharacteristicsRowsFn.call(this, rows);
   }
 
-  /** Строка для сопоставления цвета: по ID из файла или текст «Название цвета». */
-  private resolveMcImportColorRaw(
+  /** Строка для сопоставления цвета: по ID из файла или текст «Название цвета». Публично для валидатора Excel. */
+  resolveMcImportColorRaw(
     row: Record<string, unknown>,
     snap: ReferenceSnapshot,
     rowNo: number,
@@ -6054,7 +6056,7 @@ export class DictionariesPage implements OnDestroy {
     return String(row['Название цвета'] ?? '').trim();
   }
 
-  private resolveMcImportFinishRaw(
+  resolveMcImportFinishRaw(
     row: Record<string, unknown>,
     snap: ReferenceSnapshot,
     rowNo: number,
@@ -6072,7 +6074,7 @@ export class DictionariesPage implements OnDestroy {
     return String(row['Название отделки'] ?? '').trim();
   }
 
-  private resolveMcImportCoatingCell(
+  resolveMcImportCoatingCell(
     row: Record<string, unknown>,
     snap: ReferenceSnapshot,
     rowNo: number,
