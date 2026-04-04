@@ -1,8 +1,10 @@
+import type { ProductionWorkTypeItem } from '@srm/production-work-types-data-access';
 import { parseExcelBool } from './dictionaries-page-excel-parse-utils';
 import { normalizeWorkTypeName, parseNumberOrNull } from './dictionaries-page-form-utils';
+import type { DictionariesPage } from './dictionaries-page';
 
 export function validateAndMapWorkTypesRows(
-  this: any,
+  this: DictionariesPage,
   rows: ReadonlyArray<Record<string, unknown>>,
 ): {
   ok: boolean;
@@ -32,7 +34,9 @@ export function validateAndMapWorkTypesRows(
   }
 
   const seenInFile = new Set<string>();
-  const existingNames = new Set(this.productionWorkTypesStore.items().map((x: any) => normalizeWorkTypeName(x.name)));
+  const existingNames = new Set(
+    this.productionWorkTypesStore.items().map((x: ProductionWorkTypeItem) => normalizeWorkTypeName(x.name)),
+  );
 
   rows.forEach((row, idx) => {
     const rowNo = idx + 2;

@@ -1,9 +1,10 @@
 import type { RoleItemInput } from '@srm/roles-data-access';
 import { allocateUniqueRoleCode, slugifyRoleCodeFromName } from '@srm/dictionaries-utils';
 import { parseNumberOrNull } from './dictionaries-page-form-utils';
+import type { DictionariesPage } from './dictionaries-page';
 
 export function validateAndMapRolesRows(
-  this: any,
+  this: DictionariesPage,
   rows: ReadonlyArray<Record<string, unknown>>,
 ): {
   ok: boolean;

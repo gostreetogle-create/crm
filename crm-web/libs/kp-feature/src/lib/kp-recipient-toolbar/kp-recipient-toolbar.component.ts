@@ -47,13 +47,23 @@ export class KpRecipientToolbarComponent {
   @Input({ required: true }) organizationSearchCtrl!: FormControl<string>;
   @Input({ required: true }) organizationContactIdCtrl!: FormControl<string>;
 
+  private pathForStandaloneCreate(key: 'organizations' | 'clients'): string | null {
+    return STANDALONE_DICTIONARY_CREATE.find((r) => r.key === key)?.path ?? null;
+  }
+
   openAddOrganization(): void {
-    const seg = STANDALONE_DICTIONARY_CREATE.find((r) => r.key === 'organizations')!.path;
+    const seg = this.pathForStandaloneCreate('organizations');
+    if (!seg) {
+      return;
+    }
     void this.router.navigateByUrl(`${DICTIONARIES_HUB_BASE}/${seg}`);
   }
 
   openAddContact(): void {
-    const seg = STANDALONE_DICTIONARY_CREATE.find((r) => r.key === 'clients')!.path;
+    const seg = this.pathForStandaloneCreate('clients');
+    if (!seg) {
+      return;
+    }
     void this.router.navigateByUrl(`${DICTIONARIES_HUB_BASE}/${seg}`);
   }
 

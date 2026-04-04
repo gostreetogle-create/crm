@@ -1,10 +1,7 @@
 import { tryParseCompactGeometryParams } from './dictionaries-page-excel-parse-utils';
 import { parseNumberOrNull } from './dictionaries-page-form-utils';
 
-export function validateAndMapGeometriesRows(
-  this: any,
-  rows: ReadonlyArray<Record<string, unknown>>,
-): {
+export function validateAndMapGeometriesRows(rows: ReadonlyArray<Record<string, unknown>>): {
   ok: boolean;
   rows: Array<{
     name: string;

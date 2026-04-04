@@ -1,8 +1,9 @@
-import type { UserItemInput } from '@srm/users-data-access';
+import type { UserItem, UserItemInput } from '@srm/users-data-access';
 import type { RoleItem } from '@srm/roles-data-access';
+import type { DictionariesPage } from './dictionaries-page';
 
 export function validateAndMapUsersRows(
-  this: any,
+  this: DictionariesPage,
   rows: ReadonlyArray<Record<string, unknown>>,
 ): {
   ok: boolean;
@@ -45,7 +46,7 @@ export function validateAndMapUsersRows(
       return;
     }
     seenLogins.add(lk);
-    if (this.usersStore.items().some((u: any) => u.login.trim().toLowerCase() === lk)) {
+    if (this.usersStore.items().some((u: UserItem) => u.login.trim().toLowerCase() === lk)) {
       errors.push(`Строка ${rowNo}: логин «${login}» уже есть в справочнике.`);
       return;
     }

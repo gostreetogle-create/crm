@@ -1,8 +1,9 @@
 import type { OrganizationItemInput } from '@srm/organizations-data-access';
 import { mapLegalFormToOrganizationKind, organizationKindToLegalForm } from './dictionaries-page-form-utils';
+import type { DictionariesPage } from './dictionaries-page';
 
 export function validateAndMapOrganizationsRows(
-  this: any,
+  this: DictionariesPage,
   rows: ReadonlyArray<Record<string, unknown>>,
 ): {
   ok: boolean;

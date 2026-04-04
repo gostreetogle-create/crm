@@ -1,7 +1,4 @@
-export function validateAndMapUnitsRows(
-  this: any,
-  rows: ReadonlyArray<Record<string, unknown>>,
-): {
+export function validateAndMapUnitsRows(rows: ReadonlyArray<Record<string, unknown>>): {
   ok: boolean;
   rows: Array<{ name: string; code: string; notes?: string; isActive: boolean }>;
   errors: string[];

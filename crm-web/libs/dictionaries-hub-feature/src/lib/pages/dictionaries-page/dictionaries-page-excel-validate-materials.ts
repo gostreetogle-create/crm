@@ -1,9 +1,13 @@
 import type { MaterialItemInput } from '@srm/materials-data-access';
 import type { MaterialCharacteristicItem } from '@srm/material-characteristics-data-access';
+import type { GeometryItem } from '@srm/geometries-data-access';
+import type { UnitItem } from '@srm/units-data-access';
+import type { OrganizationItem } from '@srm/organizations-data-access';
 import { parseNumberOrNull } from './dictionaries-page-form-utils';
+import type { DictionariesPage } from './dictionaries-page';
 
 export function validateAndMapMaterialsRows(
-  this: any,
+  this: DictionariesPage,
   rows: ReadonlyArray<Record<string, unknown>>,
 ): {
   ok: boolean;
@@ -63,11 +67,13 @@ export function validateAndMapMaterialsRows(
       return;
     }
 
-    let geo = geoId ? this.geometriesStore.items().find((g: any) => g.id === geoId && g.isActive) : undefined;
+    let geo = geoId ? this.geometriesStore.items().find((g: GeometryItem) => g.id === geoId && g.isActive) : undefined;
     if (!geo && geometryName) {
       geo = this.geometriesStore
         .items()
-        .find((g: any) => g.isActive && g.name.trim().toLowerCase() === geometryName.toLowerCase());
+        .find(
+          (g: GeometryItem) => g.isActive && g.name.trim().toLowerCase() === geometryName.toLowerCase(),
+        );
     }
     if (!geo) {
       errors.push(
@@ -78,7 +84,7 @@ export function validateAndMapMaterialsRows(
 
     let unitRef: { id: string; label: string } | null = null;
     if (unitId) {
-      const u = this.unitsStore.items().find((x: any) => x.id === unitId);
+      const u = this.unitsStore.items().find((x: UnitItem) => x.id === unitId);
       unitRef = u ? { id: u.id, label: `${u.name} (${u.code})` } : null;
     } else if (unitCode) {
       unitRef = this.resolveMaterialUnitIdByCode(unitCode);
@@ -90,7 +96,7 @@ export function validateAndMapMaterialsRows(
 
     const supplierOrgId = String(row['ID поставщика'] ?? '').trim();
     if (supplierOrgId) {
-      const org = this.organizationsStore.items().find((o: any) => o.id === supplierOrgId);
+      const org = this.organizationsStore.items().find((o: OrganizationItem) => o.id === supplierOrgId);
       if (!org) {
         errors.push(`Строка ${rowNo}: «ID поставщика» — нет организации с таким id в справочнике.`);
         return;

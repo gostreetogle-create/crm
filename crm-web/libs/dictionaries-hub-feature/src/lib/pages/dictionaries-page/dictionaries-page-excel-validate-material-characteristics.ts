@@ -1,8 +1,9 @@
 import type { MaterialCharacteristicsImportDraftRow, ReferenceSnapshot } from '@srm/dictionaries-utils';
 import { parseNumberOrNull } from './dictionaries-page-form-utils';
+import type { DictionariesPage } from './dictionaries-page';
 
 export function validateAndMapMaterialCharacteristicsRows(
-  this: any,
+  this: DictionariesPage,
   rows: ReadonlyArray<Record<string, unknown>>,
 ): {
   ok: boolean;

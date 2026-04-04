@@ -1,9 +1,6 @@
 import { parseNumberOrNull } from './dictionaries-page-form-utils';
 
-export function validateAndMapSurfaceFinishesRows(
-  this: any,
-  rows: ReadonlyArray<Record<string, unknown>>,
-): {
+export function validateAndMapSurfaceFinishesRows(rows: ReadonlyArray<Record<string, unknown>>): {
   ok: boolean;
   rows: Array<{ finishType: string; roughnessClass: string; raMicron?: number }>;
   errors: string[];

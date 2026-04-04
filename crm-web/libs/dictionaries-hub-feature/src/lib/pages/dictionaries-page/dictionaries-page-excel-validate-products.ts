@@ -1,6 +1,7 @@
 import type { ProductItemInput } from '@srm/products-data-access';
 import { isUuidString, parseExcelBool } from './dictionaries-page-excel-parse-utils';
 import { parseNumberOrNull } from './dictionaries-page-form-utils';
+import type { DictionariesPage } from './dictionaries-page';
 
 function sumLineTotalsFromDetails(
   detailIds: string[],
@@ -15,7 +16,7 @@ function sumLineTotalsFromDetails(
  * и с экспортом плитки «Изделия» на хабе.
  */
 export function validateAndMapProductsRows(
-  this: any,
+  this: DictionariesPage,
   rows: ReadonlyArray<Record<string, unknown>>,
 ): {
   ok: boolean;
@@ -140,11 +141,14 @@ export function validateAndMapProductsRows(
       order.push(key);
       groups.set(key, []);
     }
-    groups.get(key)!.push(r);
+    groups.get(key)?.push(r);
   }
 
   for (const key of order) {
-    const groupRows = groups.get(key)!;
+    const groupRows = groups.get(key);
+    if (!groupRows) {
+      continue;
+    }
     groupRows.sort((a, b) => a.sortOrder - b.sortOrder);
     const first = groupRows[0];
     const lines = groupRows.map((r, i) => ({

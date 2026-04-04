@@ -1,10 +1,7 @@
 import type { ClientItemInput } from '@srm/clients-data-access';
 import { parseNumberOrNull } from './dictionaries-page-form-utils';
 
-export function validateAndMapClientsRows(
-  this: any,
-  rows: ReadonlyArray<Record<string, unknown>>,
-): {
+export function validateAndMapClientsRows(rows: ReadonlyArray<Record<string, unknown>>): {
   ok: boolean;
   rows: ClientItemInput[];
   errors: string[];

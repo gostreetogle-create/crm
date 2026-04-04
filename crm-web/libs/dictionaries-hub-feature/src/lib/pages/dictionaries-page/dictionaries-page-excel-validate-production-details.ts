@@ -1,10 +1,13 @@
 import type { ProductionDetailItemInput } from '@srm/production-details-data-access';
+import type { MaterialItem } from '@srm/materials-data-access';
+import type { ProductionWorkTypeItem } from '@srm/production-work-types-data-access';
 import { isUuidString, parseExcelBool } from './dictionaries-page-excel-parse-utils';
 import { productionDetailsPayloadFromValues } from './dictionaries-page-payload-builders';
 import { parseNumberOrNull } from './dictionaries-page-form-utils';
+import type { DictionariesPage } from './dictionaries-page';
 
 export function validateAndMapProductionDetailsRows(
-  this: any,
+  this: DictionariesPage,
   rows: ReadonlyArray<Record<string, unknown>>,
 ): {
   ok: boolean;
@@ -21,8 +24,8 @@ export function validateAndMapProductionDetailsRows(
     return { ok: false, rows: mapped, errors: ['Нужна колонка «Название».'] };
   }
 
-  const matIds = new Set(this.materialsStore.items().map((m: any) => m.id));
-  const wtIds = new Set(this.productionWorkTypesStore.items().map((w: any) => w.id));
+  const matIds = new Set(this.materialsStore.items().map((m: MaterialItem) => m.id));
+  const wtIds = new Set(this.productionWorkTypesStore.items().map((w: ProductionWorkTypeItem) => w.id));
 
   rows.forEach((row, idx) => {
     const rowNo = idx + 2;

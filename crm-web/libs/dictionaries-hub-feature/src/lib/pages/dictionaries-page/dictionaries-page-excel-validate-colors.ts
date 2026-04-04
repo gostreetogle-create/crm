@@ -1,9 +1,6 @@
 import { normalizeRalCode } from './dictionaries-page-form-utils';
 
-export function validateAndMapColorRows(
-  this: any,
-  rows: ReadonlyArray<Record<string, unknown>>,
-): {
+export function validateAndMapColorRows(rows: ReadonlyArray<Record<string, unknown>>): {
   ok: boolean;
   rows: Array<{
     ralCode?: string;

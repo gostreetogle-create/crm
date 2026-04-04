@@ -1,9 +1,6 @@
 import { parseNumberOrNull } from './dictionaries-page-form-utils';
 
-export function validateAndMapCoatingsRows(
-  this: any,
-  rows: ReadonlyArray<Record<string, unknown>>,
-): {
+export function validateAndMapCoatingsRows(rows: ReadonlyArray<Record<string, unknown>>): {
   ok: boolean;
   rows: Array<{ coatingType: string; coatingSpec: string; thicknessMicron?: number }>;
   errors: string[];
