@@ -27,3 +27,21 @@
 - [ ] Обновлены `architecture-audit-master.md`/канон-доки при архитектурных изменениях.
 - [ ] В PR есть явное описание остаточных рисков и границ применимости.
 
+---
+
+## Команды автопрогона (блок C, как в CI)
+
+Из каталога `crm-web/` (порядок как в `.github/workflows/frontend-ci.yml`):
+
+```bash
+npm run check:canonical-roles-sync
+npm run check:workspace-prereqs
+npm run check:route-parity
+npm run check:dictionaries-page-size
+npx nx affected -t lint --base=origin/main --head=HEAD --parallel=2
+npx nx affected -t test --base=origin/main --head=HEAD --parallel=2
+npx nx affected -t build --base=origin/main --head=HEAD --parallel=2
+```
+
+`check:canonical-roles-sync` при необходимости перезаписывает `canonical-roles.generated.ts` — если файл изменился, закоммитьте его вместе с правками `backend/shared/canonical-roles.seed.json`.
+
