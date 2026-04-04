@@ -1,0 +1,110 @@
+{
+  "_meta": {
+    "file": "docs/backend-map/admin_api_routes.json",
+    "purpose": "Справочник HTTP-эндпоинтов под префиксом /api/admin (Express: requireAuth + requireAdmin). Для ИИ и сопровождения; не замена OpenAPI.",
+    "readme": "docs/backend-map/README.md",
+    "update_rules": [
+      "При добавлении роутов в backend/src/app.ts (блок admin) — обновить этот файл.",
+      "После правок: node scripts/generate-backend-map-overview.cjs"
+    ]
+  },
+  "version": "1.0",
+  "prefix": "/api/admin",
+  "routes": [
+    {
+      "method": "GET",
+      "path": "/api/admin/system/status",
+      "summary": "Статус БД, миграции, тексты предупреждений и команд для UI «Система и обслуживание»"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/authz-matrix/diagnostics",
+      "summary": "Диагностика целостности матрицы прав и ролей"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/admin/authz-matrix",
+      "summary": "Сохранение матрицы прав (JSON body)"
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/users",
+      "summary": "Создание пользователя"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/admin/users/:id",
+      "summary": "Обновление пользователя"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/admin/users/:id",
+      "summary": "Удаление пользователя"
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/roles",
+      "summary": "Создание роли"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/admin/roles/:id",
+      "summary": "Обновление роли"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/admin/roles/:id",
+      "summary": "Удаление роли"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/db-backups/schedule",
+      "summary": "Чтение расписания авто-бэкапов"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/admin/db-backups/schedule",
+      "summary": "Запись расписания авто-бэкапов"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/db-backups",
+      "summary": "Список архивов БД"
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/db-backups",
+      "summary": "Создать бэкап вручную"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/admin/db-backups/:fileName",
+      "summary": "Удалить файл бэкапа"
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/db-backups/:fileName/restore",
+      "summary": "Восстановление из архива"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/db-backups/:fileName/download",
+      "summary": "Скачивание архива"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/excel-dictionaries/template",
+      "summary": "Шаблон Excel для импорта справочников"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/excel-dictionaries/export",
+      "summary": "Экспорт справочников в Excel"
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/excel-dictionaries/import",
+      "summary": "Импорт справочников из Excel (multipart)"
+    }
+  ]
+}

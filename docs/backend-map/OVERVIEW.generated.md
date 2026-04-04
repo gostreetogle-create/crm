@@ -1,6 +1,6 @@
 # Название файла: .md — Обзор backend-map (автогенерация)
 
-> **Сгенерировано:** `2026-04-02T14:43:55.535Z`  
+> **Сгенерировано:** `2026-04-04T08:20:54.044Z`  
 > **Не править вручную.** Источник правды — JSON в этой же папке. Обновление: `node scripts/generate-backend-map-overview.cjs`
 
 ---
@@ -15,6 +15,7 @@
 
 | Файл | Версия | Назначение (_meta.purpose) |
 |---|---|---|
+| admin_api_routes.json | 1.0 | Справочник HTTP-эндпоинтов под префиксом /api/admin (Express: requireAuth + requireAdmin). Для ИИ и сопровождения; не замена OpenAPI. |
 | entities_from_dictionaries.json | 1.3 | Сущности (логические таблицы/агрегаты): имя на русском, описание домена, список полей для проектирования БД и форм. |
 | material_geometry_new_model/material_geometry_entities.json | 0.1 | Новая модель: сущности для справочников material/geometry/detail. |
 | small_dictionaries.json | 1.2 | Малые справочники (кирпичики): перечисления со стабильным machine key и человекочитаемым названием. Их используют поля сущностей в entities_from_dictionaries.json (через ref в description или суффикс Key в имени поля). |
@@ -535,5 +536,115 @@
 
 ## Дополнительные JSON-файлы (произвольная структура)
 
-*Пока все `.json` используют только стандартные ключи. Третий файл с новыми корнями появится здесь автоматически.*
+### Прочие разделы — `admin_api_routes.json`
+
+*В этом файле есть корневые ключи кроме `dictionaries` / `entities` — ниже сырой вид для синхронизации; при стабилизации формата можно добавить отдельный рендер таблиц.*
+
+#### `prefix`
+
+```json
+"/api/admin"
+```
+
+#### `routes`
+
+```json
+[
+  {
+    "method": "GET",
+    "path": "/api/admin/system/status",
+    "summary": "Статус БД, миграции, тексты предупреждений и команд для UI «Система и обслуживание»"
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/authz-matrix/diagnostics",
+    "summary": "Диагностика целостности матрицы прав и ролей"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/admin/authz-matrix",
+    "summary": "Сохранение матрицы прав (JSON body)"
+  },
+  {
+    "method": "POST",
+    "path": "/api/admin/users",
+    "summary": "Создание пользователя"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/admin/users/:id",
+    "summary": "Обновление пользователя"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/admin/users/:id",
+    "summary": "Удаление пользователя"
+  },
+  {
+    "method": "POST",
+    "path": "/api/admin/roles",
+    "summary": "Создание роли"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/admin/roles/:id",
+    "summary": "Обновление роли"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/admin/roles/:id",
+    "summary": "Удаление роли"
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/db-backups/schedule",
+    "summary": "Чтение расписания авто-бэкапов"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/admin/db-backups/schedule",
+    "summary": "Запись расписания авто-бэкапов"
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/db-backups",
+    "summary": "Список архивов БД"
+  },
+  {
+    "method": "POST",
+    "path": "/api/admin/db-backups",
+    "summary": "Создать бэкап вручную"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/admin/db-backups/:fileName",
+    "summary": "Удалить файл бэкапа"
+  },
+  {
+    "method": "POST",
+    "path": "/api/admin/db-backups/:fileName/restore",
+    "summary": "Восстановление из архива"
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/db-backups/:fileName/download",
+    "summary": "Скачивание архива"
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/excel-dictionaries/template",
+    "summary": "Шаблон Excel для импорта справочников"
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/excel-dictionaries/export",
+    "summary": "Экспорт справочников в Excel"
+  },
+  {
+    "method": "POST",
+    "path": "/api/admin/excel-dictionaries/import",
+    "summary": "Импорт справочников из Excel (multipart)"
+  }
+]
+```
 
