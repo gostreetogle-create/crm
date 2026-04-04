@@ -63,6 +63,7 @@
 | 34 | 2026-04-04 | Диагностика backend (requestId, JSON-логи), `/api/admin/system/status`, карточка «Система» и оглавление в админ-настройках, deploy-шпаргалка и скрипты сброса локальной БД, `docs/dev-logs-and-diagnostics.md` | backend, crm-web, deploy, docs, .cursor | `b1946eb` |
 | 35 | 2026-04-04 | Прогон PR-чеклиста (gates + nx affected); синхронизация `pr-checklist`, authz-runbook, srm-front release-ready под ops/диагностику | docs/frontend | `e4fab93` |
 | 36 | 2026-04-04 | Убраны предупреждения ESLint в Excel-валидаторах справочников (`any`/`!`); безопасные пути в KP recipient toolbar | crm-web | `42c0f26` |
+| 37 | 2026-04-04 | Починка production build: методы Excel-импорта на `DictionariesPage` сделаны публичными для типизированных валидаторов; правка бэклога polish #37 | crm-web, docs/frontend | `43649c7` |
 
 ---
 
