@@ -1,5 +1,6 @@
 import type { RoleItem } from './role-item';
-import { CANONICAL_ROLE_ROWS } from './canonical-roles.frontend';
+/** Сгенерировано из `backend/shared/canonical-roles.seed.json` — см. `npm run sync:canonical-roles`. */
+import canonicalRoles from './canonical-roles.generated';
 
 type CanonicalRoleRow = {
   id: string;
@@ -10,7 +11,7 @@ type CanonicalRoleRow = {
   notes: string | null;
 };
 
-const rows = CANONICAL_ROLE_ROWS as unknown as readonly CanonicalRoleRow[];
+const rows = canonicalRoles as readonly CanonicalRoleRow[];
 
 function idFor(code: string): string {
   const r = rows.find((x) => x.code === code);
@@ -26,7 +27,7 @@ export const ROLE_ID_SYSTEM_VIEWER = idFor('viewer');
 export const ROLE_ID_SEED_DIRECTOR = idFor('director');
 export const ROLE_ID_SEED_ACCOUNTANT = idFor('accountant');
 
-/** Начальные роли для UI; дублируют `backend/shared/canonical-roles.seed.json` (см. canonical-roles.frontend.ts). */
+/** Начальные роли для UI (тот же JSON, что Prisma seed). */
 export const ROLES_SEED: readonly RoleItem[] = rows.map((r) => ({
   id: r.id,
   code: r.code,

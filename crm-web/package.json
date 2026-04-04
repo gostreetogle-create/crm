@@ -8,7 +8,9 @@
     "test": "nx test",
     "check:dictionaries-page-size": "node scripts/check-dictionaries-page-size.cjs",
     "check:workspace-prereqs": "node scripts/check-workspace-prereqs.cjs",
-    "check:route-parity": "node scripts/check-route-parity.cjs"
+    "check:route-parity": "node scripts/check-route-parity.cjs",
+    "sync:canonical-roles": "node scripts/sync-canonical-roles.cjs",
+    "check:canonical-roles-sync": "node scripts/check-canonical-roles-sync.cjs"
   },
   "private": true,
   "dependencies": {

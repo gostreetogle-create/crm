@@ -33,7 +33,7 @@
 
 ## Чеклист разработчика
 
-1. Меняете канонические роли — правите **один** файл **`backend/shared/canonical-roles.seed.json`** (сид Prisma и `ROLES_SEED` на фронте подтягивают его через alias `@srm/canonical-roles`).
+1. Меняете канонические роли — правите **один** файл **`backend/shared/canonical-roles.seed.json`**, затем из **`crm-web/`** выполните **`npm run sync:canonical-roles`** и закоммитьте обновлённый **`libs/roles-data-access/src/lib/canonical-roles.generated.ts`** (Prisma seed читает JSON напрямую; фронт и Jest — сгенерированный TS). CI проверяет совпадение (`check:canonical-roles-sync`).
 2. Новый ключ права — добавьте в `authz.catalog` / `PermissionKey`, в `backend/src/lib/authz-permission-keys.ts`, в маршруты при необходимости.
 3. После `db:reset` при странностях в правах — перелогиниться (кэш матрицы сбросится с сервером).
 4. Прод: в Docker для backend задано `SEED_DIRECTOR_USER=0` (нет тестового `director`/`director`).
@@ -42,7 +42,9 @@
 
 - `backend/shared/canonical-roles.seed.json` — канон ролей (id, code, sortOrder, …).
 - `backend/prisma/seed-roles.ts` — загрузка JSON для сида.
-- `crm-web/libs/roles-data-access/src/lib/roles.seed.ts` — `ROLES_SEED` и `ROLE_ID_*` из того же JSON.
+- `crm-web/scripts/sync-canonical-roles.cjs` — генерация фронта из JSON.
+- `crm-web/libs/roles-data-access/src/lib/canonical-roles.generated.ts` — сгенерировано, не править вручную.
+- `crm-web/libs/roles-data-access/src/lib/roles.seed.ts` — `ROLES_SEED` и `ROLE_ID_*` из generated.
 - `crm-web/libs/dictionaries-state/src/lib/roles.store.ts` — список ролей, **`ensureRolesLoaded()`**.
 - `crm-web/libs/auth-session-angular/src/lib/session-auth.service.ts` — hydrate / login, порядок загрузки ролей и матрицы, visibility / интервал.
 - `crm-web/libs/authz-runtime/src/lib/permissions.service.ts` — матрица, сессия, кэш, **`syncMatrixFromServer` / `syncMatrixFromServerSafe`**, **`matrixSyncError`**.

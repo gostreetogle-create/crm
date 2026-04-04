@@ -9,9 +9,10 @@ FROM node:20-alpine AS build
 WORKDIR /app
 COPY --from=deps /app/crm-web/node_modules ./crm-web/node_modules
 COPY crm-web/ ./crm-web/
-# tsconfig path @srm/canonical-roles → ../backend/shared/… (см. crm-web/tsconfig.base.json)
+# Единый JSON ролей → сгенерированный TS перед сборкой (см. crm-web/scripts/sync-canonical-roles.cjs)
 COPY backend/shared ./backend/shared
 WORKDIR /app/crm-web
+RUN node scripts/sync-canonical-roles.cjs
 ARG WEB_BUILD_ID=unknown
 ARG NODE_BUILD_HEAP_MB=4096
 ENV WEB_BUILD_ID=${WEB_BUILD_ID}

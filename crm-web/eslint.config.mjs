@@ -4,7 +4,7 @@ import nx from '@nx/eslint-plugin';
 export default [
   ...baseConfig,
   {
-    ignores: ['**/dist', '**/out-tsc'],
+    ignores: ['**/dist', '**/out-tsc', '**/canonical-roles.generated.ts'],
   },
   {
     files: [

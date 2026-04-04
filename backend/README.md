@@ -11,7 +11,7 @@ Express + TypeScript + Prisma + PostgreSQL.
      Канон: порт на хосте **5432** (`POSTGRES_PORT` в `deploy/.env`); он **должен совпадать** с URL в `DATABASE_URL`. Таблица портов: `docs/dev-local-ports.md`.
 2. Миграции и сиды:  
    `npx prisma migrate dev`  
-   `npx prisma db seed` (идемпотентно: канонические роли из **`backend/shared/canonical-roles.seed.json`** через `prisma/seed-roles.ts`, пользователь `admin`/`admin`, опционально `director`/`director` — см. `SEED_DIRECTOR_USER` в `.env.example`; затем единицы измерения и демо-данные справочников при пустых таблицах)
+   `npx prisma db seed` (идемпотентно: канонические роли из **`backend/shared/canonical-roles.seed.json`** через `prisma/seed-roles.ts`; на фронте тот же список — **`crm-web`**: `npm run sync:canonical-roles` → `canonical-roles.generated.ts`). Пользователь `admin`/`admin`, опционально `director`/`director` — см. `SEED_DIRECTOR_USER` в `.env.example`; затем единицы измерения и демо-данные справочников при пустых таблицах)
 
 3. **Полный сброс БД (разработка)** — удалить все данные и применить миграции + seed заново:  
    `npm run db:reset`  

@@ -13,6 +13,9 @@ const REQUIRED_FILES = [
   'libs/dictionaries-hub-feature/project.json',
 ];
 
+/** Канон ролей для Prisma seed и для `npm run sync:canonical-roles`. */
+const CANONICAL_ROLES_JSON = path.resolve(ROOT, '../backend/shared/canonical-roles.seed.json');
+
 function exists(relPath) {
   return fs.existsSync(path.join(ROOT, relPath));
 }
@@ -24,6 +27,13 @@ function main() {
     for (const p of missing) {
       console.error(`- ${p}`);
     }
+    process.exit(1);
+  }
+
+  if (!fs.existsSync(CANONICAL_ROLES_JSON)) {
+    console.error(
+      `FATAL: canonical roles seed missing: ${path.relative(process.cwd(), CANONICAL_ROLES_JSON)}`,
+    );
     process.exit(1);
   }
 

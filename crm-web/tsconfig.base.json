@@ -16,8 +16,6 @@
     "resolveJsonModule": true,
     "baseUrl": ".",
     "paths": {
-      "@crm/canonical-roles": ["../backend/shared/canonical-roles.seed.json"],
-      "@srm/canonical-roles": ["../backend/shared/canonical-roles.seed.json"],
       "@crm-web/ui-kit": ["libs/ui-kit/src/index.ts"],
       "@crm-web/shared-types": ["libs/shared-types/src/index.ts"],
       "@crm-web/platform-core": ["libs/platform-core/src/index.ts"],
