@@ -67,6 +67,7 @@
 | 38 | 2026-04-04 | GitHub Actions: `backend-ci.yml` — `npm ci` + `npm run build` при изменениях в `backend/**` | .github, backend | `aa232c3` |
 | 39 | 2026-04-04 | Push в `origin/main` накопленных коммитов (ops, CI, Excel-валидаторы, доки) | repo | `8e883ba` |
 | 40 | 2026-04-04 | Снят Excel с хаба и админки: `POST /api/admin/bulk/units`, карточка в админ-настройках, `admin.bulk.units`; удалены excel-dictionaries и xlsx; MC utils → bulk-import; доки и backend-map | backend, crm-web, docs, scripts, справочники | `fcc319b` |
+| 41 | 2026-04-04 | Docker web build: дефолт `NG_BUILD_MAX_WORKERS=1`, heap 3072 МБ, `NX_VERBOSE_LOGGING`; compose args + runbook про OOM на VPS | deploy, docs | `4c850d6` |
 
 ---
 
