@@ -1,4 +1,5 @@
 import type { ProductionDetailItemInput } from '@srm/production-details-data-access';
+import { isUuidString, parseExcelBool } from './dictionaries-page-excel-parse-utils';
 import { productionDetailsPayloadFromValues } from './dictionaries-page-payload-builders';
 import { parseNumberOrNull } from './dictionaries-page-form-utils';
 
@@ -30,7 +31,7 @@ export function validateAndMapProductionDetailsRows(
     const qty = qtyRaw != null && qtyRaw > 0 ? qtyRaw : 1;
     const code = String(row['Код'] ?? '').trim();
     const notes = String(row['Заметки'] ?? '').trim();
-    const isActive = this.parseExcelBool(row['Активен'], true);
+    const isActive = parseExcelBool(row['Активен'], true);
 
     const srcMat = String(row['ID источник материала'] ?? '').trim();
     const srcWt = String(row['ID источник вида работ'] ?? '').trim();
@@ -45,7 +46,7 @@ export function validateAndMapProductionDetailsRows(
     }
 
     if (srcMat) {
-      if (!this.isUuidString(srcMat)) {
+      if (!isUuidString(srcMat)) {
         errors.push(`Строка ${rowNo}: «ID источник материала» — неверный формат UUID.`);
         return;
       }
@@ -55,7 +56,7 @@ export function validateAndMapProductionDetailsRows(
       }
     }
     if (srcWt) {
-      if (!this.isUuidString(srcWt)) {
+      if (!isUuidString(srcWt)) {
         errors.push(`Строка ${rowNo}: «ID источник вида работ» — неверный формат UUID.`);
         return;
       }

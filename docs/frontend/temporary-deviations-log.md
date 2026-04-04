@@ -24,20 +24,20 @@
 
 ## Текущие записи
 
-## [TD-20260403-01] Временно поднят лимит mega-file
+## [TD-20260403-01] Mega-file dictionaries-page (гейт 6200 строк)
 - **Дата:** 2026-04-03
-- **Где:** `crm-web/libs/dictionaries-hub-feature/src/lib/pages/dictionaries-page/dictionaries-page.ts`
-- **Что временно:** поднят `MAX_LINES` guard в `crm-web/scripts/check-dictionaries-page-size.cjs`, чтобы CI проходил до распила mega-file.
-- **Почему временно:** безопасный распил большого файла откладывается до следующего согласованного шага, чтобы не внести риск поведения/контрактов “в один коммит”.
-- **Риск:** CI quality gate снова начнёт падать при возврате лимита; возможны задержки в обнаружении роста mega-file.
-- **Когда исправить (deadline):** 2026-04-03 (фактически завершён распил mega-file)
-- **Триггер исправления:** перед merge feature/rework распила dictionaries-page
-- **План исправления:** 1) распилить `validateAndMap*Rows` и связанные helper’ы в отдельные файлы, 2) уменьшить `dictionaries-page.ts` ниже 6200 строк, 3) вернуть `MAX_LINES` к 6200, 4) прогнать `check:dictionaries-page-size`.
+- **Где:** `crm-web/libs/dictionaries-hub-feature/src/lib/pages/dictionaries-page/dictionaries-page.ts`, `crm-web/scripts/check-dictionaries-page-size.cjs`
+- **Что было:** файл приблизился к лимиту CI (`MAX_LINES` = 6200); обсуждался как временный вариант поднять лимит до распила.
+- **Фактическое решение:** лимит **не** поднимали; выполнен распил без изменения контрактов: вынесены общие Excel-парсеры в `dictionaries-page-excel-parse-utils.ts`, прямые вызовы `validateAndMap*Fn.call(this, rows)` вместо тонких обёрток в компоненте, строк в файле стало меньше порога.
+- **Риск:** `dictionaries-page.ts` остаётся крупным; дальнейший рост снова упрётся в гейт — планировать следующий распил заранее.
+- **Когда исправить (deadline):** по мере роста файла (ориентир — оставлять запас до лимита 6200).
+- **Триггер исправления:** падение `npm run check:dictionaries-page-size`.
+- **План исправления:** продолжить вынос логики в модули рядом с `dictionaries-page-*.ts`, не ослабляя `MAX_LINES` без записи в этом логе.
 - **Ответственный:** TBD
 - **Статус:** done
 - **Ссылка на коммит/PR:** TBD
 
-На 2026-03-31 активных отклонений (статус `open`) нет.
+Активных отклонений (статус `open`) нет.
 
 ## Правила
 

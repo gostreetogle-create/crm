@@ -89,7 +89,6 @@ import {
   normalizeRalCode,
   normalizeWorkTypeName,
   organizationKindToLegalForm,
-  parseNumberOrNull,
 } from './dictionaries-page-form-utils';
 import {
   clientPayloadFromForm,
@@ -154,11 +153,9 @@ import {
   computeProductionDetailTotals,
 } from '@srm/dictionaries-utils';
 import type { MaterialItem, MaterialItemInput } from '@srm/materials-data-access';
-import type { ProductionDetailItemInput } from '@srm/production-details-data-access';
 import {
   PRODUCTS_REPOSITORY,
   type ProductItem,
-  type ProductItemInput,
   type ProductLineDto,
   type ProductsRepository,
 } from '@srm/products-data-access';
@@ -4621,7 +4618,7 @@ export class DictionariesPage implements OnDestroy {
     this.excelImportBegin();
     try {
       const rows = await this.excelRowsFromFile(file);
-      const parsed = this.validateAndMapGeometriesRows(rows);
+      const parsed = validateAndMapGeometriesRowsFn.call(this, rows);
       if (!parsed.ok) {
         this.excelImportStatus.set(`Импорт отклонен: ${parsed.errors.join(' | ')}`);
         return;
@@ -4639,7 +4636,7 @@ export class DictionariesPage implements OnDestroy {
     this.excelImportBegin();
     try {
       const rows = await this.excelRowsFromFile(file);
-      const parsed = this.validateAndMapUnitsRows(rows);
+      const parsed = validateAndMapUnitsRowsFn.call(this, rows);
       if (!parsed.ok) {
         this.excelImportStatus.set(`Импорт отклонен: ${parsed.errors.join(' | ')}`);
         return;
@@ -4657,7 +4654,7 @@ export class DictionariesPage implements OnDestroy {
     this.excelImportBegin();
     try {
       const rows = await this.excelRowsFromFile(file);
-      const parsed = this.validateAndMapRolesRows(rows);
+      const parsed = validateAndMapRolesRowsFn.call(this, rows);
       if (!parsed.ok) {
         this.excelImportStatus.set(`Импорт отклонен: ${parsed.errors.join(' | ')}`);
         return;
@@ -4675,7 +4672,7 @@ export class DictionariesPage implements OnDestroy {
     this.excelImportBegin();
     try {
       const rows = await this.excelRowsFromFile(file);
-      const parsed = this.validateAndMapUsersRows(rows);
+      const parsed = validateAndMapUsersRowsFn.call(this, rows);
       if (!parsed.ok) {
         this.excelImportStatus.set(`Импорт отклонен: ${parsed.errors.join(' | ')}`);
         return;
@@ -4693,7 +4690,7 @@ export class DictionariesPage implements OnDestroy {
     this.excelImportBegin();
     try {
       const rows = await this.excelRowsFromFile(file);
-      const parsed = this.validateAndMapWorkTypesRows(rows);
+      const parsed = validateAndMapWorkTypesRowsFn.call(this, rows);
       if (!parsed.ok) {
         this.excelImportStatus.set(`Импорт отклонен: ${parsed.errors.join(' | ')}`);
         return;
@@ -4711,7 +4708,7 @@ export class DictionariesPage implements OnDestroy {
     this.excelImportBegin();
     try {
       const rows = await this.excelRowsFromFile(file);
-      const parsed = this.validateAndMapProductionDetailsRows(rows);
+      const parsed = validateAndMapProductionDetailsRowsFn.call(this, rows);
       if (!parsed.ok) {
         this.excelImportStatus.set(`Импорт отклонен: ${parsed.errors.join(' | ')}`);
         return;
@@ -4729,7 +4726,7 @@ export class DictionariesPage implements OnDestroy {
     this.excelImportBegin();
     try {
       const rows = await this.excelRowsFromFile(file);
-      const parsed = this.validateAndMapSurfaceFinishesRows(rows);
+      const parsed = validateAndMapSurfaceFinishesRowsFn.call(this, rows);
       if (!parsed.ok) {
         this.excelImportStatus.set(`Импорт отклонен: ${parsed.errors.join(' | ')}`);
         return;
@@ -4747,7 +4744,7 @@ export class DictionariesPage implements OnDestroy {
     this.excelImportBegin();
     try {
       const rows = await this.excelRowsFromFile(file);
-      const parsed = this.validateAndMapCoatingsRows(rows);
+      const parsed = validateAndMapCoatingsRowsFn.call(this, rows);
       if (!parsed.ok) {
         this.excelImportStatus.set(`Импорт отклонен: ${parsed.errors.join(' | ')}`);
         return;
@@ -4765,7 +4762,7 @@ export class DictionariesPage implements OnDestroy {
     this.excelImportBegin();
     try {
       const rows = await this.excelRowsFromFile(file);
-      const parsed = this.validateAndMapClientsRows(rows);
+      const parsed = validateAndMapClientsRowsFn.call(this, rows);
       if (!parsed.ok) {
         this.excelImportStatus.set(`Импорт отклонен: ${parsed.errors.join(' | ')}`);
         return;
@@ -4783,7 +4780,7 @@ export class DictionariesPage implements OnDestroy {
     this.excelImportBegin();
     try {
       const rows = await this.excelRowsFromFile(file);
-      const parsed = this.validateAndMapOrganizationsRows(rows);
+      const parsed = validateAndMapOrganizationsRowsFn.call(this, rows);
       if (!parsed.ok) {
         this.excelImportStatus.set(`Импорт отклонен: ${parsed.errors.join(' | ')}`);
         return;
@@ -5341,7 +5338,7 @@ export class DictionariesPage implements OnDestroy {
     this.excelImportBegin();
     try {
       const rows = await this.excelRowsFromFile(file);
-      const parsed = this.validateAndMapProductsRows(rows);
+      const parsed = validateAndMapProductsRowsFn.call(this, rows);
       if (!parsed.ok) {
         this.excelImportStatus.set(`Импорт отклонен: ${parsed.errors.join(' | ')}`);
         return;
@@ -6097,221 +6094,6 @@ export class DictionariesPage implements OnDestroy {
     return String(row['Название покрытия'] ?? '').trim();
   }
 
-  /**
-   * Компактный формат (как в UI/экспорте): 20×20×3×6000 мм, ⌀32×2×6000 мм, разделители × x X х.
-   */
-  private tryParseCompactGeometryParams(
-    raw: string,
-    shapeKey: string
-  ): {
-    heightMm: number | null;
-    lengthMm: number | null;
-    widthMm: number | null;
-    diameterMm: number | null;
-    thicknessMm: number | null;
-  } | null {
-    let s = raw.trim();
-    s = s.replace(/\s*мм\s*$/i, '').replace(/\s*mm\s*$/i, '').trim();
-    if (!s) return null;
-
-    const parts = s.split(/[×xXх\u00D7]/u).map((p) => p.trim()).filter(Boolean);
-    if (!parts.length) return null;
-
-    const nums: number[] = [];
-    for (const p of parts) {
-      const cleaned = p
-        .replace(/^[⌀Ø]\s*/u, '')
-        .replace(/^диам\.?\s*/i, '');
-      const v = parseNumberOrNull(cleaned);
-      if (v === null) return null;
-      nums.push(v);
-    }
-
-    const n = nums;
-    switch (shapeKey) {
-      case 'rectangular':
-        if (n.length === 4) {
-          return {
-            heightMm: n[0],
-            widthMm: n[1],
-            thicknessMm: n[2],
-            lengthMm: n[3],
-            diameterMm: null,
-          };
-        }
-        if (n.length === 3) {
-          return {
-            heightMm: n[0],
-            widthMm: n[1],
-            thicknessMm: null,
-            lengthMm: n[2],
-            diameterMm: null,
-          };
-        }
-        return null;
-      case 'tube':
-        if (n.length === 3) {
-          return {
-            diameterMm: n[0],
-            thicknessMm: n[1],
-            lengthMm: n[2],
-            heightMm: null,
-            widthMm: null,
-          };
-        }
-        return null;
-      case 'cylindrical':
-        if (n.length === 2) {
-          return {
-            diameterMm: n[0],
-            lengthMm: n[1],
-            heightMm: null,
-            widthMm: null,
-            thicknessMm: null,
-          };
-        }
-        return null;
-      case 'plate':
-        if (n.length === 3) {
-          return {
-            lengthMm: n[0],
-            widthMm: n[1],
-            thicknessMm: n[2],
-            heightMm: null,
-            diameterMm: null,
-          };
-        }
-        return null;
-      default:
-        if (n.length === 0 || n.length > 5) return null;
-        return {
-          heightMm: n[0] ?? null,
-          widthMm: n[1] ?? null,
-          lengthMm: n[2] ?? null,
-          diameterMm: n[3] ?? null,
-          thicknessMm: n[4] ?? null,
-        };
-    }
-  }
-
-  private validateAndMapGeometriesRows(rows: ReadonlyArray<Record<string, unknown>>): {
-    ok: boolean;
-    rows: Array<{
-      name: string;
-      shapeKey: string;
-      heightMm?: number;
-      lengthMm?: number;
-      widthMm?: number;
-      diameterMm?: number;
-      thicknessMm?: number;
-      notes?: string;
-      isActive: boolean;
-    }>;
-    errors: string[];
-  } {
-    return validateAndMapGeometriesRowsFn.call(this, rows);
-  }
-
-  private parseExcelBool(raw: unknown, defaultTrue: boolean): boolean {
-    if (raw === null || raw === undefined || raw === '') return defaultTrue;
-    const s = String(raw).trim().toLowerCase();
-    if (!s) return defaultTrue;
-    if (['да', 'д', 'yes', 'y', '1', 'true'].includes(s)) return true;
-    if (['нет', 'н', 'no', 'n', '0', 'false'].includes(s)) return false;
-    return defaultTrue;
-  }
-
-  private validateAndMapWorkTypesRows(rows: ReadonlyArray<Record<string, unknown>>): {
-    ok: boolean;
-    rows: Array<{
-      name: string;
-      shortLabel: string;
-      hourlyRateRub: number;
-      isActive: boolean;
-    }>;
-    errors: string[];
-  } {
-    return validateAndMapWorkTypesRowsFn.call(this, rows);
-  }
-
-  private isUuidString(raw: string): boolean {
-    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-      raw.trim(),
-    );
-  }
-
-  private validateAndMapProductionDetailsRows(rows: ReadonlyArray<Record<string, unknown>>): {
-    ok: boolean;
-    rows: ProductionDetailItemInput[];
-    errors: string[];
-  } {
-    return validateAndMapProductionDetailsRowsFn.call(this, rows);
-  }
-
-  private validateAndMapUnitsRows(rows: ReadonlyArray<Record<string, unknown>>): {
-    ok: boolean;
-    rows: Array<{ name: string; code: string; notes?: string; isActive: boolean }>;
-    errors: string[];
-  } {
-    return validateAndMapUnitsRowsFn.call(this, rows);
-  }
-
-  private validateAndMapRolesRows(rows: ReadonlyArray<Record<string, unknown>>): {
-    ok: boolean;
-    rows: RoleItemInput[];
-    errors: string[];
-  } {
-    return validateAndMapRolesRowsFn.call(this, rows);
-  }
-
-  private validateAndMapUsersRows(rows: ReadonlyArray<Record<string, unknown>>): {
-    ok: boolean;
-    rows: UserItemInput[];
-    errors: string[];
-  } {
-    return validateAndMapUsersRowsFn.call(this, rows);
-  }
-
-  private validateAndMapSurfaceFinishesRows(rows: ReadonlyArray<Record<string, unknown>>): {
-    ok: boolean;
-    rows: Array<{ finishType: string; roughnessClass: string; raMicron?: number }>;
-    errors: string[];
-  } {
-    return validateAndMapSurfaceFinishesRowsFn.call(this, rows);
-  }
-
-  private validateAndMapCoatingsRows(rows: ReadonlyArray<Record<string, unknown>>): {
-    ok: boolean;
-    rows: Array<{ coatingType: string; coatingSpec: string; thicknessMicron?: number }>;
-    errors: string[];
-  } {
-    return validateAndMapCoatingsRowsFn.call(this, rows);
-  }
-
-  private validateAndMapClientsRows(rows: ReadonlyArray<Record<string, unknown>>): {
-    ok: boolean;
-    rows: ClientItemInput[];
-    errors: string[];
-  } {
-    return validateAndMapClientsRowsFn.call(this, rows);
-  }
-
-  private validateAndMapOrganizationsRows(rows: ReadonlyArray<Record<string, unknown>>): {
-    ok: boolean;
-    rows: OrganizationItemInput[];
-    errors: string[];
-  } {
-    return validateAndMapOrganizationsRowsFn.call(this, rows);
-  }
-
-  private validateAndMapProductsRows(rows: ReadonlyArray<Record<string, unknown>>): {
-    ok: boolean;
-    items: Array<{ existingId?: string; input: ProductItemInput }>;
-    errors: string[];
-  } {
-    return validateAndMapProductsRowsFn.call(this, rows);
-  }
-
   private applyGeometryShapeValidators(shape: string): void {
     const c = this.geometriesForm.controls;
     const optionalNonNegative = [Validators.min(0)];
@@ -6335,8 +6117,6 @@ export class DictionariesPage implements OnDestroy {
     }
   }
 }
-
-
 
 
 

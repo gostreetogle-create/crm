@@ -1,4 +1,5 @@
 import type { ProductItemInput } from '@srm/products-data-access';
+import { isUuidString, parseExcelBool } from './dictionaries-page-excel-parse-utils';
 import { parseNumberOrNull } from './dictionaries-page-form-utils';
 
 function sumLineTotalsFromDetails(
@@ -80,7 +81,7 @@ export function validateAndMapProductsRows(
       errors.push(`Строка ${rowNo}: укажите «ID детали».`);
       return;
     }
-    if (!this.isUuidString(detailId)) {
+    if (!isUuidString(detailId)) {
       errors.push(`Строка ${rowNo}: «ID детали» — неверный формат UUID.`);
       return;
     }
@@ -88,7 +89,7 @@ export function validateAndMapProductsRows(
       errors.push(`Строка ${rowNo}: деталь с таким id не найдена в справочнике.`);
       return;
     }
-    if (wt && !this.isUuidString(wt)) {
+    if (wt && !isUuidString(wt)) {
       errors.push(`Строка ${rowNo}: «ID вида работ» — неверный формат UUID.`);
       return;
     }
@@ -96,7 +97,7 @@ export function validateAndMapProductsRows(
       errors.push(`Строка ${rowNo}: вид работ с таким id не найден.`);
       return;
     }
-    if (col && !this.isUuidString(col)) {
+    if (col && !isUuidString(col)) {
       errors.push(`Строка ${rowNo}: «ID цвета» — неверный формат UUID.`);
       return;
     }
@@ -104,7 +105,7 @@ export function validateAndMapProductsRows(
       errors.push(`Строка ${rowNo}: цвет с таким id не найден.`);
       return;
     }
-    if (productId && !this.isUuidString(productId)) {
+    if (productId && !isUuidString(productId)) {
       errors.push(`Строка ${rowNo}: «ID изделия» — неверный формат UUID.`);
       return;
     }
@@ -120,7 +121,7 @@ export function validateAndMapProductsRows(
       priceRub: parseNumberOrNull(row['Цена ₽']),
       costRub: parseNumberOrNull(row['Себестоимость ₽']),
       notes: String(row['Заметки'] ?? '').trim(),
-      isActive: this.parseExcelBool(row['Активен'], true),
+      isActive: parseExcelBool(row['Активен'], true),
       sortOrder,
       productionDetailId: detailId,
       workTypeId: wt,

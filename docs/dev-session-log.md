@@ -57,6 +57,7 @@
 | 28 | 2026-04-04 | Docker web: Nx/heap/workers + verbose, compose defaults и NODE_BUILD_HEAP_MB; docs/dev-local-ports; srm-front dev → :3000 + proxy; KP brand link | deploy, docs, crm-web | `217e694` |
 | 29 | 2026-04-04 | Docker backend: strip CRLF entrypoint, COPY shared для seed, .gitattributes; .env.example CORS для compose | deploy | `aa548b6` |
 | 30 | 2026-04-04 | Чеклист perf/build (~200 строк), первым в development-workflow; KP без PDF-ссылки; runbook ссылка | docs, crm-web | `7f99ee5` |
+| 31 | 2026-04-04 | Распил dictionaries-page под лимит CI; canonical-roles для Jest (TS-зеркало JSON); platform-core passWithNoTests; правка TD-лога | crm-web, docs | `76deb4a` |
 
 ---
 

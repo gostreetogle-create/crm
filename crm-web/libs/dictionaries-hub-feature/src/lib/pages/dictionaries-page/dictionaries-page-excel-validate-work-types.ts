@@ -1,3 +1,4 @@
+import { parseExcelBool } from './dictionaries-page-excel-parse-utils';
 import { normalizeWorkTypeName, parseNumberOrNull } from './dictionaries-page-form-utils';
 
 export function validateAndMapWorkTypesRows(
@@ -38,7 +39,7 @@ export function validateAndMapWorkTypesRows(
     const name = String(row['Наименование'] ?? '').trim();
     const shortLabel = String(row['Короткое обозначение'] ?? '').trim();
     const rateRaw = parseNumberOrNull(row['Ставка руб/ч']);
-    const isActive = this.parseExcelBool(row['Активна'], true);
+    const isActive = parseExcelBool(row['Активна'], true);
     const nameKey = normalizeWorkTypeName(name);
 
     if (!name || !shortLabel) {

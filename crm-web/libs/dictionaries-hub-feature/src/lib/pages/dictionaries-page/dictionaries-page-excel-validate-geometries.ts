@@ -1,3 +1,4 @@
+import { tryParseCompactGeometryParams } from './dictionaries-page-excel-parse-utils';
 import { parseNumberOrNull } from './dictionaries-page-form-utils';
 
 export function validateAndMapGeometriesRows(
@@ -78,7 +79,7 @@ export function validateAndMapGeometriesRows(
       thicknessMm !== null;
 
     if (!legacyAny) {
-      const c = this.tryParseCompactGeometryParams(params, shapeKey);
+      const c = tryParseCompactGeometryParams(params, shapeKey);
       if (c) {
         heightMm = c.heightMm;
         lengthMm = c.lengthMm;
