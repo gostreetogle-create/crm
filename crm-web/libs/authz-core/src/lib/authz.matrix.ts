@@ -13,7 +13,7 @@ export const DEFAULT_PERMISSIONS_BUSINESS_WORKSPACE: readonly PermissionKey[] = 
 /**
  * Дефолтные права по **коду роли** (нижний регистр), пока для роли нет явного переопределения матрицы.
  * Код `admin` здесь не используется для суперадмина: у него полный набор через `isSuperAdminRole`.
- * `viewer` — только просмотр хаба (без CRUD/Excel и без лишних разделов).
+ * `viewer` — только просмотр хаба (без CRUD/массового JSON и без лишних разделов).
  * Любой **другой** код (кастомная роль) без матрицы получает `[]`.
  */
 export const DEFAULT_ROLE_PERMISSIONS_BY_CODE: Record<string, readonly PermissionKey[]> = {

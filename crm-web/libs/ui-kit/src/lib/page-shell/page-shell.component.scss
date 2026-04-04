@@ -5,10 +5,12 @@
   padding: var(--ui-page-shell-padding-top) var(--ui-page-shell-padding-x)
     var(--ui-page-shell-padding-bottom);
   color: var(--text-primary);
+  /* Верх: мягкий «свод» из accent; по бокам — токены A/B; низ — золотисто-кремовый градиент */
   background:
-    radial-gradient(900px 360px at 20% 0%, var(--bg-gradient-a), transparent 60%),
-    radial-gradient(900px 360px at 80% 0%, var(--bg-gradient-b), transparent 55%),
-    linear-gradient(var(--bg-base), var(--bg-base));
+    radial-gradient(ellipse 120% 55% at 50% -8%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 58%),
+    radial-gradient(900px 380px at 18% 0%, var(--bg-gradient-a), transparent 62%),
+    radial-gradient(900px 380px at 82% 0%, var(--bg-gradient-b), transparent 58%),
+    var(--page-shell-bg-bottom);
 }
 
 .page {

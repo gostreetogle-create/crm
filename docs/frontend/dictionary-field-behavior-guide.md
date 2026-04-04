@@ -5,9 +5,9 @@
 Связанные документы:
 
 - Подписи длинные/короткие: [`dictionaries-naming-convention.md`](./dictionaries-naming-convention.md)
-- Каркас CRUD и Excel: [`dictionaries-crud-playbook.md`](./dictionaries-crud-playbook.md)
+- Каркас CRUD на хабе: [`dictionaries-crud-playbook.md`](./dictionaries-crud-playbook.md)
 - Чеклист задачи: [`new-dictionary-checklist.md`](./new-dictionary-checklist.md)
-- Пример таблицы «домен ↔ колонка ↔ модалка ↔ Excel»: [`work-types-crud.md`](./work-types-crud.md)
+- Пример таблицы «домен ↔ колонка ↔ модалка»: [`work-types-crud.md`](./work-types-crud.md)
 - Откуда брать цены для себестоимости по справочникам: [`costing-and-dictionary-prices.md`](./costing-and-dictionary-prices.md)
 
 ---
@@ -83,19 +83,20 @@
 
 ---
 
-## 4. Excel (шаблон / импорт / экспорт)
+## 4. Массовый импорт (JSON / Admin API)
 
-- В файл попадают **только бизнес-колонки**; системные поля (`id`, `row_version`, …) не в шаблоне до появления upsert.
-- Заголовки листа = те же «человеческие» имена, что в шаблоне и в валидаторе импорта (один источник правды в коде).
-- Импорт в текущем каноне — **только создание** новых строк (`createMany`); ошибки — с номером строки и причиной, без «тихих» пропусков. **Исключение:** справочник **«Изделия»** — импорт с **плитки** и лист **«Изделия»** в едином Excel: создание и обновление по **ID изделия** (см. [`products-dictionary.md`](./products-dictionary.md)).
-- Нормализация текста, сопоставление Excel с мелкими справочниками без id в файле, снимки на материале и **чеклист аудита таблиц** — [`dictionaries-data-and-import-rules.md`](./dictionaries-data-and-import-rules.md).
+- На плитках `/dictionaries` **нет** кнопок шаблона/импорта/экспорта в `CrudLayout`. Массовое наполнение — через **админские JSON endpoints** (пилот: `POST /api/admin/bulk/units`, право `admin.bulk.units`, UI в «Админ-настройках»). Общий план и чеклист — [`dev-bulk-json-migration-checklist.md`](../dev-bulk-json-migration-checklist.md).
+- В payload попадают **только бизнес-поля**; системные (`id`, `row_version`, …) — по правилам конкретного endpoint (часто только при upsert).
+- Ответ сервера: успехи и ошибки **по индексам элементов** в массиве (`created`, `errors`), без «тихих» пропусков, если иное не зафиксировано в контракте. Режим (create-only vs upsert) задаётся отдельно для каждой сущности.
+- Для **«Изделий»** отдельный bulk-route и контракт появятся после переноса логики с прежнего Excel-потока; ориентир по полям — [`products-dictionary.md`](./products-dictionary.md).
+- Нормализация текста, сопоставление текстовых полей с мелкими справочниками, снимки на материале и **чеклист аудита** — [`dictionaries-data-and-import-rules.md`](./dictionaries-data-and-import-rules.md).
 
 ---
 
 ## 5. Как вводить новый справочник без хаоса
 
 1. Запись в manufacturing JSON (поля, описание, статус).
-2. Короткий **feature-doc** со **таблицей**: доменное имя | `TS`/key | `label` колонки | `label` модалки | колонки Excel.
+2. Короткий **feature-doc** со **таблицей**: доменное имя | `TS`/key | `label` колонки | `label` модалки | поля для JSON bulk (когда появится endpoint).
 3. При необходимости — новая строка в `dictionaries-naming-convention.md` (пара длинное/короткое для **нового** термина).
 4. Реализация по [`new-dictionary-checklist.md`](./new-dictionary-checklist.md).
 5. Проверка: колонка короткая, модалка полная, сценарии create/edit/view/duplicate/delete согласны с этим документом.

@@ -3,13 +3,10 @@ import { Component, EventEmitter, HostListener, Input, Output, TemplateRef } fro
 import {
   LucideChevronDown,
   LucideCopy,
-  LucideDownload,
   LucideEye,
-  LucideFileSpreadsheet,
   LucidePencil,
   LucidePlus,
   LucideTrash2,
-  LucideUpload,
 } from '@lucide/angular';
 import { FactRow, PageHeaderComponent } from '../page-header/page-header.component';
 import { UiModal as UiModalComponent } from '../modal/public-api';
@@ -34,13 +31,10 @@ export type CrudTableRow = Record<string, unknown>;
     PageHeaderComponent,
     LucideChevronDown,
     LucideCopy,
-    LucideDownload,
     LucideEye,
-    LucideFileSpreadsheet,
     LucidePencil,
     LucidePlus,
     LucideTrash2,
-    LucideUpload,
     UiModalComponent,
     UiButtonComponent,
     CrudRowActionsMenuComponent,
@@ -68,11 +62,6 @@ export class CrudLayoutComponent {
   @Input() canCreate = true;
   @Input() createAriaLabel = 'Добавить запись';
   @Input() createTitle = 'Добавить запись';
-  @Input() showExcelActions = false;
-  @Input() canDownloadTemplate = true;
-  @Input() canImportExcel = true;
-  @Input() canExportExcel = true;
-  @Input() importAccept = '.xlsx,.xls';
   @Input() canView = true;
   @Input() canDuplicate = true;
   @Input() canEdit = true;
@@ -101,9 +90,6 @@ export class CrudLayoutComponent {
   @Output() duplicate = new EventEmitter<string>();
   @Output() edit = new EventEmitter<string>();
   @Output() delete = new EventEmitter<string>();
-  @Output() downloadTemplate = new EventEmitter<void>();
-  @Output() importExcel = new EventEmitter<File>();
-  @Output() exportExcel = new EventEmitter<void>();
   isDeleteConfirmOpen = false;
   private pendingDeleteId: string | null = null;
   nameSearchTerm = '';
@@ -125,13 +111,6 @@ export class CrudLayoutComponent {
     }
     const s = v.trim();
     return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(s) ? s : 'transparent';
-  }
-
-  get hasExcelActions(): boolean {
-    return (
-      this.showExcelActions &&
-      (this.canDownloadTemplate || this.canImportExcel || this.canExportExcel)
-    );
   }
 
   get hasRowActions(): boolean {
@@ -308,24 +287,6 @@ export class CrudLayoutComponent {
     if (!this.pendingDeleteId) return;
     this.delete.emit(this.pendingDeleteId);
     this.cancelDelete();
-  }
-
-  onDownloadTemplate(): void {
-    this.downloadTemplate.emit();
-  }
-
-  onImportPicked(event: Event): void {
-    const input = event.target as HTMLInputElement | null;
-    const file = input?.files?.[0];
-    if (!file) return;
-    this.importExcel.emit(file);
-    if (input) {
-      input.value = '';
-    }
-  }
-
-  onExportExcel(): void {
-    this.exportExcel.emit();
   }
 
   private rowMatchesName(row: CrudTableRow, term: string): boolean {

@@ -40,14 +40,14 @@
 | 34 | `temporary-deviations-log.md` при отклонениях | **done** (файл актуален; записей open нет) |
 | 35 | README в `dictionaries-hub-feature` | **done** |
 | 36 | Grep: устаревшие TODO по модалкам | **done** |
-| 37 | ESLint unused / мёртвый код после рефакторинга | **partial** (Excel-валидаторы: без `any`/`!` в отдельных модулях; периодически `nx affected -t lint`) |
+| 37 | ESLint unused / мёртвый код после рефакторинга | **partial** (периодически `nx affected -t lint`; после снятия Excel на хабе — без отдельных валидаторов-листов) |
 | 38 | Объединить дубли стилей `.newMaterialPage` / shell | **done** |
 | 39 | Дубли `app.routes` устранены через фабрику маршрутов | **done** |
 | 40 | Строгая типизация `standaloneCreate` | **done** |
 | 41 | Централизовать `back()` после submit | **done** |
 | 42 | Async submit: единый паттерн захвата standalone | **done** (док: [runtime-notes](dictionaries-runtime-notes.md)) |
 | 43 | CrudLayout «+» = быстрый выбор «+» | **done** (`HUB_BOARD_QUICK_CREATE` для плитки хаба) |
-| 44 | Excel на standalone: явное решение показа/скрытия | **done** (`showExcelImportStatusBanner`) |
+| 44 | Массовый импорт вне плиток хаба | **superseded** (Excel UI снят; пилот JSON — `POST /api/admin/bulk/units`, см. `dev-bulk-json-migration-checklist.md`) |
 | 45 | Toast после сохранения (если по design-system) | **partial** ([runtime-notes](dictionaries-runtime-notes.md)) |
 | 46 | Логирование ошибок submit (prod/dev политика) | **partial** ([runtime-notes](dictionaries-runtime-notes.md)) |
 | 47 | Поведение при ошибке сети / неуспешном submit | **partial** ([runtime-notes](dictionaries-runtime-notes.md)) |

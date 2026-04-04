@@ -6,48 +6,36 @@
 
 ---
 
-## Excel: единый файл админа и плитка хаба
+## Массовое наполнение (JSON / Admin API)
 
-Колонки **одинаковые** в двух местах:
+Единый Excel-импорт и кнопки Excel в `CrudLayout` **сняты**. Массовое создание — через **админские JSON endpoints** (см. `docs/dev-bulk-json-migration-checklist.md`). Пилот: `POST /api/admin/bulk/units`. Для изделий отдельный bulk-route появится при переносе доменной логики с прежнего Excel-потока.
 
-1. **Единый импорт/экспорт** (шаблон и выгрузка всех справочников): `POST /api/admin/excel-dictionaries/import`, лист **«Изделия»** (`sheetName` в коде: `Products`). Реализация: `backend/src/lib/excel-dictionaries/excel-dictionaries.service.ts` — адаптер `Products` (после листа «Детали»).
-2. **Плитка «Изделия»** на хабе: кнопки шаблон / импорт / экспорт в `CrudLayout`, обработчики в `dictionaries-page.ts` (`exportProductsExcel`, `downloadProductsTemplateExcel`, `onProductsExcelImported`), валидация строк в `dictionaries-page-excel-validate-products.ts`.
+**Ориентир полей** для будущего JSON (одна строка payload ≈ одна строка состава, несколько строк с одним изделием объединяются так же по смыслу):
 
-### Формат листа (одна строка = одна строка состава)
-
-| Колонка | Смысл |
+| Поле | Смысл |
 |--------|--------|
-| ID изделия | UUID существующего изделия. **Пусто** — создаётся новое. **Заполнено** — обновление этой записи (состав перезаписывается целиком). |
+| ID изделия | UUID существующего изделия. Пусто — новое; заполнено — обновление (состав перезаписывается целиком). |
 | Наименование изделия | Обязательно. |
 | Цена ₽, Себестоимость ₽ | Числа; пусто — подстановка суммы по итогам выбранных деталей. |
 | Заметки | Текст. |
 | Активен | да / нет. |
-| Порядок | Порядок строки в составе (необязательно; по умолчанию порядок строк в файле). |
-| ID детали | UUID из справочника «Детали производства». Обязательно. |
-| ID вида работ | Опционально; UUID из «Вид работ». |
-| ID цвета | Опционально; UUID из «Цвета (RAL)». |
+| Порядок | Порядок строки в составе (необязательно). |
+| ID детали | UUID «Детали производства». Обязательно. |
+| ID вида работ | Опционально. |
+| ID цвета | Опционально. |
 
-Несколько строк с **одинаковым** «Наименование изделия» (и пустым «ID изделия») или с **одинаковым** «ID изделия» объединяются в одно изделие.
-
-Импорт на плитке: после успешной загрузки список обновляется через `productsRepository.getItems()` и `applyLoadedItems`.
+После импорта через API список на плитке обновляется обычным `getItems()` / перезагрузкой стора.
 
 ---
 
-## При смене полей или заголовков колонок
+## При смене полей или схемы импорта
 
-Менять **согласованно** (одни и те же русские заголовки):
-
-- `backend/src/lib/excel-dictionaries/excel-dictionaries.service.ts` — массив `productSheetHeaders`, `templateSampleRows`, `parseRow`, экспорт в `buildUnifiedExcelExportBuffer` (`case 'Products'`), при необходимости кэш `existingByIdCache.productionDetail` для импорта.
-- `crm-web/.../dictionaries-page.ts` — `productsExcelHeaders()`, строки в `exportProductsExcel` / `downloadProductsTemplateExcel`.
-- `crm-web/.../dictionaries-page-excel-validate-products.ts` — ключи `row['…']` и проверки.
-- этот файл и раздел Excel в [`dictionary-field-behavior-guide.md`](./dictionary-field-behavior-guide.md).
-
-Тесты заголовков (если есть): `dictionaries-page-table-columns.spec.ts` / Excel-спеки — по поиску `Products` / `Изделия`.
+Менять **согласованно**: доменные роуты `products`, формы `dictionaries-page-products`, этот файл и [`dictionary-field-behavior-guide.md`](./dictionary-field-behavior-guide.md). Тесты колонок таблицы: `dictionaries-page-table-columns.spec.ts` и поиск по `Products` / `Изделия`.
 
 ---
 
 ## Связанные документы
 
-- [`dictionary-field-behavior-guide.md`](./dictionary-field-behavior-guide.md) — общий канон полей и Excel.
+- [`dictionary-field-behavior-guide.md`](./dictionary-field-behavior-guide.md) — общий канон полей и массового импорта.
 - [`dictionaries-data-and-import-rules.md`](./dictionaries-data-and-import-rules.md) — правила импорта и нормализации.
 - [`dictionaries-crud-playbook.md`](./dictionaries-crud-playbook.md) — CRUD и гонки загрузки.

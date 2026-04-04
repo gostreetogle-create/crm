@@ -3,12 +3,12 @@ import type { CoatingItem, CoatingItemInput } from '@srm/coatings-data-access';
 import type { SurfaceFinishItem, SurfaceFinishItemInput } from '@srm/surface-finishes-data-access';
 import type { MaterialCharacteristicItemInput } from '@srm/material-characteristics-data-access';
 
-/** Строка Excel после валидации колонок; ссылки разрешаются отдельно. */
+/** Черновик строки массового импорта (сырые подписи ссылок); id подставляются после разрешения. */
 export type MaterialCharacteristicsImportDraftRow = {
   name: string;
   code?: string;
   densityKgM3?: number;
-  /** Исходная ячейка «Цвет» (#RRGGBB или подпись / RAL). */
+  /** Сырая подпись цвета (#RRGGBB или имя / RAL). */
   colorRaw: string;
   finishRaw: string;
   coatingCell: string;

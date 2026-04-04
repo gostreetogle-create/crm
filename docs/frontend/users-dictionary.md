@@ -16,7 +16,7 @@
 | `crm-web/src/app/features/users/data/users.seed.ts` | Начальные записи (например `demo` / суперадмин). |
 | `crm-web/src/app/features/users/state/users.store.ts` | `UsersStore`: снимок + `usersData()` для таблицы; подписан на роли для подписи колонки «Роль». |
 | `crm-web/src/app/app.config.ts` | `UsersMockRepository` + `USERS_REPOSITORY` (`useExisting`). |
-| `crm-web/src/app/features/dictionaries/pages/dictionaries-page/*` | Плитка `tileKey="users"`, модалка, Excel. |
+| `crm-web/libs/dictionaries-hub-feature/.../dictionaries-page/*` | Плитка `tileKey="users"`, модалка. |
 
 Доступ к плитке: ключ **`dict.hub.users`** (см. `dict-hub-permissions.ts`, матрица в «Админ-настройках»).
 
@@ -26,7 +26,7 @@
 - **Роль:** `<select>` заполняется **активными** ролями из `RolesStore.matrixRoleColumns()` (порядок по `sortOrder`, затем по названию).
 - **Пароль:** при создании и дублировании обязателен (мин. 4 символа); при редактировании пустое поле = **не менять** (mock-репозиторий сохраняет прежнее значение).
 - **Просмотр:** пароль не отображается.
-- **Excel:** колонки `Логин`, `ФИО`, `Email`, `Телефон`, `Код роли`, `Пароль`; роль сопоставляется по **коду** роли из справочника; экспорт пароля маскируется `***`.
+- **Массовый импорт:** через будущий Admin JSON API; в payload — поля в духе `login`, ФИО, `email`, `phone`, **код роли**, пароль при создании. Роль сопоставляется по **коду** роли из справочника. Пароль в ответах и выгрузках не отдаётся открытым; в любых списках для людей — маскирование (`***`).
 
 ## Важно для бэкенда
 

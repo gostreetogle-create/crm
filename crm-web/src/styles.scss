@@ -1,133 +1,50 @@
 @use './app/shared/styles/ui-button-content';
 @use './app/shared/styles/pattern-variant-doc';
 
+/*
+ * Тема (цвета, отступы из ThemeTokens): один источник — `libs/theme-core/theme-presets.ts` (defaultTheme = light).
+ * Применение: `applyThemeTokensToDocument` в main.ts + ThemeStore.
+ * Здесь только то, чего нет в ThemeTokens, и fallback в var() до гидратации JS.
+ */
 :root {
-  --font-family-base: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial,
-    sans-serif;
-  --font-size-base: 16px;
-  --font-size-label: 14px;
-  --font-size-small: 12px;
-  --font-size-card-title: 18px;
-  --font-size-page-title: 28px;
-  /* Формы: подпись (меньше/приглушённее) vs значение в поле (= базовый размер темы) */
   --font-weight-field-label: 600;
   --line-height-field-label: 1.28;
-  --line-height-control: 1.45;
-  --font-size-control: var(--font-size-base);
-  --text-form-label: var(--text-muted);
-  --ui-field-label-value-gap: var(--ui-space-2);
-  --text-primary: #101828;
-  --text-muted: rgba(16, 24, 40, 0.72);
+  --line-height-control: 1.4;
+  --font-size-control: var(--font-size-base, 13px);
+  --text-form-label: var(--text-muted, #6a6560);
+  --ui-field-label-value-gap: var(--ui-space-2, 6px);
+  --ui-form-control-bg: color-mix(in srgb, var(--accent, #4f6f82) 6.5%, #ffffff);
+  --field-invalid-border: var(--danger, #9f2d20);
+  --field-invalid-focus: var(--danger, #9f2d20);
 
-  --bg-base: #f4f6fa;
-  --bg-gradient-a: rgba(31, 111, 235, 0.08);
-  --bg-gradient-b: rgba(14, 159, 110, 0.08);
-  --surface: rgba(255, 255, 255, 0.96);
-  --surface-soft: rgba(249, 250, 251, 0.95);
-  --border-color: rgba(16, 24, 40, 0.14);
-  --shadow-color: rgba(16, 24, 40, 0.04);
-
-  --accent: #1f6feb;
-  /** Фон input/select/textarea в формах: очень светлый голубой вместо серого */
-  --ui-form-control-bg: color-mix(in srgb, var(--accent) 6.5%, #ffffff);
-  --success: #0e9f6e;
-  /* Affirmative / «как в 1С» для иконок: создать, сохранить, подтвердить */
-  --icon-affirm: #319432;
-  --icon-accent: #1f6feb;
-  --icon-muted: rgba(16, 24, 40, 0.72);
-  --icon-warning: #f59e0b;
-  --icon-danger: #dc2626;
-  --danger: #dc2626;
-  --warning: #f59e0b;
-  --field-invalid-border: var(--danger);
-  --field-invalid-focus: var(--danger);
-  --ui-input-padding-y: 8px;
-  --ui-input-padding-x: 10px;
-  --ui-button-padding-y: 8px;
-  --ui-button-padding-x: 10px;
-  --ui-button-primary-bg: rgba(255, 255, 255, 0.96);
-  --ui-button-primary-text: #101828;
-  --ui-button-primary-border-color: rgba(16, 24, 40, 0.14);
-  --ui-button-soft-bg: rgba(249, 250, 251, 0.95);
-  --ui-button-soft-text: #101828;
-  --ui-button-soft-border-color: rgba(16, 24, 40, 0.14);
-  --ui-card-padding: 16px;
-  --ui-card-margin-top: 18px;
-  --ui-card-title-margin-bottom: 12px;
-  --ui-fact-padding-y: 10px;
-  --ui-fact-padding-x: 12px;
-  --ui-fact-label-font-size: 12px;
-  --ui-table-head-padding-y: 12px;
-  --ui-table-head-padding-x: 12px;
-  --ui-table-cell-padding-y: 11px;
-  --ui-table-cell-padding-x: 12px;
-  --ui-table-head-font-size: 13px;
-  --ui-table-cell-font-size: 14px;
-  --ui-modal-backdrop-padding: 1rem;
-  --ui-modal-header-padding-y: 1rem;
-  --ui-modal-header-padding-x: 1.25rem;
-  --ui-modal-title-font-size: 1.1rem;
-  --ui-modal-content-padding: 1.25rem;
-  --ui-modal-actions-padding-top: 1rem;
-  --ui-modal-actions-padding-x: 1.25rem;
-  --ui-modal-actions-padding-bottom: 1.25rem;
-  --ui-app-header-padding-y: 12px;
-  --ui-app-header-padding-x: 16px;
-  --ui-nav-gap: 8px;
-  --ui-nav-link-padding-y: 6px;
-  --ui-nav-link-padding-x: 10px;
-  --ui-page-shell-padding-top: 24px;
-  --ui-page-shell-padding-x: 16px;
-  --ui-page-shell-padding-bottom: 48px;
-  /* Отступ main под фиксированный хедер + низ: для расчёта min-height shell без «фантомного» скролла */
-  --app-main-padding-top: calc((var(--ui-app-header-padding-y) * 2) + var(--ui-control-min-height) + 12px);
+  --app-main-padding-top: calc(
+    (var(--ui-app-header-padding-y, 10px) * 2) + var(--ui-control-min-height, 30px) + 12px
+  );
   --app-main-padding-bottom: 20px;
   --app-main-padding-x: 16px;
-  --ui-page-shell-max-width: min(1720px, calc(100vw - (var(--ui-page-shell-padding-x) * 2)));
-  --ui-space-1: 4px;
-  --ui-space-2: 8px;
-  --ui-space-3: 12px;
-  --ui-space-4: 16px;
-  --ui-row-action-btn-radius: 8px;
-  --ui-shadow-card-offset-y: 8px;
-  --ui-shadow-card-blur: 24px;
-  --ui-shadow-card-thin-offset-y: 1px;
-  --ui-space-0p5: 6px;
-  --ui-space-7: 7px;
-  --ui-space-14: 14px;
-  --ui-space-10: 10px;
-  --ui-backdrop-blur-md: 8px;
-  --ui-backdrop-blur-sm: 6px;
-  --ui-control-compact-height: 32px;
+  --ui-page-shell-max-width: min(1720px, calc(100vw - (var(--ui-page-shell-padding-x, 14px) * 2)));
+
+  --ui-control-compact-height: 28px;
   --ui-row-action-size: 28px;
   --ui-form-stack-gap: 10px;
   --ui-form-actions-gap: 8px;
   --ui-toolbar-gap: 6px;
   --ui-toolbar-group-gap: 4px;
-  --ui-control-min-height: 34px;
-  --ui-theme-picker-min-width: 130px;
-  --ui-crud-actions-col-width: 220px;
-  --ui-crud-card-label-width: 140px;
-  --ui-modal-shadow-offset-y: 20px;
-  --ui-modal-shadow-blur: 40px;
 
-  /* Used by SectionLabel */
-  --bg: var(--surface-soft);
-
-  /* Затемнение за модалкой: чуть плотнее, чем «очень лёгкое», без сплошного серого */
+  --bg: var(--surface-soft, #faf8f3);
   --modal-backdrop-bg: color-mix(in srgb, #0f172a 90%, transparent);
-
-  --radius-card: 4px;
-  --radius-pill: 4px;
 }
 
 html,
 body {
   margin: 0;
-  font-family: var(--font-family-base);
-  font-size: var(--font-size-base);
-  color: var(--text-primary);
-  background: var(--bg-base);
+  font-family: var(--font-family-base, Montserrat, system-ui, -apple-system, 'Segoe UI', sans-serif);
+  font-size: var(--font-size-base, 13px);
+  line-height: 1.4;
+  color: var(--text-primary, #1c1b19);
+  background: var(--bg-base, #f0f1f3);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 *,

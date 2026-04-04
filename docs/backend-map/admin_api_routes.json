@@ -92,19 +92,9 @@
       "summary": "Скачивание архива"
     },
     {
-      "method": "GET",
-      "path": "/api/admin/excel-dictionaries/template",
-      "summary": "Шаблон Excel для импорта справочников"
-    },
-    {
-      "method": "GET",
-      "path": "/api/admin/excel-dictionaries/export",
-      "summary": "Экспорт справочников в Excel"
-    },
-    {
       "method": "POST",
-      "path": "/api/admin/excel-dictionaries/import",
-      "summary": "Импорт справочников из Excel (multipart)"
+      "path": "/api/admin/bulk/units",
+      "summary": "Массовое создание единиц измерения (JSON body: items[])"
     }
   ]
 }

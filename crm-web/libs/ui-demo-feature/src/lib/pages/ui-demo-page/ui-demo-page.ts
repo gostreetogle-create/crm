@@ -101,7 +101,6 @@ export class UiDemoPage {
   readonly quickAddOpen = signal(false);
   readonly quickAddFormSubmitAttempted = signal(false);
   readonly lastAction = signal('Нет действий');
-  readonly demoExcelStatus = signal('');
   readonly searchTerm = signal('');
   readonly sortBy = signal<'name' | 'category' | 'status'>('name');
   readonly filterCategory = signal<'all' | string>('all');
@@ -502,46 +501,6 @@ export class UiDemoPage {
     this.lastAction.set(`Delete: ${id}`);
   }
 
-  async downloadDemoTemplateExcel(): Promise<void> {
-    await this.exportRowsToExcel(
-      'demo-crud-template.xlsx',
-      'DEMO_TEMPLATE',
-      [
-        { Название: 'Эталонная запись 1', Категория: 'Металл', Статус: 'Черновик' },
-        { Название: 'Эталонная запись 2', Категория: 'Полимер', Статус: 'Активно' },
-      ],
-      ['Название', 'Категория', 'Статус'],
-    );
-    this.demoExcelStatus.set('Шаблон Excel скачан.');
-  }
-
-  async exportDemoExcel(): Promise<void> {
-    const rows = this.rows().map((x) => ({
-      Название: x.name,
-      Категория: x.category,
-      Статус: x.status,
-    }));
-    await this.exportRowsToExcel('demo-crud.xlsx', 'DEMO', rows, ['Название', 'Категория', 'Статус']);
-    this.demoExcelStatus.set(`Экспортировано: ${rows.length} строк.`);
-  }
-
-  async onDemoExcelImported(file: File): Promise<void> {
-    try {
-      const rawRows = await this.excelRowsFromFile(file);
-      const parsed = this.validateAndMapDemoRows(rawRows);
-      if (!parsed.ok) {
-        this.demoExcelStatus.set(`Импорт отклонен: ${parsed.errors.join(' | ')}`);
-        return;
-      }
-      const importedRows = parsed.rows.map((row) => ({ ...row, id: `demo-${Date.now()}-${Math.random().toString(16).slice(2, 8)}` }));
-      this.rows.set([...importedRows, ...this.rows()]);
-      this.demoExcelStatus.set(`Импортировано: ${importedRows.length} строк.`);
-      this.lastAction.set(`Demo Excel import: ${importedRows.length}`);
-    } catch {
-      this.demoExcelStatus.set('Импорт отклонен: не удалось прочитать файл.');
-    }
-  }
-
   onSearch(value: string): void {
     this.searchTerm.set(value);
   }
@@ -581,61 +540,5 @@ export class UiDemoPage {
     const control = this.form.controls[controlName];
     return control.invalid && (control.dirty || control.touched);
   }
-
-  private async exportRowsToExcel(
-    filename: string,
-    sheetName: string,
-    rows: Array<Record<string, string | number>>,
-    headers: string[],
-  ): Promise<void> {
-    const XLSX = await import('xlsx');
-    const workbook = XLSX.utils.book_new();
-    const worksheet = XLSX.utils.json_to_sheet(rows, { header: headers });
-    XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
-    XLSX.writeFile(workbook, filename);
-  }
-
-  private async excelRowsFromFile(file: File): Promise<Array<Record<string, unknown>>> {
-    const XLSX = await import('xlsx');
-    const buffer = await file.arrayBuffer();
-    const workbook = XLSX.read(buffer, { type: 'array' });
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    return XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: '' });
-  }
-
-  private validateAndMapDemoRows(rows: ReadonlyArray<Record<string, unknown>>): {
-    ok: boolean;
-    rows: Array<Omit<DemoRow, 'id'>>;
-    errors: string[];
-  } {
-    const errors: string[] = [];
-    const mapped: Array<Omit<DemoRow, 'id'>> = [];
-    if (!rows.length) return { ok: false, rows: mapped, errors: ['Пустой файл.'] };
-
-    const requiredHeaders = ['Название', 'Категория', 'Статус'];
-    const firstKeys = Object.keys(rows[0] ?? {});
-    const missingHeaders = requiredHeaders.filter((h) => !firstKeys.includes(h));
-    if (missingHeaders.length) {
-      return { ok: false, rows: mapped, errors: [`Нет колонок: ${missingHeaders.join(', ')}`] };
-    }
-
-    rows.forEach((row, idx) => {
-      const rowNo = idx + 2;
-      const name = String(row['Название'] ?? '').trim();
-      const category = String(row['Категория'] ?? '').trim();
-      const status = String(row['Статус'] ?? '').trim();
-      if (!name || !category || !status) {
-        errors.push(`Строка ${rowNo}: заполните Название/Категория/Статус.`);
-        return;
-      }
-      mapped.push({ name, category, status });
-    });
-
-    if (errors.length) return { ok: false, rows: mapped, errors: errors.slice(0, 6) };
-    return { ok: true, rows: mapped, errors: [] };
-  }
 }
-
-
-
 

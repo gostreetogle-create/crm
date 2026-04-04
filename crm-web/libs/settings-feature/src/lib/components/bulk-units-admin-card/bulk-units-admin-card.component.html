@@ -1,0 +1,37 @@
+<app-content-card title="Массовое создание единиц (JSON)">
+  <p class="lead leadCompact">
+    <code>POST /api/admin/bulk/units</code> — только для администратора. Право в матрице:
+    <code>admin.bulk.units</code>. Поля элемента: <code>name</code> (обязательно), <code>code</code>,
+    <code>notes</code>, <code>isActive</code> (по умолчанию true).
+  </p>
+  <div class="bulkActions">
+    <app-ui-button variant="soft" type="button" [disabled]="!canImport()" (clicked)="useExample()">
+      Подставить пример
+    </app-ui-button>
+    <app-ui-button type="button" [disabled]="!canImport() || loading()" (clicked)="submit()">
+      Отправить на сервер
+    </app-ui-button>
+  </div>
+  @if (!canImport()) {
+    <p class="muted">Нет права <code>admin.bulk.units</code> — включите в матрице для роли.</p>
+  }
+  <label class="jsonLabel" for="bulk-units-json">Тело запроса (JSON)</label>
+  <textarea
+    id="bulk-units-json"
+    class="jsonArea"
+    rows="14"
+    [disabled]="!canImport() || loading()"
+    [(ngModel)]="jsonDraft"
+    [ngModelOptions]="{ standalone: true }"
+    spellcheck="false"
+  ></textarea>
+  @if (errorText()) {
+    <p class="err" role="alert">{{ errorText() }}</p>
+  }
+  @if (statusText()) {
+    <p class="ok" role="status">{{ statusText() }}</p>
+  }
+  @if (lastResult()) {
+    <pre class="resultPre" [attr.aria-label]="'Ответ сервера'">{{ lastResult() }}</pre>
+  }
+</app-content-card>

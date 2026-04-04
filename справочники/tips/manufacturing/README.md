@@ -4,4 +4,4 @@
 
 Канон статусов и бэклог — в [`справочники/README.md`](../README.md) (корень папки `справочники`).
 
-Интеграции (черновик, вернуться позже): [`integration-followups-checklist.md`](./integration-followups-checklist.md) — Inventor/API, заметки, сводный Excel с вкладками.
+Интеграции (черновик, вернуться позже): [`integration-followups-checklist.md`](./integration-followups-checklist.md) — Inventor/API, заметки, пакетный обмен данными (JSON / при необходимости файлы).

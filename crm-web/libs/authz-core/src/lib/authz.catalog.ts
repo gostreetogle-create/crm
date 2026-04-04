@@ -7,7 +7,7 @@ import { PermissionKey } from './authz.types';
  */
 export const PERMISSION_CATALOG: Record<
   PermissionKey,
-  { labelRu: string; group: 'page' | 'dict' | 'crud' | 'excel' }
+  { labelRu: string; group: 'page' | 'dict' | 'crud' | 'bulk' }
 > = {
   'page.dictionaries': { labelRu: 'Раздел «Справочники»', group: 'page' },
   'page.demo': { labelRu: 'Раздел «Demo»', group: 'page' },
@@ -33,9 +33,10 @@ export const PERMISSION_CATALOG: Record<
   'crud.edit': { labelRu: 'Редактирование записей', group: 'crud' },
   'crud.delete': { labelRu: 'Удаление записей', group: 'crud' },
   'crud.duplicate': { labelRu: 'Дублирование записей', group: 'crud' },
-  'excel.template': { labelRu: 'Excel: шаблон', group: 'excel' },
-  'excel.import': { labelRu: 'Excel: импорт', group: 'excel' },
-  'excel.export': { labelRu: 'Excel: экспорт', group: 'excel' },
+  'admin.bulk.units': {
+    labelRu: 'JSON: массовое создание единиц измерения',
+    group: 'bulk',
+  },
 };
 
 /** Порядок ключей в матрице (синхрон с `PermissionKey`). */
@@ -50,14 +51,12 @@ export const PERMISSION_KEYS_ORDERED: readonly PermissionKey[] = [
   'crud.edit',
   'crud.delete',
   'crud.duplicate',
-  'excel.template',
-  'excel.import',
-  'excel.export',
+  'admin.bulk.units',
 ];
 
 /** Секции матрицы в UI «Админ-настройки». */
 export const AUTHZ_MATRIX_UI_SECTIONS: ReadonlyArray<{
-  group: 'page' | 'dict' | 'crud' | 'excel';
+  group: 'page' | 'dict' | 'crud' | 'bulk';
   titleRu: string;
   hintRu: string;
 }> = [
@@ -77,14 +76,14 @@ export const AUTHZ_MATRIX_UI_SECTIONS: ReadonlyArray<{
     hintRu: 'Действия со строками внутри справочников.',
   },
   {
-    group: 'excel',
-    titleRu: 'Excel',
-    hintRu: 'Шаблон, импорт и экспорт в панели плитки.',
+    group: 'bulk',
+    titleRu: 'Массовый ввод (JSON)',
+    hintRu: 'Админ API: пакетное создание записей (пилот — единицы измерения).',
   },
 ];
 
 export function permissionKeysForAuthzGroup(
-  group: 'page' | 'dict' | 'crud' | 'excel',
+  group: 'page' | 'dict' | 'crud' | 'bulk',
 ): readonly PermissionKey[] {
   return PERMISSION_KEYS_ORDERED.filter((k) => PERMISSION_CATALOG[k].group === group);
 }

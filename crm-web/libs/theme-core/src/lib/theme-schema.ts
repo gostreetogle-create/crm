@@ -10,6 +10,8 @@ export type ThemeTokens = {
   textMuted: string;
 
   bgBase: string;
+  /** Нижний слой фона page-shell (под радиальными бликами): у light — тёплый линейный градиент */
+  pageShellBgBottom: string;
   bgGradientA: string;
   bgGradientB: string;
   surface: string;

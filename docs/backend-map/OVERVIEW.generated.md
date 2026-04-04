@@ -1,6 +1,6 @@
 # Название файла: .md — Обзор backend-map (автогенерация)
 
-> **Сгенерировано:** `2026-04-04T08:20:54.044Z`  
+> **Сгенерировано:** `2026-04-04T15:01:04.792Z`  
 > **Не править вручную.** Источник правды — JSON в этой же папке. Обновление: `node scripts/generate-backend-map-overview.cjs`
 
 ---
@@ -631,19 +631,9 @@
     "summary": "Скачивание архива"
   },
   {
-    "method": "GET",
-    "path": "/api/admin/excel-dictionaries/template",
-    "summary": "Шаблон Excel для импорта справочников"
-  },
-  {
-    "method": "GET",
-    "path": "/api/admin/excel-dictionaries/export",
-    "summary": "Экспорт справочников в Excel"
-  },
-  {
     "method": "POST",
-    "path": "/api/admin/excel-dictionaries/import",
-    "summary": "Импорт справочников из Excel (multipart)"
+    "path": "/api/admin/bulk/units",
+    "summary": "Массовое создание единиц измерения (JSON body: items[])"
   }
 ]
 ```

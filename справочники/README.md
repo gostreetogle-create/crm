@@ -41,7 +41,7 @@
 
 3. Сверка с [`docs/frontend/dictionaries-naming-convention.md`](../docs/frontend/dictionaries-naming-convention.md) и чеклистом [`docs/frontend/new-dictionary-checklist.md`](../docs/frontend/new-dictionary-checklist.md).
 4. Явное сообщение: **«ок, пункт N»** (или список правок полей → повтор шага 2).
-5. Только после п.4 — ветка с кодом (mock store, `dictionaries-page`, права, Excel по playbook).
+5. Только после п.4 — ветка с кодом (mock store, `dictionaries-page`, права; массовый импорт — по `docs/dev-bulk-json-migration-checklist.md`, не на плитке).
 
 Расширение полей у уже существующих карточек — **отдельная** задача: согласовать маппинг JSON ↔ текущий `*Item` и обновить `domainVsUi` в реестре.
 

@@ -26,7 +26,7 @@ import { unitsRouter } from "./routes/units.routes.js";
 import { usersReadRouter, usersWriteRouter } from "./routes/users.routes.js";
 import { dbBackupsRouter } from "./routes/db-backups.routes.js";
 import { systemAdminRouter } from "./routes/system-admin.routes.js";
-import { excelDictionariesRouter } from "./routes/excel-dictionaries.routes.js";
+import { bulkUnitsRouter } from "./routes/bulk-units.routes.js";
 import { authAuthedRouter, authPublicRouter } from "./routes/auth.routes.js";
 import { requireAdmin, requireAuth } from "./middleware/auth-jwt.js";
 import { httpErrorHandler } from "./middleware/http-error.js";
@@ -90,7 +90,7 @@ export function createApp() {
   admin.use("/roles", rolesWriteRouter);
   admin.use("/db-backups", dbBackupsRouter);
   admin.use("/system", systemAdminRouter);
-  admin.use("/excel-dictionaries", excelDictionariesRouter);
+  admin.use("/bulk", bulkUnitsRouter);
   admin.use("/authz-matrix", authzMatrixDiagnosticsRouter);
   admin.use("/authz-matrix", authzMatrixWriteRouter);
 

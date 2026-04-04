@@ -25,7 +25,7 @@ function color(id: string, name: string, hex: string, ralCode?: string): ColorIt
   };
 }
 
-describe('material-characteristics-excel-import', () => {
+describe('material-characteristics-bulk-import', () => {
   const colors: ColorItem[] = [color('c-grey', 'Серый', '#6B7280'), color('c2', 'Light grey', '#CBD0CC', 'RAL 7035')];
 
   const finishes: SurfaceFinishItem[] = [
@@ -191,5 +191,3 @@ describe('material-characteristics-excel-import', () => {
     });
   });
 });
-
-

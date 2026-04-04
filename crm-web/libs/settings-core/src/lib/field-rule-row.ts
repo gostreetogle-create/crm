@@ -12,8 +12,8 @@ export type FieldRuleRow = {
   fieldLabel: string;
   /** Краткое описание нормализации и хранения. */
   ruleSummary: string;
-  /** Что писать в Excel / как сопоставляется при импорте. */
-  excelHint: string;
+  /** Как поле задаётся в JSON/API и как сопоставляется при массовом импорте. */
+  bulkHint: string;
   exampleBefore?: string;
   exampleAfter?: string;
 };

@@ -103,9 +103,9 @@
 ## 8.5) Итерация B.5 (выполнено): волна `1..5` по выносу UI/theme/state/utils/settings
 
 - **1) UI:** в `@srm/ui-kit` — канон CRUD, модалки, кнопки, хаб-раскрытие (`HubCrudExpandStateService`, `LinkedDictionaryPropagationConfirmComponent` и др.). Импорт в фичах: **`@srm/ui-kit`** (исходники `crm-web/libs/ui-kit/`).
-- **2) Theme:** пакет **`@srm/theme-core`** (`crm-web/libs/theme-core/`): `ThemeStore`, `ThemeService` (совместимость), схема токенов, пресеты, `theme-json-entry.ts`.
+- **2) Theme:** пакет **`@srm/theme-core`** (`crm-web/libs/theme-core/`): `ThemeStore`, `ThemeService` (совместимость), `theme-schema` / `theme-presets`, `applyThemeTokensToDocument`, `resolveActiveThemeFromStorage` (ранний вызов в `main.ts`). Как менять тему: [`docs/frontend/theme-change-guide.md`](./theme-change-guide.md).
 - **3) State:** создан `@srm/dictionaries-state`, перенесены `*.store.ts` для всех словарных сущностей; в `features/*/state/*.store.ts` оставлены shim-реэкспорты.
-- **4) Utils:** создан `@srm/dictionaries-utils`, перенесены `role-sort`, `format-geometry-params-display`, `material-characteristics-excel-import`; в старых `features/*/utils` оставлены shim-реэкспорты.
+- **4) Utils:** создан `@srm/dictionaries-utils`, перенесены `role-sort`, `format-geometry-params-display`, `material-characteristics-bulk-import`; в старых `features/*/utils` при необходимости — точечные тесты рядом с фичей.
 - **5) Settings data/domain:** создан `@srm/settings-core`, перенесены `DbBackupsAdminService`, `FIELD_RULES_CATALOG`, `FieldRuleRow`; в `features/settings` оставлены shim-реэкспорты.
 
 ## 8.6) Итерация B.6 (выполнено): прямые импорты из `@srm/*` для ключевых потребителей
@@ -150,7 +150,7 @@
 - Библиотека **`@srm/colors-data-access`** (`crm-web/libs/colors-data-access`): модель `ColorItem` / `ColorItemInput`, токен `COLORS_REPOSITORY`, `ColorsHttpRepository`, `ColorsMockRepository`.
 - Библиотеки **`@srm/materials-data-access`**, **`@srm/units-data-access`**, **`@srm/coatings-data-access`**, **`@srm/surface-finishes-data-access`**, **`@srm/geometries-data-access`**, **`@srm/material-characteristics-data-access`**, **`@srm/production-work-types-data-access`**, **`@srm/clients-data-access`**, **`@srm/organizations-data-access`**, **`@srm/roles-data-access`**, **`@srm/users-data-access`** — тот же шаблон (модель + токен + http/mock).
 - Фичи **`features/colors|materials|units|coatings|surface-finishes|geometries|material-characteristics|production-work-types|clients|organizations|roles|users/state`** и DI хаба/авторизации импортируют репозитории и константы из соответствующих `@srm/*-data-access`; папки `features/*/data` и модели в `features/*/model` для этих сущностей удалены.
-- Утилиты импорта Excel (material-characteristics) берут типы цвета/покрытий/отделки/характеристик из соответствующих `@srm/*-data-access`.
+- Утилиты разрешения ссылок при массовом импорте характеристик (`material-characteristics-bulk-import` в `@srm/dictionaries-utils`) используют типы цвета/покрытий/отделки/характеристик из соответствующих `@srm/*-data-access`.
 
 ## 11) Итерация D (фундамент): границы для `type:data-access`
 

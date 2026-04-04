@@ -4,7 +4,7 @@
       <span class="adminTocTitle">На странице</span>
       <a class="adminTocLink" href="#admin-nav-system">Система</a>
       <a class="adminTocLink" href="#admin-nav-backup">Резервные копии</a>
-      <a class="adminTocLink" href="#admin-nav-excel">Excel</a>
+      <a class="adminTocLink" href="#admin-nav-bulk">Массовый импорт</a>
       <a class="adminTocLink" href="#admin-nav-matrix">Права доступа</a>
       <a class="adminTocLink" href="#admin-nav-rules">Правила полей</a>
     </nav>
@@ -16,15 +16,15 @@
         <div class="adminPairItem" id="admin-nav-backup">
           <app-db-backups-admin-card />
         </div>
-        <div class="adminPairItem" id="admin-nav-excel">
-          <app-excel-dictionaries-admin-card />
+        <div class="adminPairItem" id="admin-nav-bulk">
+          <app-bulk-units-admin-card />
         </div>
       </div>
 
       <app-content-card title="Права доступа (матрица)">
         <div class="adminSectionAnchor" id="admin-nav-matrix"></div>
         <p class="lead leadCompact">
-          Разрешения по ролям: страницы, плитки «Справочники», действия в карточках и Excel. Суперадмин в таблице не
+          Разрешения по ролям: страницы, плитки «Справочники», действия в карточках и админский массовый импорт. Суперадмин в таблице не
           показывается. Порядок колонок — поле «Порядок» в справочнике «Роли».
         </p>
         <details class="adminDetails">
@@ -139,7 +139,7 @@
       <app-content-card title="Правила полей и импорта">
         <div class="adminSectionAnchor" id="admin-nav-rules"></div>
         <p class="lead leadCompact">
-          Справочник для сотрудников: ввод данных и импорт Excel. Канон в репозитории:
+          Справочник для сотрудников: ввод данных и массовый импорт через JSON/Admin API. Канон в репозитории:
           <span class="docRef">docs/frontend/dictionaries-data-and-import-rules.md</span>.
         </p>
 
@@ -151,7 +151,7 @@
                 <th scope="col">Поле</th>
                 <th scope="col">Подпись</th>
                 <th scope="col">Правило</th>
-                <th scope="col">Excel / импорт</th>
+                <th scope="col">Импорт / API</th>
                 <th scope="col">Пример</th>
               </tr>
             </thead>
@@ -165,7 +165,7 @@
                   <td><code class="fieldKey">{{ row.fieldKey }}</code></td>
                   <td>{{ row.fieldLabel }}</td>
                   <td>{{ row.ruleSummary }}</td>
-                  <td>{{ row.excelHint }}</td>
+                  <td>{{ row.bulkHint }}</td>
                   <td>
                     @if (row.exampleBefore != null && row.exampleAfter != null) {
                       <span class="example">

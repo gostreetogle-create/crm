@@ -1,7 +1,7 @@
 /** Идентификатор роли из справочника (`RoleItem.id`), не путать с `code`. */
 export type RoleId = string;
 
-/** Ключи прав: страницы, плитки справочников, CRUD, Excel. */
+/** Ключи прав: страницы, плитки справочников, CRUD, массовый JSON (admin). */
 export type PermissionKey =
   | 'page.dictionaries'
   | 'page.demo'
@@ -27,9 +27,7 @@ export type PermissionKey =
   | 'crud.edit'
   | 'crud.delete'
   | 'crud.duplicate'
-  | 'excel.template'
-  | 'excel.import'
-  | 'excel.export';
+  | 'admin.bulk.units';
 
 export type CrudPermissions = {
   canCreate: boolean;

@@ -12,7 +12,7 @@ export const FIELD_RULES_CATALOG: readonly FieldRuleRow[] = [
     fieldLabel: 'Код (краткое обозначение)',
     ruleSummary:
       'Обрезка пробелов по краям; для сравнения и импорта — верхний регистр (как договорено для кодов).',
-    excelHint: 'Колонка с кодом единицы; дубликаты после нормализации запрещены.',
+    bulkHint: 'В JSON — поле code; дубликаты после нормализации запрещены.',
     exampleBefore: '  kg ',
     exampleAfter: 'KG',
   },
@@ -22,7 +22,7 @@ export const FIELD_RULES_CATALOG: readonly FieldRuleRow[] = [
     fieldKey: 'name',
     fieldLabel: 'Название',
     ruleSummary: 'Обрезка пробелов; наименование хранится в том виде, как принято в справочнике.',
-    excelHint: 'Текст из ячейки ищется с учётом правил справочника (без лишних пробелов).',
+    bulkHint: 'Строка в payload ищется с учётом правил справочника (без лишних пробелов).',
     exampleBefore: ' Килограмм ',
     exampleAfter: 'Килограмм',
   },
@@ -32,7 +32,7 @@ export const FIELD_RULES_CATALOG: readonly FieldRuleRow[] = [
     fieldKey: 'ralCode',
     fieldLabel: 'Код RAL',
     ruleSummary: 'Формат и нормализация по правилам карточки цвета (префикс RAL, пробелы).',
-    excelHint: 'В шаблоне материалов/характеристик — как в справочнике цветов.',
+    bulkHint: 'При массовом импорте материалов/характеристик — как в справочнике цветов.',
     exampleBefore: 'ral7016',
     exampleAfter: 'RAL 7016',
   },
@@ -42,7 +42,7 @@ export const FIELD_RULES_CATALOG: readonly FieldRuleRow[] = [
     fieldKey: 'name',
     fieldLabel: 'Название профиля',
     ruleSummary: 'Обрезка пробелов; уникальность и сопоставление при импорте — по правилам аудита справочника.',
-    excelHint: 'Текстовая колонка для ссылки при импорте материалов (без id в файле).',
+    bulkHint: 'Текстовое поле для ссылки при импорте материалов (без id в payload).',
   },
   {
     dictionaryKey: 'materials',
@@ -51,6 +51,6 @@ export const FIELD_RULES_CATALOG: readonly FieldRuleRow[] = [
     fieldLabel: 'Связь и денорм-подписи',
     ruleSummary:
       'Храним id выбранной характеристики и копии отображаемых полей на момент сохранения (см. доменный документ).',
-    excelHint: 'В файле — человекочитаемые колонки; при импорте разрешение в строки мелких справочников.',
+    bulkHint: 'В payload — человекочитаемые поля; при импорте разрешение в строки мелких справочников.',
   },
 ];

@@ -15,14 +15,17 @@
   cursor: pointer;
 }
 
+/* Darken fill on hover (works for solid primary and for light “outline” primaries). */
 .uiButton:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--ui-button-primary-bg) 88%, var(--accent) 12%);
-  border-color: color-mix(in srgb, var(--ui-button-primary-border-color) 75%, var(--accent) 25%);
+  background: color-mix(in srgb, var(--ui-button-primary-bg) 90%, black 10%);
+  border-color: color-mix(in srgb, var(--ui-button-primary-border-color) 82%, black 18%);
 }
 
 .uiButton:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--accent) 55%, transparent);
-  outline-offset: 1px;
+  outline: none;
+  box-shadow:
+    0 0 0 1px rgba(184, 159, 110, 0.35),
+    0 0 0 3px rgba(79, 112, 130, 0.14);
 }
 
 .uiButton:disabled {

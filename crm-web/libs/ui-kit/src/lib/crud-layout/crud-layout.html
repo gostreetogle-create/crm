@@ -31,53 +31,6 @@
   }
 </ng-template>
 
-<ng-template #crudExcelToolbar>
-  @if (hasExcelActions) {
-    <div class="crudToolbarExcel">
-      <input
-        #crudImportInput
-        type="file"
-        [attr.accept]="importAccept"
-        class="hiddenFileInput"
-        (change)="onImportPicked($event)"
-      />
-      @if (canDownloadTemplate) {
-        <button
-          type="button"
-          class="rowActionBtn"
-          (click)="onDownloadTemplate()"
-          aria-label="Скачать шаблон Excel"
-          title="Скачать шаблон Excel"
-        >
-          <svg lucideFileSpreadsheet [size]="16"></svg>
-        </button>
-      }
-      @if (canImportExcel) {
-        <button
-          type="button"
-          class="rowActionBtn rowActionBtnWarning"
-          (click)="crudImportInput.click()"
-          aria-label="Импорт Excel"
-          title="Импорт Excel"
-        >
-          <svg lucideUpload [size]="16"></svg>
-        </button>
-      }
-      @if (canExportExcel) {
-        <button
-          type="button"
-          class="rowActionBtn rowActionBtnAffirm"
-          (click)="onExportExcel()"
-          aria-label="Экспорт Excel"
-          title="Экспорт Excel"
-        >
-          <svg lucideDownload [size]="16"></svg>
-        </button>
-      }
-    </div>
-  }
-</ng-template>
-
 <ng-template #crudRowActionButtons let-row="row" let-rowIndex="rowIndex">
   @if (rowActionsLayout === 'icons') {
     @if (canView) {
@@ -165,11 +118,6 @@
             <ng-container *ngTemplateOutlet="crudSearchBlock"></ng-container>
           </div>
         }
-        @if (hasExcelActions) {
-          <div class="crudToolbarTrailing">
-            <ng-container *ngTemplateOutlet="crudExcelToolbar"></ng-container>
-          </div>
-        }
       </div>
     </div>
   </header>
@@ -185,7 +133,6 @@
     <div class="crudToolbarRight">
       <ng-container *ngTemplateOutlet="crudCreateButton"></ng-container>
       <ng-container *ngTemplateOutlet="crudSearchBlock"></ng-container>
-      <ng-container *ngTemplateOutlet="crudExcelToolbar"></ng-container>
     </div>
   </section>
 }

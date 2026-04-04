@@ -10,17 +10,17 @@
 
 ## Источник стиля
 
-1. Глобальные токены (`CSS variables`) — `crm-web/src/styles.scss`.
-2. **Тема (контракт и пресеты):** `crm-web/libs/theme-core/src/lib/theme-schema.ts`, `theme-presets.ts`.
-3. **Runtime темы:** `ThemeStore` — `crm-web/libs/theme-core/src/lib/theme.store.ts`. Класс `ThemeService` в том же пакете оставлен для совместимости; новый код ориентируется на `ThemeStore` (см. реализацию).
-4. **JSON темы** (вставка/редактирование) — `crm-web/libs/theme-core/src/lib/theme-json-entry.ts`.
+1. **Значения темы (единственный полный набор):** `crm-web/libs/theme-core/src/lib/theme-schema.ts`, пресеты и **`defaultTheme`** (`light`) — `theme-presets.ts`.
+2. **Запись в CSS:** `applyThemeTokensToDocument` (`apply-theme-to-document.ts`) — вызывается из **`crm-web/src/main.ts`** до bootstrap и из **`ThemeStore`** (`theme.store.ts`). Класс `ThemeService` оставлен для совместимости; новый код — через `ThemeStore`.
+3. **`crm-web/src/styles.scss`:** только то, чего нет в `ThemeTokens` (формы, layout main/shell, компактная высота кнопок и т.д.) и **fallback** в `var(..., default)` до гидратации JS. Не дублировать сюда токены из пресетов.
+4. **Смена темы (пошагово, в т.ч. для ИИ):** [`theme-change-guide.md`](./theme-change-guide.md). Кратко про JSON: [`theme-json-templates.md`](./theme-json-templates.md). Отдельного встроенного JSON-файла в репозитории нет.
 5. **Публичный UI-кит:** импорт из **`@srm/ui-kit`**, исходники — `crm-web/libs/ui-kit/src/lib/`. Туда же относятся `ThemePickerComponent` (`libs/ui-kit/src/lib/theme-picker/`), `AppHeaderComponent`, `CrudLayout`, модалки, поля и т.д.
 6. Синхронизация и хранение темы:
    - поток `theme$` (через `ThemeService`/`ThemeStore` — см. `theme-core`);
    - выбранная тема в `localStorage` (`crm-web.theme.tokens.v1`) и восстановление при перезагрузке.
 7. **Общие SCSS-миксины/классы форм** (например `form-stack`) — пока в `crm-web/src/app/shared/styles/`; это мост к полному переносу в `ui-kit`/`theme-core` (см. `docs/frontend/srm-front-development-workflow.md` при необходимости).
 8. **Наследие:** в `crm-web/src/app/shared/ui/` остались единичные вещи (например `theme-studio`, `section-label`). **Новые** переиспользуемые компоненты добавляются в **`crm-web/libs/ui-kit`**, экспортируются из `libs/ui-kit/src/index.ts`, в приложениях импортируются как `@srm/ui-kit`.
-9. Текущий базовый визуальный вектор: более контрастные цвета + острые углы (`radiusCard/radiusPill` минимальные).
+9. Текущий базовый визуальный вектор (light): приглушённый контраст, компактная сетка, радиусы из токенов (`radiusCard` / `radiusPill`).
 10. Иконки: `@lucide/angular`, базовая геометрия 24px, семантические цвета от токенов темы:
    - `--icon-affirm` (позитивные действия: create/save/confirm),
    - `--accent` (навигация/ссылки/нейтральные действия),

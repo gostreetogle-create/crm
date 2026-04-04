@@ -27,9 +27,7 @@ export const AUTHZ_PERMISSION_KEYS = [
   'crud.edit',
   'crud.delete',
   'crud.duplicate',
-  'excel.template',
-  'excel.import',
-  'excel.export',
+  'admin.bulk.units',
 ] as const;
 
 export const AUTHZ_PERMISSION_KEY_SET = new Set<string>(AUTHZ_PERMISSION_KEYS);
