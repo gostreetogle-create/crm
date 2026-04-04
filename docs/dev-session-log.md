@@ -59,6 +59,7 @@
 | 30 | 2026-04-04 | Чеклист perf/build (~200 строк), первым в development-workflow; KP без PDF-ссылки; runbook ссылка | docs, crm-web | `7f99ee5` |
 | 31 | 2026-04-04 | Распил dictionaries-page под лимит CI; canonical-roles для Jest (TS-зеркало JSON); platform-core passWithNoTests; правка TD-лога | crm-web, docs | `9e29653` |
 | 32 | 2026-04-04 | Канон ролей: один JSON на бэкенде, генерация `canonical-roles.generated.ts`, CI/Docker sync, без дубля вручную | crm-web, backend, deploy, docs, .github | `62fac7e` |
+| 33 | 2026-04-04 | Реестр HTTP `/api/admin` в `docs/backend-map/admin_api_routes.json`, регенерация `OVERVIEW.generated.md` | docs | `3291eff` |
 
 ---
 
