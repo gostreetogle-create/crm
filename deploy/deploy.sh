@@ -98,4 +98,6 @@ else
 fi
 
 echo "[deploy] Готово: deploy выполнен успешно."
+echo "[deploy] Итог по БД: выполнялся только prisma migrate deploy + db seed в entrypoint backend (данные Postgres не сбрасывались)."
+echo "[deploy] Полный сброс БД на сервере этим скриптом не делается — см. deploy/README.md."
 

@@ -8,6 +8,7 @@ import {
   todayYmdLocal,
   withBackupJob,
 } from "./db-backup.js";
+import { writeDiagnostic } from "./diagnostic-log.js";
 
 let interval: ReturnType<typeof setInterval> | null = null;
 
@@ -24,8 +25,15 @@ async function tick(): Promise<void> {
       await setLastRunDate(today);
       await cleanupOldBackups(sch.retentionDays);
     });
-  } catch {
-    // автобэкап не должен ронять процесс; детали — в логах при необходимости
+  } catch (e) {
+    const stack = e instanceof Error ? e.stack : undefined;
+    writeDiagnostic({
+      ts: new Date().toISOString(),
+      type: "backup_scheduler_error",
+      message: e instanceof Error ? e.message : String(e),
+      name: e instanceof Error ? e.name : "Error",
+      stack: stack ? stack.slice(0, 2000) : undefined,
+    });
   }
 }
 

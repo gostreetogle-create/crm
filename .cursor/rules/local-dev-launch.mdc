@@ -16,6 +16,8 @@ alwaysApply: true
   - или из корня репо: `docker compose -f deploy/docker-compose.yml up -d postgres` — если нужно создать/поднять сервис.
 - Подожди несколько секунд после старта, затем проверяй API.
 
+**Полный сброс локальной БД (все данные):** из корня репо скрипт `deploy/scripts/reset-local-dev-database.ps1` или `.sh`, либо из `backend/` — `npm run db:reset`. Если запускаешь `migrate reset` из агента Cursor, см. `backend/README.md` (Prisma + согласие).
+
 ## 2. Backend
 
 Из каталога **`backend/`**: `npm run dev` → `http://localhost:3000` (в фоне, если долгоживущий процесс).

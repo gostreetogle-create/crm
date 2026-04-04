@@ -15,7 +15,10 @@ Express + TypeScript + Prisma + PostgreSQL.
 
 3. **Полный сброс БД (разработка)** — удалить все данные и применить миграции + seed заново:  
    `npm run db:reset`  
-   (эквивалент `npx prisma migrate reset --force`). Требуется доступный PostgreSQL и корректный `DATABASE_URL`.
+   (эквивалент `npx prisma migrate reset --force`). Требуется доступный PostgreSQL и корректный `DATABASE_URL`.  
+   Удобно из корня репо: `deploy/scripts/reset-local-dev-database.ps1` (Windows) или `deploy/scripts/reset-local-dev-database.sh` — поднимут `postgres` из compose и вызовут `db:reset` (только если `DATABASE_URL` на localhost).
+
+   **Если команду запускает агент Cursor:** Prisma может потребовать переменную `PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION` с **точным текстом** твоего сообщения-согласия на сброс (защита от случайного `migrate reset` из AI). В обычном терминале (PowerShell/CMD вне Cursor) у большинства пользователей этого запроса **нет** — достаточно `npm run db:reset`.
 
 4. **Проверка матрицы прав** (роли в БД ↔ ключи в `authz_matrix`):  
    `npm run authz:check`  
@@ -43,3 +46,5 @@ Express + TypeScript + Prisma + PostgreSQL.
 ## Прод (Docker)
 
 См. `../deploy/docker-compose.yml`: при старте контейнера backend выполняется `prisma migrate deploy` и `prisma db seed`, затем `node dist/server.js`. Для backend задано `SEED_DIRECTOR_USER=0`, чтобы не создавать тестового пользователя `director` с известным паролем.
+
+Шпаргалка команд деплоя: `../deploy/README.md`. Логи и `requestId` для разбора ошибок: `../docs/dev-logs-and-diagnostics.md`.

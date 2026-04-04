@@ -1,164 +1,188 @@
 <app-page-shell>
-  <app-db-backups-admin-card />
-  <app-excel-dictionaries-admin-card />
+  <div class="adminHub">
+    <nav class="adminToc" aria-label="Разделы страницы">
+      <span class="adminTocTitle">На странице</span>
+      <a class="adminTocLink" href="#admin-nav-system">Система</a>
+      <a class="adminTocLink" href="#admin-nav-backup">Резервные копии</a>
+      <a class="adminTocLink" href="#admin-nav-excel">Excel</a>
+      <a class="adminTocLink" href="#admin-nav-matrix">Права доступа</a>
+      <a class="adminTocLink" href="#admin-nav-rules">Правила полей</a>
+    </nav>
 
-  <app-content-card title="Админ-настройки: права доступа">
-    <p class="lead">
-      Матрица разрешений: <strong>страницы</strong>, <strong>плитки на хабе «Справочники»</strong>,
-      <strong>кнопки в карточках</strong> и <strong>Excel</strong>. Роли — из справочника «Роли».
-      <strong>Суперадминистратор</strong> в таблице не показывается: у него всегда полный доступ, матрица на него не
-      действует. Для остальных: пока <strong>нет</strong> сохранённого переопределения для роли, действуют
-      <strong>дефолты по коду роли</strong> из канона (например раздел «Справочники» и плитки хаба для
-      <code>director</code>, <code>viewer</code> и т.д.). Как только вы сохранили набор галочек для роли — он
-      становится единственным источником прав для этой роли (полная замена дефолта). Кнопка
-      <strong>«Сбросить галочки»</strong> в колонке роли <strong>снимает все галочки</strong> для этой роли (явный
-      пустой набор прав, без доступа к разделам и действиям). Порядок колонок — поле <strong>Порядок</strong> в «Роли».
-      После входа матрица подтягивается с <strong>сервера</strong> (источник истины); в браузере — только кэш для
-      быстрого UI. При выходе кэш сбрасывается. Изменения галочек — в кэш и (с правом
-      <code>page.admin.settings</code>) на сервер (debounced).
-    </p>
-    <p class="muted">
-      Проверить интерфейс «как под другой ролью» в этом браузере — в
-      <a routerLink="/preferences" class="inlineLink">Настройках</a> (шестерёнка). Назначить роль сотруднику — в
-      «Справочниках» → «Пользователи». Ключ страницы: <code>page.admin.settings</code>.
-    </p>
+    <div class="adminHubMain">
+      <app-admin-system-status-card />
 
-    <div class="matrixToolbar">
-      <app-ui-button
-        variant="soft"
-        type="button"
-        [disabled]="!permissions.hasAnyMatrixOverride()"
-        (clicked)="resetAllMatrix()"
-      >
-        Сбросить все переопределения матрицы
-      </app-ui-button>
-    </div>
-    <p class="matrixGlobalHint">
-      В каждой таблице столбцы ролей одинаковые. <strong>Сбросить галочки</strong> в колонке — снять все отметки у
-      этой роли (права не остаются). Кнопка неактивна, если галочек уже нет.
-      <strong>Важно:</strong> если снять «Раздел „Справочники“» (<code>page.dictionaries</code>), плитки хаба
-      (<code>dict.hub.*</code>) для этой роли сбрасываются автоматически — без раздела плитки не показываются.
-    </p>
+      <div class="adminPair">
+        <div class="adminPairItem" id="admin-nav-backup">
+          <app-db-backups-admin-card />
+        </div>
+        <div class="adminPairItem" id="admin-nav-excel">
+          <app-excel-dictionaries-admin-card />
+        </div>
+      </div>
 
-    <div class="authzDiagnostics">
-      <app-ui-button variant="soft" type="button" [disabled]="diagnosticsLoading()" (clicked)="runDiagnostics()">
-        Проверка целостности (сервер)
-      </app-ui-button>
-      @if (diagnosticsError(); as err) {
-        <p class="diagnosticsErr" role="alert">{{ err }}</p>
-      }
-      @if (diagnosticsJson(); as json) {
-        <pre class="diagnosticsPre" [attr.aria-label]="'Отчёт диагностики'">{{ json }}</pre>
-      }
-    </div>
-
-    <div class="matrixSections" [attr.data-matrix-rev]="matrixRev()">
-      @for (section of matrixSections; track section.group) {
-        <section class="matrixSection" [attr.aria-labelledby]="'matrix-sec-' + section.group">
-          <div class="matrixSectionHead">
-            <h3 class="matrixSectionTitle" [id]="'matrix-sec-' + section.group">{{ section.titleRu }}</h3>
-            <p class="matrixSectionHint">{{ section.hintRu }}</p>
+      <app-content-card title="Права доступа (матрица)">
+        <div class="adminSectionAnchor" id="admin-nav-matrix"></div>
+        <p class="lead leadCompact">
+          Разрешения по ролям: страницы, плитки «Справочники», действия в карточках и Excel. Суперадмин в таблице не
+          показывается. Порядок колонок — поле «Порядок» в справочнике «Роли».
+        </p>
+        <details class="adminDetails">
+          <summary class="adminDetailsSummary">Подробнее: как устроена матрица</summary>
+          <div class="adminDetailsBody">
+            <p>
+              Пока <strong>нет</strong> сохранённого переопределения для роли, действуют <strong>дефолты по коду роли</strong>
+              из канона. После сохранения галочек для роли — только они (полная замена дефолта).
+              <strong>Сбросить галочки</strong> в колонке — снять все отметки (роль без прав). Без раздела
+              «Справочники» (<code>page.dictionaries</code>) плитки <code>dict.hub.*</code> для роли недоступны.
+              Матрица с сервера; в браузере кэш до выхода. Изменения — debounced на сервер при праве
+              <code>page.admin.settings</code>.
+            </p>
+            <p class="muted mutedTight">
+              Проверка интерфейса «как под другой ролью» — в
+              <a routerLink="/preferences" class="inlineLink">настройках профиля</a>. Роли пользователям — «Пользователи» в
+              справочниках.
+            </p>
           </div>
-          <div class="tableWrap matrixWrap">
-            <table class="matrixTable">
-              <thead>
-                <tr>
-                  <th scope="col" class="matrixCorner">Разрешение</th>
-                  @for (role of matrixRoles(); track role.id) {
-                    <th scope="col" class="roleHead">
-                      <div class="roleHeadStack">
-                        <span class="roleHeadLabel">{{ roleLabel(role) }}</span>
-                        <code class="roleHeadId" [title]="'roleId: совпадает с User.roleId и ключом в матрице'">{{
-                          role.id
-                        }}</code>
-                        <span class="roleHeadSort">Пор. {{ role.sortOrder }}</span>
-                        <button
-                          type="button"
-                          class="roleResetBtn"
-                          [disabled]="!canClearRoleColumn(role)"
-                          (click)="clearRoleColumnCheckboxes(role)"
-                          title="Снять все галочки в этой колонке (роль без прав)"
-                          [attr.aria-label]="'Снять все галочки для роли «' + role.name + '»'"
-                        >
-                          Сбросить галочки
-                        </button>
-                      </div>
-                    </th>
-                  }
-                </tr>
-              </thead>
-              <tbody>
-                @for (key of section.keys; track key) {
-                  <tr>
-                    <th scope="row" class="permCell">
-                      <code class="permKey">{{ key }}</code>
-                      <span class="permLabel">{{ permissionLabelRu(key) }}</span>
-                    </th>
-                    @for (role of matrixRoles(); track role.id) {
-                      <td class="checkCell">
-                        <input
-                          type="checkbox"
-                          [checked]="permissions.hasPermissionForRole(roleColumnId(role), key)"
-                          [disabled]="isDictHubCheckboxDisabled(role, key)"
-                          (change)="onMatrixToggle(role, key, $event)"
-                          [attr.aria-label]="section.titleRu + ' — ' + role.name + ': ' + key"
-                        />
-                      </td>
-                    }
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-        </section>
-      }
-    </div>
-  </app-content-card>
+        </details>
 
-  <app-content-card title="Правила полей и импорта">
-    <p class="lead">
-      Справочник для сотрудников: как вводить данные и как они обрабатываются при импорте Excel. Полный канон —
-      <span class="docRef">docs/frontend/dictionaries-data-and-import-rules.md</span>.
-    </p>
+        <div class="matrixToolbar">
+          <app-ui-button
+            variant="soft"
+            type="button"
+            [disabled]="!permissions.hasAnyMatrixOverride()"
+            (clicked)="resetAllMatrix()"
+          >
+            Сбросить все переопределения матрицы
+          </app-ui-button>
+        </div>
+        <p class="matrixGlobalHint">
+          В каждой таблице столбцы ролей одинаковые. Кнопка <strong>Сбросить галочки</strong> в колонке неактивна, если
+          галочек уже нет.
+        </p>
 
-    <div class="tableWrap">
-      <table class="rulesTable">
-        <thead>
-          <tr>
-            <th scope="col">Справочник</th>
-            <th scope="col">Поле</th>
-            <th scope="col">Подпись</th>
-            <th scope="col">Правило</th>
-            <th scope="col">Excel / импорт</th>
-            <th scope="col">Пример</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (row of rules; track row.dictionaryKey + row.fieldKey) {
-            <tr>
-              <td>
-                <span class="dictKey">{{ row.dictionaryKey }}</span>
-                <span class="dictLabel">{{ row.dictionaryLabel }}</span>
-              </td>
-              <td><code class="fieldKey">{{ row.fieldKey }}</code></td>
-              <td>{{ row.fieldLabel }}</td>
-              <td>{{ row.ruleSummary }}</td>
-              <td>{{ row.excelHint }}</td>
-              <td>
-                @if (row.exampleBefore != null && row.exampleAfter != null) {
-                  <span class="example">
-                    <span class="exampleBefore">{{ row.exampleBefore }}</span>
-                    <span class="exampleArrow" aria-hidden="true">→</span>
-                    <span class="exampleAfter">{{ row.exampleAfter }}</span>
-                  </span>
-                } @else {
-                  <span class="muted">—</span>
-                }
-              </td>
-            </tr>
+        <div class="authzDiagnostics">
+          <app-ui-button variant="soft" type="button" [disabled]="diagnosticsLoading()" (clicked)="runDiagnostics()">
+            Проверка целостности матрицы (сервер)
+          </app-ui-button>
+          @if (diagnosticsError(); as err) {
+            <p class="diagnosticsErr" role="alert">{{ err }}</p>
           }
-        </tbody>
-      </table>
+          @if (diagnosticsJson(); as json) {
+            <pre class="diagnosticsPre" [attr.aria-label]="'Отчёт диагностики'">{{ json }}</pre>
+          }
+        </div>
+
+        <div class="matrixSections" [attr.data-matrix-rev]="matrixRev()">
+          @for (section of matrixSections; track section.group) {
+            <section class="matrixSection" [attr.aria-labelledby]="'matrix-sec-' + section.group">
+              <div class="matrixSectionHead">
+                <h3 class="matrixSectionTitle" [id]="'matrix-sec-' + section.group">{{ section.titleRu }}</h3>
+                <p class="matrixSectionHint">{{ section.hintRu }}</p>
+              </div>
+              <div class="tableWrap matrixWrap">
+                <table class="matrixTable">
+                  <thead>
+                    <tr>
+                      <th scope="col" class="matrixCorner">Разрешение</th>
+                      @for (role of matrixRoles(); track role.id) {
+                        <th scope="col" class="roleHead">
+                          <div class="roleHeadStack">
+                            <span class="roleHeadLabel">{{ roleLabel(role) }}</span>
+                            <code class="roleHeadId" [title]="'roleId: совпадает с User.roleId и ключом в матрице'">{{
+                              role.id
+                            }}</code>
+                            <span class="roleHeadSort">Пор. {{ role.sortOrder }}</span>
+                            <button
+                              type="button"
+                              class="roleResetBtn"
+                              [disabled]="!canClearRoleColumn(role)"
+                              (click)="clearRoleColumnCheckboxes(role)"
+                              title="Снять все галочки в этой колонке (роль без прав)"
+                              [attr.aria-label]="'Снять все галочки для роли «' + role.name + '»'"
+                            >
+                              Сбросить галочки
+                            </button>
+                          </div>
+                        </th>
+                      }
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (key of section.keys; track key) {
+                      <tr>
+                        <th scope="row" class="permCell">
+                          <code class="permKey">{{ key }}</code>
+                          <span class="permLabel">{{ permissionLabelRu(key) }}</span>
+                        </th>
+                        @for (role of matrixRoles(); track role.id) {
+                          <td class="checkCell">
+                            <input
+                              type="checkbox"
+                              [checked]="permissions.hasPermissionForRole(roleColumnId(role), key)"
+                              [disabled]="isDictHubCheckboxDisabled(role, key)"
+                              (change)="onMatrixToggle(role, key, $event)"
+                              [attr.aria-label]="section.titleRu + ' — ' + role.name + ': ' + key"
+                            />
+                          </td>
+                        }
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          }
+        </div>
+      </app-content-card>
+
+      <app-content-card title="Правила полей и импорта">
+        <div class="adminSectionAnchor" id="admin-nav-rules"></div>
+        <p class="lead leadCompact">
+          Справочник для сотрудников: ввод данных и импорт Excel. Канон в репозитории:
+          <span class="docRef">docs/frontend/dictionaries-data-and-import-rules.md</span>.
+        </p>
+
+        <div class="tableWrap">
+          <table class="rulesTable">
+            <thead>
+              <tr>
+                <th scope="col">Справочник</th>
+                <th scope="col">Поле</th>
+                <th scope="col">Подпись</th>
+                <th scope="col">Правило</th>
+                <th scope="col">Excel / импорт</th>
+                <th scope="col">Пример</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of rules; track row.dictionaryKey + row.fieldKey) {
+                <tr>
+                  <td>
+                    <span class="dictKey">{{ row.dictionaryKey }}</span>
+                    <span class="dictLabel">{{ row.dictionaryLabel }}</span>
+                  </td>
+                  <td><code class="fieldKey">{{ row.fieldKey }}</code></td>
+                  <td>{{ row.fieldLabel }}</td>
+                  <td>{{ row.ruleSummary }}</td>
+                  <td>{{ row.excelHint }}</td>
+                  <td>
+                    @if (row.exampleBefore != null && row.exampleAfter != null) {
+                      <span class="example">
+                        <span class="exampleBefore">{{ row.exampleBefore }}</span>
+                        <span class="exampleArrow" aria-hidden="true">→</span>
+                        <span class="exampleAfter">{{ row.exampleAfter }}</span>
+                      </span>
+                    } @else {
+                      <span class="muted">—</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </app-content-card>
     </div>
-  </app-content-card>
+  </div>
 </app-page-shell>

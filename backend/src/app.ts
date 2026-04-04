@@ -25,10 +25,12 @@ import { surfaceFinishesRouter } from "./routes/surface-finishes.routes.js";
 import { unitsRouter } from "./routes/units.routes.js";
 import { usersReadRouter, usersWriteRouter } from "./routes/users.routes.js";
 import { dbBackupsRouter } from "./routes/db-backups.routes.js";
+import { systemAdminRouter } from "./routes/system-admin.routes.js";
 import { excelDictionariesRouter } from "./routes/excel-dictionaries.routes.js";
 import { authAuthedRouter, authPublicRouter } from "./routes/auth.routes.js";
 import { requireAdmin, requireAuth } from "./middleware/auth-jwt.js";
 import { httpErrorHandler } from "./middleware/http-error.js";
+import { requestContextMiddleware } from "./middleware/request-context.js";
 
 function materialGeometryProtected(): express.Router {
   const r = express.Router();
@@ -51,6 +53,7 @@ export function createApp() {
   );
   app.use(helmet());
   app.use(express.json({ limit: "2mb" }));
+  app.use(requestContextMiddleware);
 
   app.get("/health", (_req, res) => res.json({ ok: true }));
   app.get("/api/health", (_req, res) => res.json({ ok: true }));
@@ -86,6 +89,7 @@ export function createApp() {
   admin.use("/users", usersWriteRouter);
   admin.use("/roles", rolesWriteRouter);
   admin.use("/db-backups", dbBackupsRouter);
+  admin.use("/system", systemAdminRouter);
   admin.use("/excel-dictionaries", excelDictionariesRouter);
   admin.use("/authz-matrix", authzMatrixDiagnosticsRouter);
   admin.use("/authz-matrix", authzMatrixWriteRouter);

@@ -1,0 +1,98 @@
+<app-content-card title="Система и обслуживание">
+  <div class="sysBody" id="admin-nav-system">
+    @if (badgeCount() > 0) {
+      <p class="sysAlertLine" role="status">
+        <span class="sysBadge" aria-hidden="true">{{ badgeCount() }}</span>
+        Есть предупреждения — нажмите «Предупреждения и команды».
+      </p>
+    }
+    @if (loading()) {
+      <p class="sysMuted">Проверка состояния…</p>
+    } @else if (loadError(); as err) {
+      <p class="sysErr" role="alert">{{ err }}</p>
+      <app-ui-button variant="soft" type="button" (clicked)="refresh()">Повторить</app-ui-button>
+    } @else if (status(); as s) {
+      <div class="sysMetrics">
+        <div class="sysMetric" [class.sysMetricBad]="!s.db.ok">
+          <span class="sysMetricLabel">База данных</span>
+          <span class="sysMetricValue">
+            @if (s.db.ok) {
+              OK@if (s.db.latencyMs != null) { · {{ s.db.latencyMs }}&nbsp;мс }
+            } @else {
+              Недоступна
+            }
+          </span>
+        </div>
+        <div class="sysMetric" [class.sysMetricBad]="s.migrations.pendingNames.length > 0">
+          <span class="sysMetricLabel">Миграции</span>
+          <span class="sysMetricValue">
+            @if (s.migrations.appliedCount == null) {
+              неизвестно
+            } @else if (s.migrations.pendingNames.length > 0) {
+              не хватает {{ s.migrations.pendingNames.length }}
+            } @else {
+              синхрон {{ s.migrations.appliedCount }}/{{ s.migrations.expectedCount }}
+            }
+          </span>
+        </div>
+        <div class="sysMetric">
+          <span class="sysMetricLabel">Среда</span>
+          <span class="sysMetricValue">{{ s.environment.nodeEnv }}</span>
+        </div>
+      </div>
+
+      <div class="sysActions">
+        <app-ui-button type="button" variant="primary" (clicked)="openNotices()">
+          Предупреждения и команды
+        </app-ui-button>
+        <app-ui-button variant="soft" type="button" (clicked)="refresh()">Обновить</app-ui-button>
+      </div>
+
+      @if (copyHint(); as hint) {
+        <p class="sysHint" role="status">{{ hint }}</p>
+      }
+    }
+  </div>
+</app-content-card>
+
+<ng-template #modalContentTpl>
+  @if (status(); as s) {
+    <div class="modalNotices">
+      @for (n of s.notices; track n.id) {
+        <article class="notice" [class.noticeCritical]="n.severity === 'critical'" [class.noticeWarning]="n.severity === 'warning'">
+          <header class="noticeHead">
+            <span class="noticeSev">{{ severityLabel(n.severity) }}</span>
+            <h3 class="noticeTitle">{{ n.title }}</h3>
+          </header>
+          <p class="noticeDetail">{{ n.detail }}</p>
+          @if (n.commands.length > 0) {
+            <div class="noticeBlock">
+              <span class="noticeBlockLabel">Команды</span>
+              <pre class="noticePre">{{ n.commands.join('\n') }}</pre>
+              <app-ui-button variant="soft" type="button" (clicked)="copyText('команды', n.commands.join('\n'))">
+                Копировать команды
+              </app-ui-button>
+            </div>
+          }
+          <div class="noticeBlock">
+            <span class="noticeBlockLabel">Промпт для ИИ</span>
+            <pre class="noticePre noticePrePrompt">{{ n.aiPrompt }}</pre>
+            <app-ui-button variant="soft" type="button" (clicked)="copyText('промпт', n.aiPrompt)">
+              Копировать промпт
+            </app-ui-button>
+          </div>
+        </article>
+      }
+    </div>
+  }
+</ng-template>
+
+@if (noticesModalOpen()) {
+  <ui-modal
+    title="Предупреждения и команды"
+    [content]="modalContentTpl"
+    size="lg"
+    [closeOnBackdrop]="true"
+    (close)="closeNotices()"
+  />
+}

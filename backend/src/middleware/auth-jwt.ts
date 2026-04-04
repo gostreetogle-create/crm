@@ -1,6 +1,7 @@
-import type { NextFunction, Request, Response } from 'express';
-import { prisma } from '../lib/prisma.js';
-import { verifyAccessToken } from '../lib/jwt.js';
+import type { NextFunction, Request, Response } from "express";
+import { writeDiagnostic } from "../lib/diagnostic-log.js";
+import { prisma } from "../lib/prisma.js";
+import { verifyAccessToken } from "../lib/jwt.js";
 
 export async function requireAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
@@ -47,9 +48,22 @@ export async function requireAdmin(req: Request, res: Response, next: NextFuncti
       }
       next();
     } catch (dbErr) {
-      // eslint-disable-next-line no-console
-      console.error('[requireAdmin] DB error', dbErr);
-      res.status(503).json({ error: 'db_unavailable', message: 'Не удалось проверить роль (БД).' });
+      const stack = dbErr instanceof Error ? dbErr.stack : String(dbErr);
+      writeDiagnostic({
+        ts: new Date().toISOString(),
+        type: "auth_admin_db_error",
+        requestId: req.requestId,
+        method: req.method,
+        path: req.originalUrl ?? req.url,
+        message: dbErr instanceof Error ? dbErr.message : String(dbErr),
+        name: dbErr instanceof Error ? dbErr.name : "Error",
+        stack: stack ? stack.slice(0, 2000) : undefined,
+      });
+      res.status(503).json({
+        error: "db_unavailable",
+        message: "Не удалось проверить роль (БД).",
+        requestId: req.requestId,
+      });
     }
   } catch (e) {
     next(e);
