@@ -69,6 +69,7 @@ node scripts/generate-backend-map-overview.cjs
 - **Источник правды по этой карте** — только `docs/backend-map/`.
 - После появления реального кода синхронизировать с `docs/api/*`, Prisma и т.д. по отдельным задачам.
 - **Фронт (CRM):** пользовательские справочники и сценарии CRUD описаны в [`docs/frontend/dictionaries-crud-playbook.md`](../frontend/dictionaries-crud-playbook.md); расхождения имен полей/справочников с этой картой закрывать осознанными задачами (модель ↔ UI).
+- **Админ-API (Express):** перечень маршрутов под `/api/admin` — [`admin_api_routes.json`](./admin_api_routes.json) (обновлять вместе с `backend/src/app.ts`).
 
 ---
 
