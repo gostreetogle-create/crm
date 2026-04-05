@@ -13,6 +13,9 @@ Express + TypeScript + Prisma + PostgreSQL.
    `npx prisma migrate dev`  
    `npx prisma db seed` (идемпотентно: канонические роли из **`backend/shared/canonical-roles.seed.json`** через `prisma/seed-roles.ts`; на фронте тот же список — **`crm-web`**: `npm run sync:canonical-roles` → `canonical-roles.generated.ts`). Пользователь `admin`/`admin`, опционально `director`/`director` — см. `SEED_DIRECTOR_USER` в `.env.example`; затем единицы измерения и демо-данные справочников при пустых таблицах)
 
+   **Каталог «комплексы → товары → позиции»** (миграция `20260406140000_complexes_products_articles`): таблицы `complexes`, `products`, `articles`. В Prisma: `Complex`, `Product` (каталог), `Article`. Производственное изделие (BOM к деталям) — модель **`ManufacturedProduct`**, таблица **`"Product"`**; не путать с каталожным `products`.  
+   Доступ к **`/api/complexes`**, **`/api/catalog-products`**, **`/api/catalog-articles`** требует права **`dict.hub.catalog_suite`** (проверка на бэкенде; ключ в матрице и в `@srm/authz-core`). При чтении матрицы роли с **`dict.hub.trade_goods`** автоматически получают **`dict.hub.catalog_suite`**, если его ещё не было (см. `augmentAuthzMatrixImplicitHubKeys`).
+
 3. **Полный сброс БД (разработка)** — удалить все данные и применить миграции + seed заново:  
    `npm run db:reset`  
    (эквивалент `npx prisma migrate reset --force`). Требуется доступный PostgreSQL и корректный `DATABASE_URL`.  
@@ -27,7 +30,8 @@ Express + TypeScript + Prisma + PostgreSQL.
 
 5. Запуск: `npm run dev` → `http://localhost:3000`  
    - `GET /health`, `GET /api/health`  
-   - `GET|POST /api/units`, `PUT|DELETE /api/units/:id`
+   - `GET|POST /api/units`, `PUT|DELETE /api/units/:id`  
+   - Каталог комплексов / товаров / позиций (JWT): `GET|POST /api/complexes`, `PUT|DELETE /api/complexes/:id`; `GET|POST /api/catalog-products` (фильтр `?complexId=`), `PUT|DELETE /api/catalog-products/:id`; `GET|POST /api/catalog-articles` (фильтр `?productId=`), `PUT|DELETE /api/catalog-articles/:id`. Производственные изделия по-прежнему `/api/products`.
 
 ### Если в консоли Prisma: «Can't reach database server»
 

@@ -8,13 +8,13 @@ datasource db {
 }
 
 model Unit {
-  id        String   @id @default(uuid())
+  id        String     @id @default(uuid())
   name      String
   code      String?
   notes     String?
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  isActive  Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
   materials Material[]
 }
 
@@ -29,7 +29,7 @@ model Color {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  characteristics MaterialCharacteristic[]
+  characteristics           MaterialCharacteristic[]
   productLineColorOverrides ProductLine[]
 }
 
@@ -81,61 +81,61 @@ model ProductionWorkType {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  productionDetailSources ProductionDetail[] @relation("ProductionDetailSourceWorkType")
-  productLineWorkTypeOverrides ProductLine[] @relation("ProductLineWorkTypeOverride")
+  productionDetailSources      ProductionDetail[] @relation("ProductionDetailSourceWorkType")
+  productLineWorkTypeOverrides ProductLine[]      @relation("ProductLineWorkTypeOverride")
 }
 
 model Client {
-  id                   String   @id @default(uuid())
-  lastName             String
-  firstName            String
-  patronymic           String
-  phone                String
-  address              String
-  email                String
-  notes                String   @default("")
-  clientMarkupPercent  Float?
-  isActive             Boolean  @default(true)
-  passportSeries       String   @default("")
-  passportNumber       String   @default("")
-  passportIssuedBy     String   @default("")
-  passportIssuedDate   String   @default("")
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  id                  String   @id @default(uuid())
+  lastName            String
+  firstName           String
+  patronymic          String
+  phone               String
+  address             String
+  email               String
+  notes               String   @default("")
+  clientMarkupPercent Float?
+  isActive            Boolean  @default(true)
+  passportSeries      String   @default("")
+  passportNumber      String   @default("")
+  passportIssuedBy    String   @default("")
+  passportIssuedDate  String   @default("")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
   organizationLinks OrganizationContact[]
   commercialOffers  CommercialOffer[]
 }
 
 model Organization {
-  id                 String   @id @default(uuid())
-  name               String
-  shortName          String?
-  legalForm          String?
-  inn                String?
-  kpp                String?
-  ogrn               String?
-  okpo               String?
-  phone              String?
-  email              String?
-  website            String?
-  legalAddress       String?
-  postalAddress      String?
-  bankName           String?
-  bankBik            String?
-  bankAccount        String?
-  bankCorrAccount    String?
-  signerName         String?
-  signerPosition     String?
-  notes              String?
-  isActive           Boolean  @default(true)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  id              String   @id @default(uuid())
+  name            String
+  shortName       String?
+  legalForm       String?
+  inn             String?
+  kpp             String?
+  ogrn            String?
+  okpo            String?
+  phone           String?
+  email           String?
+  website         String?
+  legalAddress    String?
+  postalAddress   String?
+  bankName        String?
+  bankBik         String?
+  bankAccount     String?
+  bankCorrAccount String?
+  signerName      String?
+  signerPosition  String?
+  notes           String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  contacts OrganizationContact[]
-  commercialOffers CommercialOffer[]
-  kpPhotos KpPhoto[]
-  materialSuppliers Material[] @relation("MaterialSupplier")
+  contacts          OrganizationContact[]
+  commercialOffers  CommercialOffer[]
+  kpPhotos          KpPhoto[]
+  materialSuppliers Material[]            @relation("MaterialSupplier")
 }
 
 /// Изображения для вставки в коммерческое предложение (привязка к организации).
@@ -163,17 +163,17 @@ enum CommercialOfferStatus {
 
 /// Шапка коммерческого предложения (строки позиций — отдельный шаг).
 model CommercialOffer {
-  id               String                 @id @default(uuid())
-  number           String?
-  title            String?
-  status           CommercialOfferStatus  @default(DRAFT)
+  id             String                @id @default(uuid())
+  number         String?
+  title          String?
+  status         CommercialOfferStatus @default(DRAFT)
   organizationId String?
-  clientId         String?
-  validUntil       DateTime?
-  currency         String                 @default("RUB")
-  notes            String?
-  createdAt        DateTime               @default(now())
-  updatedAt        DateTime               @updatedAt
+  clientId       String?
+  validUntil     DateTime?
+  currency       String                @default("RUB")
+  notes          String?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
 
   organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   client       Client?       @relation(fields: [clientId], references: [id], onDelete: Restrict)
@@ -187,7 +187,7 @@ model CommercialOffer {
 model OrganizationContact {
   organizationId String
   clientId       String
-  isPrimary      Boolean @default(false)
+  isPrimary      Boolean  @default(false)
   createdAt      DateTime @default(now())
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -254,10 +254,10 @@ model MaterialCharacteristic {
   createdAt              DateTime @default(now())
   updatedAt              DateTime @updatedAt
 
-  color          Color?          @relation(fields: [colorId], references: [id], onDelete: SetNull)
-  surfaceFinish  SurfaceFinish?  @relation(fields: [surfaceFinishId], references: [id], onDelete: SetNull)
-  coating        Coating?        @relation(fields: [coatingId], references: [id], onDelete: SetNull)
-  materials      Material[]
+  color         Color?         @relation(fields: [colorId], references: [id], onDelete: SetNull)
+  surfaceFinish SurfaceFinish? @relation(fields: [surfaceFinishId], references: [id], onDelete: SetNull)
+  coating       Coating?       @relation(fields: [coatingId], references: [id], onDelete: SetNull)
+  materials     Material[]
 }
 
 model Material {
@@ -274,11 +274,11 @@ model Material {
   createdAt                DateTime @default(now())
   updatedAt                DateTime @updatedAt
 
-  unit                 Unit?                  @relation(fields: [unitId], references: [id], onDelete: SetNull)
-  characteristic       MaterialCharacteristic @relation(fields: [materialCharacteristicId], references: [id], onDelete: Restrict)
-  geometry             Geometry               @relation(fields: [geometryId], references: [id], onDelete: Restrict)
-  supplierOrganization Organization?          @relation("MaterialSupplier", fields: [supplierOrganizationId], references: [id], onDelete: SetNull)
-  productionDetailSources ProductionDetail[]  @relation("ProductionDetailSourceMaterial")
+  unit                    Unit?                  @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  characteristic          MaterialCharacteristic @relation(fields: [materialCharacteristicId], references: [id], onDelete: Restrict)
+  geometry                Geometry               @relation(fields: [geometryId], references: [id], onDelete: Restrict)
+  supplierOrganization    Organization?          @relation("MaterialSupplier", fields: [supplierOrganizationId], references: [id], onDelete: SetNull)
+  productionDetailSources ProductionDetail[]     @relation("ProductionDetailSourceMaterial")
 }
 
 /// Справочник «Детали»: независимая позиция со снимком полей материала и вида работ (редактируемый снимок).
@@ -293,18 +293,18 @@ model ProductionDetail {
   sourceMaterialId String?
   sourceWorkTypeId String?
 
-  snapshotMaterialName         String?
-  snapshotMaterialCode         String?
-  snapshotUnitCode             String?
-  snapshotUnitName             String?
-  snapshotPurchasePriceRub     Float?
-  snapshotDensityKgM3          Float?
-  snapshotHeightMm             Float?
-  snapshotLengthMm             Float?
-  snapshotWidthMm              Float?
-  snapshotDiameterMm           Float?
-  snapshotThicknessMm          Float?
-  snapshotCharacteristicName   String?
+  snapshotMaterialName       String?
+  snapshotMaterialCode       String?
+  snapshotUnitCode           String?
+  snapshotUnitName           String?
+  snapshotPurchasePriceRub   Float?
+  snapshotDensityKgM3        Float?
+  snapshotHeightMm           Float?
+  snapshotLengthMm           Float?
+  snapshotWidthMm            Float?
+  snapshotDiameterMm         Float?
+  snapshotThicknessMm        Float?
+  snapshotCharacteristicName String?
 
   snapshotWorkTypeName   String?
   snapshotWorkShortLabel String?
@@ -315,9 +315,9 @@ model ProductionDetail {
   workTotalRub     Float?
   lineTotalRub     Float?
 
-  sourceMaterial Material?            @relation("ProductionDetailSourceMaterial", fields: [sourceMaterialId], references: [id], onDelete: SetNull)
-  sourceWorkType ProductionWorkType?  @relation("ProductionDetailSourceWorkType", fields: [sourceWorkTypeId], references: [id], onDelete: SetNull)
-  productLines ProductLine[]
+  sourceMaterial Material?           @relation("ProductionDetailSourceMaterial", fields: [sourceMaterialId], references: [id], onDelete: SetNull)
+  sourceWorkType ProductionWorkType? @relation("ProductionDetailSourceWorkType", fields: [sourceWorkTypeId], references: [id], onDelete: SetNull)
+  productLines   ProductLine[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -326,25 +326,125 @@ model ProductionDetail {
   @@index([sourceWorkTypeId])
 }
 
-/// Справочник «Изделия»: шапка + одна или несколько позиций деталей (с переопределением вида работ и цвета).
+/// Справочник «Изделия» (производственная BOM к деталям). Таблица в БД: `"Product"`.
+model ManufacturedProduct {
+  id          String   @id @default(uuid())
+  /// Артикул / внутренний код SKU (уникален, если задан).
+  code        String?  @unique
+  name        String
+  /// Текст для витрины и КП; внутренние пометки — в `notes`.
+  description String?
+  priceRub    Float?
+  costRub     Float?
+  notes       String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  lines          ProductLine[]
+  tradeGoodLines TradeGoodLine[]
+
+  @@map("Product")
+}
+
+/// Коммерческий комплекс: в один комплекс входит несколько каталожных товаров (модель `Product` → таблица `products`).
+model Complex {
+  id          String   @id @default(uuid())
+  name        String
+  code        String?
+  description String?
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  products Product[]
+
+  @@index([isActive, name])
+  @@map("complexes")
+}
+
+/// Товар в составе комплекса: в товар входит несколько позиций изделий (`Article`).
 model Product {
-  id        String   @id @default(uuid())
-  name      String
-  priceRub  Float?
-  costRub   Float?
-  notes     String?
-  isActive  Boolean  @default(true)
+  id          String   @id @default(uuid())
+  complexId   String   @map("complex_id")
+  name        String
+  code        String?
+  description String?
+  price       Decimal  @default(0) @db.Decimal(12, 2)
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  complex  Complex   @relation(fields: [complexId], references: [id], onDelete: Restrict)
+  articles Article[]
+
+  @@index([complexId])
+  @@index([complexId, isActive, name])
+  @@map("products")
+}
+
+/// Позиция изделия в составе товара (не путать с производственным `ManufacturedProduct`).
+model Article {
+  id          String   @id @default(uuid())
+  productId   String   @map("product_id")
+  name        String
+  code        String?
+  description String?
+  qty         Int      @default(1)
+  isActive    Boolean  @default(true) @map("is_active")
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([productId])
+  @@index([productId, isActive, sortOrder, name])
+  @@map("articles")
+}
+
+/// Справочник «Товары» (TradeGood): коммерческая позиция из одного или нескольких производственных изделий (`ManufacturedProduct`).
+model TradeGood {
+  id          String   @id @default(uuid())
+  code        String?  @unique
+  name        String
+  description String?
+  priceRub    Float?
+  costRub     Float?
+  notes       String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  lines TradeGoodLine[]
+
+  @@map("trade_goods")
+}
+
+/// Строка состава товара: изделие и количество.
+model TradeGoodLine {
+  id          String @id @default(uuid())
+  tradeGoodId String
+  sortOrder   Int    @default(0)
+  productId   String
+  qty         Float  @default(1)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  lines ProductLine[]
+  tradeGood TradeGood           @relation(fields: [tradeGoodId], references: [id], onDelete: Cascade)
+  product   ManufacturedProduct @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([tradeGoodId])
+  @@index([productId])
+  @@map("trade_good_lines")
 }
 
 /// Строка состава изделия: ссылка на деталь + опциональные переопределения вида работ и цвета (null = взять из детали/материала).
 model ProductLine {
-  id                 String   @id @default(uuid())
+  id                 String  @id @default(uuid())
   productId          String
-  sortOrder          Int      @default(0)
+  sortOrder          Int     @default(0)
   productionDetailId String
   workTypeId         String?
   colorId            String?
@@ -352,10 +452,10 @@ model ProductLine {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  product          Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
-  productionDetail ProductionDetail  @relation(fields: [productionDetailId], references: [id], onDelete: Restrict)
+  product          ManufacturedProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productionDetail ProductionDetail    @relation(fields: [productionDetailId], references: [id], onDelete: Restrict)
   overrideWorkType ProductionWorkType? @relation("ProductLineWorkTypeOverride", fields: [workTypeId], references: [id], onDelete: SetNull)
-  overrideColor    Color?            @relation(fields: [colorId], references: [id], onDelete: SetNull)
+  overrideColor    Color?              @relation(fields: [colorId], references: [id], onDelete: SetNull)
 
   @@index([productId])
   @@index([productionDetailId])

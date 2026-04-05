@@ -15,6 +15,18 @@
 
 **Локальный запуск (Postgres + backend + `nx serve`):** [`backend-enable-runbook.md`](./backend-enable-runbook.md); для ассистента в Cursor — `.cursor/rules/local-dev-launch.mdc`.
 
+## Прод-деплой на VPS (фронт)
+
+**Один только `git push` новый UI на сервер не доставляет:** статика не в git, она лежит на диске VPS в **`deploy/prebuilt-web/`**.
+
+Каждый раз, когда нужно обновить интерфейс на сервере:
+
+1. Локально — **сразу после push** (или перед ним) — production-сборка: `cd crm-web` → `node scripts/sync-canonical-roles.cjs` → `npx nx run crm-web:build:production`.
+2. Выкладка статики (отдельно от git): **`deploy/prebuilt-web.zip`** в **`deploy/`** на сервере (собрать: `deploy/scripts/pack-prebuilt-web.ps1` / `pack-prebuilt-web.sh`) **или** содержимое `browser/` в **`deploy/prebuilt-web/`** (rsync/scp/SFTP).
+3. На сервере — **`./deploy.sh`** в `deploy/`.
+
+Таблица шагов и примеры (включая Windows): **[`deploy/README.md`](../../deploy/README.md)**. Для ассистента в Cursor при обсуждении деплоя — `.cursor/rules/deploy-prebuilt-web.mdc`.
+
 ## Стандарт выполнения каждой задачи
 
 1. Сначала обновляем/создаём контракт (тип/интерфейс/модель), потом UI и только потом детали.

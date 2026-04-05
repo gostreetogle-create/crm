@@ -55,12 +55,14 @@ docker start crm_postgres
 - Статика и API с одного origin: `baseUrl: ''`, backend за прокси `location /api/`.
 - Если API на **другом origin**: задать `baseUrl: 'https://api.example.com'` и проверить CORS в `backend`.
 
-### Если `deploy.sh` падает на шаге сборки `web` (`nx build crm-web`)
+### Если `deploy.sh` ругается на отсутствие `prebuilt-web/index.html`
 
-- В логе после обновления репозитория будет **`--verbose`** у Nx — ищи конкретную ошибку (TypeScript, нехватка памяти и т.д.).
-- Типично для **малых VPS**: нехватка RAM → процесс Node умирает с **exit code 1** после долгого «Building…» (в логе может не быть текста компилятора). Решения: **swap** (2–4 ГБ), в `deploy/.env` при необходимости **`NODE_BUILD_HEAP_MB=2048`** или **`3072`**, **`NG_BUILD_MAX_WORKERS=1`** (дефолт в compose), пересобрать web:  
-  `docker compose --env-file .env build --no-cache web`
-- В `Dockerfile.web`: **`NX_DAEMON=false`**, **`NX_VERBOSE_LOGGING=true`**, **`NG_BUILD_MAX_WORKERS`** и **`NODE_BUILD_HEAP_MB`** из `deploy/docker-compose.yml` / build-args.
+- Канон: статика собирается **не на сервере**, а локально/в CI, затем выкладывается в **`deploy/prebuilt-web/`** на VPS (см. `deploy/README.md`).
+- Сборка: `cd crm-web && node scripts/sync-canonical-roles.cjs && npx nx run crm-web:build:production`, затем содержимое `dist/crm-web/browser/` → `prebuilt-web/`.
+
+### Если собираете образ web внутри Docker (`Dockerfile.web.in-docker-build`)
+
+- На **малых VPS** возможен **OOM** (долго «Building…», `exit 1` без текста). Тогда: **swap** 2–4 ГБ, build-args **`NODE_BUILD_HEAP_MB`** / **`NG_BUILD_MAX_WORKERS=1`** — см. комментарии в `Dockerfile.web.in-docker-build`.
 
 ## Несовместимый ответ API
 

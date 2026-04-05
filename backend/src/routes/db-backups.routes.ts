@@ -16,8 +16,15 @@ import {
   withBackupJob,
   writeSchedule,
 } from "../lib/db-backup.js";
+import { refreshPrismaConnectionPool } from "../lib/prisma-pool-refresh.js";
 
 export const dbBackupsRouter = Router();
+
+/** Каталог с `docker-compose.yml` на сервере — для текста «выполните команду…» в ответе API. */
+function manualBackendRestartCommand(): string {
+  const dir = (process.env.CRM_DEPLOY_DIR ?? "/opt/crm/deploy").trim().replace(/\/$/, "");
+  return `cd ${dir} && docker compose restart backend`;
+}
 
 const SchedulePutSchema = z.object({
   enabled: z.boolean(),
@@ -117,10 +124,22 @@ dbBackupsRouter.post("/:fileName/restore", async (req, res, next) => {
       res.status(409).json({ error: "backup_busy" });
       return;
     }
-    await withBackupJob(async () => {
-      await restoreFromDump(fileName);
+    const conn = await withBackupJob(() => restoreFromDump(fileName));
+    const pool = await refreshPrismaConnectionPool();
+    const restartCmd = manualBackendRestartCommand();
+
+    const userMessage = pool.ok
+      ? "База успешно восстановлена из архива."
+      : `База восстановлена из архива. Автоматически переподключить приложение к базе не удалось (${pool.error}). На сервере выполните:\n${restartCmd}`;
+
+    res.json({
+      ok: true,
+      pgToolsSource: conn.source,
+      pgToolsHostPort: conn.hostPort,
+      prismaPoolRefreshed: pool.ok,
+      ...(pool.ok ? {} : { prismaPoolRefreshError: pool.error, manualRestartCommand: restartCmd }),
+      userMessage,
     });
-    res.json({ ok: true });
   } catch (e) {
     if (e instanceof Error && e.message === "busy") {
       res.status(409).json({ error: "backup_busy" });

@@ -492,6 +492,22 @@
   letter-spacing: -0.02em;
 }
 
+.productSpecView__code {
+  margin: 0 0 6px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: rgba(47, 35, 12, 0.72);
+}
+
+.productSpecView__description {
+  margin: 0 0 10px;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: rgba(47, 35, 12, 0.88);
+  max-width: 52ch;
+}
+
 .productSpecView__heroNums {
   display: flex;
   flex-wrap: wrap;
@@ -617,4 +633,13 @@
 .productSpecView .uiSpecTable__td--tone-emphasis {
   white-space: normal;
   max-width: 12rem;
+}
+
+.dictionaryHubLoadError {
+  margin: 0 0 var(--ui-space-3);
+  padding: var(--ui-space-2) var(--ui-space-3);
+  border-radius: var(--ui-radius-md, 6px);
+  background: color-mix(in srgb, var(--danger, #c62828) 12%, transparent);
+  color: var(--danger, #b71c1c);
+  font-size: 0.8125rem;
 }

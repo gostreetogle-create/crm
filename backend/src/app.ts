@@ -15,6 +15,10 @@ import { materialGeometryRouter } from "./routes/material-geometry.routes.js";
 import { productionWorkTypesRouter } from "./routes/production-work-types.routes.js";
 import { productionDetailsRouter } from "./routes/production-details.routes.js";
 import { productsRouter } from "./routes/products.routes.js";
+import { tradeGoodsRouter } from "./routes/trade-goods.routes.js";
+import { complexesRouter } from "./routes/complexes.routes.js";
+import { catalogProductsRouter } from "./routes/catalog-products.routes.js";
+import { catalogArticlesRouter } from "./routes/catalog-articles.routes.js";
 import { rolesReadRouter, rolesWriteRouter } from "./routes/roles.routes.js";
 import {
   authzMatrixDiagnosticsRouter,
@@ -29,6 +33,7 @@ import { systemAdminRouter } from "./routes/system-admin.routes.js";
 import { bulkUnitsRouter } from "./routes/bulk-units.routes.js";
 import { authAuthedRouter, authPublicRouter } from "./routes/auth.routes.js";
 import { requireAdmin, requireAuth } from "./middleware/auth-jwt.js";
+import { requireDictionaryHubPermission } from "./middleware/require-dict-hub-permission.js";
 import { httpErrorHandler } from "./middleware/http-error.js";
 import { requestContextMiddleware } from "./middleware/request-context.js";
 
@@ -73,6 +78,14 @@ export function createApp() {
   authed.use("/production-work-types", productionWorkTypesRouter);
   authed.use("/production-details", productionDetailsRouter);
   authed.use("/products", productsRouter);
+  authed.use("/trade-goods", tradeGoodsRouter);
+
+  const catalogSuiteRouter = express.Router();
+  catalogSuiteRouter.use(requireDictionaryHubPermission("dict.hub.catalog_suite"));
+  catalogSuiteRouter.use("/complexes", complexesRouter);
+  catalogSuiteRouter.use("/catalog-products", catalogProductsRouter);
+  catalogSuiteRouter.use("/catalog-articles", catalogArticlesRouter);
+  authed.use(catalogSuiteRouter);
   authed.use("/clients", clientsRouter);
   authed.use("/organizations", organizationsRouter);
   authed.use("/commercial-offers", commercialOffersRouter);

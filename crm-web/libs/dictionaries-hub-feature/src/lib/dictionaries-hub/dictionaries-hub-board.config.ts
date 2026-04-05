@@ -27,6 +27,30 @@ export const HUB_BOARD_DICTIONARY_ROW_DEFS: readonly HubBoardDictionaryRowDef[] 
   },
   { section: 'Материалы и производство', sectionId: 'dictionary-hub-section-production', key: 'productionDetails', title: 'Детали' },
   { section: 'Материалы и производство', sectionId: 'dictionary-hub-section-production', key: 'products', title: 'Изделия' },
+  {
+    section: 'Материалы и производство',
+    sectionId: 'dictionary-hub-section-production',
+    key: 'tradeGoods',
+    title: 'Товары',
+  },
+  {
+    section: 'Каталог',
+    sectionId: 'dictionary-hub-section-catalog',
+    key: 'catalogComplexes',
+    title: 'Комплексы',
+  },
+  {
+    section: 'Каталог',
+    sectionId: 'dictionary-hub-section-catalog',
+    key: 'catalogProducts',
+    title: 'Каталожные товары',
+  },
+  {
+    section: 'Каталог',
+    sectionId: 'dictionary-hub-section-catalog',
+    key: 'catalogArticles',
+    title: 'Позиции каталога',
+  },
   { section: 'Цвет, отделка и покрытия', sectionId: 'dictionary-hub-section-surface', key: 'colors', title: 'Цвета (RAL)' },
   {
     section: 'Цвет, отделка и покрытия',
@@ -49,6 +73,7 @@ export const HUB_BOARD_DICTIONARY_ROW_DEFS: readonly HubBoardDictionaryRowDef[] 
 
 export const HUB_BOARD_SECTION_ORDER: readonly string[] = [
   'dictionary-hub-section-production',
+  'dictionary-hub-section-catalog',
   'dictionary-hub-section-surface',
   'dictionary-hub-section-clients',
   'dictionary-hub-section-commercial',

@@ -1,7 +1,11 @@
 import {
+  CATALOG_ARTICLES_COLUMNS_FULL,
+  CATALOG_COMPLEXES_COLUMNS_FULL,
+  CATALOG_PRODUCTS_COLUMNS_FULL,
   COLORS_COLUMNS_FULL,
   GEOMETRIES_COLUMNS_FULL,
   MATERIALS_COLUMNS_FULL,
+  PRODUCTS_COLUMNS_FULL,
   WORK_TYPES_COLUMNS_FULL,
 } from './dictionaries-page-table-columns';
 
@@ -39,6 +43,24 @@ describe('dictionaries-page-table-columns contracts', () => {
 
   it('keeps critical colors columns', () => {
     expect(keysOf(COLORS_COLUMNS_FULL)).toEqual(expect.arrayContaining(['ralCode', 'name', 'hex', 'rgb']));
+  });
+
+  it('keeps critical products columns', () => {
+    expect(keysOf(PRODUCTS_COLUMNS_FULL)).toEqual(
+      expect.arrayContaining(['codeLabel', 'name', 'descriptionLabel', 'colorLabel', 'priceLabel']),
+    );
+  });
+
+  it('keeps critical catalog suite columns', () => {
+    expect(keysOf(CATALOG_COMPLEXES_COLUMNS_FULL)).toEqual(
+      expect.arrayContaining(['name', 'codeLabel', 'descriptionLabel', 'isActiveLabel']),
+    );
+    expect(keysOf(CATALOG_PRODUCTS_COLUMNS_FULL)).toEqual(
+      expect.arrayContaining(['complexNameLabel', 'name', 'priceLabel', 'isActiveLabel']),
+    );
+    expect(keysOf(CATALOG_ARTICLES_COLUMNS_FULL)).toEqual(
+      expect.arrayContaining(['productNameLabel', 'name', 'qtyLabel', 'sortOrderLabel', 'isActiveLabel']),
+    );
   });
 });
 

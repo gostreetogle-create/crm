@@ -82,8 +82,22 @@ import {
   PRODUCTION_DETAILS_COLUMNS_FULL,
   PRODUCTS_COLUMNS,
   PRODUCTS_COLUMNS_FULL,
+  TRADE_GOODS_COLUMNS,
+  TRADE_GOODS_COLUMNS_FULL,
+  CATALOG_ARTICLES_COLUMNS,
+  CATALOG_ARTICLES_COLUMNS_FULL,
+  CATALOG_COMPLEXES_COLUMNS,
+  CATALOG_COMPLEXES_COLUMNS_FULL,
+  CATALOG_PRODUCTS_COLUMNS,
+  CATALOG_PRODUCTS_COLUMNS_FULL,
 } from './dictionaries-page-table-columns';
+import {
+  catalogArticlePayloadFromValues,
+  catalogProductPayloadFromValues,
+  complexPayloadFromValues,
+} from './dictionaries-page-catalog-suite';
 import { productPayloadFromValues } from './dictionaries-page-products';
+import { tradeGoodPayloadFromValues } from './dictionaries-page-trade-goods';
 import {
   mapLegalFormToOrganizationKind,
   normalizeRalCode,
@@ -115,6 +129,10 @@ import {
   OrganizationsStore,
   ProductionDetailsStore,
   ProductsStore,
+  TradeGoodsStore,
+  CatalogArticlesStore,
+  CatalogProductsStore,
+  ComplexesStore,
   ProductionWorkTypesStore,
   RolesStore,
   SurfaceFinishesStore,
@@ -140,6 +158,11 @@ import {
   type ProductLineDto,
   type ProductsRepository,
 } from '@srm/products-data-access';
+import {
+  TRADE_GOODS_REPOSITORY,
+  type TradeGoodItem,
+  type TradeGoodsRepository,
+} from '@srm/trade-goods-data-access';
 import { type ClientItemInput, formatClientFio } from '@srm/clients-data-access';
 import { OrganizationItem, OrganizationItemInput } from '@srm/organizations-data-access';
 import {
@@ -299,6 +322,15 @@ export class DictionariesPage implements OnDestroy {
       case 'standalone':
         this.navigateToStandaloneDictionaryCreate(target.key);
         break;
+      case 'catalogComplexModal':
+        this.openCatalogComplexCreate();
+        break;
+      case 'catalogProductModal':
+        this.openCatalogProductCreate();
+        break;
+      case 'catalogArticleModal':
+        this.openCatalogArticleCreate();
+        break;
     }
   }
   readonly rolesStore = inject(RolesStore);
@@ -314,9 +346,16 @@ export class DictionariesPage implements OnDestroy {
   readonly productionDetailsStore = inject(ProductionDetailsStore);
   readonly productsStore = inject(ProductsStore);
   private readonly productsRepository = inject<ProductsRepository>(PRODUCTS_REPOSITORY);
+  readonly tradeGoodsStore = inject(TradeGoodsStore);
+  private readonly tradeGoodsRepository = inject<TradeGoodsRepository>(TRADE_GOODS_REPOSITORY);
+  readonly complexesStore = inject(ComplexesStore);
+  readonly catalogProductsStore = inject(CatalogProductsStore);
+  readonly catalogArticlesStore = inject(CatalogArticlesStore);
 
   /** Полные данные для режима просмотра изделия (все поля и строки состава из API). */
   readonly productViewItem = signal<ProductItem | null>(null);
+  /** Полные данные для режима просмотра товара (набор изделий). */
+  readonly tradeGoodViewItem = signal<TradeGoodItem | null>(null);
 
   /** Колонки таблицы состава в модалке «Просмотр изделия». */
   readonly productViewCompositionColumns: UiSpecTableColumn[] = [
@@ -334,6 +373,16 @@ export class DictionariesPage implements OnDestroy {
     { key: 'ovWt', label: 'Пер. ВР', tone: 'muted' },
     { key: 'ovCol', label: 'Пер. цвет', tone: 'muted' },
   ];
+
+  /** Колонки таблицы «Изделия в составе товара» в модалке просмотра. */
+  readonly tradeGoodViewCompositionColumns: UiSpecTableColumn[] = [
+    { key: 'productLabel', label: 'Изделие', tone: 'emphasis' },
+    { key: 'qtyLabel', label: 'Кол-во', tone: 'muted', align: 'end' },
+    { key: 'priceLabel', label: 'Цена ₽', tone: 'muted', align: 'end' },
+    { key: 'costLabel', label: 'Себест. ₽', tone: 'muted', align: 'end' },
+    { key: 'lineId', label: 'ID строки', tone: 'muted' },
+    { key: 'productId', label: 'ID изделия', tone: 'muted' },
+  ];
   readonly clientsStore = inject(ClientsStore);
   readonly organizationsStore = inject(OrganizationsStore);
   readonly materialCharacteristicsStore = inject(MaterialCharacteristicsStore);
@@ -349,6 +398,14 @@ export class DictionariesPage implements OnDestroy {
   readonly isProductionDetailsViewMode = signal(false);
   readonly isProductsModalOpen = signal(false);
   readonly isProductsViewMode = signal(false);
+  readonly isTradeGoodsModalOpen = signal(false);
+  readonly isTradeGoodsViewMode = signal(false);
+  readonly isCatalogComplexModalOpen = signal(false);
+  readonly isCatalogComplexViewMode = signal(false);
+  readonly isCatalogProductModalOpen = signal(false);
+  readonly isCatalogProductViewMode = signal(false);
+  readonly isCatalogArticleModalOpen = signal(false);
+  readonly isCatalogArticleViewMode = signal(false);
   readonly isMaterialCharacteristicsModalOpen = signal(false);
   readonly isMaterialCharacteristicsViewMode = signal(false);
   readonly isMaterialsModalOpen = signal(false);
@@ -555,6 +612,8 @@ export class DictionariesPage implements OnDestroy {
   readonly productionDetailsColumnsFull = PRODUCTION_DETAILS_COLUMNS_FULL;
   readonly productsColumns = PRODUCTS_COLUMNS;
   readonly productsColumnsFull = PRODUCTS_COLUMNS_FULL;
+  readonly tradeGoodsColumns = TRADE_GOODS_COLUMNS;
+  readonly tradeGoodsColumnsFull = TRADE_GOODS_COLUMNS_FULL;
   readonly materialCharacteristicsColumnsPreview = MATERIAL_CHARACTERISTICS_COLUMNS_PREVIEW;
   readonly materialCharacteristicsColumnsFull = MATERIAL_CHARACTERISTICS_COLUMNS_FULL;
   readonly materialsColumnsPreview = MATERIALS_COLUMNS_PREVIEW;
@@ -610,6 +669,32 @@ export class DictionariesPage implements OnDestroy {
     this.productionDetailsColumnsFull,
   );
   readonly productsColumnsForTile = this.columnsForTile('products', this.productsColumns, this.productsColumnsFull);
+  readonly tradeGoodsColumnsForTile = this.columnsForTile(
+    'tradeGoods',
+    this.tradeGoodsColumns,
+    this.tradeGoodsColumnsFull,
+  );
+  readonly catalogComplexesColumns = CATALOG_COMPLEXES_COLUMNS;
+  readonly catalogComplexesColumnsFull = CATALOG_COMPLEXES_COLUMNS_FULL;
+  readonly catalogProductsColumns = CATALOG_PRODUCTS_COLUMNS;
+  readonly catalogProductsColumnsFull = CATALOG_PRODUCTS_COLUMNS_FULL;
+  readonly catalogArticlesColumns = CATALOG_ARTICLES_COLUMNS;
+  readonly catalogArticlesColumnsFull = CATALOG_ARTICLES_COLUMNS_FULL;
+  readonly catalogComplexesColumnsForTile = this.columnsForTile(
+    'catalogComplexes',
+    this.catalogComplexesColumns,
+    this.catalogComplexesColumnsFull,
+  );
+  readonly catalogProductsColumnsForTile = this.columnsForTile(
+    'catalogProducts',
+    this.catalogProductsColumns,
+    this.catalogProductsColumnsFull,
+  );
+  readonly catalogArticlesColumnsForTile = this.columnsForTile(
+    'catalogArticles',
+    this.catalogArticlesColumns,
+    this.catalogArticlesColumnsFull,
+  );
 
   /** Колонки мини-таблицы состава в раскрытии строки «Изделия» (`app-ui-spec-table`). */
   readonly productCompositionSpecColumns: UiSpecTableColumn[] = [
@@ -634,6 +719,24 @@ export class DictionariesPage implements OnDestroy {
       };
     });
   }
+
+  readonly tradeGoodCompositionSpecColumns: UiSpecTableColumn[] = [
+    { key: 'productLabel', label: 'Изделие', tone: 'emphasis' },
+    { key: 'qtyLabel', label: 'Кол-во', tone: 'muted', align: 'end' },
+  ];
+
+  tradeGoodCompositionSpecRows(lines: unknown): Array<Record<string, unknown>> {
+    if (!Array.isArray(lines)) return [];
+    return lines.map((raw) => {
+      const l = raw as { productLabel?: unknown; qty?: unknown };
+      const q = typeof l.qty === 'number' ? l.qty : 1;
+      return {
+        productLabel: l.productLabel,
+        qtyLabel: q,
+      };
+    });
+  }
+
   readonly unitsColumnsForTile = this.columnsForTile('units', this.unitsColumns, this.unitsColumnsFull);
   readonly kpPhotosColumnsForTile = this.columnsForTile('kpPhotos', this.kpPhotosColumns, this.kpPhotosColumnsFull);
   readonly clientsColumnsForTile = this.columnsForTile('clients', this.clientsColumns, this.clientsColumnsFull);
@@ -740,9 +843,22 @@ export class DictionariesPage implements OnDestroy {
   });
 
   readonly productsForm = this.fb.nonNullable.group({
+    code: [''],
     name: ['', [Validators.required, Validators.minLength(2)]],
+    description: [''],
     workTypeId: [''],
     colorId: [''],
+    priceRub: [null as number | null],
+    costRub: [null as number | null],
+    notes: [''],
+    isActive: [true],
+    lines: this.fb.array<FormGroup>([]),
+  });
+
+  readonly tradeGoodsForm = this.fb.nonNullable.group({
+    code: [''],
+    name: ['', [Validators.required, Validators.minLength(2)]],
+    description: [''],
     priceRub: [null as number | null],
     costRub: [null as number | null],
     notes: [''],
@@ -795,6 +911,32 @@ export class DictionariesPage implements OnDestroy {
     name: ['', [Validators.required, Validators.minLength(1)]],
     code: ['', [Validators.required, Validators.minLength(2)]],
     notes: [''],
+    isActive: [true],
+  });
+
+  readonly catalogComplexForm = this.fb.nonNullable.group({
+    name: ['', [Validators.required, Validators.minLength(1)]],
+    code: [''],
+    description: [''],
+    isActive: [true],
+  });
+
+  readonly catalogProductForm = this.fb.nonNullable.group({
+    complexId: ['', Validators.required],
+    name: ['', [Validators.required, Validators.minLength(1)]],
+    code: [''],
+    description: [''],
+    price: [0, [Validators.required, Validators.min(0)]],
+    isActive: [true],
+  });
+
+  readonly catalogArticleForm = this.fb.nonNullable.group({
+    productId: ['', Validators.required],
+    name: ['', [Validators.required, Validators.minLength(1)]],
+    code: [''],
+    description: [''],
+    qty: [1, [Validators.required, Validators.min(1)]],
+    sortOrder: [0, [Validators.required, Validators.min(0)]],
     isActive: [true],
   });
 
@@ -970,6 +1112,10 @@ export class DictionariesPage implements OnDestroy {
     this.productionWorkTypesStore.loadItems();
     this.productionDetailsStore.loadItems();
     this.productsStore.loadItems();
+    this.tradeGoodsStore.loadItems();
+    this.complexesStore.loadItems();
+    this.catalogProductsStore.loadItems();
+    this.catalogArticlesStore.loadItems();
     this.clientsStore.loadItems();
     this.organizationsStore.loadItems();
 
@@ -1278,7 +1424,9 @@ export class DictionariesPage implements OnDestroy {
     this.clearProductLines();
     this.addProductLine();
     this.productsForm.reset({
+      code: '',
       name: '',
+      description: '',
       workTypeId: '',
       colorId: '',
       priceRub: null,
@@ -1323,7 +1471,9 @@ export class DictionariesPage implements OnDestroy {
     const firstColor = sortedLines[0]?.colorId ?? '';
     const firstWorkType = sortedLines[0]?.workTypeId ?? '';
     this.productsForm.reset({
+      code: item.code ?? '',
       name: item.name,
+      description: item.description ?? '',
       workTypeId: firstWorkType,
       colorId: firstColor,
       priceRub: item.priceRub,
@@ -1454,15 +1604,38 @@ export class DictionariesPage implements OnDestroy {
     return '—';
   }
 
+  tradeGoodViewCompositionRows(): Array<Record<string, unknown>> {
+    const tg = this.tradeGoodViewItem();
+    if (!tg) return [];
+    const labelFor = (p: { code: string | null; name: string }) =>
+      p.code?.trim() ? `${p.code.trim()} — ${p.name}` : p.name;
+    return [...tg.lines]
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+      .map((line) => ({
+        productLabel: labelFor(line.product),
+        qtyLabel: line.qty,
+        priceLabel: line.product.priceRub != null ? `${line.product.priceRub} ₽` : '—',
+        costLabel: line.product.costRub != null ? `${line.product.costRub} ₽` : '—',
+        lineId: line.id,
+        productId: line.productId,
+      }));
+  }
+
   async submitProducts(): Promise<void> {
     const raw = this.productsForm.getRawValue();
     const lines = (raw.lines as Array<{ productionDetailId: string }>).filter((l) => l.productionDetailId);
     if (lines.length === 0) {
       this.productsStore.submit({
         value: productPayloadFromValues({
-          ...raw,
+          code: String(raw.code ?? ''),
+          name: String(raw.name ?? ''),
+          description: String(raw.description ?? ''),
           workTypeId: String(raw.workTypeId ?? ''),
           colorId: String(raw.colorId ?? ''),
+          priceRub: raw.priceRub,
+          costRub: raw.costRub,
+          notes: String(raw.notes ?? ''),
+          isActive: raw.isActive,
           lines: [],
         }),
         isValid: false,
@@ -1471,7 +1644,9 @@ export class DictionariesPage implements OnDestroy {
       return;
     }
     const payload = productPayloadFromValues({
+      code: String(raw.code ?? ''),
       name: raw.name,
+      description: String(raw.description ?? ''),
       workTypeId: String(raw.workTypeId ?? ''),
       colorId: String(raw.colorId ?? ''),
       priceRub: raw.priceRub,
@@ -1505,6 +1680,191 @@ export class DictionariesPage implements OnDestroy {
   private initProductsStandaloneCreate(): void {
     if (!this.permissions.crud().canCreate) return;
     this.resetProductsCreateForm();
+  }
+
+  get tradeGoodLinesFormArray(): FormArray {
+    return this.tradeGoodsForm.get('lines') as FormArray;
+  }
+
+  closeTradeGoodsModal(): void {
+    this.tradeGoodViewItem.set(null);
+    this.tradeGoodsStore.resetForm();
+    this.clearTradeGoodLines();
+    this.isTradeGoodsViewMode.set(false);
+    this.isTradeGoodsModalOpen.set(false);
+  }
+
+  private clearTradeGoodLines(): void {
+    while (this.tradeGoodLinesFormArray.length > 0) {
+      this.tradeGoodLinesFormArray.removeAt(0);
+    }
+  }
+
+  private newTradeGoodLineGroup(init?: Partial<{ productId: string; qty: number }>): FormGroup {
+    return this.fb.nonNullable.group({
+      productId: [init?.productId ?? '', Validators.required],
+      qty: [init?.qty ?? 1, [Validators.required, Validators.min(0.0001)]],
+    });
+  }
+
+  addTradeGoodLine(initial?: Partial<{ productId: string; qty: number }>): void {
+    this.tradeGoodLinesFormArray.push(this.newTradeGoodLineGroup(initial));
+  }
+
+  removeTradeGoodLine(index: number): void {
+    this.tradeGoodLinesFormArray.removeAt(index);
+    this.recalcTradeGoodPriceDefaults();
+  }
+
+  recalcTradeGoodPriceDefaults(): void {
+    let price = 0;
+    let cost = 0;
+    for (const ctrl of this.tradeGoodLinesFormArray.controls) {
+      const g = ctrl as FormGroup;
+      const pid = String(g.get('productId')?.value ?? '').trim();
+      const q = Number(g.get('qty')?.value ?? 1);
+      if (!pid || !Number.isFinite(q) || q <= 0) continue;
+      const p = this.productsStore.items().find((x) => x.id === pid);
+      if (p) {
+        price += (p.priceRub ?? 0) * q;
+        cost += (p.costRub ?? 0) * q;
+      }
+    }
+    this.tradeGoodsForm.patchValue({ priceRub: price, costRub: cost });
+  }
+
+  private resetTradeGoodsCreateForm(): void {
+    this.tradeGoodViewItem.set(null);
+    this.isTradeGoodsViewMode.set(false);
+    this.tradeGoodsForm.enable({ emitEvent: false });
+    this.tradeGoodsStore.startCreate();
+    this.clearTradeGoodLines();
+    this.addTradeGoodLine();
+    this.tradeGoodsForm.reset({
+      code: '',
+      name: '',
+      description: '',
+      priceRub: null,
+      costRub: null,
+      notes: '',
+      isActive: true,
+    });
+    this.recalcTradeGoodPriceDefaults();
+  }
+
+  openTradeGoodsCreate(): void {
+    if (!this.permissions.crud().canCreate) return;
+    this.navigateToStandaloneDictionaryCreate('tradeGoods');
+  }
+
+  openTradeGoodsCreateInModal(): void {
+    if (!this.permissions.crud().canCreate) return;
+    this.resetTradeGoodsCreateForm();
+    this.isTradeGoodsModalOpen.set(true);
+  }
+
+  async openTradeGoodsEdit(id: string): Promise<void> {
+    if (!this.permissions.crud().canEdit) return;
+    this.isTradeGoodsViewMode.set(false);
+    this.tradeGoodsForm.enable({ emitEvent: false });
+    let item: TradeGoodItem;
+    try {
+      item = await firstValueFrom(this.tradeGoodsRepository.getById(id));
+    } catch {
+      return;
+    }
+    this.tradeGoodViewItem.set(item);
+    this.tradeGoodsStore.startEdit(item.id);
+    this.clearTradeGoodLines();
+    const sortedLines = [...item.lines].sort((a, b) => a.sortOrder - b.sortOrder);
+    for (const line of sortedLines) {
+      this.addTradeGoodLine({ productId: line.productId, qty: line.qty });
+    }
+    this.tradeGoodsForm.reset({
+      code: item.code ?? '',
+      name: item.name,
+      description: item.description ?? '',
+      priceRub: item.priceRub,
+      costRub: item.costRub,
+      notes: item.notes ?? '',
+      isActive: item.isActive,
+    });
+    this.isTradeGoodsModalOpen.set(true);
+  }
+
+  openTradeGoodsView(id: string): void {
+    void this.openTradeGoodsEdit(id).then(() => {
+      if (!this.isTradeGoodsModalOpen()) return;
+      this.isTradeGoodsViewMode.set(true);
+      this.tradeGoodsForm.disable({ emitEvent: false });
+    });
+  }
+
+  deleteTradeGood(id: string): void {
+    if (!this.permissions.crud().canDelete) return;
+    this.tradeGoodsStore.delete(id);
+  }
+
+  async submitTradeGoods(): Promise<void> {
+    const raw = this.tradeGoodsForm.getRawValue();
+    const lines = (raw.lines as Array<{ productId: string; qty: number }>).filter((l) =>
+      String(l.productId ?? '').trim(),
+    );
+    if (lines.length === 0) {
+      this.tradeGoodsStore.submit({
+        value: tradeGoodPayloadFromValues({
+          code: String(raw.code ?? ''),
+          name: String(raw.name ?? ''),
+          description: String(raw.description ?? ''),
+          priceRub: raw.priceRub,
+          costRub: raw.costRub,
+          notes: String(raw.notes ?? ''),
+          isActive: raw.isActive,
+          lines: [],
+        }),
+        isValid: false,
+      });
+      this.tradeGoodsForm.markAllAsTouched();
+      return;
+    }
+    const payload = tradeGoodPayloadFromValues({
+      code: String(raw.code ?? ''),
+      name: raw.name,
+      description: String(raw.description ?? ''),
+      priceRub: raw.priceRub,
+      costRub: raw.costRub,
+      notes: String(raw.notes ?? ''),
+      isActive: raw.isActive,
+      lines: lines.map((l) => ({
+        productId: String(l.productId).trim(),
+        qty: Number(l.qty) > 0 ? Number(l.qty) : 1,
+      })),
+    });
+    if (this.tradeGoodsForm.invalid) {
+      this.tradeGoodsStore.submit({ value: payload, isValid: false });
+      this.tradeGoodsForm.markAllAsTouched();
+      scrollToFirstInvalidControlInForm('trade-goods-form', this.doc);
+      return;
+    }
+    try {
+      const editId = this.tradeGoodsStore.editId();
+      if (editId) {
+        await firstValueFrom(this.tradeGoodsRepository.update(editId, payload));
+      } else {
+        await firstValueFrom(this.tradeGoodsRepository.create(payload));
+      }
+      const items = await firstValueFrom(this.tradeGoodsRepository.getItems());
+      this.tradeGoodsStore.applyLoadedItems(items);
+    } catch {
+      return;
+    }
+    this.closeTradeGoodsModal();
+    this.finishStandaloneDictionaryCreateIfMatch('tradeGoods');
+  }
+
+  private initTradeGoodsStandaloneCreate(): void {
+    if (!this.permissions.crud().canCreate) return;
+    this.resetTradeGoodsCreateForm();
   }
 
   private resetProductionDetailsCreateForm(): void {
@@ -1855,6 +2215,7 @@ export class DictionariesPage implements OnDestroy {
       kpPhotos: () => this.closeKpPhotosModal(),
       productionDetails: () => this.closeProductionDetailsModal(),
       products: () => this.closeProductsModal(),
+      tradeGoods: () => this.closeTradeGoodsModal(),
     });
     this.resetAllDictionaryHubQuickAddFlags();
     this.location.back();
@@ -2267,6 +2628,7 @@ export class DictionariesPage implements OnDestroy {
       kpPhotos: () => this.initKpPhotosStandaloneCreate(),
       productionDetails: () => this.initProductionDetailsStandaloneCreate(),
       products: () => this.initProductsStandaloneCreate(),
+      tradeGoods: () => this.initTradeGoodsStandaloneCreate(),
     };
     inits[sc]();
   }
@@ -2798,6 +3160,299 @@ export class DictionariesPage implements OnDestroy {
     this.unitsForm.disable({ emitEvent: false });
     this.isUnitsViewMode.set(true);
     this.isUnitsModalOpen.set(true);
+  }
+
+  openCatalogComplexCreate(): void {
+    if (!this.permissions.crud().canCreate) return;
+    this.isCatalogComplexViewMode.set(false);
+    this.catalogComplexForm.enable({ emitEvent: false });
+    this.complexesStore.startCreate();
+    this.catalogComplexForm.reset({
+      name: '',
+      code: '',
+      description: '',
+      isActive: true,
+    });
+    this.isCatalogComplexModalOpen.set(true);
+  }
+
+  openCatalogComplexEdit(id: string): void {
+    if (!this.permissions.crud().canEdit) return;
+    this.isCatalogComplexViewMode.set(false);
+    this.catalogComplexForm.enable({ emitEvent: false });
+    const item = this.complexesStore.items().find((x) => x.id === id);
+    if (!item) return;
+    this.complexesStore.startEdit(item.id);
+    this.catalogComplexForm.reset({
+      name: item.name ?? '',
+      code: item.code ?? '',
+      description: item.description ?? '',
+      isActive: item.isActive,
+    });
+    this.isCatalogComplexModalOpen.set(true);
+  }
+
+  closeCatalogComplexModal(): void {
+    this.complexesStore.resetForm();
+    this.isCatalogComplexViewMode.set(false);
+    this.isCatalogComplexModalOpen.set(false);
+  }
+
+  submitCatalogComplex(): void {
+    const raw = this.catalogComplexForm.getRawValue();
+    const payload = complexPayloadFromValues(raw);
+    if (this.catalogComplexForm.invalid) {
+      this.complexesStore.submit({ value: payload, isValid: false });
+      this.catalogComplexForm.markAllAsTouched();
+      scrollToFirstInvalidControlInForm('catalog-complex-form', this.doc);
+      return;
+    }
+    this.complexesStore.submit({ value: payload, isValid: true });
+    this.closeCatalogComplexModal();
+  }
+
+  deleteCatalogComplex(id: string): void {
+    if (!this.permissions.crud().canDelete) return;
+    this.complexesStore.delete(id);
+    if (this.catalogProductForm.controls.complexId.value === id) {
+      this.catalogProductForm.controls.complexId.setValue('');
+    }
+  }
+
+  duplicateCatalogComplex(id: string): void {
+    if (!this.permissions.can('crud.duplicate')) return;
+    const item = this.complexesStore.items().find((x) => x.id === id);
+    if (!item) return;
+    this.isCatalogComplexViewMode.set(false);
+    this.catalogComplexForm.enable({ emitEvent: false });
+    this.complexesStore.startCreate();
+    this.catalogComplexForm.reset({
+      name: item.name ? `${item.name} (копия)` : '',
+      code: item.code ?? '',
+      description: item.description ?? '',
+      isActive: item.isActive,
+    });
+    this.isCatalogComplexModalOpen.set(true);
+  }
+
+  openCatalogComplexView(id: string): void {
+    const item = this.complexesStore.items().find((x) => x.id === id);
+    if (!item) return;
+    this.complexesStore.resetForm();
+    this.catalogComplexForm.reset({
+      name: item.name ?? '',
+      code: item.code ?? '',
+      description: item.description ?? '',
+      isActive: item.isActive,
+    });
+    this.catalogComplexForm.disable({ emitEvent: false });
+    this.isCatalogComplexViewMode.set(true);
+    this.isCatalogComplexModalOpen.set(true);
+  }
+
+  openCatalogProductCreate(): void {
+    if (!this.permissions.crud().canCreate) return;
+    this.isCatalogProductViewMode.set(false);
+    this.catalogProductForm.enable({ emitEvent: false });
+    this.catalogProductsStore.startCreate();
+    this.catalogProductForm.reset({
+      complexId: '',
+      name: '',
+      code: '',
+      description: '',
+      price: 0,
+      isActive: true,
+    });
+    this.isCatalogProductModalOpen.set(true);
+  }
+
+  openCatalogProductEdit(id: string): void {
+    if (!this.permissions.crud().canEdit) return;
+    this.isCatalogProductViewMode.set(false);
+    this.catalogProductForm.enable({ emitEvent: false });
+    const item = this.catalogProductsStore.items().find((x) => x.id === id);
+    if (!item) return;
+    this.catalogProductsStore.startEdit(item.id);
+    this.catalogProductForm.reset({
+      complexId: item.complexId,
+      name: item.name ?? '',
+      code: item.code ?? '',
+      description: item.description ?? '',
+      price: item.price,
+      isActive: item.isActive,
+    });
+    this.isCatalogProductModalOpen.set(true);
+  }
+
+  closeCatalogProductModal(): void {
+    this.catalogProductsStore.resetForm();
+    this.isCatalogProductViewMode.set(false);
+    this.isCatalogProductModalOpen.set(false);
+  }
+
+  submitCatalogProduct(): void {
+    const raw = this.catalogProductForm.getRawValue();
+    const payload = catalogProductPayloadFromValues(raw);
+    if (this.catalogProductForm.invalid) {
+      this.catalogProductsStore.submit({ value: payload, isValid: false });
+      this.catalogProductForm.markAllAsTouched();
+      scrollToFirstInvalidControlInForm('catalog-product-form', this.doc);
+      return;
+    }
+    this.catalogProductsStore.submit({ value: payload, isValid: true });
+    this.closeCatalogProductModal();
+  }
+
+  deleteCatalogProduct(id: string): void {
+    if (!this.permissions.crud().canDelete) return;
+    this.catalogProductsStore.delete(id);
+    if (this.catalogArticleForm.controls.productId.value === id) {
+      this.catalogArticleForm.controls.productId.setValue('');
+    }
+  }
+
+  duplicateCatalogProduct(id: string): void {
+    if (!this.permissions.can('crud.duplicate')) return;
+    const item = this.catalogProductsStore.items().find((x) => x.id === id);
+    if (!item) return;
+    this.isCatalogProductViewMode.set(false);
+    this.catalogProductForm.enable({ emitEvent: false });
+    this.catalogProductsStore.startCreate();
+    this.catalogProductForm.reset({
+      complexId: item.complexId,
+      name: item.name ? `${item.name} (копия)` : '',
+      code: item.code ?? '',
+      description: item.description ?? '',
+      price: item.price,
+      isActive: item.isActive,
+    });
+    this.isCatalogProductModalOpen.set(true);
+  }
+
+  openCatalogProductView(id: string): void {
+    const item = this.catalogProductsStore.items().find((x) => x.id === id);
+    if (!item) return;
+    this.catalogProductsStore.resetForm();
+    this.catalogProductForm.reset({
+      complexId: item.complexId,
+      name: item.name ?? '',
+      code: item.code ?? '',
+      description: item.description ?? '',
+      price: item.price,
+      isActive: item.isActive,
+    });
+    this.catalogProductForm.disable({ emitEvent: false });
+    this.isCatalogProductViewMode.set(true);
+    this.isCatalogProductModalOpen.set(true);
+  }
+
+  openCatalogArticleCreate(): void {
+    if (!this.permissions.crud().canCreate) return;
+    this.isCatalogArticleViewMode.set(false);
+    this.catalogArticleForm.enable({ emitEvent: false });
+    this.catalogArticlesStore.startCreate();
+    this.catalogArticleForm.reset({
+      productId: '',
+      name: '',
+      code: '',
+      description: '',
+      qty: 1,
+      sortOrder: 0,
+      isActive: true,
+    });
+    this.isCatalogArticleModalOpen.set(true);
+  }
+
+  openCatalogArticleEdit(id: string): void {
+    if (!this.permissions.crud().canEdit) return;
+    this.isCatalogArticleViewMode.set(false);
+    this.catalogArticleForm.enable({ emitEvent: false });
+    const item = this.catalogArticlesStore.items().find((x) => x.id === id);
+    if (!item) return;
+    this.catalogArticlesStore.startEdit(item.id);
+    this.catalogArticleForm.reset({
+      productId: item.productId,
+      name: item.name ?? '',
+      code: item.code ?? '',
+      description: item.description ?? '',
+      qty: item.qty,
+      sortOrder: item.sortOrder,
+      isActive: item.isActive,
+    });
+    this.isCatalogArticleModalOpen.set(true);
+  }
+
+  closeCatalogArticleModal(): void {
+    this.catalogArticlesStore.resetForm();
+    this.isCatalogArticleViewMode.set(false);
+    this.isCatalogArticleModalOpen.set(false);
+  }
+
+  submitCatalogArticle(): void {
+    const raw = this.catalogArticleForm.getRawValue();
+    const payload = catalogArticlePayloadFromValues(raw);
+    if (this.catalogArticleForm.invalid) {
+      this.catalogArticlesStore.submit({ value: payload, isValid: false });
+      this.catalogArticleForm.markAllAsTouched();
+      scrollToFirstInvalidControlInForm('catalog-article-form', this.doc);
+      return;
+    }
+    this.catalogArticlesStore.submit({ value: payload, isValid: true });
+    this.closeCatalogArticleModal();
+  }
+
+  deleteCatalogArticle(id: string): void {
+    if (!this.permissions.crud().canDelete) return;
+    this.catalogArticlesStore.delete(id);
+  }
+
+  duplicateCatalogArticle(id: string): void {
+    if (!this.permissions.can('crud.duplicate')) return;
+    const item = this.catalogArticlesStore.items().find((x) => x.id === id);
+    if (!item) return;
+    this.isCatalogArticleViewMode.set(false);
+    this.catalogArticleForm.enable({ emitEvent: false });
+    this.catalogArticlesStore.startCreate();
+    this.catalogArticleForm.reset({
+      productId: item.productId,
+      name: item.name ? `${item.name} (копия)` : '',
+      code: item.code ?? '',
+      description: item.description ?? '',
+      qty: item.qty,
+      sortOrder: item.sortOrder,
+      isActive: item.isActive,
+    });
+    this.isCatalogArticleModalOpen.set(true);
+  }
+
+  openCatalogArticleView(id: string): void {
+    const item = this.catalogArticlesStore.items().find((x) => x.id === id);
+    if (!item) return;
+    this.catalogArticlesStore.resetForm();
+    this.catalogArticleForm.reset({
+      productId: item.productId,
+      name: item.name ?? '',
+      code: item.code ?? '',
+      description: item.description ?? '',
+      qty: item.qty,
+      sortOrder: item.sortOrder,
+      isActive: item.isActive,
+    });
+    this.catalogArticleForm.disable({ emitEvent: false });
+    this.isCatalogArticleViewMode.set(true);
+    this.isCatalogArticleModalOpen.set(true);
+  }
+
+  catalogProductComplexViewLabel(): string {
+    const id = this.catalogProductForm.controls.complexId.value;
+    const c = this.complexesStore.items().find((x) => x.id === id);
+    return c?.name ?? '—';
+  }
+
+  catalogArticleProductViewLabel(): string {
+    const id = this.catalogArticleForm.controls.productId.value;
+    const p = this.catalogProductsStore.items().find((x) => x.id === id);
+    return p?.name ?? '—';
   }
 
   openKpPhotosCreate(): void {
@@ -4458,6 +5113,30 @@ export class DictionariesPage implements OnDestroy {
     return (
       control.invalid &&
       (control.touched || control.dirty || this.unitsStore.formSubmitAttempted())
+    );
+  }
+
+  isCatalogComplexInvalid(controlName: keyof typeof this.catalogComplexForm.controls): boolean {
+    const control = this.catalogComplexForm.controls[controlName];
+    return (
+      control.invalid &&
+      (control.touched || control.dirty || this.complexesStore.formSubmitAttempted())
+    );
+  }
+
+  isCatalogProductInvalid(controlName: keyof typeof this.catalogProductForm.controls): boolean {
+    const control = this.catalogProductForm.controls[controlName];
+    return (
+      control.invalid &&
+      (control.touched || control.dirty || this.catalogProductsStore.formSubmitAttempted())
+    );
+  }
+
+  isCatalogArticleInvalid(controlName: keyof typeof this.catalogArticleForm.controls): boolean {
+    const control = this.catalogArticleForm.controls[controlName];
+    return (
+      control.invalid &&
+      (control.touched || control.dirty || this.catalogArticlesStore.formSubmitAttempted())
     );
   }
 

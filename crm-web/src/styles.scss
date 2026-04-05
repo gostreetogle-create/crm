@@ -17,9 +17,15 @@
   --field-invalid-border: var(--danger, #9f2d20);
   --field-invalid-focus: var(--danger, #9f2d20);
 
-  --app-main-padding-top: calc(
-    (var(--ui-app-header-padding-y, 10px) * 2) + var(--ui-control-min-height, 30px) + 12px
+  /*
+   * Высота под фиксированную шапку: --header-height выставляет AppHeader (ResizeObserver на .appHeaderShell).
+   * Fallback — до первого кадра и без JS: safe-area + строка шапки (логотип 40px ≥ высоты контролов) + запас.
+   */
+  --app-main-padding-top-fallback: calc(
+    env(safe-area-inset-top, 0px) + (var(--ui-app-header-padding-y, 10px) * 2) +
+      max(40px, var(--ui-control-min-height, 30px)) + 4px
   );
+  --app-main-padding-top: var(--header-height, var(--app-main-padding-top-fallback));
   --app-main-padding-bottom: 20px;
   --app-main-padding-x: 16px;
   --ui-page-shell-max-width: min(1720px, calc(100vw - (var(--ui-page-shell-padding-x, 14px) * 2)));

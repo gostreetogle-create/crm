@@ -28,20 +28,27 @@ export const ProductsStore = signalStore(
   withComputed(({ items, editId }) => ({
     productsData: computed(() =>
       items()
-        .map((item) => ({
-          id: item.id,
-          name: item.name,
-          hubLine: item.name,
-          detailNamesSummary: item.detailNamesSummary?.trim() ? item.detailNamesSummary : '—',
-          workTypesSummary: item.workTypesSummary?.trim() ? item.workTypesSummary : '—',
-          colorLabel: item.colorLabel?.trim() ? item.colorLabel : '—',
-          priceLabel: item.priceRub != null ? `${item.priceRub} ₽` : '—',
-          costLabel: item.costRub != null ? `${item.costRub} ₽` : '—',
-          linesCountLabel: String(item.linesCount),
-          notesLabel: item.notes?.trim() ? item.notes.trim() : '—',
-          isActiveLabel: item.isActive ? 'Да' : 'Нет',
-          compositionLines: item.compositionLines ?? [],
-        }))
+        .map((item) => {
+          const code = item.code?.trim() ?? '';
+          const hubLine = code ? `${code} — ${item.name}` : item.name;
+          return {
+            id: item.id,
+            name: item.name,
+            code: code,
+            hubLine,
+            codeLabel: code || '—',
+            descriptionLabel: item.description?.trim() ? item.description.trim() : '—',
+            detailNamesSummary: item.detailNamesSummary?.trim() ? item.detailNamesSummary : '—',
+            workTypesSummary: item.workTypesSummary?.trim() ? item.workTypesSummary : '—',
+            colorLabel: item.colorLabel?.trim() ? item.colorLabel : '—',
+            priceLabel: item.priceRub != null ? `${item.priceRub} ₽` : '—',
+            costLabel: item.costRub != null ? `${item.costRub} ₽` : '—',
+            linesCountLabel: String(item.linesCount),
+            notesLabel: item.notes?.trim() ? item.notes.trim() : '—',
+            isActiveLabel: item.isActive ? 'Да' : 'Нет',
+            compositionLines: item.compositionLines ?? [],
+          };
+        })
         .sort((a, b) => String(a.name ?? '').localeCompare(String(b.name ?? ''), 'ru')),
     ),
     isEditMode: computed(() => editId() !== null),

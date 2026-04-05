@@ -17,6 +17,10 @@ const TILE_TO_PERMISSION: Readonly<Record<string, PermissionKey>> = {
   kpPhotos: 'dict.hub.kp_photos',
   productionDetails: 'dict.hub.production_details',
   products: 'dict.hub.products',
+  tradeGoods: 'dict.hub.trade_goods',
+  catalogComplexes: 'dict.hub.catalog_suite',
+  catalogProducts: 'dict.hub.catalog_suite',
+  catalogArticles: 'dict.hub.catalog_suite',
 };
 
 export function permissionKeyForDictionaryHubTile(tileKey: string): PermissionKey {
@@ -40,4 +44,6 @@ export const DICTIONARY_HUB_PERMISSION_KEYS: readonly PermissionKey[] = [
   'dict.hub.kp_photos',
   'dict.hub.production_details',
   'dict.hub.products',
+  'dict.hub.trade_goods',
+  'dict.hub.catalog_suite',
 ];

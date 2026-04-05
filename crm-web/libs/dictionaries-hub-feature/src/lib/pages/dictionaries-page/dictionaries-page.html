@@ -185,6 +185,20 @@
       (dismiss)="navigateBackFromStandaloneDictionaryCreate()"
     />
   </app-dictionary-standalone-create-shell>
+  } @else if (standaloneCreateKey() === 'tradeGoods') {
+  <app-dictionary-standalone-create-shell
+    [pageTitle]="standaloneDictionaryTitle('tradeGoods')"
+    (backClicked)="navigateBackFromStandaloneDictionaryCreate()"
+  >
+    <ng-container *ngTemplateOutlet="tradeGoodsContentTpl"></ng-container>
+    <app-ui-modal-form-actions
+      standaloneFormActions
+      [viewMode]="isTradeGoodsViewMode()"
+      [formId]="'trade-goods-form'"
+      [submitLabel]="tradeGoodsStore.isEditMode() ? 'Сохранить изменения' : 'Создать товар'"
+      (dismiss)="navigateBackFromStandaloneDictionaryCreate()"
+    />
+  </app-dictionary-standalone-create-shell>
   } @else if (isNewMaterialPageRoute()) {
   <app-new-material-fullscreen-page
     [pageTitle]="'Новый материал'"
@@ -382,6 +396,9 @@
         }
 
             @case ('products') {
+      @if (productsStore.error()) {
+        <p class="dictionaryHubLoadError" role="alert">{{ productsStore.error() }}</p>
+      }
       <ng-template #productsExpandComposition let-row>
         <app-ui-spec-table
           caption="Состав изделия"
@@ -417,6 +434,141 @@
         (view)="openProductsView($event)"
         (edit)="openProductsEdit($event)"
         (delete)="deleteProduct($event)"
+      ></crud-layout>
+        }
+
+            @case ('tradeGoods') {
+      @if (tradeGoodsStore.error()) {
+        <p class="dictionaryHubLoadError" role="alert">{{ tradeGoodsStore.error() }}</p>
+      }
+      <ng-template #tradeGoodsExpandComposition let-row>
+        <app-ui-spec-table
+          caption="Состав товара (изделия)"
+          variant="embed"
+          emptyText="Нет строк состава."
+          [showOrdinalColumn]="true"
+          [columns]="tradeGoodCompositionSpecColumns"
+          [rows]="tradeGoodCompositionSpecRows($any(row)['compositionLines'])"
+        />
+      </ng-template>
+      <crud-layout
+        title="Товары"
+        [showHeader]="false"
+        [showCardLabel]="false"
+        [showNameSearch]="true"
+        [showCreateAction]="false"
+        [canCreate]="permissions.crud().canCreate"
+        createAriaLabel="Добавить товар"
+        createTitle="Добавить товар"
+        [columns]="tradeGoodsColumnsForTile()"
+        [data]="tradeGoodsStore.tradeGoodsData()"
+        [loading]="tradeGoodsStore.loading()"
+        [maxTableBodyRows]="null"
+        [tableBodyMaxHeight]="hubBoardDetailTableMaxHeight"
+        [canView]="true"
+        [canDuplicate]="false"
+        [canEdit]="permissions.crud().canEdit"
+        [canDelete]="permissions.crud().canDelete"
+        deleteConfirmMessage="Удалить товар?"
+        [expandableRows]="true"
+        [expandRowTemplate]="tradeGoodsExpandComposition"
+        (create)="openTradeGoodsCreate()"
+        (view)="openTradeGoodsView($event)"
+        (edit)="openTradeGoodsEdit($event)"
+        (delete)="deleteTradeGood($event)"
+      ></crud-layout>
+        }
+
+            @case ('catalogComplexes') {
+      @if (complexesStore.error()) {
+        <p class="dictionaryHubLoadError" role="alert">{{ complexesStore.error() }}</p>
+      }
+      <crud-layout
+        title="Комплексы"
+        [showHeader]="false"
+        [showCardLabel]="false"
+        [showNameSearch]="true"
+        [showCreateAction]="false"
+        [canCreate]="permissions.crud().canCreate"
+        createAriaLabel="Добавить комплекс"
+        createTitle="Добавить комплекс"
+        [columns]="catalogComplexesColumnsForTile()"
+        [data]="complexesStore.complexesData()"
+        [loading]="complexesStore.loading()"
+        [maxTableBodyRows]="null"
+        [tableBodyMaxHeight]="hubBoardDetailTableMaxHeight"
+        [canView]="true"
+        [canDuplicate]="permissions.crud().canDuplicate"
+        [canEdit]="permissions.crud().canEdit"
+        [canDelete]="permissions.crud().canDelete"
+        deleteConfirmMessage="Удалить комплекс?"
+        (create)="openCatalogComplexCreate()"
+        (view)="openCatalogComplexView($event)"
+        (duplicate)="duplicateCatalogComplex($event)"
+        (edit)="openCatalogComplexEdit($event)"
+        (delete)="deleteCatalogComplex($event)"
+      ></crud-layout>
+        }
+
+            @case ('catalogProducts') {
+      @if (catalogProductsStore.error()) {
+        <p class="dictionaryHubLoadError" role="alert">{{ catalogProductsStore.error() }}</p>
+      }
+      <crud-layout
+        title="Каталожные товары"
+        [showHeader]="false"
+        [showCardLabel]="false"
+        [showNameSearch]="true"
+        [showCreateAction]="false"
+        [canCreate]="permissions.crud().canCreate"
+        createAriaLabel="Добавить каталожный товар"
+        createTitle="Добавить каталожный товар"
+        [columns]="catalogProductsColumnsForTile()"
+        [data]="catalogProductsStore.catalogProductsData()"
+        [loading]="catalogProductsStore.loading()"
+        [maxTableBodyRows]="null"
+        [tableBodyMaxHeight]="hubBoardDetailTableMaxHeight"
+        [canView]="true"
+        [canDuplicate]="permissions.crud().canDuplicate"
+        [canEdit]="permissions.crud().canEdit"
+        [canDelete]="permissions.crud().canDelete"
+        deleteConfirmMessage="Удалить каталожный товар?"
+        (create)="openCatalogProductCreate()"
+        (view)="openCatalogProductView($event)"
+        (duplicate)="duplicateCatalogProduct($event)"
+        (edit)="openCatalogProductEdit($event)"
+        (delete)="deleteCatalogProduct($event)"
+      ></crud-layout>
+        }
+
+            @case ('catalogArticles') {
+      @if (catalogArticlesStore.error()) {
+        <p class="dictionaryHubLoadError" role="alert">{{ catalogArticlesStore.error() }}</p>
+      }
+      <crud-layout
+        title="Позиции каталога"
+        [showHeader]="false"
+        [showCardLabel]="false"
+        [showNameSearch]="true"
+        [showCreateAction]="false"
+        [canCreate]="permissions.crud().canCreate"
+        createAriaLabel="Добавить позицию"
+        createTitle="Добавить позицию"
+        [columns]="catalogArticlesColumnsForTile()"
+        [data]="catalogArticlesStore.catalogArticlesData()"
+        [loading]="catalogArticlesStore.loading()"
+        [maxTableBodyRows]="null"
+        [tableBodyMaxHeight]="hubBoardDetailTableMaxHeight"
+        [canView]="true"
+        [canDuplicate]="permissions.crud().canDuplicate"
+        [canEdit]="permissions.crud().canEdit"
+        [canDelete]="permissions.crud().canDelete"
+        deleteConfirmMessage="Удалить позицию каталога?"
+        (create)="openCatalogArticleCreate()"
+        (view)="openCatalogArticleView($event)"
+        (duplicate)="duplicateCatalogArticle($event)"
+        (edit)="openCatalogArticleEdit($event)"
+        (delete)="deleteCatalogArticle($event)"
       ></crud-layout>
         }
 
@@ -1046,6 +1198,22 @@
   size="xl"
 ></ui-modal>
 
+<ui-modal
+  *ngIf="isTradeGoodsModalOpen()"
+  [title]="
+    isTradeGoodsViewMode()
+      ? 'Просмотр товара'
+      : tradeGoodsStore.isEditMode()
+        ? 'Редактирование товара'
+        : 'Новый товар'
+  "
+  [content]="tradeGoodsContentTpl"
+  [actions]="tradeGoodsActionsTpl"
+  (close)="closeTradeGoodsModal()"
+  [closeOnBackdrop]="isTradeGoodsViewMode()"
+  size="xl"
+></ui-modal>
+
 <ng-template #productionDetailsContentTpl>
   @if (isProductionDetailsViewMode()) {
     <app-dictionary-preview-card-no-photo
@@ -1268,6 +1436,12 @@
             </span>
           </div>
           <h2 class="productSpecView__title">{{ pv.name }}</h2>
+          @if ((pv.code ?? '').trim()) {
+            <p class="productSpecView__code">Артикул: {{ pv.code }}</p>
+          }
+          @if ((pv.description ?? '').trim()) {
+            <p class="productSpecView__description">{{ pv.description }}</p>
+          }
           <div class="productSpecView__heroNums">
             <span
               ><strong>Цена</strong>
@@ -1305,8 +1479,16 @@
           <section class="productSpecView__card">
             <h3 class="productSpecView__cardTitle">Шапка и примечания</h3>
             <dl class="productSpecView__dl">
+              <div class="productSpecView__dlRow">
+                <dt>Артикул</dt>
+                <dd class="productSpecView__mono">{{ (pv.code ?? '').trim() || '—' }}</dd>
+              </div>
               <div class="productSpecView__dlRow productSpecView__dlRow--block">
-                <dt>Заметки</dt>
+                <dt>Описание (витрина / КП)</dt>
+                <dd>{{ (pv.description ?? '').trim() || '—' }}</dd>
+              </div>
+              <div class="productSpecView__dlRow productSpecView__dlRow--block">
+                <dt>Заметки (внутренние)</dt>
                 <dd>{{ (pv.notes ?? '').trim() || '—' }}</dd>
               </div>
             </dl>
@@ -1350,8 +1532,14 @@
       <fieldset class="dictionaryFormSection">
         <legend>Изделие</legend>
         <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
+          <app-ui-form-field label="Артикул">
+            <input type="text" formControlName="code" placeholder="Необязательно, уникально" />
+          </app-ui-form-field>
           <app-ui-form-field label="Наименование" [required]="true">
             <input type="text" formControlName="name" placeholder="Напр. Секция А-1" />
+          </app-ui-form-field>
+          <app-ui-form-field label="Описание (витрина / КП)" [wide]="true">
+            <textarea rows="2" formControlName="description" placeholder="Текст для клиента; внутренние пометки — в «Заметки»"></textarea>
           </app-ui-form-field>
           <app-ui-form-field label="Вид работ">
             <select formControlName="workTypeId">
@@ -1377,7 +1565,7 @@
           <app-ui-form-field label="Себестоимость, ₽">
             <input type="number" formControlName="costRub" step="any" />
           </app-ui-form-field>
-          <app-ui-form-field label="Заметки" [wide]="true">
+          <app-ui-form-field label="Заметки (внутренние)" [wide]="true">
             <textarea rows="2" formControlName="notes"></textarea>
           </app-ui-form-field>
           <app-ui-checkbox-field class="checkbox" label="Активно" formControlName="isActive"></app-ui-checkbox-field>
@@ -1444,6 +1632,178 @@
     [formId]="'products-form'"
     [submitLabel]="productsStore.isEditMode() ? 'Сохранить изменения' : 'Создать изделие'"
     (dismiss)="closeProductsModal()"
+  />
+</ng-template>
+
+<ng-template #tradeGoodsContentTpl>
+  @if (isTradeGoodsViewMode()) {
+    @if (tradeGoodViewItem(); as tg) {
+      <div class="productSpecView">
+        <header class="productSpecView__hero">
+          <div class="productSpecView__heroTop">
+            <span class="productSpecView__badge" [class.productSpecView__badge--off]="!tg.isActive">
+              {{ tg.isActive ? 'Активен' : 'Неактивен' }}
+            </span>
+          </div>
+          <h2 class="productSpecView__title">{{ tg.name }}</h2>
+          @if ((tg.code ?? '').trim()) {
+            <p class="productSpecView__code">Артикул: {{ tg.code }}</p>
+          }
+          @if ((tg.description ?? '').trim()) {
+            <p class="productSpecView__description">{{ tg.description }}</p>
+          }
+          <div class="productSpecView__heroNums">
+            <span><strong>Цена</strong> {{ tg.priceRub != null ? tg.priceRub + ' ₽' : '—' }}</span>
+            <span><strong>Себестоимость</strong> {{ tg.costRub != null ? tg.costRub + ' ₽' : '—' }}</span>
+            <span><strong>Изделий в составе</strong> {{ tg.lines.length }}</span>
+          </div>
+        </header>
+
+        <div class="productSpecView__topGrid">
+          <section class="productSpecView__card">
+            <h3 class="productSpecView__cardTitle">Учёт</h3>
+            <dl class="productSpecView__dl">
+              <div class="productSpecView__dlRow">
+                <dt>ID</dt>
+                <dd class="productSpecView__mono">{{ tg.id }}</dd>
+              </div>
+              <div class="productSpecView__dlRow">
+                <dt>Создано</dt>
+                <dd>{{ formatProductViewDate(tg.createdAt) }}</dd>
+              </div>
+              <div class="productSpecView__dlRow">
+                <dt>Обновлено</dt>
+                <dd>{{ formatProductViewDate(tg.updatedAt) }}</dd>
+              </div>
+            </dl>
+          </section>
+
+          <section class="productSpecView__card">
+            <h3 class="productSpecView__cardTitle">Описание и заметки</h3>
+            <dl class="productSpecView__dl">
+              <div class="productSpecView__dlRow productSpecView__dlRow--block">
+                <dt>Описание (витрина / КП)</dt>
+                <dd>{{ (tg.description ?? '').trim() || '—' }}</dd>
+              </div>
+              <div class="productSpecView__dlRow productSpecView__dlRow--block">
+                <dt>Заметки (внутренние)</dt>
+                <dd>{{ (tg.notes ?? '').trim() || '—' }}</dd>
+              </div>
+            </dl>
+          </section>
+        </div>
+
+        <section class="productSpecView__card productSpecView__card--full">
+          <h3 class="productSpecView__cardTitle">Состав: изделия</h3>
+          <app-ui-spec-table
+            caption="Строки состава"
+            variant="embed"
+            emptyText="Нет изделий в составе."
+            [showOrdinalColumn]="true"
+            [columns]="tradeGoodViewCompositionColumns"
+            [rows]="tradeGoodViewCompositionRows()"
+          />
+        </section>
+      </div>
+    } @else {
+      <p class="productSpecView__empty" role="status">Нет данных для просмотра.</p>
+    }
+  } @else {
+    <form id="trade-goods-form" [formGroup]="tradeGoodsForm" (ngSubmit)="submitTradeGoods()" class="formGrid">
+      <fieldset class="dictionaryFormSection">
+        <legend>Товар</legend>
+        <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
+          <app-ui-form-field label="Артикул">
+            <input type="text" formControlName="code" placeholder="Необязательно, уникально" />
+          </app-ui-form-field>
+          <app-ui-form-field label="Наименование" [required]="true">
+            <input type="text" formControlName="name" placeholder="Напр. Комплект А-1" />
+          </app-ui-form-field>
+          <app-ui-form-field label="Описание (витрина / КП)" [wide]="true">
+            <textarea
+              rows="2"
+              formControlName="description"
+              placeholder="Текст для клиента; внутренние пометки — в «Заметки»"
+            ></textarea>
+          </app-ui-form-field>
+          <app-ui-form-field label="Цена, ₽">
+            <input type="number" formControlName="priceRub" step="any" />
+          </app-ui-form-field>
+          <app-ui-form-field label="Себестоимость, ₽">
+            <input type="number" formControlName="costRub" step="any" />
+          </app-ui-form-field>
+          <app-ui-form-field label="Заметки (внутренние)" [wide]="true">
+            <textarea rows="2" formControlName="notes"></textarea>
+          </app-ui-form-field>
+          <app-ui-checkbox-field class="checkbox" label="Активен" formControlName="isActive"></app-ui-checkbox-field>
+          <div class="dictionaryFieldRowFull">
+            <app-ui-button type="button" variant="soft" (clicked)="recalcTradeGoodPriceDefaults()">
+              Подставить сумму по изделиям (цена и себестоимость)
+            </app-ui-button>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="dictionaryFormSection">
+        <legend>Состав: одно или несколько изделий</legend>
+        <p class="muted dictionaryFieldRowFull">
+          В каждой строке выберите изделие и количество. Цена и себестоимость можно пересчитать по сумме позиций.
+        </p>
+        <div formArrayName="lines">
+          @for (line of tradeGoodLinesFormArray.controls; track $index; let i = $index) {
+            <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2 productLineRow" [formGroupName]="i">
+              <app-ui-form-field label="Изделие" [required]="true">
+                <div class="colorRefRow">
+                  <select formControlName="productId" (change)="recalcTradeGoodPriceDefaults()">
+                    <option value="">— выберите изделие —</option>
+                    @for (p of productsStore.items(); track p.id) {
+                      @if (p.isActive) {
+                        <option [value]="p.id">{{ p.code?.trim() ? p.code + ' — ' + p.name : p.name }}</option>
+                      }
+                    }
+                  </select>
+                  @if (permissions.crud().canCreate) {
+                    <app-ui-button
+                      type="button"
+                      [square]="true"
+                      ariaLabel="Новое изделие"
+                      title="Создать изделие (отдельная страница)"
+                      (clicked)="navigateToStandaloneDictionaryCreate('products')"
+                    >
+                      <span class="squareIconTone squareIconTone--affirm"><svg lucidePlus [size]="18"></svg></span>
+                    </app-ui-button>
+                  }
+                </div>
+              </app-ui-form-field>
+              <app-ui-form-field label="Количество" [required]="true">
+                <input
+                  type="number"
+                  formControlName="qty"
+                  min="0.0001"
+                  step="any"
+                  (change)="recalcTradeGoodPriceDefaults()"
+                />
+              </app-ui-form-field>
+              <div class="dictionaryFieldRowFull productLineRowActions">
+                <app-ui-button type="button" variant="soft" (clicked)="removeTradeGoodLine(i)">Удалить строку</app-ui-button>
+              </div>
+            </div>
+          }
+        </div>
+        <div class="dictionaryFieldRowFull">
+          <app-ui-button type="button" variant="soft" (clicked)="addTradeGoodLine()">+ Добавить изделие в состав</app-ui-button>
+        </div>
+      </fieldset>
+    </form>
+  }
+</ng-template>
+
+<ng-template #tradeGoodsActionsTpl>
+  <app-ui-modal-form-actions
+    [viewMode]="isTradeGoodsViewMode()"
+    [formId]="'trade-goods-form'"
+    [submitLabel]="tradeGoodsStore.isEditMode() ? 'Сохранить изменения' : 'Создать товар'"
+    (dismiss)="closeTradeGoodsModal()"
   />
 </ng-template>
 
@@ -3097,6 +3457,289 @@
     [formId]="'geometries-form'"
     [submitLabel]="geometriesStore.isEditMode() ? 'Сохранить изменения' : 'Создать геометрию'"
     (dismiss)="closeGeometriesModal()"
+  />
+</ng-template>
+
+<ui-modal
+  *ngIf="isCatalogComplexModalOpen()"
+  [title]="
+    isCatalogComplexViewMode()
+      ? 'Просмотр — Комплекс'
+      : complexesStore.isEditMode()
+        ? 'Редактирование комплекса'
+        : 'Новый комплекс'
+  "
+  [content]="catalogComplexContentTpl"
+  [actions]="catalogComplexActionsTpl"
+  (close)="closeCatalogComplexModal()"
+  [closeOnBackdrop]="isCatalogComplexViewMode()"
+  size="md"
+></ui-modal>
+
+<ng-template #catalogComplexContentTpl>
+  @if (isCatalogComplexViewMode()) {
+    <app-dictionary-preview-card-no-photo
+      ariaLabel="Карточка комплекса"
+      [accentColor]="'#3b5bdb'"
+      [title]="catalogComplexForm.controls.name.value"
+      [code]="catalogComplexForm.controls.code.value"
+      [isActive]="catalogComplexForm.controls.isActive.value"
+    >
+      @if (catalogComplexForm.controls.description.value.trim()) {
+        <section class="dictionaryPreviewCard__notes">
+          <h3 class="dictionaryPreviewCard__panelTitle">Описание</h3>
+          <p class="dictionaryPreviewCard__notesText">{{ catalogComplexForm.controls.description.value }}</p>
+        </section>
+      }
+    </app-dictionary-preview-card-no-photo>
+  } @else {
+    <form
+      id="catalog-complex-form"
+      [formGroup]="catalogComplexForm"
+      (ngSubmit)="submitCatalogComplex()"
+      class="formGrid"
+    >
+      <fieldset class="dictionaryFormSection">
+        <legend>Комплекс</legend>
+        <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
+          <app-ui-form-field
+            label="Название"
+            [required]="true"
+            [invalid]="isCatalogComplexInvalid('name')"
+            [errorText]="isCatalogComplexInvalid('name') ? 'Введите название' : ''"
+          >
+            <input type="text" formControlName="name" />
+          </app-ui-form-field>
+
+          <app-ui-form-field label="Код">
+            <input type="text" formControlName="code" />
+          </app-ui-form-field>
+        </div>
+        <div class="dictionaryFormSectionBody">
+          <app-ui-form-field label="Описание" [wide]="true">
+            <textarea rows="2" formControlName="description"></textarea>
+          </app-ui-form-field>
+
+          <app-ui-checkbox-field class="checkbox" label="Активен" formControlName="isActive"></app-ui-checkbox-field>
+        </div>
+      </fieldset>
+    </form>
+  }
+</ng-template>
+
+<ng-template #catalogComplexActionsTpl>
+  <app-ui-modal-form-actions
+    [viewMode]="isCatalogComplexViewMode()"
+    [formId]="'catalog-complex-form'"
+    [submitLabel]="complexesStore.isEditMode() ? 'Сохранить изменения' : 'Создать комплекс'"
+    (dismiss)="closeCatalogComplexModal()"
+  />
+</ng-template>
+
+<ui-modal
+  *ngIf="isCatalogProductModalOpen()"
+  [title]="
+    isCatalogProductViewMode()
+      ? 'Просмотр — Каталожный товар'
+      : catalogProductsStore.isEditMode()
+        ? 'Редактирование каталожного товара'
+        : 'Новый каталожный товар'
+  "
+  [content]="catalogProductContentTpl"
+  [actions]="catalogProductActionsTpl"
+  (close)="closeCatalogProductModal()"
+  [closeOnBackdrop]="isCatalogProductViewMode()"
+  size="md"
+></ui-modal>
+
+<ng-template #catalogProductContentTpl>
+  @if (isCatalogProductViewMode()) {
+    <div class="dictionaryFormSection">
+      <p><strong>{{ catalogProductForm.controls.name.value }}</strong></p>
+      <p>Комплекс: {{ catalogProductComplexViewLabel() }}</p>
+      @if (catalogProductForm.controls.code.value.trim()) {
+        <p>Код: {{ catalogProductForm.controls.code.value }}</p>
+      }
+      <p>Цена: {{ catalogProductForm.controls.price.value }} ₽</p>
+      @if (catalogProductForm.controls.description.value.trim()) {
+        <p>Описание: {{ catalogProductForm.controls.description.value }}</p>
+      }
+      <p>Активен: {{ catalogProductForm.controls.isActive.value ? 'Да' : 'Нет' }}</p>
+    </div>
+  } @else {
+    <form
+      id="catalog-product-form"
+      [formGroup]="catalogProductForm"
+      (ngSubmit)="submitCatalogProduct()"
+      class="formGrid"
+    >
+      <fieldset class="dictionaryFormSection">
+        <legend>Товар</legend>
+        <div class="dictionaryFormSectionBody">
+          <app-ui-form-field
+            label="Комплекс"
+            [required]="true"
+            [invalid]="isCatalogProductInvalid('complexId')"
+            [errorText]="isCatalogProductInvalid('complexId') ? 'Выберите комплекс' : ''"
+          >
+            <select formControlName="complexId">
+              <option value="">— выберите —</option>
+              @for (opt of complexesStore.options(); track opt.id) {
+                <option [value]="opt.id">{{ opt.label }}</option>
+              }
+            </select>
+          </app-ui-form-field>
+        </div>
+        <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
+          <app-ui-form-field
+            label="Наименование"
+            [required]="true"
+            [invalid]="isCatalogProductInvalid('name')"
+            [errorText]="isCatalogProductInvalid('name') ? 'Введите наименование' : ''"
+          >
+            <input type="text" formControlName="name" />
+          </app-ui-form-field>
+
+          <app-ui-form-field label="Код">
+            <input type="text" formControlName="code" />
+          </app-ui-form-field>
+        </div>
+        <div class="dictionaryFormSectionBody">
+          <app-ui-form-field label="Описание" [wide]="true">
+            <textarea rows="2" formControlName="description"></textarea>
+          </app-ui-form-field>
+
+          <app-ui-form-field
+            label="Цена, ₽"
+            [required]="true"
+            [invalid]="isCatalogProductInvalid('price')"
+            [errorText]="isCatalogProductInvalid('price') ? 'Укажите неотрицательную цену' : ''"
+          >
+            <input type="number" formControlName="price" min="0" step="0.01" />
+          </app-ui-form-field>
+
+          <app-ui-checkbox-field class="checkbox" label="Активен" formControlName="isActive"></app-ui-checkbox-field>
+        </div>
+      </fieldset>
+    </form>
+  }
+</ng-template>
+
+<ng-template #catalogProductActionsTpl>
+  <app-ui-modal-form-actions
+    [viewMode]="isCatalogProductViewMode()"
+    [formId]="'catalog-product-form'"
+    [submitLabel]="catalogProductsStore.isEditMode() ? 'Сохранить изменения' : 'Создать товар'"
+    (dismiss)="closeCatalogProductModal()"
+  />
+</ng-template>
+
+<ui-modal
+  *ngIf="isCatalogArticleModalOpen()"
+  [title]="
+    isCatalogArticleViewMode()
+      ? 'Просмотр — Позиция каталога'
+      : catalogArticlesStore.isEditMode()
+        ? 'Редактирование позиции'
+        : 'Новая позиция каталога'
+  "
+  [content]="catalogArticleContentTpl"
+  [actions]="catalogArticleActionsTpl"
+  (close)="closeCatalogArticleModal()"
+  [closeOnBackdrop]="isCatalogArticleViewMode()"
+  size="md"
+></ui-modal>
+
+<ng-template #catalogArticleContentTpl>
+  @if (isCatalogArticleViewMode()) {
+    <div class="dictionaryFormSection">
+      <p><strong>{{ catalogArticleForm.controls.name.value }}</strong></p>
+      <p>Товар: {{ catalogArticleProductViewLabel() }}</p>
+      @if (catalogArticleForm.controls.code.value.trim()) {
+        <p>Код: {{ catalogArticleForm.controls.code.value }}</p>
+      }
+      <p>Количество: {{ catalogArticleForm.controls.qty.value }}</p>
+      <p>Порядок сортировки: {{ catalogArticleForm.controls.sortOrder.value }}</p>
+      @if (catalogArticleForm.controls.description.value.trim()) {
+        <p>Описание: {{ catalogArticleForm.controls.description.value }}</p>
+      }
+      <p>Активна: {{ catalogArticleForm.controls.isActive.value ? 'Да' : 'Нет' }}</p>
+    </div>
+  } @else {
+    <form
+      id="catalog-article-form"
+      [formGroup]="catalogArticleForm"
+      (ngSubmit)="submitCatalogArticle()"
+      class="formGrid"
+    >
+      <fieldset class="dictionaryFormSection">
+        <legend>Позиция</legend>
+        <div class="dictionaryFormSectionBody">
+          <app-ui-form-field
+            label="Каталожный товар"
+            [required]="true"
+            [invalid]="isCatalogArticleInvalid('productId')"
+            [errorText]="isCatalogArticleInvalid('productId') ? 'Выберите товар' : ''"
+          >
+            <select formControlName="productId">
+              <option value="">— выберите —</option>
+              @for (opt of catalogProductsStore.options(); track opt.id) {
+                <option [value]="opt.id">{{ opt.label }}</option>
+              }
+            </select>
+          </app-ui-form-field>
+        </div>
+        <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
+          <app-ui-form-field
+            label="Наименование"
+            [required]="true"
+            [invalid]="isCatalogArticleInvalid('name')"
+            [errorText]="isCatalogArticleInvalid('name') ? 'Введите наименование' : ''"
+          >
+            <input type="text" formControlName="name" />
+          </app-ui-form-field>
+
+          <app-ui-form-field label="Код">
+            <input type="text" formControlName="code" />
+          </app-ui-form-field>
+        </div>
+        <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
+          <app-ui-form-field
+            label="Количество"
+            [required]="true"
+            [invalid]="isCatalogArticleInvalid('qty')"
+            [errorText]="isCatalogArticleInvalid('qty') ? 'Минимум 1' : ''"
+          >
+            <input type="number" formControlName="qty" min="1" step="1" />
+          </app-ui-form-field>
+
+          <app-ui-form-field
+            label="Порядок"
+            [required]="true"
+            [invalid]="isCatalogArticleInvalid('sortOrder')"
+            [errorText]="isCatalogArticleInvalid('sortOrder') ? 'Неотрицательное число' : ''"
+          >
+            <input type="number" formControlName="sortOrder" min="0" step="1" />
+          </app-ui-form-field>
+        </div>
+        <div class="dictionaryFormSectionBody">
+          <app-ui-form-field label="Описание" [wide]="true">
+            <textarea rows="2" formControlName="description"></textarea>
+          </app-ui-form-field>
+
+          <app-ui-checkbox-field class="checkbox" label="Активна" formControlName="isActive"></app-ui-checkbox-field>
+        </div>
+      </fieldset>
+    </form>
+  }
+</ng-template>
+
+<ng-template #catalogArticleActionsTpl>
+  <app-ui-modal-form-actions
+    [viewMode]="isCatalogArticleViewMode()"
+    [formId]="'catalog-article-form'"
+    [submitLabel]="catalogArticlesStore.isEditMode() ? 'Сохранить изменения' : 'Создать позицию'"
+    (dismiss)="closeCatalogArticleModal()"
   />
 </ng-template>
 

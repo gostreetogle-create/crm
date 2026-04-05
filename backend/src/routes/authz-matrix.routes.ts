@@ -1,7 +1,10 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
-import { sanitizeAuthzMatrixPayload } from '../lib/authz-matrix-sanitize.js';
+import {
+  augmentAuthzMatrixImplicitHubKeys,
+  sanitizeAuthzMatrixPayload,
+} from '../lib/authz-matrix-sanitize.js';
 import { collectAuthzDiagnostics } from '../lib/authz-diagnostics.js';
 
 const SETTING_KEY = 'authz_matrix';
@@ -31,7 +34,9 @@ authzMatrixReadRouter.get('/', async (_req, res, next) => {
     const known = new Set(roleRows.map((r) => r.id));
     const matrix = raw as Record<string, string[]>;
     const sanitized = sanitizeAuthzMatrixPayload(matrix, known);
-    const out = Object.keys(sanitized).length > 0 ? sanitized : null;
+    const augmented =
+      Object.keys(sanitized).length > 0 ? augmentAuthzMatrixImplicitHubKeys(sanitized) : sanitized;
+    const out = Object.keys(augmented).length > 0 ? augmented : null;
     res.json({ matrix: out });
   } catch (e) {
     next(e);

@@ -1,4 +1,4 @@
-<div class="appHeaderShell">
+<div class="appHeaderShell" #shell>
   @if (permissions.matrixSyncError(); as matrixErr) {
     <div class="matrixSyncBanner" role="alert">
       <span class="matrixSyncBannerText">Не удалось обновить матрицу прав с сервера. {{ matrixErr }}</span>

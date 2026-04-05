@@ -37,3 +37,5 @@ docker compose -f deploy\docker-compose.yml --env-file deploy\.env up -d
 ```
 BACKUP_DATABASE_URL=postgresql://crm:ВАШ_ПАРОЛЬ@postgres:5432/crm
 ```
+
+Строка **без кавычек**. После правки `deploy/.env` пересоздай backend: `docker compose --env-file deploy/.env up -d --force-recreate backend`. Если в логах всё ещё `localhost` — переменная не попала в контейнер (или API крутится не в Docker — тогда тот же ключ нужен в `backend/.env` с хостом `localhost`).

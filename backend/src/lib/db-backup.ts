@@ -171,39 +171,99 @@ function newBackupFileName(): string {
 }
 
 /**
- * URL подключения для `pg_dump` и `pg_restore`.
+ * Значение DSN из `.env`: убираем пробелы, CR (Windows), внешние кавычки — иначе переменная
+ * «кажется» заданной в файле, но в `process.env` пустая или с мусором, и срабатывает fallback на
+ * `DATABASE_URL` с `localhost`.
+ */
+function normalizeEnvConnectionString(v: string | undefined): string | undefined {
+  if (v === undefined) return undefined;
+  let s = v.trim().replace(/\r/g, "");
+  if (!s) return undefined;
+  if (
+    (s.startsWith('"') && s.endsWith('"')) ||
+    (s.startsWith("'") && s.endsWith("'"))
+  ) {
+    s = s.slice(1, -1).trim();
+  }
+  return s || undefined;
+}
+
+function pgUrlHostPortForLog(url: string): string {
+  try {
+    const u = new URL(url);
+    const port = u.port || "5432";
+    return `${u.hostname}:${port}`;
+  } catch {
+    return "(разбор URL не удался)";
+  }
+}
+
+/**
+ * Источник строки подключения для `pg_dump` / `pg_restore` (всегда через {@link resolvePgToolsConnection}).
  *
  * Prisma в `DATABASE_URL` часто добавляет `?schema=public`. Утилиты libpq не понимают этот
  * query-параметр и падают с: invalid URI query parameter: "schema".
  *
  * Приоритет:
- * 1. `BACKUP_DATABASE_URL` — задайте тот же DSN, что и для приложения, но **без** `?schema=...`
- *    (и без других query-параметров, если pg их не принимает).
- * 2. Иначе берётся `DATABASE_URL`, из которого отрезается всё начиная с первого `?`.
- *
- * При использовании п.2 при **первом** вызове пишется одно предупреждение в stderr (чтобы в логах
- * было видно, что задействован fallback, а не явный `BACKUP_DATABASE_URL`).
+ * 1. `BACKUP_DATABASE_URL` — тот же DSN, что и для приложения, но **без** `?schema=...`.
+ *    Должен попасть в **процесс Node** (`backend/.env` при `npm run dev`; в Docker — `deploy/.env` + compose + пересоздание `backend`).
+ * 2. Иначе `DATABASE_URL` без части после первого `?`.
  */
-/** Один раз за жизнь процесса: предупредить о fallback без BACKUP_DATABASE_URL. */
-let warnedBackupDatabaseUrlFallback = false;
+export type PgToolsConnectionSource = "BACKUP_DATABASE_URL" | "DATABASE_URL";
 
-function connectionUrlForPgTools(): string {
-  const backupUrl = process.env.BACKUP_DATABASE_URL?.trim();
+export type PgToolsConnectionInfo = {
+  /** Строка для передачи в pg_dump / pg_restore (без query-параметров Prisma). */
+  url: string;
+  source: PgToolsConnectionSource;
+  /** hostname:port для логов и API (без пользователя и пароля). */
+  hostPort: string;
+};
+
+/** Единая точка выбора DSN для всех вызовов libpq в этом модуле. */
+export function resolvePgToolsConnection(): PgToolsConnectionInfo {
+  const backupUrl = normalizeEnvConnectionString(process.env.BACKUP_DATABASE_URL);
   if (backupUrl) {
-    return backupUrl;
+    return {
+      url: backupUrl,
+      source: "BACKUP_DATABASE_URL",
+      hostPort: pgUrlHostPortForLog(backupUrl),
+    };
   }
-  const dbUrl = process.env.DATABASE_URL?.trim();
+  const dbUrl = normalizeEnvConnectionString(process.env.DATABASE_URL);
   if (!dbUrl) {
     throw new Error("DATABASE_URL is not set");
   }
-  if (!warnedBackupDatabaseUrlFallback) {
-    warnedBackupDatabaseUrlFallback = true;
-    console.warn(
-      "BACKUP_DATABASE_URL не задан. Используем DATABASE_URL без параметров schema.",
+  const q = dbUrl.indexOf("?");
+  const stripped = q >= 0 ? dbUrl.slice(0, q) : dbUrl;
+  return {
+    url: stripped,
+    source: "DATABASE_URL",
+    hostPort: pgUrlHostPortForLog(stripped),
+  };
+}
+
+/** Один раз за жизнь процесса: предупредить о fallback без BACKUP_DATABASE_URL. */
+let warnedBackupDatabaseUrlFallback = false;
+/** Один раз: сводка DSN для pg_dump при первом обращении. */
+let loggedPgToolsConnectionTarget = false;
+
+function connectionUrlForPgTools(): string {
+  const c = resolvePgToolsConnection();
+  if (!loggedPgToolsConnectionTarget) {
+    loggedPgToolsConnectionTarget = true;
+    if (c.source === "DATABASE_URL") {
+      if (!warnedBackupDatabaseUrlFallback) {
+        warnedBackupDatabaseUrlFallback = true;
+        console.warn(
+          "BACKUP_DATABASE_URL не задан. Используем DATABASE_URL без параметров schema.",
+        );
+      }
+    }
+    console.info(
+      `[db-backup] pg_dump: используется ${c.source} → ${c.hostPort}`,
     );
   }
-  const q = dbUrl.indexOf("?");
-  return q >= 0 ? dbUrl.slice(0, q) : dbUrl;
+  return c.url;
 }
 
 let backupJobRunning = false;
@@ -246,22 +306,26 @@ export async function createBackupDump(): Promise<{ fileName: string; sizeBytes:
   return { fileName, sizeBytes: st.size };
 }
 
-export async function restoreFromDump(fileName: string): Promise<void> {
+export async function restoreFromDump(fileName: string): Promise<PgToolsConnectionInfo> {
   if (!BACKUP_FILE_RE.test(fileName)) {
     throw new Error("invalid_file");
   }
   const full = path.join(config.backupDir, fileName);
   await fs.access(full);
-  const url = connectionUrlForPgTools();
+  const c = resolvePgToolsConnection();
+  console.info(
+    `[db-backup] pg_restore: источник DSN ${c.source} → целевой сервер ${c.hostPort}, файл ${fileName}`,
+  );
   const { code, stderr } = await runCmd(
     "pg_restore",
-    ["--clean", "--if-exists", "--no-owner", "--no-privileges", "-d", url, full],
+    ["--clean", "--if-exists", "--no-owner", "--no-privileges", "-d", c.url, full],
     { ...process.env },
   );
   // pg_restore: 0 — ок, 1 — предупреждения (часто при --clean), 2 — фатальная ошибка
   if (code !== 0 && code !== 1) {
     throw new DbBackupCommandError(stderr || "pg_restore failed");
   }
+  return c;
 }
 
 export async function deleteBackupFile(fileName: string): Promise<void> {

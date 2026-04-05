@@ -23,6 +23,9 @@ export class DbBackupsAdminCardComponent implements OnInit {
   readonly saving = signal(false);
   readonly jobBusy = signal(false);
   readonly errorText = signal<string | null>(null);
+  /** Сообщение после restore: зелёный баннер при авто‑переподключении Prisma, предупреждение — если нужен ручной перезапуск. */
+  readonly restoreFeedbackText = signal<string | null>(null);
+  readonly restoreFeedbackIsWarning = signal(false);
 
   readonly scheduleEnabled = signal(false);
   readonly scheduleTime = signal('03:00');
@@ -72,6 +75,8 @@ export class DbBackupsAdminCardComponent implements OnInit {
   saveSchedule(): void {
     this.saving.set(true);
     this.errorText.set(null);
+    this.restoreFeedbackText.set(null);
+    this.restoreFeedbackIsWarning.set(false);
     this.api
       .putSchedule({
         enabled: this.scheduleEnabled(),
@@ -99,6 +104,8 @@ export class DbBackupsAdminCardComponent implements OnInit {
   createNow(): void {
     this.jobBusy.set(true);
     this.errorText.set(null);
+    this.restoreFeedbackText.set(null);
+    this.restoreFeedbackIsWarning.set(false);
     this.api
       .createNow()
       .pipe(finalize(() => this.jobBusy.set(false)))
@@ -138,6 +145,8 @@ export class DbBackupsAdminCardComponent implements OnInit {
       .subscribe({
         next: () => {
           this.closeDeleteModal();
+          this.restoreFeedbackText.set(null);
+          this.restoreFeedbackIsWarning.set(false);
           this.reload();
         },
         error: () => this.errorText.set('Не удалось удалить архив.'),
@@ -157,15 +166,16 @@ export class DbBackupsAdminCardComponent implements OnInit {
     if (!row) return;
     this.jobBusy.set(true);
     this.errorText.set(null);
+    this.restoreFeedbackText.set(null);
+    this.restoreFeedbackIsWarning.set(false);
     this.api
       .restore(row.fileName)
       .pipe(finalize(() => this.jobBusy.set(false)))
       .subscribe({
-        next: () => {
+        next: (r) => {
           this.closeRestoreModal();
-          this.errorText.set(
-            'Восстановление выполнено. При необходимости перезапустите backend, чтобы сбросить пул соединений к БД.',
-          );
+          this.restoreFeedbackText.set(r.userMessage);
+          this.restoreFeedbackIsWarning.set(!r.prismaPoolRefreshed);
         },
         error: (err) => {
           if (err instanceof HttpErrorResponse && err.status === 409) {

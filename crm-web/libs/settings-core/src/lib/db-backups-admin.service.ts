@@ -26,6 +26,16 @@ export type DbBackupCreateResponse = {
   sizeBytes: number;
 };
 
+export type DbBackupRestoreResponse = {
+  ok: true;
+  pgToolsSource: string;
+  pgToolsHostPort: string;
+  prismaPoolRefreshed: boolean;
+  prismaPoolRefreshError?: string;
+  manualRestartCommand?: string;
+  userMessage: string;
+};
+
 @Injectable({ providedIn: 'root' })
 export class DbBackupsAdminService {
   private readonly http = inject(HttpClient);
@@ -61,9 +71,9 @@ export class DbBackupsAdminService {
     return this.http.delete<void>(`${this.base()}/${enc}`);
   }
 
-  restore(fileName: string): Observable<{ ok: boolean }> {
+  restore(fileName: string): Observable<DbBackupRestoreResponse> {
     const enc = encodeURIComponent(fileName);
-    return this.http.post<{ ok: boolean }>(`${this.base()}/${enc}/restore`, {});
+    return this.http.post<DbBackupRestoreResponse>(`${this.base()}/${enc}/restore`, {});
   }
 
   downloadBlob(fileName: string): Observable<Blob> {

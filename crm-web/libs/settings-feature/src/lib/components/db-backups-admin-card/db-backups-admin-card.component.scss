@@ -12,6 +12,24 @@
   color: var(--text-primary);
 }
 
+.successBanner {
+  margin: 0 0 var(--ui-space-3);
+  padding: var(--ui-space-2) var(--ui-space-3);
+  border-radius: var(--radius-md, 8px);
+  background: color-mix(in srgb, var(--success, #2e7d32) 14%, transparent);
+  color: var(--text-primary);
+  white-space: pre-line;
+}
+
+.warningBanner {
+  margin: 0 0 var(--ui-space-3);
+  padding: var(--ui-space-2) var(--ui-space-3);
+  border-radius: var(--radius-md, 8px);
+  background: color-mix(in srgb, var(--warning, #f9a825) 18%, transparent);
+  color: var(--text-primary);
+  white-space: pre-line;
+}
+
 .section {
   margin-top: var(--ui-space-4);
 }

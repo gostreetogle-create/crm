@@ -1,0 +1,15 @@
+---
+description: Прод-деплой на VPS, deploy.sh, выкладка на сервер, push в GitHub для production, prebuilt-web, обновление сайта
+alwaysApply: false
+---
+
+# Прод: фронт на VPS
+
+Если пользователь говорит о **деплое на сервер**, **`./deploy.sh`**, **push на прод**, **обновлении сайта на VPS** — **обязательно** напомнить (кратко, по шагам):
+
+1. **`git push`** переносит только код; **`deploy/prebuilt-web/`** в репозиторий **не входит**.
+2. **Локально** пересобрать фронт: `cd crm-web` → `node scripts/sync-canonical-roles.cjs` → `npx nx run crm-web:build:production`.
+3. Выкладка статики на сервер **отдельно от git**: либо **`deploy/prebuilt-web.zip`** в каталог **`deploy/`** (собрать: `deploy/scripts/pack-prebuilt-web.ps1` / `pack-prebuilt-web.sh`; `deploy.sh` распакует сам), либо содержимое `browser/` в **`deploy/prebuilt-web/`**.
+4. На сервере — **`./deploy.sh`** (после при необходимости `git pull`).
+
+Полный чеклист и примеры команд: **`deploy/README.md`** (начало файла).

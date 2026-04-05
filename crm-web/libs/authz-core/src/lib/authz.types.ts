@@ -23,6 +23,8 @@ export type PermissionKey =
   | 'dict.hub.kp_photos'
   | 'dict.hub.production_details'
   | 'dict.hub.products'
+  | 'dict.hub.trade_goods'
+  | 'dict.hub.catalog_suite'
   | 'crud.create'
   | 'crud.edit'
   | 'crud.delete'

@@ -6,6 +6,15 @@
   @if (errorText()) {
     <p class="errorBanner" role="alert">{{ errorText() }}</p>
   }
+  @if (restoreFeedbackText(); as fb) {
+    <p
+      [class.successBanner]="!restoreFeedbackIsWarning()"
+      [class.warningBanner]="restoreFeedbackIsWarning()"
+      [attr.role]="restoreFeedbackIsWarning() ? 'alert' : 'status'"
+    >
+      {{ fb }}
+    </p>
+  }
 
   <section class="section" aria-labelledby="db-backup-schedule-title">
     <h3 class="sectionTitle" id="db-backup-schedule-title">Расписание</h3>

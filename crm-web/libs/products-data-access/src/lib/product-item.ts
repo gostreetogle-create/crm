@@ -18,7 +18,9 @@ export type ProductLineDto = {
 
 export type ProductItem = {
   id: string;
+  code: string | null;
   name: string;
+  description: string | null;
   priceRub: number | null;
   costRub: number | null;
   notes: string | null;
@@ -38,7 +40,9 @@ export type ProductCompositionLineListItem = {
 /** Элемент списка изделий: сводки по строкам состава для таблицы хаба. */
 export type ProductListItem = {
   id: string;
+  code: string | null;
   name: string;
+  description: string | null;
   priceRub: number | null;
   costRub: number | null;
   notes: string | null;
@@ -65,7 +69,9 @@ export type ProductLineInput = {
 };
 
 export type ProductItemInput = {
+  code: string | null;
   name: string;
+  description: string | null;
   priceRub: number | null;
   costRub: number | null;
   notes: string | null;

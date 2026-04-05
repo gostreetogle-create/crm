@@ -79,7 +79,7 @@
 - [ ] lint-проверка измененных файлов без новых ошибок
 - [ ] Документация обновлена:
   - [ ] `docs/frontend/dictionaries-crud-playbook.md` (если менялись общие правила)
-  - [ ] feature-doc для нового справочника (примеры: `docs/frontend/work-types-crud.md`, `docs/frontend/geometries-crud.md`)
+  - [ ] feature-doc для нового справочника (примеры: `docs/frontend/work-types-crud.md`, `docs/frontend/geometries-crud.md`; каталог комплексов: `docs/frontend/catalog-suite-dictionary.md`)
   - [ ] при временных отклонениях: `docs/frontend/temporary-deviations-log.md`
 - [ ] Пройден `docs/frontend/pr-checklist.md`
 

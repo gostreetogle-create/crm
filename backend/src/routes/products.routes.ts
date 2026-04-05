@@ -16,7 +16,9 @@ const LineInputSchema = z.object({
 });
 
 const InputSchema = z.object({
+  code: nullableString,
   name: z.string().trim().min(1),
+  description: nullableString,
   priceRub: nullableNumber,
   costRub: nullableNumber,
   notes: nullableString,
@@ -135,7 +137,7 @@ function uniqueSemicolonSummary(parts: string[]): string {
 
 productsRouter.get("/", async (_req, res, next) => {
   try {
-    const list = await prisma.product.findMany({
+    const list = await prisma.manufacturedProduct.findMany({
       orderBy: { name: "asc" },
       include: {
         lines: {
@@ -159,7 +161,9 @@ productsRouter.get("/", async (_req, res, next) => {
         }));
         return {
           id: p.id,
+          code: p.code,
           name: p.name,
+          description: p.description,
           priceRub: p.priceRub,
           costRub: p.costRub,
           notes: p.notes,
@@ -186,7 +190,7 @@ productsRouter.get("/:id", async (req, res, next) => {
       res.status(400).json({ error: "missing_id" });
       return;
     }
-    const row = await prisma.product.findUnique({
+    const row = await prisma.manufacturedProduct.findUnique({
       where: { id },
       include: {
         lines: {
@@ -207,7 +211,9 @@ productsRouter.get("/:id", async (req, res, next) => {
 
 function mapProduct(row: {
   id: string;
+  code: string | null;
   name: string;
+  description: string | null;
   priceRub: number | null;
   costRub: number | null;
   notes: string | null;
@@ -233,7 +239,9 @@ function mapProduct(row: {
 }) {
   return {
     id: row.id,
+    code: row.code,
     name: row.name,
+    description: row.description,
     priceRub: row.priceRub,
     costRub: row.costRub,
     notes: row.notes,
@@ -267,9 +275,11 @@ productsRouter.post("/", async (req, res, next) => {
     const costRub = numOrNull(p.costRub) ?? defaultSum;
 
     const created = await prisma.$transaction(async (tx) => {
-      const product = await tx.product.create({
+      const product = await tx.manufacturedProduct.create({
         data: {
+          code: strOrNull(p.code),
           name: p.name.trim(),
+          description: strOrNull(p.description),
           priceRub,
           costRub,
           notes: strOrNull(p.notes),
@@ -316,10 +326,12 @@ productsRouter.put("/:id", async (req, res, next) => {
 
     const updated = await prisma.$transaction(async (tx) => {
       await tx.productLine.deleteMany({ where: { productId: id } });
-      return tx.product.update({
+      return tx.manufacturedProduct.update({
         where: { id },
         data: {
+          code: strOrNull(p.code),
           name: p.name.trim(),
+          description: strOrNull(p.description),
           priceRub,
           costRub,
           notes: strOrNull(p.notes),
@@ -352,7 +364,7 @@ productsRouter.delete("/:id", async (req, res, next) => {
       res.status(400).json({ error: "missing_id" });
       return;
     }
-    await prisma.product.delete({ where: { id } });
+    await prisma.manufacturedProduct.delete({ where: { id } });
     res.status(204).send();
   } catch (e) {
     next(e);

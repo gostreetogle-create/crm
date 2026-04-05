@@ -1,5 +1,16 @@
+import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { Component, DestroyRef, inject, signal } from '@angular/core';
+import {
+  AfterViewInit,
+  Component,
+  DestroyRef,
+  ElementRef,
+  OnDestroy,
+  PLATFORM_ID,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { LucideSettings } from '@lucide/angular';
@@ -16,13 +27,17 @@ import { catchError, map, of, switchMap, timer, timeout } from 'rxjs';
   templateUrl: './app-header.component.html',
   styleUrl: './app-header.component.scss',
 })
-export class AppHeaderComponent {
+export class AppHeaderComponent implements AfterViewInit, OnDestroy {
   private readonly session = inject(SessionAuthService);
   private readonly router = inject(Router);
   private readonly http = inject(HttpClient);
   private readonly api = inject(API_CONFIG);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly platformId = inject(PLATFORM_ID);
   readonly permissions = inject(PermissionsService);
+
+  private readonly shellRef = viewChild.required<ElementRef<HTMLElement>>('shell');
+  private resizeObserver: ResizeObserver | null = null;
 
   /** `true` — ответил `/api/health`; иначе недоступен или ещё не проверяли. */
   readonly serverOnline = signal<boolean | null>(null);
@@ -46,6 +61,25 @@ export class AppHeaderComponent {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe((ok) => this.serverOnline.set(ok));
+  }
+
+  ngAfterViewInit(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    const el = this.shellRef().nativeElement;
+    const root = document.documentElement;
+    const sync = () => {
+      const h = el.getBoundingClientRect().height;
+      root.style.setProperty('--header-height', `${Math.ceil(h)}px`);
+    };
+    sync();
+    this.resizeObserver = new ResizeObserver(() => sync());
+    this.resizeObserver.observe(el);
+  }
+
+  ngOnDestroy(): void {
+    this.resizeObserver?.disconnect();
+    this.resizeObserver = null;
+    document.documentElement.style.removeProperty('--header-height');
   }
 
   private healthUrl(): string {

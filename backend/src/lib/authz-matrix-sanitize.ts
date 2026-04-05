@@ -19,3 +19,38 @@ export function sanitizeAuthzMatrixPayload(
   }
   return out;
 }
+
+const PAGE_DICTIONARIES = 'page.dictionaries';
+const HUB_PRODUCTS = 'dict.hub.products';
+const HUB_TRADE_GOODS = 'dict.hub.trade_goods';
+const HUB_CATALOG_SUITE = 'dict.hub.catalog_suite';
+
+/**
+ * Матрица в БД могла быть сохранена до появления новых ключей `dict.hub.*`.
+ * — «Изделия» → добавить «Товары» (TradeGood).
+ * — «Товары» → добавить «Комплексы и каталог» (complexes / catalog-products / catalog-articles).
+ */
+export function augmentAuthzMatrixImplicitHubKeys(matrix: Record<string, string[]>): Record<string, string[]> {
+  const out: Record<string, string[]> = {};
+  for (const [roleId, keys] of Object.entries(matrix)) {
+    let next = [...keys];
+    if (
+      next.includes(PAGE_DICTIONARIES) &&
+      next.includes(HUB_PRODUCTS) &&
+      !next.includes(HUB_TRADE_GOODS) &&
+      AUTHZ_PERMISSION_KEY_SET.has(HUB_TRADE_GOODS)
+    ) {
+      next = [...next, HUB_TRADE_GOODS];
+    }
+    if (
+      next.includes(PAGE_DICTIONARIES) &&
+      next.includes(HUB_TRADE_GOODS) &&
+      !next.includes(HUB_CATALOG_SUITE) &&
+      AUTHZ_PERMISSION_KEY_SET.has(HUB_CATALOG_SUITE)
+    ) {
+      next = [...next, HUB_CATALOG_SUITE];
+    }
+    out[roleId] = next;
+  }
+  return out;
+}

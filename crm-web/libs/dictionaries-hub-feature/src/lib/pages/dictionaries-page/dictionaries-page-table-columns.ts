@@ -66,7 +66,9 @@ export const PRODUCTION_DETAILS_COLUMNS_FULL: TableColumn[] = [
 export const PRODUCTS_COLUMNS: TableColumn[] = [{ key: 'hubLine', label: 'Изделие' }];
 
 export const PRODUCTS_COLUMNS_FULL: TableColumn[] = [
+  { key: 'codeLabel', label: 'Артикул' },
   { key: 'name', label: 'Наименование' },
+  { key: 'descriptionLabel', label: 'Описание' },
   { key: 'colorLabel', label: 'Цвет' },
   { key: 'detailNamesSummary', label: 'Детали' },
   { key: 'workTypesSummary', label: 'Вид работ' },
@@ -74,6 +76,53 @@ export const PRODUCTS_COLUMNS_FULL: TableColumn[] = [
   { key: 'costLabel', label: 'Себестоимость ₽' },
   { key: 'linesCountLabel', label: 'Деталей в составе' },
   { key: 'notesLabel', label: 'Заметка' },
+  { key: 'isActiveLabel', label: 'Активен' },
+];
+
+/** Товар = набор изделий (отдельно от «Изделия»). */
+export const TRADE_GOODS_COLUMNS: TableColumn[] = [{ key: 'hubLine', label: 'Товар' }];
+
+export const TRADE_GOODS_COLUMNS_FULL: TableColumn[] = [
+  { key: 'codeLabel', label: 'Артикул' },
+  { key: 'name', label: 'Наименование' },
+  { key: 'descriptionLabel', label: 'Описание' },
+  { key: 'productsSummaryLabel', label: 'Изделия в составе' },
+  { key: 'priceLabel', label: 'Цена ₽' },
+  { key: 'costLabel', label: 'Себестоимость ₽' },
+  { key: 'linesCountLabel', label: 'Позиций (изделий)' },
+  { key: 'notesLabel', label: 'Заметка' },
+  { key: 'isActiveLabel', label: 'Активен' },
+];
+
+export const CATALOG_COMPLEXES_COLUMNS: TableColumn[] = [{ key: 'hubLine', label: 'Комплекс' }];
+
+export const CATALOG_COMPLEXES_COLUMNS_FULL: TableColumn[] = [
+  { key: 'name', label: 'Название' },
+  { key: 'codeLabel', label: 'Код' },
+  { key: 'descriptionLabel', label: 'Описание' },
+  { key: 'isActiveLabel', label: 'Активен' },
+];
+
+export const CATALOG_PRODUCTS_COLUMNS: TableColumn[] = [{ key: 'hubLine', label: 'Каталожный товар' }];
+
+export const CATALOG_PRODUCTS_COLUMNS_FULL: TableColumn[] = [
+  { key: 'complexNameLabel', label: 'Комплекс' },
+  { key: 'name', label: 'Наименование' },
+  { key: 'codeLabel', label: 'Код' },
+  { key: 'descriptionLabel', label: 'Описание' },
+  { key: 'priceLabel', label: 'Цена' },
+  { key: 'isActiveLabel', label: 'Активен' },
+];
+
+export const CATALOG_ARTICLES_COLUMNS: TableColumn[] = [{ key: 'hubLine', label: 'Позиция' }];
+
+export const CATALOG_ARTICLES_COLUMNS_FULL: TableColumn[] = [
+  { key: 'productNameLabel', label: 'Каталожный товар' },
+  { key: 'name', label: 'Наименование' },
+  { key: 'codeLabel', label: 'Код' },
+  { key: 'descriptionLabel', label: 'Описание' },
+  { key: 'qtyLabel', label: 'Кол-во' },
+  { key: 'sortOrderLabel', label: 'Порядок' },
   { key: 'isActiveLabel', label: 'Активен' },
 ];
 

@@ -2,7 +2,9 @@ import type { ProductItemInput } from '@srm/products-data-access';
 
 /** Сбор payload изделия из значений формы (строки состава — plain objects). */
 export function productPayloadFromValues(v: {
+  code: string;
   name: string;
+  description: string;
   priceRub: number | null;
   costRub: number | null;
   notes: string;
@@ -18,7 +20,9 @@ export function productPayloadFromValues(v: {
   const lineColor = v.colorId?.trim() ? v.colorId.trim() : null;
   const lineWork = v.workTypeId?.trim() ? v.workTypeId.trim() : null;
   return {
+    code: v.code.trim() || null,
     name: v.name.trim(),
+    description: v.description.trim() || null,
     priceRub: v.priceRub,
     costRub: v.costRub,
     notes: v.notes.trim() || null,
