@@ -26,6 +26,8 @@ if [[ "${CORS_ORIGIN}" == "*" ]]; then
 fi
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+PREBUILT_DIR="${REPO_ROOT}/deploy/prebuilt-web"
+PREBUILT_ZIP="${REPO_ROOT}/deploy/prebuilt-web.zip"
 
 echo "[deploy] Обновляю код (если это серверный сценарий)..."
 if git -C "${REPO_ROOT}" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
@@ -51,13 +53,39 @@ fi
 echo "[deploy] Подтягиваю образы (если есть в registry)..."
 docker compose --env-file .env pull || true
 
+# Один архив вместо сотен файлов: положите deploy/prebuilt-web.zip на сервер — распакуем в prebuilt-web/ и удалим zip.
+if [[ -f "${PREBUILT_ZIP}" ]]; then
+  if ! command -v unzip >/dev/null 2>&1; then
+    echo "[deploy] Ошибка: найден ${PREBUILT_ZIP}, но нет команды unzip. Установите: apt install unzip"
+    exit 1
+  fi
+  echo "[deploy] Распаковываю ${PREBUILT_ZIP} → ${PREBUILT_DIR}/"
+  mkdir -p "${PREBUILT_DIR}"
+  unzip -o -q "${PREBUILT_ZIP}" -d "${PREBUILT_DIR}"
+  rm -f "${PREBUILT_ZIP}"
+fi
+
+if [[ ! -f "${PREBUILT_DIR}/index.html" ]]; then
+  echo "[deploy] Ошибка: нет ${PREBUILT_DIR}/index.html"
+  echo "[deploy] Соберите фронт локально: cd crm-web && node scripts/sync-canonical-roles.cjs && npx nx run crm-web:build:production"
+  echo "[deploy] Затем либо: deploy/scripts/pack-prebuilt-web.ps1 (Windows) / pack-prebuilt-web.sh — и загрузите deploy/prebuilt-web.zip на сервер в deploy/"
+  echo "[deploy] Либо залейте содержимое crm-web/dist/crm-web/browser/ в ${PREBUILT_DIR}/ (rsync/scp/sftp)."
+  exit 1
+fi
+
 echo "[deploy] Сборка образов..."
 unset WEB_BUILD_ID 2>/dev/null || true
 WEB_BUILD_ID="$(git -C "${REPO_ROOT}" rev-parse HEAD 2>/dev/null || echo unknown)"
 export WEB_BUILD_ID
 echo "[deploy] WEB_BUILD_ID=${WEB_BUILD_ID}"
 
-docker compose --env-file .env build --build-arg "WEB_BUILD_ID=${WEB_BUILD_ID}" web
+# Мета-тег в index.html на диске сервера (том read-only в контейнере снимается с хоста).
+if [[ -f "${PREBUILT_DIR}/index.html" ]]; then
+  sed -i '/name="crm-build"/d' "${PREBUILT_DIR}/index.html" 2>/dev/null || true
+  sed -i "s#</head>#<meta name=\"crm-build\" content=\"${WEB_BUILD_ID}\"></head>#" "${PREBUILT_DIR}/index.html" || true
+fi
+
+docker compose --env-file .env build web
 docker compose --env-file .env build backend
 
 echo "[deploy] Запуск контейнеров..."

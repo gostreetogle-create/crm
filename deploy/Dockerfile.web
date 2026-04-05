@@ -1,40 +1,5 @@
-FROM node:20-alpine AS deps
-WORKDIR /app
-COPY crm-web/package*.json ./crm-web/
-WORKDIR /app/crm-web
-# Sequential lifecycle scripts avoid ETXTBSY on esbuild postinstall (common with Docker overlayfs).
-RUN npm ci --foreground-scripts
-
-FROM node:20-alpine AS build
-WORKDIR /app
-COPY --from=deps /app/crm-web/node_modules ./crm-web/node_modules
-COPY crm-web/ ./crm-web/
-# Единый JSON ролей → сгенерированный TS перед сборкой (см. crm-web/scripts/sync-canonical-roles.cjs)
-COPY backend/shared ./backend/shared
-WORKDIR /app/crm-web
-RUN node scripts/sync-canonical-roles.cjs
-ARG WEB_BUILD_ID=unknown
-ARG NODE_BUILD_HEAP_MB=3072
-# 1 worker сильно снижает пик RAM при production optimization на VPS (2–4 GB); на мощной машине: --build-arg NG_BUILD_MAX_WORKERS=2
-ARG NG_BUILD_MAX_WORKERS=1
-ENV WEB_BUILD_ID=${WEB_BUILD_ID}
-# VPS/Docker: Nx daemon в контейнере часто лишний; без heap/worker limits — долгий «Building…» и тихий OOM (exit 1).
-ENV NX_DAEMON=false
-ENV NODE_OPTIONS=--max-old-space-size=${NODE_BUILD_HEAP_MB}
-ENV NG_BUILD_MAX_WORKERS=${NG_BUILD_MAX_WORKERS}
-# Явный вывод прогресса (иногда stderr буферизуется до падения).
-ENV NX_VERBOSE_LOGGING=true
-RUN npm run build -- crm-web --verbose
-
-FROM nginx:1.27-alpine AS runtime
-ARG WEB_BUILD_ID=unknown
+# Только nginx + конфиг. Статика CRM: каталог deploy/prebuilt-web на сервере (см. docker-compose volume и deploy/README.md).
+FROM nginx:1.27-alpine
 WORKDIR /usr/share/nginx/html
 RUN apk add --no-cache wget
 COPY deploy/nginx.conf /etc/nginx/conf.d/default.conf
-COPY --from=build /app/crm-web/dist/crm-web/browser/ /usr/share/nginx/html/
-
-# Embed build id for cache/debug (optional, best-effort)
-RUN if [ -f /usr/share/nginx/html/index.html ]; then \
-      sed -i "s#</head>#<meta name=\"crm-build\" content=\"${WEB_BUILD_ID}\"></head>#g" /usr/share/nginx/html/index.html || true; \
-    fi
-

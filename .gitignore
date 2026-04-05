@@ -4,6 +4,10 @@ Basics/
 
 backend/.env
 deploy/.env
+# Собранный фронт на сервере (заливка вручную; в git только .gitkeep)
+deploy/prebuilt-web/*
+!deploy/prebuilt-web/.gitkeep
+deploy/prebuilt-web.zip
 backend/node_modules/
 backend/dist/
 backend/backups/

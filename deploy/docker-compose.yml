@@ -54,16 +54,14 @@ services:
     build:
       context: ..
       dockerfile: deploy/Dockerfile.web
-      args:
-        WEB_BUILD_ID: ${WEB_BUILD_ID:-unknown}
-        # При нехватке RAM: NODE_BUILD_HEAP_MB (МБ), NG_BUILD_MAX_WORKERS=1, swap 2G+ — см. deploy/.env.example
-        NODE_BUILD_HEAP_MB: ${NODE_BUILD_HEAP_MB:-3072}
-        NG_BUILD_MAX_WORKERS: ${NG_BUILD_MAX_WORKERS:-1}
     container_name: crm_web
     restart: unless-stopped
     depends_on:
       backend:
         condition: service_healthy
+    # Готовая статика с хоста (загрузите dist/crm-web/browser/ — см. deploy/README.md). Не коммитится в git.
+    volumes:
+      - ./prebuilt-web:/usr/share/nginx/html:ro
     ports:
       - "${WEB_PORT:-8080}:80"
     healthcheck:
