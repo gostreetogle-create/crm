@@ -61,8 +61,15 @@ if [[ -f "${PREBUILT_ZIP}" ]]; then
   fi
   echo "[deploy] Распаковываю ${PREBUILT_ZIP} → ${PREBUILT_DIR}/"
   mkdir -p "${PREBUILT_DIR}"
+  # Info-ZIP: код 1 = предупреждения при успешной распаковке (часто zip с Windows/Compress-Archive).
+  set +e
   unzip -o -q "${PREBUILT_ZIP}" -d "${PREBUILT_DIR}"
-  rm -f "${PREBUILT_ZIP}"
+  unzip_rc=$?
+  set -e
+  if [[ "${unzip_rc}" -gt 1 ]]; then
+    echo "[deploy] Ошибка: unzip завершился с кодом ${unzip_rc}"
+    exit 1
+  fi
 fi
 
 if [[ ! -f "${PREBUILT_DIR}/index.html" ]]; then
@@ -72,6 +79,8 @@ if [[ ! -f "${PREBUILT_DIR}/index.html" ]]; then
   echo "[deploy] Либо залейте содержимое crm-web/dist/crm-web/browser/ в ${PREBUILT_DIR}/ (rsync/scp/sftp)."
   exit 1
 fi
+
+rm -f "${PREBUILT_ZIP}"
 
 echo "[deploy] Сборка образов..."
 unset WEB_BUILD_ID 2>/dev/null || true
