@@ -2,6 +2,7 @@ import {
   cleanupOldBackups,
   createBackupDump,
   currentMatchesScheduleTime,
+  DbBackupCommandError,
   isBackupJobRunning,
   readSchedule,
   setLastRunDate,
@@ -27,10 +28,16 @@ async function tick(): Promise<void> {
     });
   } catch (e) {
     const stack = e instanceof Error ? e.stack : undefined;
+    const message =
+      e instanceof DbBackupCommandError
+        ? e.detail
+        : e instanceof Error
+          ? e.message
+          : String(e);
     writeDiagnostic({
       ts: new Date().toISOString(),
       type: "backup_scheduler_error",
-      message: e instanceof Error ? e.message : String(e),
+      message,
       name: e instanceof Error ? e.name : "Error",
       stack: stack ? stack.slice(0, 2000) : undefined,
     });

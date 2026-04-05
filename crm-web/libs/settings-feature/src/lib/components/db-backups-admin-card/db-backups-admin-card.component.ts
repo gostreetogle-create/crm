@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { finalize, forkJoin } from 'rxjs';
@@ -36,6 +37,17 @@ export class DbBackupsAdminCardComponent implements OnInit {
 
   ngOnInit(): void {
     this.reload();
+  }
+
+  /** Текст из ответа API (503 backup_failed) или запасная фраза. */
+  private backupCommandErrorMessage(err: unknown, fallback: string): string {
+    if (!(err instanceof HttpErrorResponse)) return fallback;
+    const body = err.error;
+    if (!body || typeof body !== 'object' || !('message' in body)) return fallback;
+    const m = (body as { message: unknown }).message;
+    const raw = typeof m === 'string' ? m.trim() : '';
+    if (!raw) return fallback;
+    return raw.length > 800 ? `${raw.slice(0, 800)}…` : raw;
   }
 
   reload(): void {
@@ -93,10 +105,15 @@ export class DbBackupsAdminCardComponent implements OnInit {
       .subscribe({
         next: () => this.reload(),
         error: (err) => {
-          if (err?.status === 409) {
+          if (err instanceof HttpErrorResponse && err.status === 409) {
             this.errorText.set('Операция уже выполняется (бэкап или восстановление).');
           } else {
-            this.errorText.set('Не удалось создать архив. Убедитесь, что на сервере установлен pg_dump.');
+            this.errorText.set(
+              this.backupCommandErrorMessage(
+                err,
+                'Не удалось создать архив. В Docker пересоберите образ backend (в нём должен быть postgresql-client); без Docker — установите postgresql-client на хост.',
+              ),
+            );
           }
         },
       });
@@ -151,10 +168,12 @@ export class DbBackupsAdminCardComponent implements OnInit {
           );
         },
         error: (err) => {
-          if (err?.status === 409) {
+          if (err instanceof HttpErrorResponse && err.status === 409) {
             this.errorText.set('Операция уже выполняется.');
           } else {
-            this.errorText.set('Не удалось восстановить БД из архива.');
+            this.errorText.set(
+              this.backupCommandErrorMessage(err, 'Не удалось восстановить БД из архива.'),
+            );
           }
         },
       });

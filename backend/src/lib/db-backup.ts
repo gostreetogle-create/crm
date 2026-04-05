@@ -134,17 +134,34 @@ function runCmd(
   args: string[],
   env: NodeJS.ProcessEnv,
 ): Promise<{ code: number; stderr: string }> {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const child = spawn(cmd, args, { env, stdio: ["ignore", "pipe", "pipe"] });
     let stderr = "";
     child.stderr?.on("data", (c: Buffer) => {
       stderr += c.toString();
     });
-    child.on("error", reject);
+    child.on("error", (err: NodeJS.ErrnoException) => {
+      const hint =
+        err.code === "ENOENT"
+          ? `${cmd}: not found (install PostgreSQL client tools, e.g. postgresql-client)`
+          : `${cmd}: ${err.message}`;
+      resolve({ code: 127, stderr: hint });
+    });
     child.on("close", (code) => {
       resolve({ code: code ?? 1, stderr });
     });
   });
+}
+
+/** Ошибка выполнения pg_dump/pg_restore — отдаётся клиенту с текстом из stderr (усечённым). */
+export class DbBackupCommandError extends Error {
+  readonly detail: string;
+
+  constructor(detail: string) {
+    super("backup_command_failed");
+    this.name = "DbBackupCommandError";
+    this.detail = detail.slice(0, 2000);
+  }
 }
 
 function newBackupFileName(): string {
@@ -193,7 +210,7 @@ export async function createBackupDump(): Promise<{ fileName: string; sizeBytes:
     } catch {
       // ignore
     }
-    throw new Error(stderr || "pg_dump_failed");
+    throw new DbBackupCommandError(stderr || "pg_dump failed");
   }
   const st = await fs.stat(full);
   return { fileName, sizeBytes: st.size };
@@ -213,7 +230,7 @@ export async function restoreFromDump(fileName: string): Promise<void> {
   );
   // pg_restore: 0 — ок, 1 — предупреждения (часто при --clean), 2 — фатальная ошибка
   if (code !== 0 && code !== 1) {
-    throw new Error(stderr || "pg_restore_failed");
+    throw new DbBackupCommandError(stderr || "pg_restore failed");
   }
 }
 

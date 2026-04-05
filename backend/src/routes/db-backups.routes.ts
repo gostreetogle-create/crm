@@ -5,6 +5,7 @@ import {
   BACKUP_FILE_RE,
   cleanupOldBackups,
   createBackupDump,
+  DbBackupCommandError,
   deleteBackupFile,
   getBackupDir,
   isBackupJobRunning,
@@ -83,6 +84,10 @@ dbBackupsRouter.post("/", async (_req, res, next) => {
       res.status(409).json({ error: "backup_busy" });
       return;
     }
+    if (e instanceof DbBackupCommandError) {
+      res.status(503).json({ error: "backup_failed", message: e.detail });
+      return;
+    }
     next(e);
   }
 });
@@ -119,6 +124,10 @@ dbBackupsRouter.post("/:fileName/restore", async (req, res, next) => {
   } catch (e) {
     if (e instanceof Error && e.message === "busy") {
       res.status(409).json({ error: "backup_busy" });
+      return;
+    }
+    if (e instanceof DbBackupCommandError) {
+      res.status(503).json({ error: "backup_failed", message: e.detail });
       return;
     }
     next(e);
