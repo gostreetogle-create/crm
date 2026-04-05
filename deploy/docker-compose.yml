@@ -37,6 +37,8 @@ services:
       SEED_DIRECTOR_USER: "0"
       # Должен совпадать с паролем пользователя crm в уже существующем volume Postgres (смена CRM_POSTGRES_PASSWORD в .env без сброса volume ломает подключение).
       DATABASE_URL: postgresql://crm:${CRM_POSTGRES_PASSWORD:-crm}@postgres:5432/crm?schema=public
+      # Тот же DSN без ?schema= для pg_dump/pg_restore; пусто — в коде отрежется query у DATABASE_URL.
+      BACKUP_DATABASE_URL: ${BACKUP_DATABASE_URL:-}
       BACKUP_DIR: /var/lib/crm/backups
     volumes:
       - crm_backups:/var/lib/crm/backups

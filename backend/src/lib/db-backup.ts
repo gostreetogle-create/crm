@@ -170,11 +170,41 @@ function newBackupFileName(): string {
   return `crm-backup-${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}.dump`;
 }
 
-const databaseUrl = (): string => {
-  const u = process.env.DATABASE_URL?.trim();
-  if (!u) throw new Error("DATABASE_URL is not set");
-  return u;
-};
+/**
+ * URL подключения для `pg_dump` и `pg_restore`.
+ *
+ * Prisma в `DATABASE_URL` часто добавляет `?schema=public`. Утилиты libpq не понимают этот
+ * query-параметр и падают с: invalid URI query parameter: "schema".
+ *
+ * Приоритет:
+ * 1. `BACKUP_DATABASE_URL` — задайте тот же DSN, что и для приложения, но **без** `?schema=...`
+ *    (и без других query-параметров, если pg их не принимает).
+ * 2. Иначе берётся `DATABASE_URL`, из которого отрезается всё начиная с первого `?`.
+ *
+ * При использовании п.2 при **первом** вызове пишется одно предупреждение в stderr (чтобы в логах
+ * было видно, что задействован fallback, а не явный `BACKUP_DATABASE_URL`).
+ */
+/** Один раз за жизнь процесса: предупредить о fallback без BACKUP_DATABASE_URL. */
+let warnedBackupDatabaseUrlFallback = false;
+
+function connectionUrlForPgTools(): string {
+  const backupUrl = process.env.BACKUP_DATABASE_URL?.trim();
+  if (backupUrl) {
+    return backupUrl;
+  }
+  const dbUrl = process.env.DATABASE_URL?.trim();
+  if (!dbUrl) {
+    throw new Error("DATABASE_URL is not set");
+  }
+  if (!warnedBackupDatabaseUrlFallback) {
+    warnedBackupDatabaseUrlFallback = true;
+    console.warn(
+      "BACKUP_DATABASE_URL не задан. Используем DATABASE_URL без параметров schema.",
+    );
+  }
+  const q = dbUrl.indexOf("?");
+  return q >= 0 ? dbUrl.slice(0, q) : dbUrl;
+}
 
 let backupJobRunning = false;
 
@@ -198,7 +228,7 @@ export async function createBackupDump(): Promise<{ fileName: string; sizeBytes:
   await ensureBackupDir();
   const fileName = newBackupFileName();
   const full = path.join(config.backupDir, fileName);
-  const url = databaseUrl();
+  const url = connectionUrlForPgTools();
   const { code, stderr } = await runCmd(
     "pg_dump",
     ["-Fc", "-f", full, url],
@@ -222,7 +252,7 @@ export async function restoreFromDump(fileName: string): Promise<void> {
   }
   const full = path.join(config.backupDir, fileName);
   await fs.access(full);
-  const url = databaseUrl();
+  const url = connectionUrlForPgTools();
   const { code, stderr } = await runCmd(
     "pg_restore",
     ["--clean", "--if-exists", "--no-owner", "--no-privileges", "-d", url, full],
