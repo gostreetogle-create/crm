@@ -17,15 +17,16 @@
           <app-db-backups-admin-card />
         </div>
         <div class="adminPairItem" id="admin-nav-bulk">
-          <app-bulk-units-admin-card />
+          <app-bulk-json-import-card />
         </div>
       </div>
 
       <app-content-card title="Права доступа (матрица)">
         <div class="adminSectionAnchor" id="admin-nav-matrix"></div>
         <p class="lead leadCompact">
-          Разрешения по ролям: страницы, плитки «Справочники», действия в карточках и админский массовый импорт. Суперадмин в таблице не
-          показывается. Порядок колонок — поле «Порядок» в справочнике «Роли».
+          Разрешения по ролям: страницы, плитки «Справочники», действия в карточках и админский массовый импорт — одна таблица, колонки ролей
+          не повторяются. Суперадмин в таблице не показывается. Порядок колонок — поле «Порядок» в справочнике «Роли». У колонки показан
+          внутренний <strong>код</strong> роли — он различает одинаковые названия.
         </p>
         <details class="adminDetails">
           <summary class="adminDetailsSummary">Подробнее: как устроена матрица</summary>
@@ -57,8 +58,8 @@
           </app-ui-button>
         </div>
         <p class="matrixGlobalHint">
-          В каждой таблице столбцы ролей одинаковые. Кнопка <strong>Сбросить галочки</strong> в колонке неактивна, если
-          галочек уже нет.
+          Секции (разделы, справочники, CRUD, массовый JSON) идут блоками внутри одной таблицы. Кнопка
+          <strong>Сбросить галочки</strong> в колонке неактивна, если галочек уже нет.
         </p>
 
         <div class="authzDiagnostics">
@@ -74,65 +75,71 @@
         </div>
 
         <div class="matrixSections" [attr.data-matrix-rev]="matrixRev()">
-          @for (section of matrixSections; track section.group) {
-            <section class="matrixSection" [attr.aria-labelledby]="'matrix-sec-' + section.group">
-              <div class="matrixSectionHead">
-                <h3 class="matrixSectionTitle" [id]="'matrix-sec-' + section.group">{{ section.titleRu }}</h3>
-                <p class="matrixSectionHint">{{ section.hintRu }}</p>
-              </div>
-              <div class="tableWrap matrixWrap">
-                <table class="matrixTable">
-                  <thead>
+          <div class="tableWrap matrixWrap">
+            <table class="matrixTable">
+              <thead>
+                <tr>
+                  <th scope="col" class="matrixCorner">Разрешение</th>
+                  @for (role of matrixRoles(); track role.id) {
+                    <th scope="col" class="roleHead">
+                      <div class="roleHeadStack">
+                        <span class="roleHeadLabel">{{ roleLabel(role) }}</span>
+                        <span class="roleHeadCode" [title]="'Внутренний код роли (уникален)'">{{ role.code }}</span>
+                        <code class="roleHeadId" [title]="'roleId: совпадает с User.roleId и ключом в матрице'">{{
+                          role.id
+                        }}</code>
+                        <span class="roleHeadSort">Пор. {{ role.sortOrder }}</span>
+                        <button
+                          type="button"
+                          class="roleResetBtn"
+                          [disabled]="!canClearRoleColumn(role)"
+                          (click)="clearRoleColumnCheckboxes(role)"
+                          title="Снять все галочки в этой колонке (роль без прав)"
+                          [attr.aria-label]="'Снять все галочки для роли «' + role.name + '»'"
+                        >
+                          Сбросить галочки
+                        </button>
+                      </div>
+                    </th>
+                  }
+                </tr>
+              </thead>
+              @for (section of matrixSections; track section.group) {
+                <tbody [attr.aria-labelledby]="'matrix-sec-' + section.group">
+                  <tr class="matrixSectionRow">
+                    <th
+                      class="matrixSectionHeadCell"
+                      [attr.colspan]="1 + matrixRoles().length"
+                      [id]="'matrix-sec-' + section.group"
+                      scope="colgroup"
+                    >
+                      <span class="matrixSectionTitle">{{ section.titleRu }}</span>
+                      <span class="matrixSectionHint">{{ section.hintRu }}</span>
+                    </th>
+                  </tr>
+                  @for (key of section.keys; track key) {
                     <tr>
-                      <th scope="col" class="matrixCorner">Разрешение</th>
+                      <th scope="row" class="permCell">
+                        <code class="permKey">{{ key }}</code>
+                        <span class="permLabel">{{ permissionLabelRu(key) }}</span>
+                      </th>
                       @for (role of matrixRoles(); track role.id) {
-                        <th scope="col" class="roleHead">
-                          <div class="roleHeadStack">
-                            <span class="roleHeadLabel">{{ roleLabel(role) }}</span>
-                            <code class="roleHeadId" [title]="'roleId: совпадает с User.roleId и ключом в матрице'">{{
-                              role.id
-                            }}</code>
-                            <span class="roleHeadSort">Пор. {{ role.sortOrder }}</span>
-                            <button
-                              type="button"
-                              class="roleResetBtn"
-                              [disabled]="!canClearRoleColumn(role)"
-                              (click)="clearRoleColumnCheckboxes(role)"
-                              title="Снять все галочки в этой колонке (роль без прав)"
-                              [attr.aria-label]="'Снять все галочки для роли «' + role.name + '»'"
-                            >
-                              Сбросить галочки
-                            </button>
-                          </div>
-                        </th>
+                        <td class="checkCell">
+                          <input
+                            type="checkbox"
+                            [checked]="permissions.hasPermissionForRole(roleColumnId(role), key)"
+                            [disabled]="isDictHubCheckboxDisabled(role, key)"
+                            (change)="onMatrixToggle(role, key, $event)"
+                            [attr.aria-label]="section.titleRu + ' — ' + role.name + ': ' + key"
+                          />
+                        </td>
                       }
                     </tr>
-                  </thead>
-                  <tbody>
-                    @for (key of section.keys; track key) {
-                      <tr>
-                        <th scope="row" class="permCell">
-                          <code class="permKey">{{ key }}</code>
-                          <span class="permLabel">{{ permissionLabelRu(key) }}</span>
-                        </th>
-                        @for (role of matrixRoles(); track role.id) {
-                          <td class="checkCell">
-                            <input
-                              type="checkbox"
-                              [checked]="permissions.hasPermissionForRole(roleColumnId(role), key)"
-                              [disabled]="isDictHubCheckboxDisabled(role, key)"
-                              (change)="onMatrixToggle(role, key, $event)"
-                              [attr.aria-label]="section.titleRu + ' — ' + role.name + ': ' + key"
-                            />
-                          </td>
-                        }
-                      </tr>
-                    }
-                  </tbody>
-                </table>
-              </div>
-            </section>
-          }
+                  }
+                </tbody>
+              }
+            </table>
+          </div>
         </div>
       </app-content-card>
 

@@ -103,16 +103,23 @@ export class PermissionsService {
     if (this.isSuperAdminRole(roleId)) {
       return [...PERMISSION_KEYS_ORDERED];
     }
+    const item = this.roleContext.roleById(roleId);
+    const raw = item?.code?.trim() ?? DEFAULT_ROLE_CODE_BY_ROLE_ID[roleId] ?? '';
+    const code = raw.toLowerCase();
+
     let keys: readonly PermissionKey[];
     const o = this.matrixOverrideSignal();
     if (o && Object.prototype.hasOwnProperty.call(o, roleId) && o[roleId] !== undefined) {
       keys = o[roleId]!;
     } else {
-      const item = this.roleContext.roleById(roleId);
-      const raw = item?.code?.trim() ?? DEFAULT_ROLE_CODE_BY_ROLE_ID[roleId] ?? '';
-      const code = raw.toLowerCase();
       keys = this.defaultKeysForRoleCode(code);
     }
+
+    /** Код `admin`: не даём урезанной матрице отключать bulk и прочие права — объединяем с полным дефолтом. */
+    if (code === 'admin') {
+      keys = [...new Set([...DEFAULT_ROLE_PERMISSIONS_BY_CODE['admin'], ...keys])];
+    }
+
     return stripDictHubKeysIfNoPageSection(keys);
   }
 
@@ -207,7 +214,7 @@ export class PermissionsService {
   /** После выхода: сбросить роль и кэш матрицы (при следующем входе — только с сервера). */
   resetRoleAfterLogout(): void {
     this.matrixSyncErrorSignal.set(null);
-    this.roleSignal.set(this.systemRoleIds.viewer);
+    this.roleSignal.set(this.systemRoleIds.admin);
     this.matrixOverrideSignal.set(null);
     try {
       localStorage.removeItem(STORAGE_KEY_MATRIX);
@@ -388,15 +395,14 @@ export class PermissionsService {
       const raw =
         localStorage.getItem(STORAGE_KEY_ROLE) ?? sessionStorage.getItem(STORAGE_KEY_ROLE);
       if (!raw) {
-        // Safe default: если роль ещё неизвестна (rolesStore мог не подгрузиться),
-        // не выдаём лишних прав. Это предотвращает «привилегии по умолчанию».
-        return this.systemRoleIds.viewer;
+        // Канон: одна роль по умолчанию — администратор (полный доступ в UI до загрузки JWT/ролей).
+        return this.systemRoleIds.admin;
       }
       return normalizeMatrixRoleKey(raw) as RoleId;
     } catch {
       // no-op for restricted environments
     }
-    return this.systemRoleIds.viewer;
+    return this.systemRoleIds.admin;
   }
 
   private readMatrixFromStorage(): Partial<Record<RoleId, PermissionKey[]>> | null {

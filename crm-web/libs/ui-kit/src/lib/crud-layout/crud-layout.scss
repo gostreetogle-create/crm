@@ -27,11 +27,54 @@
 
 .crudToolbarStackedRow {
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--ui-toolbar-gap);
   width: 100%;
   min-width: 0;
+}
+
+.crudToolbarPaginationSlot {
+  flex: 0 1 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px 14px;
+  min-width: 0;
+  margin-left: auto;
+}
+
+.crudPageSize {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.crudPageSizeLabel {
+  font-size: var(--font-size-small, 12px);
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.crudPageSizeSelect {
+  min-width: 3.5rem;
+  min-height: var(--ui-control-min-height);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--text-primary);
+  padding: 0 10px;
+  font-size: var(--font-size-small, 12px);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.crudPaginationWrap ::ng-deep .pagination {
+  margin-top: 0;
+  justify-content: flex-end;
 }
 
 .crudToolbarLeading {
@@ -72,6 +115,14 @@
   width: 100%;
 }
 
+.crudToolbar.crudToolbar--compact {
+  margin-bottom: 6px;
+}
+
+.crudToolbarStacked.crudToolbar--compact {
+  margin-bottom: 6px;
+}
+
 .crudToolbarMain {
   display: flex;
   align-items: center;
@@ -95,7 +146,9 @@
   flex: 0 0 auto;
   margin-left: auto;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  justify-content: flex-end;
   gap: var(--ui-toolbar-group-gap);
 }
 
@@ -300,6 +353,63 @@
 .crudTable td {
   border-bottom: 1px solid var(--border-color);
   padding: var(--ui-button-padding-y) var(--ui-button-padding-x);
+}
+
+/* Первая колонка «прилипает» слева при горизонтальном скролле в .tableView */
+.crudTable thead th:first-child,
+.crudTable tbody tr:not(.crudExpandDetailRow) td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  min-width: 10rem;
+  box-shadow: 4px 0 10px -4px color-mix(in srgb, var(--text-primary) 16%, transparent);
+}
+
+.crudTable thead th:first-child {
+  z-index: 3;
+  background: var(--surface);
+}
+
+/* Фон как у строки зебры / hover (как у tr:nth-child(even) и tr:hover) */
+.crudTable tbody tr:not(.crudExpandDetailRow) td:first-child {
+  background-color: var(--surface);
+}
+
+.crudTable tbody tr:nth-child(even):not(.crudExpandDetailRow) td:first-child {
+  background-color: color-mix(in srgb, var(--surface-soft) 62%, var(--surface) 38%);
+}
+
+.crudTable tbody tr:not(.crudExpandDetailRow):hover td:first-child {
+  background-color: color-mix(in srgb, var(--surface-soft) 82%, var(--accent) 18%);
+}
+
+.crudTable.crudTable--compact thead th:first-child,
+.crudTable.crudTable--compact tbody tr:not(.crudExpandDetailRow) td:first-child {
+  min-width: 9rem;
+}
+
+/* Хаб справочников: минимальная высота строк */
+.crudTable.crudTable--compact th,
+.crudTable.crudTable--compact td {
+  padding: 2px 8px;
+  line-height: 1.25;
+}
+
+.crudTable.crudTable--compact th {
+  font-size: var(--font-size-small);
+}
+
+.crudTable.crudTable--compact.crudTableHub th.crudHubHeadMerged {
+  padding: 4px 8px;
+}
+
+.crudTable.crudTable--compact .rowActionBtn {
+  width: calc(var(--ui-row-action-size) - 4px);
+  height: calc(var(--ui-row-action-size) - 4px);
+}
+
+.crudTable.crudTable--compact .crudExpandChevron {
+  margin-top: 0;
 }
 
 .crudTable td {

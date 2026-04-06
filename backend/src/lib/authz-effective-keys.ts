@@ -57,5 +57,11 @@ export async function getEffectivePermissionKeysForRoleId(roleId: string): Promi
     effective = defaultKeysByRoleCode(role.code);
   }
 
+  /** Роль с кодом `admin` (не только системная): всегда не менее полного канона, даже если в матрице сохранён урезанный список. */
+  if ((role.code ?? "").trim().toLowerCase() === "admin") {
+    const fullAdmin = defaultKeysByRoleCode("admin");
+    effective = [...new Set([...fullAdmin, ...effective])];
+  }
+
   return new Set(effective.filter((k) => AUTHZ_PERMISSION_KEY_SET.has(k)));
 }

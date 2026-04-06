@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import express from "express";
 import cors from "cors";
 import { config } from "./config.js";
@@ -16,6 +17,8 @@ import { productionWorkTypesRouter } from "./routes/production-work-types.routes
 import { productionDetailsRouter } from "./routes/production-details.routes.js";
 import { productsRouter } from "./routes/products.routes.js";
 import { tradeGoodsRouter } from "./routes/trade-goods.routes.js";
+import { tradeGoodCategoriesRouter } from "./routes/trade-good-categories.routes.js";
+import { tradeGoodSubcategoriesRouter } from "./routes/trade-good-subcategories.routes.js";
 import { complexesRouter } from "./routes/complexes.routes.js";
 import { catalogProductsRouter } from "./routes/catalog-products.routes.js";
 import { catalogArticlesRouter } from "./routes/catalog-articles.routes.js";
@@ -30,7 +33,7 @@ import { unitsRouter } from "./routes/units.routes.js";
 import { usersReadRouter, usersWriteRouter } from "./routes/users.routes.js";
 import { dbBackupsRouter } from "./routes/db-backups.routes.js";
 import { systemAdminRouter } from "./routes/system-admin.routes.js";
-import { bulkUnitsRouter } from "./routes/bulk-units.routes.js";
+import { bulkRouter } from "./routes/bulk.routes.js";
 import { authAuthedRouter, authPublicRouter } from "./routes/auth.routes.js";
 import { requireAdmin, requireAuth } from "./middleware/auth-jwt.js";
 import { requireDictionaryHubPermission } from "./middleware/require-dict-hub-permission.js";
@@ -60,6 +63,22 @@ export function createApp() {
   app.use(express.json({ limit: "2mb" }));
   app.use(requestContextMiddleware);
 
+  if (!fs.existsSync(config.kpPhotosDir)) {
+    fs.mkdirSync(config.kpPhotosDir, { recursive: true });
+  }
+  app.use(
+    "/media/kp-photos",
+    express.static(config.kpPhotosDir, { index: false, fallthrough: false }),
+  );
+
+  if (!fs.existsSync(config.tradeGoodsPhotosDir)) {
+    fs.mkdirSync(config.tradeGoodsPhotosDir, { recursive: true });
+  }
+  app.use(
+    "/media/trade-goods",
+    express.static(config.tradeGoodsPhotosDir, { index: false, fallthrough: false }),
+  );
+
   app.get("/health", (_req, res) => res.json({ ok: true }));
   app.get("/api/health", (_req, res) => res.json({ ok: true }));
 
@@ -79,6 +98,8 @@ export function createApp() {
   authed.use("/production-details", productionDetailsRouter);
   authed.use("/products", productsRouter);
   authed.use("/trade-goods", tradeGoodsRouter);
+  authed.use("/trade-good-categories", tradeGoodCategoriesRouter);
+  authed.use("/trade-good-subcategories", tradeGoodSubcategoriesRouter);
 
   const catalogSuiteRouter = express.Router();
   catalogSuiteRouter.use(requireDictionaryHubPermission("dict.hub.catalog_suite"));
@@ -103,7 +124,7 @@ export function createApp() {
   admin.use("/roles", rolesWriteRouter);
   admin.use("/db-backups", dbBackupsRouter);
   admin.use("/system", systemAdminRouter);
-  admin.use("/bulk", bulkUnitsRouter);
+  admin.use("/bulk", bulkRouter);
   admin.use("/authz-matrix", authzMatrixDiagnosticsRouter);
   admin.use("/authz-matrix", authzMatrixWriteRouter);
 

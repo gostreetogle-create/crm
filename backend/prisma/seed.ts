@@ -30,6 +30,22 @@ async function ensureSeedRoles(): Promise<void> {
   }
 }
 
+/** Пользователей с несуществующей ролью и лишние строки Role убираем — в каноне одна роль. */
+async function pruneRolesToCanonical(): Promise<void> {
+  const canonicalIds = SEED_CANONICAL_ROLES.map((r) => r.id);
+  const adminId = canonicalIds[0];
+  if (!adminId) {
+    return;
+  }
+  await prisma.user.updateMany({
+    where: { roleId: { notIn: canonicalIds } },
+    data: { roleId: adminId },
+  });
+  await prisma.role.deleteMany({
+    where: { id: { notIn: canonicalIds } },
+  });
+}
+
 /** Пользователь `admin` / `admin` — всегда (идемпотентно). */
 async function ensureSeedAdminUser(): Promise<void> {
   const adminHash = await bcrypt.hash('admin', 10);
@@ -48,34 +64,10 @@ async function ensureSeedAdminUser(): Promise<void> {
   });
 }
 
-/**
- * Тестовый пользователь роли «Директор» (логин `director`, пароль `director`).
- * Отключение: `SEED_DIRECTOR_USER=0` (в docker-compose для backend задано по умолчанию).
- */
-async function ensureSeedDirectorUser(): Promise<void> {
-  if (process.env.SEED_DIRECTOR_USER === '0') {
-    return;
-  }
-  const hash = await bcrypt.hash('director', 10);
-  await prisma.user.upsert({
-    where: { login: 'director' },
-    create: {
-      id: 'user-seed-director',
-      login: 'director',
-      passwordHash: hash,
-      fullName: 'Директор (тест)',
-      email: 'director@example.local',
-      phone: '',
-      roleId: 'role-seed-director',
-    },
-    update: { passwordHash: hash, roleId: 'role-seed-director' },
-  });
-}
-
 async function main(): Promise<void> {
   await ensureSeedRoles();
+  await pruneRolesToCanonical();
   await ensureSeedAdminUser();
-  await ensureSeedDirectorUser();
 
   if ((await prisma.unit.count()) === 0) {
     await prisma.unit.createMany({

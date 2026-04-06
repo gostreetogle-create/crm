@@ -2,10 +2,23 @@ import type { KpCatalogProduct } from '../kp-catalog-vitrine/kp-catalog-product.
 
 export type KpCatalogProductSort = 'priceAsc' | 'priceDesc';
 
+/** Служебное значение фильтра «подкатегория не задана». */
+export const KP_CATALOG_SUBCATEGORY_NONE_VALUE = '__none__';
+
+export function kpCatalogSubcategoryText(p: KpCatalogProduct): string {
+  return (p.subcategory ?? '').trim();
+}
+
+export function formatKpCatalogCardMetaLine(p: KpCatalogProduct): string {
+  const sub = kpCatalogSubcategoryText(p);
+  return sub ? `${p.category} · ${sub}` : p.category;
+}
+
 export function filterSortProductsForVitrine(
   products: readonly KpCatalogProduct[],
   termRaw: unknown,
   category: string,
+  subcategory: string,
   sort: KpCatalogProductSort,
 ): KpCatalogProduct[] {
   const term = String(termRaw ?? '').trim().toLowerCase();
@@ -13,11 +26,19 @@ export function filterSortProductsForVitrine(
   const items = products
     .filter((p) => (category === 'all' ? true : p.category === category))
     .filter((p) => {
+      if (category === 'all' || subcategory === 'all') return true;
+      const s = kpCatalogSubcategoryText(p);
+      if (subcategory === KP_CATALOG_SUBCATEGORY_NONE_VALUE) return s === '';
+      return s === subcategory;
+    })
+    .filter((p) => {
       if (!term) return true;
+      const sub = kpCatalogSubcategoryText(p);
       return (
         p.title.toLowerCase().includes(term) ||
         p.sku.toLowerCase().includes(term) ||
-        p.category.toLowerCase().includes(term)
+        p.category.toLowerCase().includes(term) ||
+        sub.toLowerCase().includes(term)
       );
     })
     .sort((a, b) => {

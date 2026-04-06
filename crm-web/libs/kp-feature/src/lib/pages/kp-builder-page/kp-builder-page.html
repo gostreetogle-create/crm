@@ -1,8 +1,12 @@
 <app-page-shell [fluid]="true">
   <div class="kp-builder">
     <div class="kp-builder__split">
-      <aside class="kp-builder__catalog kp-no-print" aria-label="Карточки товаров, витрина">
-        <app-kp-catalog-vitrine (addToKp)="addFromVitrine($event)" />
+      <aside class="kp-builder__catalog kp-no-print" aria-label="Товары для подбора в КП">
+        <app-kp-catalog-vitrine
+          [catalogProducts]="kpCatalogProducts()"
+          (addToKp)="addFromVitrine($event)"
+          (editInDictionary)="navigateToEditTradeGood($event)"
+        />
       </aside>
 
       <div class="kp-builder__column-right">
@@ -46,6 +50,7 @@
                 [contentPaddingTop]="contentPaddingTop"
                 [contentPaddingTopPage2]="contentPaddingTopPage2"
                 [rowsPerPageCtrl]="form.controls.rowsPerPage"
+                [photoThumbMaxPxCtrl]="form.controls.photoThumbMaxPx"
                 (addLineClick)="addLine()"
               />
             </div>

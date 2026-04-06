@@ -101,9 +101,11 @@ function buildNotices(params: {
       detail:
         "Запрос к _prisma_migrations не выполнился. Возможна пустая или повреждённая схема — нужны миграции.",
       commands: [
-        "Локально: cd backend && npx prisma migrate deploy",
-        "Docker на сервере: пересобрать и задеплоить (entrypoint выполнит migrate deploy), либо:",
-        "docker compose --env-file deploy/.env exec backend npx prisma migrate deploy",
+        "Локально (PowerShell, из корня репозитория): cd backend; npx prisma migrate deploy",
+        "Локально (bash): cd backend && npx prisma migrate deploy",
+        "Docker (из корня репозитория): docker compose -f deploy/docker-compose.yml --env-file deploy/.env exec backend npx prisma migrate deploy",
+        "На сервере (из каталога deploy): docker compose --env-file .env exec backend npx prisma migrate deploy",
+        "После правок образа: пересобрать backend — entrypoint выполнит migrate deploy.",
       ],
       aiPrompt:
         "В CRM Prisma не читает _prisma_migrations при живой БД. Разбери причину (права, схема public, пустая БД), предложи команды prisma migrate deploy или восстановление.",
@@ -119,15 +121,18 @@ function buildNotices(params: {
       title: "Есть неприменённые миграции",
       detail: `В коде образа есть миграции, которых нет в БД: ${list}. Пока они не применены, схема может не совпадать с кодом (ошибки API).`,
       commands: [
-        "Локально: cd backend && npx prisma migrate deploy",
-        "Сервер (типовой): cd deploy && ./deploy.sh — entrypoint backend выполнит migrate deploy",
-        "Или вручную: cd deploy && docker compose --env-file .env exec backend npx prisma migrate deploy",
-        "Логи: docker compose --env-file .env logs -f backend",
+        "Локально (PowerShell): cd backend; npx prisma migrate deploy",
+        "Локально (bash): cd backend && npx prisma migrate deploy",
+        "Docker из корня репо: docker compose -f deploy/docker-compose.yml --env-file deploy/.env up -d --build backend",
+        "Или только migrate: docker compose -f deploy/docker-compose.yml --env-file deploy/.env exec backend npx prisma migrate deploy",
+        "Сервер (Linux, bash): cd deploy && ./deploy.sh — entrypoint выполнит migrate deploy",
+        "Сервер вручную (из deploy): docker compose --env-file .env exec backend npx prisma migrate deploy",
+        "Логи backend: docker compose -f deploy/docker-compose.yml --env-file deploy/.env logs -f backend",
       ],
       aiPrompt:
         "В CRM не применены миграции Prisma: " +
         list +
-        ". Объясни безопасно применить migrate deploy в Docker (deploy/docker-compose, entrypoint-backend.sh), как проверить логи и что не делать (migrate reset на проде).",
+        ". Объясни безопасно применить migrate deploy: локально в Windows PowerShell (cd backend; npx prisma migrate deploy), в Docker из корня репо (docker compose -f deploy/docker-compose.yml --env-file deploy/.env), entrypoint-backend.sh, как проверить логи и что не делать (migrate reset на проде).",
     });
   }
 

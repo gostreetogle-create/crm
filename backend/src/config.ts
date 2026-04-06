@@ -23,6 +23,16 @@ const EnvSchema = z.object({
   JWT_SECRET: z.string().optional(),
   /** Абсолютный или относительный путь к каталогу архивов БД (volume в Docker). */
   BACKUP_DIR: z.string().optional(),
+  /**
+   * Каталог с файлами «Фото для КП»: `KP_PHOTOS_DIR/{organizationId}/имя-файла.jpg`.
+   * Раздаётся по префиксу `/media/kp-photos` (см. app.ts).
+   */
+  KP_PHOTOS_DIR: z.string().optional(),
+  /**
+   * Фото карточек товаров по артикулу: `TRADE_GOODS_PHOTOS_DIR/{артикул}.jpg`.
+   * Раздаётся по префиксу `/media/trade-goods` (см. app.ts).
+   */
+  TRADE_GOODS_PHOTOS_DIR: z.string().optional(),
 });
 
 const env = EnvSchema.parse(process.env);
@@ -48,12 +58,30 @@ const backupDirResolved = backupDirRaw
     : path.resolve(backendRoot, backupDirRaw)
   : path.resolve(backendRoot, "backups");
 
+const kpPhotosDirRaw = env.KP_PHOTOS_DIR?.trim();
+const kpPhotosDirResolved = kpPhotosDirRaw
+  ? path.isAbsolute(kpPhotosDirRaw)
+    ? kpPhotosDirRaw
+    : path.resolve(backendRoot, kpPhotosDirRaw)
+  : path.resolve(backendRoot, "uploads", "kp-photos");
+
+const tradeGoodsPhotosDirRaw = env.TRADE_GOODS_PHOTOS_DIR?.trim();
+const tradeGoodsPhotosDirResolved = tradeGoodsPhotosDirRaw
+  ? path.isAbsolute(tradeGoodsPhotosDirRaw)
+    ? tradeGoodsPhotosDirRaw
+    : path.resolve(backendRoot, tradeGoodsPhotosDirRaw)
+  : path.resolve(backendRoot, "uploads", "trade-goods-photos");
+
 export const config = {
   port: env.PORT ?? 3000,
   corsOrigin: env.CORS_ORIGIN ?? "*",
   jwtSecret,
   nodeEnv,
   backupDir: backupDirResolved,
+  /** Абсолютный путь к корню файлов КП (подпапки = organizationId). */
+  kpPhotosDir: kpPhotosDirResolved,
+  /** Плоский каталог: имя файла = артикул товара (`code`), напр. `TG-001.jpg`. */
+  tradeGoodsPhotosDir: tradeGoodsPhotosDirResolved,
 } as const;
 
 // SECURITY: не используем CORS "*" в production, иначе фронт/скрипты из других доменов

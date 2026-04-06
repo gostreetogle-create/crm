@@ -103,7 +103,7 @@
 @if (showCardLabel) {
   <header class="crudHeaderStack">
     <h2 class="crudCardHeading">{{ title }}</h2>
-    <div class="crudToolbar crudToolbarStacked">
+    <div class="crudToolbar crudToolbarStacked" [class.crudToolbar--compact]="tableDensity === 'compact'">
       <div class="crudToolbarStackedRow">
         <div class="crudToolbarLeading">
           @if (toolbarActions) {
@@ -118,11 +118,35 @@
             <ng-container *ngTemplateOutlet="crudSearchBlock"></ng-container>
           </div>
         }
+        @if (tablePagination && effectivePageSize > 0 && visibleData.length > 0) {
+          <div class="crudToolbarPaginationSlot">
+            <label class="crudPageSize">
+              <span class="crudPageSizeLabel">На странице</span>
+              <select
+                class="crudPageSizeSelect"
+                [value]="effectivePageSize"
+                (change)="onTablePageSizeChange($event)"
+                aria-label="Количество строк на странице"
+              >
+                @for (n of tablePageSizeOptions; track n) {
+                  <option [value]="n">{{ n }}</option>
+                }
+              </select>
+            </label>
+            <div class="crudPaginationWrap">
+              <app-ui-pagination
+                [page]="clampedTablePage"
+                [pageCount]="tablePageCount"
+                (pageChange)="onTablePageChange($event)"
+              />
+            </div>
+          </div>
+        }
       </div>
     </div>
   </header>
 } @else {
-  <section class="crudToolbar">
+  <section class="crudToolbar" [class.crudToolbar--compact]="tableDensity === 'compact'">
     <div class="crudToolbarMain">
       @if (toolbarActions) {
         <div class="crudToolbarActions">
@@ -133,6 +157,28 @@
     <div class="crudToolbarRight">
       <ng-container *ngTemplateOutlet="crudCreateButton"></ng-container>
       <ng-container *ngTemplateOutlet="crudSearchBlock"></ng-container>
+      @if (tablePagination && effectivePageSize > 0 && visibleData.length > 0) {
+        <label class="crudPageSize">
+          <span class="crudPageSizeLabel">На странице</span>
+          <select
+            class="crudPageSizeSelect"
+            [value]="effectivePageSize"
+            (change)="onTablePageSizeChange($event)"
+            aria-label="Количество строк на странице"
+          >
+            @for (n of tablePageSizeOptions; track n) {
+              <option [value]="n">{{ n }}</option>
+            }
+          </select>
+        </label>
+        <div class="crudPaginationWrap">
+          <app-ui-pagination
+            [page]="clampedTablePage"
+            [pageCount]="tablePageCount"
+            (pageChange)="onTablePageChange($event)"
+          />
+        </div>
+      }
     </div>
   </section>
 }
@@ -164,6 +210,7 @@
       class="crudTable"
       [class.crudTableHub]="columns.length > 0 && columns.length <= 2"
       [class.crudTable--rowActionsMenu]="rowActionsLayout === 'menu' && hasRowActions"
+      [class.crudTable--compact]="tableDensity === 'compact'"
     >
       <thead>
         <tr>

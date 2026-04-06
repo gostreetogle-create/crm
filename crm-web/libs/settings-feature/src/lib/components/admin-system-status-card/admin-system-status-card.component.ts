@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import {
   Component,
   OnInit,
@@ -69,13 +69,13 @@ export class AdminSystemStatusCardComponent implements OnInit {
     try {
       const base = this.apiConfig.baseUrl.replace(/\/$/, '');
       const res = await firstValueFrom(
-        this.http.get<SystemStatusDto>(`${base}/api/admin/system/status`),
+        this.http.get<SystemStatusDto>(`${base}/api/system/status`),
       );
       this.status.set(res);
       const n = res.notices.filter((x) => x.severity !== 'info').length;
       this.badgeCount.set(n);
     } catch (e: unknown) {
-      this.loadError.set(e instanceof Error ? e.message : String(e));
+      this.loadError.set(this.formatLoadError(e));
       this.status.set(null);
       this.badgeCount.set(0);
     } finally {
@@ -102,6 +102,24 @@ export class AdminSystemStatusCardComponent implements OnInit {
     }
   }
 
+  /** HttpErrorResponse не является Error — String(e) давало «[object Object]». */
+  private formatLoadError(e: unknown): string {
+    if (e instanceof HttpErrorResponse) {
+      const body = e.error;
+      if (body != null && typeof body === 'object' && 'message' in body) {
+        const m = (body as { message?: unknown }).message;
+        if (typeof m === 'string' && m.trim()) return m;
+      }
+      if (typeof body === 'string' && body.trim()) return body;
+      const fromStatus = [e.status, e.statusText].filter(Boolean).join(' ').trim();
+      if (fromStatus) return `Ошибка запроса: ${fromStatus}`;
+      return e.message || 'Не удалось загрузить состояние системы';
+    }
+    if (e instanceof Error) return e.message;
+    if (typeof e === 'string') return e;
+    return 'Не удалось загрузить состояние системы';
+  }
+
   severityLabel(s: SystemNoticeSeverity): string {
     switch (s) {
       case 'critical':
@@ -111,5 +129,12 @@ export class AdminSystemStatusCardComponent implements OnInit {
       default:
         return 'Инфо';
     }
+  }
+
+  /** Короткая строка для карточки; полный список — в модалке и в ответе API. */
+  formatPendingMigrationNames(names: readonly string[]): string {
+    if (names.length === 0) return '';
+    if (names.length <= 2) return names.join(', ') + '.';
+    return `${names.slice(0, 2).join(', ')} и ещё ${names.length - 2}.`;
   }
 }

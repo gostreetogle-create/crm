@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { getSystemStatus } from "../lib/system-status.js";
 
-/** Монтируется под `/api/admin/system` (уже с requireAuth + requireAdmin). */
+/** Монтируется под `/api/system` (admin: requireAuth + requireAdmin в app.ts). */
 export const systemAdminRouter = Router();
 
 systemAdminRouter.get("/status", async (_req, res, next) => {

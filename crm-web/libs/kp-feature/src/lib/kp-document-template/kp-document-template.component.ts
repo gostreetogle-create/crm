@@ -1,10 +1,10 @@
 import { DecimalPipe } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, signal } from '@angular/core';
 import { FormArray, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import type { ClientItem } from '@srm/clients-data-access';
 import { formatClientFio } from '@srm/clients-data-access';
 import type { OrganizationItem } from '@srm/organizations-data-access';
-import { LucidePlus, LucideTrash2 } from '@lucide/angular';
+import { LucideEyeOff, LucideFileText, LucidePlus, LucideTrash2 } from '@lucide/angular';
 import { UiButtonComponent } from '@srm/ui-kit';
 import {
   calcKpComputedTotal,
@@ -18,17 +18,25 @@ import {
   parseKpNumber,
   parseKpRecipient,
   parseKpVatAmount,
+  shouldShowDescriptionColumn,
   shouldShowPhotoColumn,
 } from '../kp-utils';
 
 /** Строка табличной части КП. */
 export type KpLineItem = {
   name: string;
+  /** Доп. текст по позиции (в т.ч. из справочника «Товары» при добавлении с витрины). */
+  description: string;
   qty: string;
   unit: string;
   price: string;
   /** URL картинки товара (https:// или путь с /); пусто — без фото. */
   imageUrl: string;
+  /**
+   * Id карточки витрины (`KpCatalogProduct.id`); пусто — строка не привязана к витрине
+   * (ручной ввод или старые данные). Нужно для слияния дублей при повторном «В КП».
+   */
+  catalogProductId: string;
 };
 
 /** Слайс таблицы на одном листе A4. */
@@ -57,7 +65,15 @@ export const KP_RECIPIENT_CONTACT_PREFIX = 'contact:';
 @Component({
   selector: 'app-kp-document-template',
   standalone: true,
-  imports: [DecimalPipe, ReactiveFormsModule, UiButtonComponent, LucidePlus, LucideTrash2],
+  imports: [
+    DecimalPipe,
+    ReactiveFormsModule,
+    UiButtonComponent,
+    LucideEyeOff,
+    LucideFileText,
+    LucidePlus,
+    LucideTrash2,
+  ],
   templateUrl: './kp-document-template.component.html',
   styleUrl: './kp-document-template.component.scss',
 })
@@ -94,6 +110,12 @@ export class KpDocumentTemplateComponent {
    * Поле ввода — слева от кнопки «+» под таблицей (без подписи в макете).
    */
   @Input() rowsPerPageCtrl: FormControl<string> | null = null;
+
+  /** Максимальный размер миниатюры в колонке «Фото», px (панель под таблицей). */
+  @Input() photoThumbMaxPxCtrl: FormControl<string> | null = null;
+
+  /** Пользователь нажал «Описание» под таблицей — показать колонку, пока не очистят все тексты. */
+  private readonly descriptionColumnForced = signal(false);
 
   lineItemsValue(): KpLineItem[] {
     return (this.linesForm?.getRawValue() ?? []) as KpLineItem[];
@@ -185,8 +207,69 @@ export class KpDocumentTemplateComponent {
     return shouldShowPhotoColumn(n, (i) => this.imageUrlTrimmed(i).length > 0);
   }
 
+  descriptionTrimmed(index: number): string {
+    return String(this.lineGroupAt(index).get('description')?.value ?? '').trim();
+  }
+
+  /**
+   * Колонка «Описание» — как «Фото»: при непустом тексте у любой строки; иначе только после кнопки «Описание».
+   */
+  showDescriptionColumn(): boolean {
+    const n = this.linesForm?.length ?? 0;
+    if (shouldShowDescriptionColumn(n, (i) => this.descriptionTrimmed(i).length > 0)) {
+      return true;
+    }
+    return this.descriptionColumnForced();
+  }
+
+  /** Показать колонку «Описание» вручную (пока нет ни одного текста). */
+  enableDescriptionColumn(): void {
+    this.descriptionColumnForced.set(true);
+  }
+
+  /** Скрыть колонку, если она была открыта кнопкой и везде пусто. */
+  hideDescriptionColumn(): void {
+    this.descriptionColumnForced.set(false);
+  }
+
+  /** Есть ли непустое описание хотя бы в одной строке. */
+  hasDescriptionData(): boolean {
+    const n = this.linesForm?.length ?? 0;
+    return shouldShowDescriptionColumn(n, (i) => this.descriptionTrimmed(i).length > 0);
+  }
+
+  /** Кнопка «Описание»: колонка скрыта, данных ещё нет. */
+  showAddDescriptionColumnButton(): boolean {
+    return !this.hasDescriptionData() && !this.descriptionColumnForced();
+  }
+
+  /** Кнопка «Скрыть описание»: колонка из-за кнопки, но текста нигде нет. */
+  showHideDescriptionColumnButton(): boolean {
+    return this.descriptionColumnForced() && !this.hasDescriptionData();
+  }
+
   lineGroupAt(index: number): FormGroup {
     return this.linesForm.at(index) as FormGroup;
+  }
+
+  /** Подсветка ошибки после ввода / blur. */
+  lineFieldInvalid(index: number, key: keyof KpLineItem): boolean {
+    const c = this.lineGroupAt(index).get(key as string);
+    return !!c && c.invalid && (c.dirty || c.touched);
+  }
+
+  formCtrlInvalid(ctrl: FormControl<string> | null | undefined): boolean {
+    return !!ctrl && ctrl.invalid && (ctrl.dirty || ctrl.touched);
+  }
+
+  /** Ограничение 24…160 px для превью и печати. */
+  photoThumbMaxPxEffective(): number {
+    const raw = String(this.photoThumbMaxPxCtrl?.value ?? '').replace(/\s/g, '');
+    const n = parseInt(raw, 10);
+    if (!Number.isFinite(n)) {
+      return 80;
+    }
+    return Math.min(160, Math.max(24, n));
   }
 
   removeLineAt(index: number): void {

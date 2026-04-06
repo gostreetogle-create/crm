@@ -15,7 +15,7 @@ import { RolesStore } from '@srm/dictionaries-state';
 import { ContentCardComponent, PageShellComponent, UiButtonComponent } from '@srm/ui-kit';
 import { AdminSystemStatusCardComponent } from '../../components/admin-system-status-card/admin-system-status-card.component';
 import { DbBackupsAdminCardComponent } from '../../components/db-backups-admin-card/db-backups-admin-card.component';
-import { BulkUnitsAdminCardComponent } from '../../components/bulk-units-admin-card/bulk-units-admin-card.component';
+import { BulkJsonImportCardComponent } from '../../components/bulk-json-import-card/bulk-json-import-card.component';
 import { FIELD_RULES_CATALOG } from '@srm/settings-core';
 import { FieldRuleRow } from '@srm/settings-core';
 
@@ -29,7 +29,7 @@ import { FieldRuleRow } from '@srm/settings-core';
     RouterLink,
     AdminSystemStatusCardComponent,
     DbBackupsAdminCardComponent,
-    BulkUnitsAdminCardComponent,
+    BulkJsonImportCardComponent,
   ],
   templateUrl: './admin-settings-page.html',
   styleUrl: './admin-settings-page.scss',

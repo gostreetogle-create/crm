@@ -396,8 +396,14 @@
           [imageSrc]="'https://picsum.photos/seed/' + p.imageSeed + '/640/640'"
         >
           <div product-actions>
-            <app-ui-button variant="soft" [square]="true" aria-label="В избранное">
-              <span class="squareIconTone squareIconTone--warn"><svg lucideStar [size]="18"></svg></span>
+            <app-ui-button
+              type="button"
+              variant="soft"
+              [square]="true"
+              aria-label="Редактировать (демо)"
+              title="Демо: кнопка без действия"
+            >
+              <svg lucidePencil [size]="18"></svg>
             </app-ui-button>
             <app-ui-button variant="soft" [square]="true" aria-label="В корзину">
               <span class="squareIconTone squareIconTone--accent"><svg lucideShoppingCart [size]="18"></svg></span>

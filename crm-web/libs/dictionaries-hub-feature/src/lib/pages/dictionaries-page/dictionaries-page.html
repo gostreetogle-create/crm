@@ -299,6 +299,8 @@
         [data]="materialsStore.materialsData()"
         [loading]="materialsStore.loading()"
         [maxTableBodyRows]="null"
+        [tablePagination]="true"
+        [tableDensity]="'compact'"
         [tableBodyMaxHeight]="hubBoardDetailTableMaxHeight"
         [canView]="true"
         [canDuplicate]="permissions.crud().canDuplicate"
@@ -326,6 +328,8 @@
         [data]="materialCharacteristicsStore.materialCharacteristicsData()"
         [loading]="materialCharacteristicsStore.loading()"
         [maxTableBodyRows]="null"
+        [tablePagination]="true"
+        [tableDensity]="'compact'"
         [tableBodyMaxHeight]="hubBoardDetailTableMaxHeight"
         [canView]="true"
         [canDuplicate]="permissions.crud().canDuplicate"
@@ -353,6 +357,8 @@
         [data]="productionWorkTypesStore.workTypesData()"
         [loading]="productionWorkTypesStore.loading()"
         [maxTableBodyRows]="null"
+        [tablePagination]="true"
+        [tableDensity]="'compact'"
         [tableBodyMaxHeight]="hubBoardDetailTableMaxHeight"
         [canView]="true"
         [canDuplicate]="permissions.crud().canDuplicate"
@@ -381,6 +387,8 @@
         [data]="productionDetailsStore.productionDetailsData()"
         [loading]="productionDetailsStore.loading()"
         [maxTableBodyRows]="null"
+        [tablePagination]="true"
+        [tableDensity]="'compact'"
         [tableBodyMaxHeight]="hubBoardDetailTableMaxHeight"
         [canView]="true"
         [canDuplicate]="permissions.crud().canDuplicate"
@@ -422,6 +430,8 @@
         [data]="productsStore.productsData()"
         [loading]="productsStore.loading()"
         [maxTableBodyRows]="null"
+        [tablePagination]="true"
+        [tableDensity]="'compact'"
         [tableBodyMaxHeight]="hubBoardDetailTableMaxHeight"
         [canView]="true"
         [canDuplicate]="false"
@@ -434,6 +444,72 @@
         (view)="openProductsView($event)"
         (edit)="openProductsEdit($event)"
         (delete)="deleteProduct($event)"
+      ></crud-layout>
+        }
+
+            @case ('tradeGoodCategories') {
+      @if (tradeGoodCategoriesStore.error()) {
+        <p class="dictionaryHubLoadError" role="alert">{{ tradeGoodCategoriesStore.error() }}</p>
+      }
+      <crud-layout
+        title="Категории товаров"
+        [showHeader]="false"
+        [showCardLabel]="false"
+        [showNameSearch]="true"
+        [showCreateAction]="false"
+        [canCreate]="permissions.crud().canCreate"
+        createAriaLabel="Добавить категорию"
+        createTitle="Добавить категорию"
+        [columns]="tradeGoodCategoriesColumnsForTile()"
+        [data]="tradeGoodCategoriesStore.tradeGoodCategoriesData()"
+        [loading]="tradeGoodCategoriesStore.loading()"
+        [maxTableBodyRows]="null"
+        [tablePagination]="true"
+        [tableDensity]="'compact'"
+        [tableBodyMaxHeight]="hubBoardDetailTableMaxHeight"
+        [canView]="true"
+        [canDuplicate]="permissions.crud().canDuplicate"
+        [canEdit]="permissions.crud().canEdit"
+        [canDelete]="permissions.crud().canDelete"
+        deleteConfirmMessage="Удалить категорию? У товаров с этой категорией связь будет снята."
+        (create)="openTradeGoodCategoriesCreate()"
+        (view)="openTradeGoodCategoriesView($event)"
+        (duplicate)="duplicateTradeGoodCategory($event)"
+        (edit)="openTradeGoodCategoriesEdit($event)"
+        (delete)="deleteTradeGoodCategory($event)"
+      ></crud-layout>
+        }
+
+            @case ('tradeGoodSubcategories') {
+      @if (tradeGoodSubcategoriesStore.error()) {
+        <p class="dictionaryHubLoadError" role="alert">{{ tradeGoodSubcategoriesStore.error() }}</p>
+      }
+      <crud-layout
+        title="Подкатегории товаров"
+        [showHeader]="false"
+        [showCardLabel]="false"
+        [showNameSearch]="true"
+        [showCreateAction]="false"
+        [canCreate]="permissions.crud().canCreate"
+        createAriaLabel="Добавить подкатегорию"
+        createTitle="Добавить подкатегорию"
+        [columns]="tradeGoodSubcategoriesColumnsForTile()"
+        [data]="tradeGoodSubcategoriesStore.tradeGoodSubcategoriesData()"
+        [loading]="tradeGoodSubcategoriesStore.loading()"
+        [maxTableBodyRows]="null"
+        [tablePagination]="true"
+        [tableDensity]="'compact'"
+        [tableBodyMaxHeight]="hubBoardDetailTableMaxHeight"
+        [canView]="true"
+        [canDuplicate]="permissions.crud().canDuplicate"
+        [canEdit]="permissions.crud().canEdit"
+        [canDelete]="permissions.crud().canDelete"
+        deleteConfirmMessage="Удалить подкатегорию? У товаров подкатегория будет снята."
+        (create)="openTradeGoodSubcategoriesCreate()"
+        (view)="openTradeGoodSubcategoriesView($event)"
+        (duplicate)="duplicateTradeGoodSubcategory($event)"
+        (edit)="openTradeGoodSubcategoriesEdit($event)"
+        (delete)="deleteTradeGoodSubcategory($event)"
       ></crud-layout>
         }
 
@@ -464,6 +540,8 @@
         [data]="tradeGoodsStore.tradeGoodsData()"
         [loading]="tradeGoodsStore.loading()"
         [maxTableBodyRows]="null"
+        [tablePagination]="true"
+        [tableDensity]="'compact'"
         [tableBodyMaxHeight]="hubBoardDetailTableMaxHeight"
         [canView]="true"
         [canDuplicate]="false"
@@ -496,6 +574,8 @@
         [data]="complexesStore.complexesData()"
         [loading]="complexesStore.loading()"
         [maxTableBodyRows]="null"
+        [tablePagination]="true"
+        [tableDensity]="'compact'"
         [tableBodyMaxHeight]="hubBoardDetailTableMaxHeight"
         [canView]="true"
         [canDuplicate]="permissions.crud().canDuplicate"
@@ -507,68 +587,6 @@
         (duplicate)="duplicateCatalogComplex($event)"
         (edit)="openCatalogComplexEdit($event)"
         (delete)="deleteCatalogComplex($event)"
-      ></crud-layout>
-        }
-
-            @case ('catalogProducts') {
-      @if (catalogProductsStore.error()) {
-        <p class="dictionaryHubLoadError" role="alert">{{ catalogProductsStore.error() }}</p>
-      }
-      <crud-layout
-        title="Каталожные товары"
-        [showHeader]="false"
-        [showCardLabel]="false"
-        [showNameSearch]="true"
-        [showCreateAction]="false"
-        [canCreate]="permissions.crud().canCreate"
-        createAriaLabel="Добавить каталожный товар"
-        createTitle="Добавить каталожный товар"
-        [columns]="catalogProductsColumnsForTile()"
-        [data]="catalogProductsStore.catalogProductsData()"
-        [loading]="catalogProductsStore.loading()"
-        [maxTableBodyRows]="null"
-        [tableBodyMaxHeight]="hubBoardDetailTableMaxHeight"
-        [canView]="true"
-        [canDuplicate]="permissions.crud().canDuplicate"
-        [canEdit]="permissions.crud().canEdit"
-        [canDelete]="permissions.crud().canDelete"
-        deleteConfirmMessage="Удалить каталожный товар?"
-        (create)="openCatalogProductCreate()"
-        (view)="openCatalogProductView($event)"
-        (duplicate)="duplicateCatalogProduct($event)"
-        (edit)="openCatalogProductEdit($event)"
-        (delete)="deleteCatalogProduct($event)"
-      ></crud-layout>
-        }
-
-            @case ('catalogArticles') {
-      @if (catalogArticlesStore.error()) {
-        <p class="dictionaryHubLoadError" role="alert">{{ catalogArticlesStore.error() }}</p>
-      }
-      <crud-layout
-        title="Позиции каталога"
-        [showHeader]="false"
-        [showCardLabel]="false"
-        [showNameSearch]="true"
-        [showCreateAction]="false"
-        [canCreate]="permissions.crud().canCreate"
-        createAriaLabel="Добавить позицию"
-        createTitle="Добавить позицию"
-        [columns]="catalogArticlesColumnsForTile()"
-        [data]="catalogArticlesStore.catalogArticlesData()"
-        [loading]="catalogArticlesStore.loading()"
-        [maxTableBodyRows]="null"
-        [tableBodyMaxHeight]="hubBoardDetailTableMaxHeight"
-        [canView]="true"
-        [canDuplicate]="permissions.crud().canDuplicate"
-        [canEdit]="permissions.crud().canEdit"
-        [canDelete]="permissions.crud().canDelete"
-        deleteConfirmMessage="Удалить позицию каталога?"
-        (create)="openCatalogArticleCreate()"
-        (view)="openCatalogArticleView($event)"
-        (duplicate)="duplicateCatalogArticle($event)"
-        (edit)="openCatalogArticleEdit($event)"
-        (delete)="deleteCatalogArticle($event)"
       ></crud-layout>
         }
 
@@ -586,6 +604,8 @@
         [data]="unitsStore.unitsData()"
         [loading]="unitsStore.loading()"
         [maxTableBodyRows]="null"
+        [tablePagination]="true"
+        [tableDensity]="'compact'"
         [tableBodyMaxHeight]="hubBoardDetailTableMaxHeight"
         [canView]="true"
         [canDuplicate]="permissions.crud().canDuplicate"
@@ -613,6 +633,8 @@
         [data]="geometriesStore.geometriesData()"
         [loading]="geometriesStore.loading()"
         [maxTableBodyRows]="null"
+        [tablePagination]="true"
+        [tableDensity]="'compact'"
         [tableBodyMaxHeight]="hubBoardDetailTableMaxHeight"
         [canView]="true"
         [canDuplicate]="permissions.crud().canDuplicate"
@@ -640,6 +662,8 @@
         [data]="colorsStore.colorsData()"
         [loading]="colorsStore.loading()"
         [maxTableBodyRows]="null"
+        [tablePagination]="true"
+        [tableDensity]="'compact'"
         [tableBodyMaxHeight]="hubBoardDetailTableMaxHeight"
         [canView]="true"
         [canDuplicate]="permissions.crud().canDuplicate"
@@ -667,6 +691,8 @@
         [data]="surfaceFinishesStore.surfaceFinishesData()"
         [loading]="surfaceFinishesStore.loading()"
         [maxTableBodyRows]="null"
+        [tablePagination]="true"
+        [tableDensity]="'compact'"
         [tableBodyMaxHeight]="hubBoardDetailTableMaxHeight"
         [canView]="true"
         [canDuplicate]="permissions.crud().canDuplicate"
@@ -694,6 +720,8 @@
         [data]="coatingsStore.coatingsData()"
         [loading]="coatingsStore.loading()"
         [maxTableBodyRows]="null"
+        [tablePagination]="true"
+        [tableDensity]="'compact'"
         [tableBodyMaxHeight]="hubBoardDetailTableMaxHeight"
         [canView]="true"
         [canDuplicate]="permissions.crud().canDuplicate"
@@ -722,6 +750,8 @@
         [data]="organizationsStore.organizationsData()"
         [loading]="organizationsStore.loading()"
         [maxTableBodyRows]="null"
+        [tablePagination]="true"
+        [tableDensity]="'compact'"
         [tableBodyMaxHeight]="hubBoardDetailTableMaxHeight"
         [canView]="true"
         [canDuplicate]="permissions.crud().canDuplicate"
@@ -751,6 +781,8 @@
         [data]="clientsStore.clientsData()"
         [loading]="clientsStore.loading()"
         [maxTableBodyRows]="null"
+        [tablePagination]="true"
+        [tableDensity]="'compact'"
         [tableBodyMaxHeight]="hubBoardDetailTableMaxHeight"
         [canView]="true"
         [canDuplicate]="permissions.crud().canDuplicate"
@@ -780,6 +812,8 @@
         [data]="kpPhotosStore.kpPhotosData()"
         [loading]="kpPhotosStore.loading()"
         [maxTableBodyRows]="null"
+        [tablePagination]="true"
+        [tableDensity]="'compact'"
         [tableBodyMaxHeight]="hubBoardDetailTableMaxHeight"
         [canView]="true"
         [canDuplicate]="permissions.crud().canDuplicate"
@@ -809,6 +843,8 @@
         [data]="rolesStore.rolesData()"
         [loading]="false"
         [maxTableBodyRows]="null"
+        [tablePagination]="true"
+        [tableDensity]="'compact'"
         [tableBodyMaxHeight]="hubBoardDetailTableMaxHeight"
         [canView]="true"
         [canDuplicate]="permissions.crud().canDuplicate"
@@ -838,6 +874,8 @@
         [data]="usersStore.usersData()"
         [loading]="false"
         [maxTableBodyRows]="null"
+        [tablePagination]="true"
+        [tableDensity]="'compact'"
         [tableBodyMaxHeight]="hubBoardDetailTableMaxHeight"
         [canView]="true"
         [canDuplicate]="permissions.crud().canDuplicate"
@@ -1214,6 +1252,25 @@
   size="xl"
 ></ui-modal>
 
+<ui-modal
+  *ngIf="isTradeGoodDeleteConfirmOpen()"
+  title="Удалить товар?"
+  [content]="tradeGoodDeleteConfirmContentTpl"
+  [actions]="tradeGoodDeleteConfirmActionsTpl"
+  size="sm"
+  [backdropZIndex]="tradeGoodDeleteConfirmBackdropZIndex"
+  (close)="cancelTradeGoodDeleteConfirm()"
+></ui-modal>
+
+<ng-template #tradeGoodDeleteConfirmContentTpl>
+  <p class="dictionaryMuted">Товар будет удалён без возможности восстановления из интерфейса.</p>
+</ng-template>
+
+<ng-template #tradeGoodDeleteConfirmActionsTpl>
+  <app-ui-button variant="soft" type="button" (clicked)="cancelTradeGoodDeleteConfirm()">Отмена</app-ui-button>
+  <app-ui-button variant="danger" type="button" (clicked)="confirmTradeGoodDeleteFromModal()">Удалить</app-ui-button>
+</ng-template>
+
 <ng-template #productionDetailsContentTpl>
   @if (isProductionDetailsViewMode()) {
     <app-dictionary-preview-card-no-photo
@@ -1484,7 +1541,7 @@
                 <dd class="productSpecView__mono">{{ (pv.code ?? '').trim() || '—' }}</dd>
               </div>
               <div class="productSpecView__dlRow productSpecView__dlRow--block">
-                <dt>Описание (витрина / КП)</dt>
+                <dt>Описание</dt>
                 <dd>{{ (pv.description ?? '').trim() || '—' }}</dd>
               </div>
               <div class="productSpecView__dlRow productSpecView__dlRow--block">
@@ -1538,7 +1595,7 @@
           <app-ui-form-field label="Наименование" [required]="true">
             <input type="text" formControlName="name" placeholder="Напр. Секция А-1" />
           </app-ui-form-field>
-          <app-ui-form-field label="Описание (витрина / КП)" [wide]="true">
+          <app-ui-form-field label="Описание" [wide]="true">
             <textarea rows="2" formControlName="description" placeholder="Текст для клиента; внутренние пометки — в «Заметки»"></textarea>
           </app-ui-form-field>
           <app-ui-form-field label="Вид работ">
@@ -1649,8 +1706,40 @@
           @if ((tg.code ?? '').trim()) {
             <p class="productSpecView__code">Артикул: {{ tg.code }}</p>
           }
+          @if ((tg.category ?? '').trim() || (tg.subcategory ?? '').trim() || (tg.unitCode ?? '').trim()) {
+            <p class="productSpecView__code">
+              @if ((tg.category ?? '').trim()) {
+                <span>Категория: {{ tg.category }}</span>
+              }
+              @if ((tg.subcategory ?? '').trim()) {
+                <span> · Подкатегория: {{ tg.subcategory }}</span>
+              }
+              @if ((tg.unitCode ?? '').trim()) {
+                <span> · Ед.: {{ tg.unitCode }}</span>
+              }
+            </p>
+          }
           @if ((tg.description ?? '').trim()) {
             <p class="productSpecView__description">{{ tg.description }}</p>
+          }
+          @if ((tg.photoUrls?.length ?? 0) > 0) {
+            <div class="tradeGoodViewPhotos kpPhotoPreview--tradeGoodHero">
+              @for (u of tg.photoUrls!; track $index) {
+                <figure
+                  class="kpPhotoPreview tradeGoodViewPhotos__item"
+                  [class.tradeGoodViewPhotos__item--primary]="($index + 1) === (tg.photoPrimaryIndex ?? 1)"
+                >
+                  <img [src]="u" alt="" />
+                  @if (($index + 1) === (tg.photoPrimaryIndex ?? 1)) {
+                    <figcaption class="tradeGoodViewPhotos__badge">Главное</figcaption>
+                  }
+                </figure>
+              }
+            </div>
+          } @else if ((tg.photoUrl ?? '').trim()) {
+            <div class="kpPhotoPreview kpPhotoPreview--tradeGoodHero">
+              <img [src]="tg.photoUrl" alt="" />
+            </div>
           }
           <div class="productSpecView__heroNums">
             <span><strong>Цена</strong> {{ tg.priceRub != null ? tg.priceRub + ' ₽' : '—' }}</span>
@@ -1681,8 +1770,20 @@
           <section class="productSpecView__card">
             <h3 class="productSpecView__cardTitle">Описание и заметки</h3>
             <dl class="productSpecView__dl">
+              <div class="productSpecView__dlRow">
+                <dt>Категория</dt>
+                <dd>{{ (tg.category ?? '').trim() || '—' }}</dd>
+              </div>
+              <div class="productSpecView__dlRow">
+                <dt>Подкатегория</dt>
+                <dd>{{ (tg.subcategory ?? '').trim() || '—' }}</dd>
+              </div>
+              <div class="productSpecView__dlRow">
+                <dt>Ед. изм.</dt>
+                <dd>{{ (tg.unitCode ?? '').trim() || '—' }}</dd>
+              </div>
               <div class="productSpecView__dlRow productSpecView__dlRow--block">
-                <dt>Описание (витрина / КП)</dt>
+                <dt>Описание</dt>
                 <dd>{{ (tg.description ?? '').trim() || '—' }}</dd>
               </div>
               <div class="productSpecView__dlRow productSpecView__dlRow--block">
@@ -1710,21 +1811,83 @@
     }
   } @else {
     <form id="trade-goods-form" [formGroup]="tradeGoodsForm" (ngSubmit)="submitTradeGoods()" class="formGrid">
+      @if (tradeGoodsSaveError()) {
+        <p class="dictionaryHubLoadError" role="alert">{{ tradeGoodsSaveError() }}</p>
+      }
       <fieldset class="dictionaryFormSection">
         <legend>Товар</legend>
         <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
-          <app-ui-form-field label="Артикул">
-            <input type="text" formControlName="code" placeholder="Необязательно, уникально" />
+          <app-ui-form-field class="dictionaryFieldRowFull" label="Артикул">
+            <input type="text" formControlName="code" placeholder="Нужен для имён файлов фото" />
           </app-ui-form-field>
-          <app-ui-form-field label="Наименование" [required]="true">
+          <p class="dictionaryMuted dictionaryFieldRowFull">
+            Фото для карточки и КП: можно выбирать файлы несколько раз — новые добавляются к списку. При сохранении на сервере
+            имена файлов
+            <code>{{ tradeGoodCodeHint() }}_1.jpg</code>, <code>_2</code>, <code>_3</code> … Главное изображение — только
+            радиокнопкой (по умолчанию не переключается при добавлении фото).
+          </p>
+          <div class="dictionaryFieldRowFull tradeGoodPhotoPicker">
+            <label class="tradeGoodPhotoPicker__file">
+              <span class="muted">Выбрать файлы</span>
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                multiple
+                (change)="onTradeGoodPhotosPick($event)"
+              />
+            </label>
+          </div>
+          @if (tradeGoodPhotoPreviewRows().length > 0) {
+            <div class="tradeGoodPhotoPicker__grid dictionaryFieldRowFull" role="radiogroup" aria-label="Главное фото">
+              @for (src of tradeGoodPhotoPreviewRows(); track src) {
+                <label
+                  class="tradeGoodPhotoPicker__tile"
+                  [class.tradeGoodPhotoPicker__tile--selected]="tradeGoodPhotoPrimarySlot() === $index"
+                >
+                  <input
+                    type="radio"
+                    name="tradeGoodPrimaryPhoto"
+                    [value]="$index"
+                    [checked]="tradeGoodPhotoPrimarySlot() === $index"
+                    (change)="setTradeGoodPhotoPrimarySlot($index)"
+                  />
+                  <span class="tradeGoodPhotoPicker__thumb kpPhotoPreview">
+                    <img [src]="src" alt="" />
+                  </span>
+                </label>
+              }
+            </div>
+          } @else if (tradeGoodEditPhotoUrl()) {
+            <div class="dictionaryFieldRowFull kpPhotoPreview">
+              <img [src]="tradeGoodEditPhotoUrl()" alt="" />
+            </div>
+          }
+          <app-ui-form-field class="dictionaryFieldRowFull" label="Наименование" [required]="true">
             <input type="text" formControlName="name" placeholder="Напр. Комплект А-1" />
           </app-ui-form-field>
-          <app-ui-form-field label="Описание (витрина / КП)" [wide]="true">
-            <textarea
-              rows="2"
-              formControlName="description"
-              placeholder="Текст для клиента; внутренние пометки — в «Заметки»"
-            ></textarea>
+          <app-ui-form-field label="Категория">
+            <select formControlName="categoryId">
+              <option value="">— не выбрано —</option>
+              @for (o of tradeGoodCategoriesStore.options(); track o.id) {
+                <option [value]="o.id">{{ o.label }}</option>
+              }
+            </select>
+          </app-ui-form-field>
+          <app-ui-form-field label="Подкатегория">
+            <select formControlName="subcategoryId">
+              <option value="">— не выбрано —</option>
+              @for (o of tradeGoodSubcategorySelectOptions(); track o.id) {
+                <option [value]="o.id">{{ o.label }}</option>
+              }
+            </select>
+          </app-ui-form-field>
+          <app-ui-form-field class="dictionaryFieldRowFull" label="Ед. изм.">
+            <select formControlName="unitCode" aria-label="Единица измерения из справочника">
+              <option value="">— не выбрано —</option>
+              @for (o of tradeGoodUnitSelectOptions(); track o.value) {
+                <option [value]="o.value">{{ o.label }}</option>
+              }
+            </select>
           </app-ui-form-field>
           <app-ui-form-field label="Цена, ₽">
             <input type="number" formControlName="priceRub" step="any" />
@@ -1732,15 +1895,17 @@
           <app-ui-form-field label="Себестоимость, ₽">
             <input type="number" formControlName="costRub" step="any" />
           </app-ui-form-field>
-          <app-ui-form-field label="Заметки (внутренние)" [wide]="true">
+          <app-ui-form-field class="dictionaryFieldRowFull" label="Описание" [wide]="true">
+            <textarea
+              rows="2"
+              formControlName="description"
+              placeholder="Текст для клиента; внутренние пометки — в «Заметки»"
+            ></textarea>
+          </app-ui-form-field>
+          <app-ui-form-field class="dictionaryFieldRowFull" label="Заметки (внутренние)" [wide]="true">
             <textarea rows="2" formControlName="notes"></textarea>
           </app-ui-form-field>
-          <app-ui-checkbox-field class="checkbox" label="Активен" formControlName="isActive"></app-ui-checkbox-field>
-          <div class="dictionaryFieldRowFull">
-            <app-ui-button type="button" variant="soft" (clicked)="recalcTradeGoodPriceDefaults()">
-              Подставить сумму по изделиям (цена и себестоимость)
-            </app-ui-button>
-          </div>
+          <app-ui-checkbox-field class="checkbox dictionaryFieldRowFull" label="Активен" formControlName="isActive"></app-ui-checkbox-field>
         </div>
       </fieldset>
 
@@ -1793,18 +1958,38 @@
         <div class="dictionaryFieldRowFull">
           <app-ui-button type="button" variant="soft" (clicked)="addTradeGoodLine()">+ Добавить изделие в состав</app-ui-button>
         </div>
+        <div class="dictionaryFieldRowFull tradeGoodRecalcRow">
+          <app-ui-button type="button" variant="soft" (clicked)="recalcTradeGoodPriceDefaults()">
+            Подставить сумму по изделиям (цена и себестоимость)
+          </app-ui-button>
+          <p class="muted tradeGoodRecalcRow__hint">
+            Учитывает строки состава выше и подставляет суммы в поля «Цена» и «Себестоимость» в блоке «Товар».
+          </p>
+        </div>
       </fieldset>
     </form>
   }
 </ng-template>
 
 <ng-template #tradeGoodsActionsTpl>
-  <app-ui-modal-form-actions
-    [viewMode]="isTradeGoodsViewMode()"
-    [formId]="'trade-goods-form'"
-    [submitLabel]="tradeGoodsStore.isEditMode() ? 'Сохранить изменения' : 'Создать товар'"
-    (dismiss)="closeTradeGoodsModal()"
-  />
+  <div class="tradeGoodsModalActions">
+    @if (permissions.crud().canDelete && tradeGoodsStore.isEditMode() && !isTradeGoodsViewMode()) {
+      <app-ui-button
+        class="tradeGoodsModalActions__delete"
+        type="button"
+        variant="danger"
+        (clicked)="deleteTradeGoodFromModal()"
+      >
+        Удалить товар
+      </app-ui-button>
+    }
+    <app-ui-modal-form-actions
+      [viewMode]="isTradeGoodsViewMode()"
+      [formId]="'trade-goods-form'"
+      [submitLabel]="tradeGoodsStore.isEditMode() ? 'Сохранить изменения' : 'Создать товар'"
+      (dismiss)="closeTradeGoodsModal()"
+    />
+  </div>
 </ng-template>
 
 <ng-template #productionDetailsActionsTpl>
@@ -3537,213 +3722,6 @@
 </ng-template>
 
 <ui-modal
-  *ngIf="isCatalogProductModalOpen()"
-  [title]="
-    isCatalogProductViewMode()
-      ? 'Просмотр — Каталожный товар'
-      : catalogProductsStore.isEditMode()
-        ? 'Редактирование каталожного товара'
-        : 'Новый каталожный товар'
-  "
-  [content]="catalogProductContentTpl"
-  [actions]="catalogProductActionsTpl"
-  (close)="closeCatalogProductModal()"
-  [closeOnBackdrop]="isCatalogProductViewMode()"
-  size="md"
-></ui-modal>
-
-<ng-template #catalogProductContentTpl>
-  @if (isCatalogProductViewMode()) {
-    <div class="dictionaryFormSection">
-      <p><strong>{{ catalogProductForm.controls.name.value }}</strong></p>
-      <p>Комплекс: {{ catalogProductComplexViewLabel() }}</p>
-      @if (catalogProductForm.controls.code.value.trim()) {
-        <p>Код: {{ catalogProductForm.controls.code.value }}</p>
-      }
-      <p>Цена: {{ catalogProductForm.controls.price.value }} ₽</p>
-      @if (catalogProductForm.controls.description.value.trim()) {
-        <p>Описание: {{ catalogProductForm.controls.description.value }}</p>
-      }
-      <p>Активен: {{ catalogProductForm.controls.isActive.value ? 'Да' : 'Нет' }}</p>
-    </div>
-  } @else {
-    <form
-      id="catalog-product-form"
-      [formGroup]="catalogProductForm"
-      (ngSubmit)="submitCatalogProduct()"
-      class="formGrid"
-    >
-      <fieldset class="dictionaryFormSection">
-        <legend>Товар</legend>
-        <div class="dictionaryFormSectionBody">
-          <app-ui-form-field
-            label="Комплекс"
-            [required]="true"
-            [invalid]="isCatalogProductInvalid('complexId')"
-            [errorText]="isCatalogProductInvalid('complexId') ? 'Выберите комплекс' : ''"
-          >
-            <select formControlName="complexId">
-              <option value="">— выберите —</option>
-              @for (opt of complexesStore.options(); track opt.id) {
-                <option [value]="opt.id">{{ opt.label }}</option>
-              }
-            </select>
-          </app-ui-form-field>
-        </div>
-        <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
-          <app-ui-form-field
-            label="Наименование"
-            [required]="true"
-            [invalid]="isCatalogProductInvalid('name')"
-            [errorText]="isCatalogProductInvalid('name') ? 'Введите наименование' : ''"
-          >
-            <input type="text" formControlName="name" />
-          </app-ui-form-field>
-
-          <app-ui-form-field label="Код">
-            <input type="text" formControlName="code" />
-          </app-ui-form-field>
-        </div>
-        <div class="dictionaryFormSectionBody">
-          <app-ui-form-field label="Описание" [wide]="true">
-            <textarea rows="2" formControlName="description"></textarea>
-          </app-ui-form-field>
-
-          <app-ui-form-field
-            label="Цена, ₽"
-            [required]="true"
-            [invalid]="isCatalogProductInvalid('price')"
-            [errorText]="isCatalogProductInvalid('price') ? 'Укажите неотрицательную цену' : ''"
-          >
-            <input type="number" formControlName="price" min="0" step="0.01" />
-          </app-ui-form-field>
-
-          <app-ui-checkbox-field class="checkbox" label="Активен" formControlName="isActive"></app-ui-checkbox-field>
-        </div>
-      </fieldset>
-    </form>
-  }
-</ng-template>
-
-<ng-template #catalogProductActionsTpl>
-  <app-ui-modal-form-actions
-    [viewMode]="isCatalogProductViewMode()"
-    [formId]="'catalog-product-form'"
-    [submitLabel]="catalogProductsStore.isEditMode() ? 'Сохранить изменения' : 'Создать товар'"
-    (dismiss)="closeCatalogProductModal()"
-  />
-</ng-template>
-
-<ui-modal
-  *ngIf="isCatalogArticleModalOpen()"
-  [title]="
-    isCatalogArticleViewMode()
-      ? 'Просмотр — Позиция каталога'
-      : catalogArticlesStore.isEditMode()
-        ? 'Редактирование позиции'
-        : 'Новая позиция каталога'
-  "
-  [content]="catalogArticleContentTpl"
-  [actions]="catalogArticleActionsTpl"
-  (close)="closeCatalogArticleModal()"
-  [closeOnBackdrop]="isCatalogArticleViewMode()"
-  size="md"
-></ui-modal>
-
-<ng-template #catalogArticleContentTpl>
-  @if (isCatalogArticleViewMode()) {
-    <div class="dictionaryFormSection">
-      <p><strong>{{ catalogArticleForm.controls.name.value }}</strong></p>
-      <p>Товар: {{ catalogArticleProductViewLabel() }}</p>
-      @if (catalogArticleForm.controls.code.value.trim()) {
-        <p>Код: {{ catalogArticleForm.controls.code.value }}</p>
-      }
-      <p>Количество: {{ catalogArticleForm.controls.qty.value }}</p>
-      <p>Порядок сортировки: {{ catalogArticleForm.controls.sortOrder.value }}</p>
-      @if (catalogArticleForm.controls.description.value.trim()) {
-        <p>Описание: {{ catalogArticleForm.controls.description.value }}</p>
-      }
-      <p>Активна: {{ catalogArticleForm.controls.isActive.value ? 'Да' : 'Нет' }}</p>
-    </div>
-  } @else {
-    <form
-      id="catalog-article-form"
-      [formGroup]="catalogArticleForm"
-      (ngSubmit)="submitCatalogArticle()"
-      class="formGrid"
-    >
-      <fieldset class="dictionaryFormSection">
-        <legend>Позиция</legend>
-        <div class="dictionaryFormSectionBody">
-          <app-ui-form-field
-            label="Каталожный товар"
-            [required]="true"
-            [invalid]="isCatalogArticleInvalid('productId')"
-            [errorText]="isCatalogArticleInvalid('productId') ? 'Выберите товар' : ''"
-          >
-            <select formControlName="productId">
-              <option value="">— выберите —</option>
-              @for (opt of catalogProductsStore.options(); track opt.id) {
-                <option [value]="opt.id">{{ opt.label }}</option>
-              }
-            </select>
-          </app-ui-form-field>
-        </div>
-        <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
-          <app-ui-form-field
-            label="Наименование"
-            [required]="true"
-            [invalid]="isCatalogArticleInvalid('name')"
-            [errorText]="isCatalogArticleInvalid('name') ? 'Введите наименование' : ''"
-          >
-            <input type="text" formControlName="name" />
-          </app-ui-form-field>
-
-          <app-ui-form-field label="Код">
-            <input type="text" formControlName="code" />
-          </app-ui-form-field>
-        </div>
-        <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
-          <app-ui-form-field
-            label="Количество"
-            [required]="true"
-            [invalid]="isCatalogArticleInvalid('qty')"
-            [errorText]="isCatalogArticleInvalid('qty') ? 'Минимум 1' : ''"
-          >
-            <input type="number" formControlName="qty" min="1" step="1" />
-          </app-ui-form-field>
-
-          <app-ui-form-field
-            label="Порядок"
-            [required]="true"
-            [invalid]="isCatalogArticleInvalid('sortOrder')"
-            [errorText]="isCatalogArticleInvalid('sortOrder') ? 'Неотрицательное число' : ''"
-          >
-            <input type="number" formControlName="sortOrder" min="0" step="1" />
-          </app-ui-form-field>
-        </div>
-        <div class="dictionaryFormSectionBody">
-          <app-ui-form-field label="Описание" [wide]="true">
-            <textarea rows="2" formControlName="description"></textarea>
-          </app-ui-form-field>
-
-          <app-ui-checkbox-field class="checkbox" label="Активна" formControlName="isActive"></app-ui-checkbox-field>
-        </div>
-      </fieldset>
-    </form>
-  }
-</ng-template>
-
-<ng-template #catalogArticleActionsTpl>
-  <app-ui-modal-form-actions
-    [viewMode]="isCatalogArticleViewMode()"
-    [formId]="'catalog-article-form'"
-    [submitLabel]="catalogArticlesStore.isEditMode() ? 'Сохранить изменения' : 'Создать позицию'"
-    (dismiss)="closeCatalogArticleModal()"
-  />
-</ng-template>
-
-<ui-modal
   *ngIf="isUnitsModalOpen()"
   [title]="
     isUnitsViewMode()
@@ -3824,6 +3802,138 @@
 </ng-template>
 
 <ui-modal
+  *ngIf="isTradeGoodCategoriesModalOpen()"
+  [title]="
+    isTradeGoodCategoriesViewMode()
+      ? 'Просмотр категории товаров'
+      : tradeGoodCategoriesStore.isEditMode()
+        ? 'Редактирование категории'
+        : 'Новая категория'
+  "
+  [content]="tradeGoodCategoriesContentTpl"
+  [actions]="tradeGoodCategoriesActionsTpl"
+  (close)="closeTradeGoodCategoriesModal()"
+  [closeOnBackdrop]="isTradeGoodCategoriesViewMode()"
+  size="md"
+></ui-modal>
+
+<ng-template #tradeGoodCategoriesContentTpl>
+  @if (isTradeGoodCategoriesViewMode()) {
+    <div class="dictionaryFormSection">
+      <p><strong>{{ tradeGoodCategoriesForm.controls.name.value }}</strong></p>
+      <p>Порядок: {{ tradeGoodCategoriesForm.controls.sortOrder.value }}</p>
+      <p>Активна: {{ tradeGoodCategoriesForm.controls.isActive.value ? 'Да' : 'Нет' }}</p>
+    </div>
+  } @else {
+    <form id="trade-good-categories-form" [formGroup]="tradeGoodCategoriesForm" (ngSubmit)="submitTradeGoodCategories()" class="formGrid">
+      <fieldset class="dictionaryFormSection">
+        <legend>Категория</legend>
+        <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
+          <app-ui-form-field
+            label="Название"
+            [required]="true"
+            [invalid]="isTradeGoodCategoriesInvalid('name')"
+            [errorText]="isTradeGoodCategoriesInvalid('name') ? 'Введите название' : ''"
+          >
+            <input type="text" formControlName="name" />
+          </app-ui-form-field>
+          <app-ui-form-field label="Порядок сортировки" [required]="true">
+            <input type="number" formControlName="sortOrder" step="1" />
+          </app-ui-form-field>
+          <app-ui-checkbox-field class="checkbox" label="Активна" formControlName="isActive"></app-ui-checkbox-field>
+        </div>
+      </fieldset>
+    </form>
+  }
+</ng-template>
+
+<ng-template #tradeGoodCategoriesActionsTpl>
+  <app-ui-modal-form-actions
+    [viewMode]="isTradeGoodCategoriesViewMode()"
+    [formId]="'trade-good-categories-form'"
+    [submitLabel]="tradeGoodCategoriesStore.isEditMode() ? 'Сохранить изменения' : 'Создать категорию'"
+    (dismiss)="closeTradeGoodCategoriesModal()"
+  />
+</ng-template>
+
+<ui-modal
+  *ngIf="isTradeGoodSubcategoriesModalOpen()"
+  [title]="
+    isTradeGoodSubcategoriesViewMode()
+      ? 'Просмотр подкатегории товаров'
+      : tradeGoodSubcategoriesStore.isEditMode()
+        ? 'Редактирование подкатегории'
+        : 'Новая подкатегория'
+  "
+  [content]="tradeGoodSubcategoriesContentTpl"
+  [actions]="tradeGoodSubcategoriesActionsTpl"
+  (close)="closeTradeGoodSubcategoriesModal()"
+  [closeOnBackdrop]="isTradeGoodSubcategoriesViewMode()"
+  size="md"
+></ui-modal>
+
+<ng-template #tradeGoodSubcategoriesContentTpl>
+  @if (isTradeGoodSubcategoriesViewMode()) {
+    <div class="dictionaryFormSection">
+      <p>
+        Категория:
+        <strong>{{ getTradeGoodCategoryNameForId(tradeGoodSubcategoriesForm.controls.categoryId.value ?? '') }}</strong>
+      </p>
+      <p><strong>{{ tradeGoodSubcategoriesForm.controls.name.value }}</strong></p>
+      <p>Порядок: {{ tradeGoodSubcategoriesForm.controls.sortOrder.value }}</p>
+      <p>Активна: {{ tradeGoodSubcategoriesForm.controls.isActive.value ? 'Да' : 'Нет' }}</p>
+    </div>
+  } @else {
+    <form
+      id="trade-good-subcategories-form"
+      [formGroup]="tradeGoodSubcategoriesForm"
+      (ngSubmit)="submitTradeGoodSubcategories()"
+      class="formGrid"
+    >
+      <fieldset class="dictionaryFormSection">
+        <legend>Подкатегория</legend>
+        <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
+          <app-ui-form-field
+            label="Категория"
+            [required]="true"
+            [invalid]="isTradeGoodSubcategoriesInvalid('categoryId')"
+            [errorText]="isTradeGoodSubcategoriesInvalid('categoryId') ? 'Выберите категорию' : ''"
+          >
+            <select formControlName="categoryId">
+              <option value="">— выберите —</option>
+              @for (o of tradeGoodCategoriesStore.options(); track o.id) {
+                <option [value]="o.id">{{ o.label }}</option>
+              }
+            </select>
+          </app-ui-form-field>
+          <app-ui-form-field
+            label="Название"
+            [required]="true"
+            [invalid]="isTradeGoodSubcategoriesInvalid('name')"
+            [errorText]="isTradeGoodSubcategoriesInvalid('name') ? 'Введите название' : ''"
+          >
+            <input type="text" formControlName="name" />
+          </app-ui-form-field>
+          <app-ui-form-field label="Порядок сортировки" [required]="true">
+            <input type="number" formControlName="sortOrder" step="1" />
+          </app-ui-form-field>
+          <app-ui-checkbox-field class="checkbox" label="Активна" formControlName="isActive"></app-ui-checkbox-field>
+        </div>
+      </fieldset>
+    </form>
+  }
+</ng-template>
+
+<ng-template #tradeGoodSubcategoriesActionsTpl>
+  <app-ui-modal-form-actions
+    [viewMode]="isTradeGoodSubcategoriesViewMode()"
+    [formId]="'trade-good-subcategories-form'"
+    [submitLabel]="tradeGoodSubcategoriesStore.isEditMode() ? 'Сохранить изменения' : 'Создать подкатегорию'"
+    (dismiss)="closeTradeGoodSubcategoriesModal()"
+  />
+</ng-template>
+
+<ui-modal
   *ngIf="isKpPhotosModalOpen()"
   [title]="
     isKpPhotosViewMode()
@@ -3845,9 +3955,12 @@
       <p><strong>{{ kpPhotosForm.controls.name.value }}</strong></p>
       <p>Организация: {{ kpPhotoOrganizationLabel() }}</p>
       <p>Название фото: {{ kpPhotosForm.controls.photoTitle.value }}</p>
-      @if (kpPhotosForm.controls.photoUrl.value) {
+      @if (kpPhotosForm.controls.photoFileName.value?.trim()) {
+        <p>Файл на сервере: {{ kpPhotosForm.controls.photoFileName.value }}</p>
+      }
+      @if (kpPhotoPreviewUrl()) {
         <div class="kpPhotoPreview">
-          <img [src]="kpPhotosForm.controls.photoUrl.value" alt="" />
+          <img [src]="kpPhotoPreviewUrl()" alt="" />
         </div>
       }
       <p>Активна: {{ kpPhotosForm.controls.isActive.value ? 'Да' : 'Нет' }}</p>
@@ -3884,7 +3997,7 @@
 
       <fieldset class="dictionaryFormSection">
         <legend>Фото</legend>
-        <div class="dictionaryFormSectionBody">
+        <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
           <app-ui-form-field
             label="Название фото"
             [required]="true"
@@ -3894,20 +4007,37 @@
             <input type="text" formControlName="photoTitle" />
           </app-ui-form-field>
 
-          <div class="kpPhotoUploadRow">
-            <label class="kpPhotoUploadLabel">
-              <span>Файл изображения</span>
-              <input type="file" accept="image/*" (change)="onKpPhotoFileSelected($event)" />
-            </label>
-            <p class="dictionaryMuted">До 1,5 МБ. Сохраняется в базе (data URL).</p>
-          </div>
-
-          @if (kpPhotosForm.controls.photoUrl.value) {
-            <div class="kpPhotoPreview">
-              <img [src]="kpPhotosForm.controls.photoUrl.value" alt="" />
-            </div>
-          }
+          <app-ui-form-field label="Имя файла на сервере" [required]="false">
+            <input
+              type="text"
+              formControlName="photoFileName"
+              placeholder="например, sample.jpg"
+              autocomplete="off"
+            />
+          </app-ui-form-field>
         </div>
+        <p class="dictionaryMuted">
+          Положите файл в каталог на сервере:
+          <code>uploads/kp-photos/{{ kpPhotosForm.controls.organizationId.value || '…' }}/</code>
+          — превью подставится, если файл с таким именем есть.
+        </p>
+
+        <div class="dictionaryFormSectionBody">
+          <app-ui-form-field label="Дополнительный URL (необязательно)" [required]="false">
+            <input
+              type="text"
+              formControlName="photoExternalUrl"
+              placeholder="https://… или только если без файла в папке"
+              autocomplete="off"
+            />
+          </app-ui-form-field>
+        </div>
+
+        @if (kpPhotoPreviewUrl()) {
+          <div class="kpPhotoPreview">
+            <img [src]="kpPhotoPreviewUrl()" alt="" />
+          </div>
+        }
       </fieldset>
 
       <fieldset class="dictionaryFormSection">

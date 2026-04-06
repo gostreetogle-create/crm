@@ -29,9 +29,9 @@ export const AUTHZ_SYSTEM_ROLE_IDS = new InjectionToken<AuthzSystemRoleIds>('AUT
   providedIn: 'root',
   factory: () => ({
     admin: 'role-sys-admin',
-    editor: 'role-sys-editor',
-    viewer: 'role-sys-viewer',
-    director: 'role-seed-director',
-    accountant: 'role-seed-accountant',
+    editor: 'role-sys-admin',
+    viewer: 'role-sys-admin',
+    director: 'role-sys-admin',
+    accountant: 'role-sys-admin',
   }),
 });

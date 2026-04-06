@@ -144,7 +144,10 @@ model KpPhoto {
   name           String
   organizationId String
   photoTitle     String
-  photoUrl       String   @db.Text
+  /// Имя файла в каталоге uploads/kp-photos/{organizationId}/ (без путей; бэкенд проверяет наличие и отдаёт URL).
+  photoFileName  String?
+  /// Внешний URL или data URL (legacy); если задано photoFileName и файл найден — в API приоритет у файла.
+  photoUrl       String?  @db.Text
   isActive       Boolean  @default(true)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -403,21 +406,68 @@ model Article {
   @@map("articles")
 }
 
+/// Категория товарной номенклатуры (верхний уровень для КП / витрины).
+model TradeGoodCategory {
+  id        String   @id @default(uuid())
+  name      String
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  subcategories TradeGoodSubcategory[]
+  tradeGoods    TradeGood[]
+
+  @@unique([name])
+  @@map("trade_good_categories")
+}
+
+/// Подкатегория внутри категории товаров.
+model TradeGoodSubcategory {
+  id         String   @id @default(uuid())
+  categoryId String
+  name       String
+  sortOrder  Int      @default(0)
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  category   TradeGoodCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  tradeGoods TradeGood[]
+
+  @@unique([categoryId, name])
+  @@index([categoryId])
+  @@map("trade_good_subcategories")
+}
+
 /// Справочник «Товары» (TradeGood): коммерческая позиция из одного или нескольких производственных изделий (`ManufacturedProduct`).
 model TradeGood {
-  id          String   @id @default(uuid())
-  code        String?  @unique
+  id          String  @id @default(uuid())
+  code        String? @unique
   name        String
   description String?
-  priceRub    Float?
-  costRub     Float?
-  notes       String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  /// Ссылка на справочник категорий; null — без категории (витрина: «Без категории»).
+  categoryId    String? @map("category_id")
+  /// Ссылка на подкатегорию; должна принадлежать той же логической ветке, что и categoryId.
+  subcategoryId String? @map("subcategory_id")
+  /// Единица учёта для клиента (шт, м.п., м² …), без FK на справочник единиц.
+  unitCode      String? @map("unit_code")
+  priceRub      Float?
+  costRub       Float?
+  notes         String?
+  isActive      Boolean @default(true)
+  /// Какой снимок главный для карточек и КП: `артикул_N.ext` (1 = первый файл `_1`).
+  photoPrimaryIndex Int @default(1) @map("photo_primary_index")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  category    TradeGoodCategory?    @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  subcategory TradeGoodSubcategory? @relation(fields: [subcategoryId], references: [id], onDelete: SetNull)
 
   lines TradeGoodLine[]
 
+  @@index([categoryId])
+  @@index([subcategoryId])
   @@map("trade_goods")
 }
 

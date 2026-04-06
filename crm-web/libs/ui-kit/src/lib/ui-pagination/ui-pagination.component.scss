@@ -1,4 +1,7 @@
+/* В одной строке с селектами (напр. «На странице») — та же высота, что у --ui-control-min-height */
 .pagination {
+  --pagination-control-size: var(--ui-control-min-height, 34px);
+
   display: flex;
   align-items: center;
   justify-content: center;
@@ -8,9 +11,17 @@
 
 .pages {
   display: flex;
-  gap: var(--ui-space-1);
   flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ui-space-1);
   justify-content: center;
+}
+
+.pagination ::ng-deep .uiButton.uiButtonSquare {
+  width: var(--pagination-control-size);
+  min-width: var(--pagination-control-size);
+  height: var(--pagination-control-size);
+  min-height: var(--pagination-control-size);
 }
 
 .paginationIcon {
@@ -23,5 +34,66 @@
 
 .paginationIcon svg {
   color: inherit;
+}
+
+/* Стрелки заметнее: крупнее и толще штрих */
+.paginationIcon--prevNext svg {
+  width: 22px;
+  height: 22px;
+  stroke-width: 2.5px;
+}
+
+.pagination__ellipsis {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  min-height: var(--pagination-control-size);
+  padding: 0 2px;
+  font-size: var(--font-size-small, 14px);
+  font-weight: 600;
+  color: var(--text-muted, rgba(16, 24, 40, 0.5));
+  user-select: none;
+}
+
+/* Последняя страница (всего страниц) — не как обычная кнопка-«плитка» */
+.pagination__lastPage {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.25rem;
+  min-height: var(--pagination-control-size);
+  margin: 0;
+  padding: 0 10px;
+  font-size: var(--font-size-small, 13px);
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+  border-radius: var(--radius-card, 8px);
+  border: 1px dashed var(--border-color, rgba(16, 24, 40, 0.22));
+  background: var(--surface-soft, rgba(249, 250, 251, 0.95));
+  color: var(--text-muted, rgba(16, 24, 40, 0.72));
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.pagination__lastPage:hover {
+  border-color: rgba(16, 24, 40, 0.32);
+  color: var(--text-primary);
+}
+
+.pagination__lastPage--current {
+  border-style: solid;
+  border-color: var(--ui-button-primary-border-color);
+  background: var(--ui-button-primary-bg);
+  color: var(--ui-button-primary-text);
+}
+
+.pagination__lastPage--current:hover {
+  background: color-mix(in srgb, var(--ui-button-primary-bg) 90%, black 10%);
+  border-color: color-mix(in srgb, var(--ui-button-primary-border-color) 82%, black 18%);
 }
 

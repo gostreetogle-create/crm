@@ -85,10 +85,21 @@ export class RolesStore {
       })),
   );
 
-  /** Колонки матрицы «Админ-настройки»: только активные роли, слева направо по возрастанию `sortOrder`. */
-  readonly matrixRoleColumns = computed(() =>
-    [...this.items()].filter((r) => r.isActive).sort(compareRolesBySortOrder),
-  );
+  /**
+   * Колонки матрицы «Админ-настройки»: только активные роли, слева направо по возрастанию `sortOrder`.
+   * Дедуп по `id` — на случай сбоев/дублей в ответе API.
+   */
+  readonly matrixRoleColumns = computed(() => {
+    const active = [...this.items()].filter((r) => r.isActive).sort(compareRolesBySortOrder);
+    const seen = new Set<string>();
+    return active.filter((r) => {
+      if (seen.has(r.id)) {
+        return false;
+      }
+      seen.add(r.id);
+      return true;
+    });
+  });
 
   roleExists(id: string): boolean {
     return this.items().some((x) => x.id === id);

@@ -25,6 +25,7 @@ import {
 import { USERS_REPOSITORY, UsersHttpRepository } from '@srm/users-data-access';
 import { ORGANIZATIONS_REPOSITORY, OrganizationsHttpRepository } from '@srm/organizations-data-access';
 import { CLIENTS_REPOSITORY, ClientsHttpRepository } from '@srm/clients-data-access';
+import { TRADE_GOODS_REPOSITORY, TradeGoodsHttpRepository } from '@srm/trade-goods-data-access';
 import { authBearerInterceptor, SessionAuthService } from '@srm/auth-session-angular';
 import { RolesStore } from '@srm/dictionaries-state';
 import { appRoutes } from './app.routes';
@@ -98,5 +99,7 @@ export const appConfig: ApplicationConfig = {
     { provide: ORGANIZATIONS_REPOSITORY, useExisting: OrganizationsHttpRepository },
     ClientsHttpRepository,
     { provide: CLIENTS_REPOSITORY, useExisting: ClientsHttpRepository },
+    TradeGoodsHttpRepository,
+    { provide: TRADE_GOODS_REPOSITORY, useExisting: TradeGoodsHttpRepository },
   ],
 };

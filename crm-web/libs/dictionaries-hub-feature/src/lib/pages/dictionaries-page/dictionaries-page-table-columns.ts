@@ -66,8 +66,8 @@ export const PRODUCTION_DETAILS_COLUMNS_FULL: TableColumn[] = [
 export const PRODUCTS_COLUMNS: TableColumn[] = [{ key: 'hubLine', label: 'Изделие' }];
 
 export const PRODUCTS_COLUMNS_FULL: TableColumn[] = [
-  { key: 'codeLabel', label: 'Артикул' },
   { key: 'name', label: 'Наименование' },
+  { key: 'codeLabel', label: 'Артикул' },
   { key: 'descriptionLabel', label: 'Описание' },
   { key: 'colorLabel', label: 'Цвет' },
   { key: 'detailNamesSummary', label: 'Детали' },
@@ -79,12 +79,32 @@ export const PRODUCTS_COLUMNS_FULL: TableColumn[] = [
   { key: 'isActiveLabel', label: 'Активен' },
 ];
 
+export const TRADE_GOOD_CATEGORIES_COLUMNS: TableColumn[] = [{ key: 'hubLine', label: 'Категория' }];
+
+export const TRADE_GOOD_CATEGORIES_COLUMNS_FULL: TableColumn[] = [
+  { key: 'name', label: 'Название' },
+  { key: 'sortOrderLabel', label: 'Порядок' },
+  { key: 'isActiveLabel', label: 'Активна' },
+];
+
+export const TRADE_GOOD_SUBCATEGORIES_COLUMNS: TableColumn[] = [{ key: 'hubLine', label: 'Подкатегория' }];
+
+export const TRADE_GOOD_SUBCATEGORIES_COLUMNS_FULL: TableColumn[] = [
+  { key: 'name', label: 'Название' },
+  { key: 'categoryNameLabel', label: 'Категория' },
+  { key: 'sortOrderLabel', label: 'Порядок' },
+  { key: 'isActiveLabel', label: 'Активна' },
+];
+
 /** Товар = набор изделий (отдельно от «Изделия»). */
 export const TRADE_GOODS_COLUMNS: TableColumn[] = [{ key: 'hubLine', label: 'Товар' }];
 
 export const TRADE_GOODS_COLUMNS_FULL: TableColumn[] = [
-  { key: 'codeLabel', label: 'Артикул' },
   { key: 'name', label: 'Наименование' },
+  { key: 'codeLabel', label: 'Артикул' },
+  { key: 'categoryLabel', label: 'Категория' },
+  { key: 'subcategoryLabel', label: 'Подкатегория' },
+  { key: 'unitCodeLabel', label: 'Ед. изм.' },
   { key: 'descriptionLabel', label: 'Описание' },
   { key: 'productsSummaryLabel', label: 'Изделия в составе' },
   { key: 'priceLabel', label: 'Цена ₽' },
@@ -106,8 +126,8 @@ export const CATALOG_COMPLEXES_COLUMNS_FULL: TableColumn[] = [
 export const CATALOG_PRODUCTS_COLUMNS: TableColumn[] = [{ key: 'hubLine', label: 'Каталожный товар' }];
 
 export const CATALOG_PRODUCTS_COLUMNS_FULL: TableColumn[] = [
-  { key: 'complexNameLabel', label: 'Комплекс' },
   { key: 'name', label: 'Наименование' },
+  { key: 'complexNameLabel', label: 'Комплекс' },
   { key: 'codeLabel', label: 'Код' },
   { key: 'descriptionLabel', label: 'Описание' },
   { key: 'priceLabel', label: 'Цена' },
@@ -117,8 +137,8 @@ export const CATALOG_PRODUCTS_COLUMNS_FULL: TableColumn[] = [
 export const CATALOG_ARTICLES_COLUMNS: TableColumn[] = [{ key: 'hubLine', label: 'Позиция' }];
 
 export const CATALOG_ARTICLES_COLUMNS_FULL: TableColumn[] = [
-  { key: 'productNameLabel', label: 'Каталожный товар' },
   { key: 'name', label: 'Наименование' },
+  { key: 'productNameLabel', label: 'Каталожный товар' },
   { key: 'codeLabel', label: 'Код' },
   { key: 'descriptionLabel', label: 'Описание' },
   { key: 'qtyLabel', label: 'Кол-во' },
@@ -152,6 +172,7 @@ export const KP_PHOTOS_COLUMNS_FULL: TableColumn[] = [
   { key: 'name', label: 'Наименование' },
   { key: 'organizationName', label: 'Организация' },
   { key: 'photoTitle', label: 'Название фото' },
+  { key: 'photoFileName', label: 'Файл на сервере' },
   { key: 'isActiveLabel', label: 'Активен' },
 ];
 
@@ -159,8 +180,8 @@ export const COLORS_COLUMNS: TableColumn[] = [{ key: 'hubLine', label: 'Цвет
 
 /** Full-view для раскрытия colors. */
 export const COLORS_COLUMNS_FULL: TableColumn[] = [
-  { key: 'ralCode', label: 'Код RAL' },
   { key: 'name', label: 'Название' },
+  { key: 'ralCode', label: 'Код RAL' },
   { key: 'hex', label: 'HEX', swatchHexKey: 'hex' },
   { key: 'rgb', label: 'RGB' },
 ];

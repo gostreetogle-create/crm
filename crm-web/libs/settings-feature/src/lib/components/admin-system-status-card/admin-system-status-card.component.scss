@@ -78,9 +78,45 @@
   align-items: center;
 }
 
+.sysMigrationHint {
+  margin: 0;
+  padding: var(--ui-space-2) var(--ui-space-3);
+  font-size: var(--font-size-small);
+  line-height: 1.5;
+  color: var(--text-primary);
+  border-radius: var(--radius-card, 8px);
+  border: 1px solid color-mix(in srgb, var(--color-danger, #b91c1c) 35%, var(--border-color));
+  background: color-mix(in srgb, var(--color-danger, #b91c1c) 6%, var(--surface));
+}
+
+.sysMigrationHintLead {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: var(--text-primary);
+}
+
+.sysMigrationNames {
+  display: inline;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.sysInlineCode {
+  font-size: 0.9em;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--surface-soft);
+  border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.08));
+}
+
 .sysHint {
   margin: 0;
+  max-width: 100%;
   font-size: var(--font-size-small);
+  line-height: 1.45;
+  word-break: break-word;
+  overflow-wrap: anywhere;
   color: var(--accent);
 }
 

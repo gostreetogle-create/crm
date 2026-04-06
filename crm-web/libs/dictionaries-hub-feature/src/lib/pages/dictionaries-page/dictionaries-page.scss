@@ -430,6 +430,26 @@
   }
 }
 
+.kpPhotoPreview--tradeGoodHero {
+  margin-top: 0.75rem;
+  max-width: min(100%, 320px);
+}
+
+.tradeGoodRecalcRow {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.tradeGoodRecalcRow__hint {
+  margin: 0;
+  font-size: var(--font-size-small, 13px);
+  line-height: 1.4;
+  max-width: 42rem;
+}
+
 /* Просмотр изделия: спецификация, золотистая шапка, плотные блоки */
 .productSpecView {
   display: flex;
@@ -642,4 +662,103 @@
   background: color-mix(in srgb, var(--danger, #c62828) 12%, transparent);
   color: var(--danger, #b71c1c);
   font-size: 0.8125rem;
+}
+
+/* Модалка товара: «Удалить» слева, «Отмена» + сохранение справа (дети ui-modal-form-actions — display: contents) */
+.tradeGoodsModalActions {
+  display: flex;
+  width: 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.tradeGoodsModalActions__delete {
+  margin-right: auto;
+}
+
+.tradeGoodPhotoPicker__file input[type='file'] {
+  max-width: 100%;
+  font-size: 0.8125rem;
+}
+
+.tradeGoodPhotoPicker__grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-space-3);
+  align-items: flex-start;
+}
+
+.tradeGoodPhotoPicker__tile {
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  max-width: 140px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+
+  input {
+    margin: 0;
+  }
+}
+
+.tradeGoodPhotoPicker__thumb {
+  display: block;
+  width: 120px;
+  height: 90px;
+  border-radius: var(--ui-radius-md, 6px);
+  overflow: hidden;
+  border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.12));
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.tradeGoodPhotoPicker__tile--selected .tradeGoodPhotoPicker__thumb {
+  outline: 2px solid var(--accent, #c9a227);
+  outline-offset: 2px;
+}
+
+.tradeGoodViewPhotos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-space-3);
+  margin: var(--ui-space-2) 0 0;
+}
+
+.tradeGoodViewPhotos__item {
+  position: relative;
+  margin: 0;
+  max-width: 200px;
+
+  img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--ui-radius-md, 6px);
+  }
+}
+
+.tradeGoodViewPhotos__item--primary {
+  outline: 2px solid var(--accent, #c9a227);
+  outline-offset: 2px;
+  border-radius: var(--ui-radius-md, 6px);
+}
+
+.tradeGoodViewPhotos__badge {
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  background: color-mix(in srgb, var(--surface, #fff) 92%, transparent);
+  color: var(--text-muted);
 }

@@ -188,6 +188,8 @@ export function kpPhotosPayloadFromValues(v: {
   name: string;
   organizationId: string;
   photoTitle: string;
+  photoFileName: string;
+  /** Внешний или data URL (тело запроса `photoUrl`). */
   photoUrl: string;
   isActive: boolean;
 }) {
@@ -195,6 +197,7 @@ export function kpPhotosPayloadFromValues(v: {
     name: v.name.trim(),
     organizationId: v.organizationId.trim(),
     photoTitle: v.photoTitle.trim(),
+    photoFileName: v.photoFileName.trim(),
     photoUrl: v.photoUrl.trim(),
     isActive: v.isActive,
   };

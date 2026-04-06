@@ -9,11 +9,14 @@
         searchPlaceholder="Поиск по товарам / артикулу..."
         [sortOptions]="productSortOptions"
         [filterOptions]="productCategoryOptions()"
+        [secondaryFilterOptions]="productSubcategoryOptions()"
         [selectedSort]="productSort()"
         [selectedFilter]="productCategory()"
+        [selectedSecondaryFilter]="productSubcategory()"
         (searchChange)="onProductSearch($event)"
         (sortChange)="onProductSortChange($event)"
         (filterChange)="onProductCategory($event)"
+        (secondaryFilterChange)="onProductSubcategory($event)"
       ></app-filters-bar>
     </div>
 
@@ -45,15 +48,27 @@
     @for (p of visibleProducts(); track p.id) {
       <app-product-card
         [title]="p.title"
-        [subtitle]="p.category"
+        [subtitle]="cardMetaLine(p)"
         skuLabel="Артикул"
         [skuValue]="p.sku"
         [price]="formatPrice(p.price)"
         [imageSrc]="imageUrl(p)"
       >
         <div product-actions>
-          <app-ui-button type="button" variant="soft" [square]="true" aria-label="В избранное">
-            <span class="kp-vitrine__iconWarn"><svg lucideStar [size]="18"></svg></span>
+          <app-ui-button
+            type="button"
+            variant="soft"
+            [square]="true"
+            [disabled]="p.source !== 'trade_good'"
+            aria-label="Редактировать товар в справочнике"
+            [title]="
+              p.source === 'trade_good'
+                ? 'Редактировать в справочнике'
+                : 'Доступно только для товаров из справочника «Товары» (не демо)'
+            "
+            (clicked)="onEditInDictionary(p)"
+          >
+            <svg lucidePencil [size]="18"></svg>
           </app-ui-button>
           <app-ui-button
             type="button"

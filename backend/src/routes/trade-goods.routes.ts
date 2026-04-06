@@ -1,11 +1,43 @@
+import fs from "node:fs";
+import path from "node:path";
 import { Router } from "express";
+import multer from "multer";
 import { z } from "zod";
+import { config } from "../config.js";
+import {
+  clearTradeGoodPhotoFiles,
+  extFromImageMime,
+  listTradeGoodPhotoPublicUrls,
+  resolveTradeGoodPhotoDisplayUrl,
+  stemFromTradeGoodArticleCode,
+} from "../lib/trade-good-photo-resolve.js";
 import { prisma } from "../lib/prisma.js";
+import {
+  assertTradeGoodCategoryPair,
+  resolveTradeGoodCategoryIdsFromNames,
+} from "../lib/trade-good-classification-resolve.js";
+import { numOrNull, strOrNull, sumPriceAndCostFromProducts } from "../lib/trade-good-pricing.js";
 
 export const tradeGoodsRouter = Router();
 
+function paramId(raw: string | string[] | undefined): string | undefined {
+  if (typeof raw === "string") return raw;
+  if (Array.isArray(raw) && raw[0]) return raw[0];
+  return undefined;
+}
+
+const tradeGoodsPhotoUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 12 * 1024 * 1024, files: 15 },
+});
+
+function tradeGoodPhotoUrlJson(code: string | null, photoPrimaryIndex: number): string {
+  return resolveTradeGoodPhotoDisplayUrl(config.tradeGoodsPhotosDir, code, photoPrimaryIndex) ?? "";
+}
+
 const nullableString = z.union([z.string(), z.null(), z.undefined()]).optional();
 const nullableNumber = z.union([z.number(), z.null(), z.undefined()]).optional();
+const nullableUuid = z.union([z.string().uuid(), z.null(), z.undefined()]).optional();
 
 const LineInputSchema = z.object({
   id: nullableString,
@@ -18,45 +50,21 @@ const InputSchema = z.object({
   code: nullableString,
   name: z.string().trim().min(1),
   description: nullableString,
+  /** Предпочтительно: id из справочников. */
+  categoryId: nullableUuid,
+  subcategoryId: nullableUuid,
+  /** Legacy / импорт: строки создают или подбирают записи справочника. */
+  category: nullableString,
+  subcategory: nullableString,
+  unitCode: nullableString,
   priceRub: nullableNumber,
   costRub: nullableNumber,
   notes: nullableString,
   isActive: z.boolean(),
+  /** Главное фото для карточек и КП: номер слота `артикул_N` (1-based). */
+  photoPrimaryIndex: z.number().int().min(1).max(30).optional(),
   lines: z.array(LineInputSchema).min(1),
 });
-
-function strOrNull(v: unknown): string | null {
-  if (v == null) return null;
-  const s = String(v).trim();
-  return s ? s : null;
-}
-
-function numOrNull(v: unknown): number | null {
-  if (v == null || v === "") return null;
-  if (typeof v === "number" && Number.isFinite(v)) return v;
-  return null;
-}
-
-async function sumPriceAndCostFromProducts(
-  lines: { productId: string; qty: number }[],
-): Promise<{ price: number; cost: number }> {
-  if (lines.length === 0) return { price: 0, cost: 0 };
-  const ids = [...new Set(lines.map((l) => l.productId))];
-  const rows = await prisma.manufacturedProduct.findMany({
-    where: { id: { in: ids } },
-    select: { id: true, priceRub: true, costRub: true },
-  });
-  const byId = new Map(rows.map((r) => [r.id, r]));
-  let price = 0;
-  let cost = 0;
-  for (const l of lines) {
-    const p = byId.get(l.productId);
-    const q = l.qty;
-    price += (p?.priceRub ?? 0) * q;
-    cost += (p?.costRub ?? 0) * q;
-  }
-  return { price, cost };
-}
 
 const listLineInclude = {
   product: {
@@ -72,91 +80,91 @@ const listLineInclude = {
 
 const lineInclude = listLineInclude;
 
-tradeGoodsRouter.get("/", async (_req, res, next) => {
-  try {
-    const list = await prisma.tradeGood.findMany({
-      orderBy: { name: "asc" },
-      include: {
-        lines: {
-          orderBy: { sortOrder: "asc" },
-          include: listLineInclude,
-        },
-      },
-    });
-    res.json(
-      list.map((g) => {
-        const lines = [...g.lines].sort((a, b) => a.sortOrder - b.sortOrder);
-        const productLabels = lines.map((l) => {
-          const code = l.product.code?.trim();
-          const q = l.qty;
-          const base = code ? `${code} — ${l.product.name}` : l.product.name;
-          return q !== 1 ? `${base} ×${q}` : base;
-        });
-        const productsSummary = productLabels.length ? productLabels.join("; ") : "—";
-        return {
-          id: g.id,
-          code: g.code,
-          name: g.name,
-          description: g.description,
-          priceRub: g.priceRub,
-          costRub: g.costRub,
-          notes: g.notes,
-          isActive: g.isActive,
-          linesCount: lines.length,
-          productsSummary,
-          compositionLines: lines.map((l) => ({
-            productLabel: l.product.code?.trim()
-              ? `${l.product.code.trim()} — ${l.product.name}`
-              : l.product.name,
-            qty: l.qty,
-          })),
-          createdAt: g.createdAt.toISOString(),
-          updatedAt: g.updatedAt.toISOString(),
-        };
-      }),
-    );
-  } catch (e) {
-    next(e);
-  }
-});
+const classificationInclude = {
+  category: true,
+  subcategory: true,
+} as const;
 
-tradeGoodsRouter.get("/:id", async (req, res, next) => {
-  try {
-    const id = req.params["id"];
-    if (!id) {
-      res.status(400).json({ error: "missing_id" });
-      return;
-    }
-    const row = await prisma.tradeGood.findUnique({
-      where: { id },
-      include: {
-        lines: {
-          orderBy: { sortOrder: "asc" },
-          include: lineInclude,
-        },
-      },
-    });
-    if (!row) {
-      res.status(404).json({ error: "not_found" });
-      return;
-    }
-    res.json(mapTradeGood(row));
-  } catch (e) {
-    next(e);
-  }
-});
+function isUuid(s: unknown): s is string {
+  return typeof s === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    s.trim(),
+  );
+}
 
-function mapTradeGood(row: {
+const CLASSIFICATION_ERR = "__tg_class__:";
+
+function throwClassification(reason: string): never {
+  throw new Error(`${CLASSIFICATION_ERR}${reason}`);
+}
+
+async function resolveClassificationForInput(
+  tx: Parameters<typeof resolveTradeGoodCategoryIdsFromNames>[0],
+  p: z.infer<typeof InputSchema>,
+): Promise<{ categoryId: string | null; subcategoryId: string | null }> {
+  const catRaw = p.categoryId;
+  const subRaw = p.subcategoryId;
+  if (typeof catRaw === "string" && catRaw.trim() && !isUuid(catRaw)) {
+    throwClassification("invalid_category_id");
+  }
+  if (typeof subRaw === "string" && subRaw.trim() && !isUuid(subRaw)) {
+    throwClassification("invalid_subcategory_id");
+  }
+  if (isUuid(catRaw)) {
+    try {
+      return await assertTradeGoodCategoryPair(
+        tx,
+        catRaw.trim(),
+        isUuid(subRaw) ? subRaw.trim() : null,
+      );
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "";
+      if (
+        msg === "subcategory_without_category" ||
+        msg === "category_not_found" ||
+        msg === "subcategory_not_found" ||
+        msg === "subcategory_category_mismatch"
+      ) {
+        throwClassification(msg);
+      }
+      throw err;
+    }
+  }
+  if (isUuid(subRaw) && !isUuid(catRaw)) {
+    throwClassification("subcategory_id_without_category_id");
+  }
+  try {
+    return await resolveTradeGoodCategoryIdsFromNames(tx, p.category, p.subcategory);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "";
+    if (
+      msg === "subcategory_without_category" ||
+      msg === "category_not_found" ||
+      msg === "subcategory_not_found" ||
+      msg === "subcategory_category_mismatch"
+    ) {
+      throwClassification(msg);
+    }
+    throw err;
+  }
+}
+
+type TradeGoodRowWithLines = {
   id: string;
   code: string | null;
   name: string;
   description: string | null;
+  categoryId: string | null;
+  subcategoryId: string | null;
+  unitCode: string | null;
   priceRub: number | null;
   costRub: number | null;
   notes: string | null;
   isActive: boolean;
+  photoPrimaryIndex: number;
   createdAt: Date;
   updatedAt: Date;
+  category: { id: string; name: string } | null;
+  subcategory: { id: string; name: string; categoryId: string } | null;
   lines: Array<{
     id: string;
     sortOrder: number;
@@ -164,16 +172,27 @@ function mapTradeGood(row: {
     qty: number;
     product: { id: string; code: string | null; name: string; priceRub: number | null; costRub: number | null };
   }>;
-}) {
+};
+
+function mapTradeGood(row: TradeGoodRowWithLines) {
+  const primaryIdx = row.photoPrimaryIndex >= 1 ? row.photoPrimaryIndex : 1;
   return {
     id: row.id,
     code: row.code,
     name: row.name,
     description: row.description,
+    categoryId: row.categoryId,
+    subcategoryId: row.subcategoryId,
+    category: row.category?.name ?? null,
+    subcategory: row.subcategory?.name ?? null,
+    unitCode: row.unitCode,
     priceRub: row.priceRub,
     costRub: row.costRub,
     notes: row.notes,
     isActive: row.isActive,
+    photoPrimaryIndex: primaryIdx,
+    photoUrls: listTradeGoodPhotoPublicUrls(config.tradeGoodsPhotosDir, row.code),
+    photoUrl: tradeGoodPhotoUrlJson(row.code, primaryIdx),
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
     lines: row.lines.map((l) => ({
@@ -185,6 +204,98 @@ function mapTradeGood(row: {
     })),
   };
 }
+
+function mapTradeGoodListItem(
+  g: TradeGoodRowWithLines,
+  lines: TradeGoodRowWithLines["lines"],
+): Record<string, unknown> {
+  const productLabels = lines.map((l) => {
+    const code = l.product.code?.trim();
+    const q = l.qty;
+    const base = code ? `${code} — ${l.product.name}` : l.product.name;
+    return q !== 1 ? `${base} ×${q}` : base;
+  });
+  const productsSummary = productLabels.length ? productLabels.join("; ") : "—";
+  const primaryIdx = g.photoPrimaryIndex >= 1 ? g.photoPrimaryIndex : 1;
+  return {
+    id: g.id,
+    code: g.code,
+    name: g.name,
+    description: g.description,
+    categoryId: g.categoryId,
+    subcategoryId: g.subcategoryId,
+    category: g.category?.name ?? null,
+    subcategory: g.subcategory?.name ?? null,
+    unitCode: g.unitCode,
+    priceRub: g.priceRub,
+    costRub: g.costRub,
+    notes: g.notes,
+    isActive: g.isActive,
+    photoPrimaryIndex: primaryIdx,
+    photoUrls: listTradeGoodPhotoPublicUrls(config.tradeGoodsPhotosDir, g.code),
+    photoUrl: tradeGoodPhotoUrlJson(g.code, primaryIdx),
+    linesCount: lines.length,
+    productsSummary,
+    compositionLines: lines.map((l) => ({
+      productLabel: l.product.code?.trim()
+        ? `${l.product.code.trim()} — ${l.product.name}`
+        : l.product.name,
+      qty: l.qty,
+    })),
+    createdAt: g.createdAt.toISOString(),
+    updatedAt: g.updatedAt.toISOString(),
+  };
+}
+
+tradeGoodsRouter.get("/", async (_req, res, next) => {
+  try {
+    const list = await prisma.tradeGood.findMany({
+      orderBy: { name: "asc" },
+      include: {
+        ...classificationInclude,
+        lines: {
+          orderBy: { sortOrder: "asc" },
+          include: listLineInclude,
+        },
+      },
+    });
+    res.json(
+      list.map((g) => {
+        const lines = [...g.lines].sort((a, b) => a.sortOrder - b.sortOrder);
+        return mapTradeGoodListItem(g as TradeGoodRowWithLines, lines);
+      }),
+    );
+  } catch (e) {
+    next(e);
+  }
+});
+
+tradeGoodsRouter.get("/:id", async (req, res, next) => {
+  try {
+    const id = paramId(req.params["id"]);
+    if (!id) {
+      res.status(400).json({ error: "missing_id" });
+      return;
+    }
+    const row = await prisma.tradeGood.findUnique({
+      where: { id },
+      include: {
+        ...classificationInclude,
+        lines: {
+          orderBy: { sortOrder: "asc" },
+          include: lineInclude,
+        },
+      },
+    });
+    if (!row) {
+      res.status(404).json({ error: "not_found" });
+      return;
+    }
+    res.json(mapTradeGood(row as TradeGoodRowWithLines));
+  } catch (e) {
+    next(e);
+  }
+});
 
 tradeGoodsRouter.post("/", async (req, res, next) => {
   try {
@@ -204,15 +315,20 @@ tradeGoodsRouter.post("/", async (req, res, next) => {
     const costRub = numOrNull(p.costRub) ?? sums.cost;
 
     const created = await prisma.$transaction(async (tx) => {
-      const tg = await tx.tradeGood.create({
+      const ids = await resolveClassificationForInput(tx, p);
+      return tx.tradeGood.create({
         data: {
           code: strOrNull(p.code),
           name: p.name.trim(),
           description: strOrNull(p.description),
+          categoryId: ids.categoryId,
+          subcategoryId: ids.subcategoryId,
+          unitCode: strOrNull(p.unitCode),
           priceRub,
           costRub,
           notes: strOrNull(p.notes),
           isActive: p.isActive,
+          photoPrimaryIndex: p.photoPrimaryIndex ?? 1,
           lines: {
             create: normLines.map((line) => ({
               sortOrder: line.sortOrder,
@@ -222,21 +338,95 @@ tradeGoodsRouter.post("/", async (req, res, next) => {
           },
         },
         include: {
+          ...classificationInclude,
           lines: { orderBy: { sortOrder: "asc" }, include: lineInclude },
         },
       });
-      return tg;
     });
 
-    res.status(201).json(mapTradeGood(created));
-  } catch (e) {
+    res.status(201).json(mapTradeGood(created as TradeGoodRowWithLines));
+  } catch (e: unknown) {
+    if (e instanceof Error && e.message.startsWith(CLASSIFICATION_ERR)) {
+      res.status(400).json({
+        error: "classification_invalid",
+        reason: e.message.slice(CLASSIFICATION_ERR.length),
+      });
+      return;
+    }
     next(e);
   }
 });
 
+tradeGoodsRouter.post(
+  "/:id/photos",
+  tradeGoodsPhotoUpload.array("files", 15),
+  async (req, res, next) => {
+    try {
+      const id = paramId(req.params["id"]);
+      if (!id) {
+        res.status(400).json({ error: "missing_id" });
+        return;
+      }
+      const files = req.files;
+      if (!Array.isArray(files) || files.length === 0) {
+        res.status(400).json({ error: "no_files" });
+        return;
+      }
+      const row = await prisma.tradeGood.findUnique({ where: { id } });
+      if (!row) {
+        res.status(404).json({ error: "not_found" });
+        return;
+      }
+      const code = strOrNull(row.code);
+      if (!code) {
+        res.status(400).json({
+          error: "missing_code",
+          message: "Укажите артикул товара — по нему сохраняются имена файлов.",
+        });
+        return;
+      }
+      const stem = stemFromTradeGoodArticleCode(code);
+      if (!stem) {
+        res.status(400).json({ error: "invalid_code" });
+        return;
+      }
+      const rawPrimary = req.body?.["primaryIndex"];
+      let primaryOneBased = 1;
+      if (rawPrimary != null && String(rawPrimary).trim() !== "") {
+        const n = parseInt(String(rawPrimary), 10);
+        if (Number.isFinite(n) && n >= 1 && n <= files.length) {
+          primaryOneBased = n;
+        }
+      }
+      clearTradeGoodPhotoFiles(config.tradeGoodsPhotosDir, code);
+      const dir = config.tradeGoodsPhotosDir;
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      for (let i = 0; i < files.length; i++) {
+        const f = files[i]!;
+        const ext = extFromImageMime(f.mimetype);
+        const name = `${stem}_${i + 1}${ext}`;
+        fs.writeFileSync(path.join(dir, name), f.buffer);
+      }
+      const updated = await prisma.tradeGood.update({
+        where: { id },
+        data: { photoPrimaryIndex: primaryOneBased },
+        include: {
+          ...classificationInclude,
+          lines: { orderBy: { sortOrder: "asc" }, include: lineInclude },
+        },
+      });
+      res.json(mapTradeGood(updated as TradeGoodRowWithLines));
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
 tradeGoodsRouter.put("/:id", async (req, res, next) => {
   try {
-    const id = req.params["id"];
+    const id = paramId(req.params["id"]);
     if (!id) {
       res.status(400).json({ error: "missing_id" });
       return;
@@ -257,6 +447,19 @@ tradeGoodsRouter.put("/:id", async (req, res, next) => {
     const costRub = numOrNull(p.costRub) ?? sums.cost;
 
     const updated = await prisma.$transaction(async (tx) => {
+      const existing = await tx.tradeGood.findUnique({ where: { id } });
+      if (!existing) {
+        return null;
+      }
+      const ids = await resolveClassificationForInput(tx, p);
+      const oldStem = stemFromTradeGoodArticleCode(existing.code);
+      const newStem = stemFromTradeGoodArticleCode(strOrNull(p.code));
+      if (oldStem && newStem && oldStem !== newStem) {
+        clearTradeGoodPhotoFiles(config.tradeGoodsPhotosDir, existing.code);
+      }
+      if (oldStem && !newStem) {
+        clearTradeGoodPhotoFiles(config.tradeGoodsPhotosDir, existing.code);
+      }
       await tx.tradeGoodLine.deleteMany({ where: { tradeGoodId: id } });
       return tx.tradeGood.update({
         where: { id },
@@ -264,10 +467,14 @@ tradeGoodsRouter.put("/:id", async (req, res, next) => {
           code: strOrNull(p.code),
           name: p.name.trim(),
           description: strOrNull(p.description),
+          categoryId: ids.categoryId,
+          subcategoryId: ids.subcategoryId,
+          unitCode: strOrNull(p.unitCode),
           priceRub,
           costRub,
           notes: strOrNull(p.notes),
           isActive: p.isActive,
+          ...(p.photoPrimaryIndex !== undefined ? { photoPrimaryIndex: p.photoPrimaryIndex } : {}),
           lines: {
             create: normLines.map((line) => ({
               sortOrder: line.sortOrder,
@@ -277,23 +484,44 @@ tradeGoodsRouter.put("/:id", async (req, res, next) => {
           },
         },
         include: {
+          ...classificationInclude,
           lines: { orderBy: { sortOrder: "asc" }, include: lineInclude },
         },
       });
     });
 
-    res.json(mapTradeGood(updated));
-  } catch (e) {
+    if (!updated) {
+      res.status(404).json({ error: "not_found" });
+      return;
+    }
+
+    res.json(mapTradeGood(updated as TradeGoodRowWithLines));
+  } catch (e: unknown) {
+    if (e instanceof Error && e.message.startsWith(CLASSIFICATION_ERR)) {
+      res.status(400).json({
+        error: "classification_invalid",
+        reason: e.message.slice(CLASSIFICATION_ERR.length),
+      });
+      return;
+    }
     next(e);
   }
 });
 
 tradeGoodsRouter.delete("/:id", async (req, res, next) => {
   try {
-    const id = req.params["id"];
+    const id = paramId(req.params["id"]);
     if (!id) {
       res.status(400).json({ error: "missing_id" });
       return;
+    }
+    const row = await prisma.tradeGood.findUnique({ where: { id } });
+    if (!row) {
+      res.status(404).json({ error: "not_found" });
+      return;
+    }
+    if (row.code) {
+      clearTradeGoodPhotoFiles(config.tradeGoodsPhotosDir, row.code);
     }
     await prisma.tradeGood.delete({ where: { id } });
     res.status(204).send();

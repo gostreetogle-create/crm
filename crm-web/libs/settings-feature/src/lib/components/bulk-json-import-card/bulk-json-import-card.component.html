@@ -1,0 +1,160 @@
+<app-content-card title="Массовое создание (JSON)">
+  <div class="bulkTargetRow">
+    <label class="bulkTargetLabel" for="bulk-json-table">Таблица</label>
+    <select
+      id="bulk-json-table"
+      class="bulkTargetSelect"
+      [value]="selectedId()"
+      (change)="onTargetSelect($event)"
+      [disabled]="!canUseBulkEditor()"
+    >
+      @for (t of targets; track t.id) {
+        <option [value]="t.id">{{ t.label }}</option>
+      }
+    </select>
+    <div class="bulkPurgeWrap">
+      <app-ui-button
+        variant="danger"
+        size="sm"
+        type="button"
+        [title]="purgeButtonTitle()"
+        [disabled]="!canPurgeAll() || loadingPurge()"
+        (clicked)="openPurgeAllConfirm()"
+      >
+        Удалить данные
+      </app-ui-button>
+      @if (purgeEndpointHint(); as ph) {
+        <p class="muted bulkInlineHint">{{ ph }}</p>
+      }
+    </div>
+  </div>
+
+  <ol class="bulkChecklist" aria-label="Порядок работы">
+    <li>Выберите таблицу.</li>
+    <li>
+      Скачайте JSON — для подключённых справочников в файл попадут все текущие строки из БД; если строк нет, в
+      <code>items</code> будет один шаблон со всеми полями (пустые значения) для заполнения.
+    </li>
+    <li>Отредактируйте файл на диске, затем нажмите «Загрузить JSON».</li>
+    <li>Нажмите «Проверить».</li>
+    <li>Если проверка успешна — «Сохранить в БД» (нужны права на выбранную таблицу).</li>
+  </ol>
+
+  <p class="lead leadCompact">
+    <span class="bulkMethodLine">{{ currentTarget().methodLine }}</span>
+    @if (currentTarget().hasEndpoint) {
+      <span> — только для администратора с правом на массовый ввод.</span>
+    }
+  </p>
+  <p class="lead leadCompact detailHint">{{ currentTarget().detailHint }}</p>
+
+  <input
+    #jsonFile
+    type="file"
+    class="bulkFileInput"
+    accept="application/json,.json"
+    [disabled]="!canUseBulkEditor()"
+    (change)="onJsonFileSelected($event)"
+  />
+
+  <div class="bulkActions">
+    <app-ui-button
+      variant="soft"
+      size="sm"
+      type="button"
+      [disabled]="!canUseBulkEditor() || loadingExport()"
+      (clicked)="downloadJson()"
+    >
+      Скачать JSON
+    </app-ui-button>
+    <app-ui-button
+      variant="soft"
+      size="sm"
+      type="button"
+      [disabled]="!canUseBulkEditor()"
+      (clicked)="openJsonFilePicker()"
+    >
+      Загрузить JSON
+    </app-ui-button>
+    <app-ui-button
+      variant="soft"
+      size="sm"
+      type="button"
+      [title]="validateDisabledHint() ?? 'Проверить JSON по правилам выбранной таблицы'"
+      [disabled]="!canUseBulkEditor() || loading() || !loadedFileLabel()"
+      (clicked)="validate()"
+    >
+      Проверить
+    </app-ui-button>
+    <app-ui-button
+      size="sm"
+      type="button"
+      [title]="saveDisabledHint() ?? 'Сохранить в БД после успешной проверки'"
+      [disabled]="!canSubmit() || loading() || !validatedOk()"
+      (clicked)="saveToDb()"
+    >
+      Сохранить в БД
+    </app-ui-button>
+  </div>
+
+  @if (canUseBulkEditor() && !loading() && canBulkWriteCurrent()) {
+    @if (validateDisabledHint(); as vh) {
+      <p class="muted bulkInlineHint" role="status">{{ vh }}</p>
+    }
+    @if (saveDisabledHint(); as sh) {
+      <p class="muted bulkInlineHint" role="status">{{ sh }}</p>
+    }
+  }
+
+  @if (!canUseBulkEditor()) {
+    <p class="muted">
+      Нет ни одного права группы «Массовый ввод (JSON)» (<code>admin.bulk.*</code> или мастер-ключ <code>admin.bulk.all</code>) — включите нужные галочки в матрице для роли.
+    </p>
+  }
+  @if (bulkWritePermissionHint(); as bw) {
+    <p class="muted bulkSoon" role="status">{{ bw }}</p>
+  }
+  @if (canUseBulkEditor() && !currentTarget().hasEndpoint) {
+    <p class="muted bulkSoon">
+      Для выбранной таблицы эндпоинт ещё не подключён — доступен только пустой шаблон при скачивании; сохранение в БД появится позже.
+    </p>
+  }
+
+  @if (canUseBulkEditor()) {
+    <p class="bulkFileStatus" [class.bulkFileStatus--empty]="!loadedFileLabel()" role="status">
+      @if (loadedFileLabel(); as name) {
+        Загружен файл: <strong>{{ name }}</strong>
+      } @else {
+        Файл не загружен — скачайте JSON, отредактируйте локально и загрузите кнопкой «Загрузить JSON».
+      }
+    </p>
+  }
+
+  @if (errorText()) {
+    <p class="err" role="alert">{{ errorText() }}</p>
+  }
+  @if (statusText()) {
+    <p class="ok" role="status">{{ statusText() }}</p>
+  }
+  @if (lastResult()) {
+    <pre class="resultPre" [attr.aria-label]="'Ответ сервера'">{{ lastResult() }}</pre>
+  }
+</app-content-card>
+
+<ui-modal
+  *ngIf="isPurgeAllConfirmOpen()"
+  title="Удалить все строки?"
+  [content]="purgeAllConfirmContentTpl"
+  [actions]="purgeAllConfirmActionsTpl"
+  size="sm"
+  (close)="cancelPurgeAllConfirm()"
+></ui-modal>
+
+<ng-template #purgeAllConfirmContentTpl>
+  <p class="muted">{{ purgeAllConfirmMessage() }}</p>
+</ng-template>
+
+<ng-template #purgeAllConfirmActionsTpl>
+  <app-ui-button variant="soft" type="button" (clicked)="cancelPurgeAllConfirm()">Отмена</app-ui-button>
+  <app-ui-button variant="danger" type="button" (clicked)="confirmPurgeAll()">Удалить</app-ui-button>
+</ng-template>

@@ -31,6 +31,15 @@ export class TradeGoodsHttpRepository implements TradeGoodsRepository {
     return this.http.put<TradeGoodItem>(this.endpoint(`/${id}`), input);
   }
 
+  uploadPhotos(id: string, files: File[], primaryIndex: number): Observable<TradeGoodItem> {
+    const fd = new FormData();
+    for (const f of files) {
+      fd.append('files', f, f.name);
+    }
+    fd.append('primaryIndex', String(primaryIndex));
+    return this.http.post<TradeGoodItem>(this.endpoint(`/${id}/photos`), fd);
+  }
+
   remove(id: string): Observable<void> {
     return this.http.delete<void>(this.endpoint(`/${id}`));
   }

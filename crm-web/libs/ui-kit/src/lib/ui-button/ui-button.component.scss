@@ -54,6 +54,12 @@
   border-color: color-mix(in srgb, var(--danger) 85%, black 15%);
 }
 
+.uiButtonSm {
+  padding: calc(var(--ui-button-padding-y) * 0.45) calc(var(--ui-button-padding-x) * 0.65);
+  min-height: calc(var(--ui-control-compact-height) * 0.58);
+  font-size: calc(var(--font-size-control) * 0.92);
+}
+
 .uiButtonSquare {
   padding: 0;
   width: var(--ui-control-compact-height);

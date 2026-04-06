@@ -1,3 +1,4 @@
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { DOCUMENT, Location, NgFor, NgIf, NgTemplateOutlet } from '@angular/common';
 import {
   Component,
@@ -10,7 +11,7 @@ import {
   signal,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
+import { ActivatedRoute, NavigationEnd, NavigationStart, Router } from '@angular/router';
 import { LucidePlus, LucideX } from '@lucide/angular';
 import {
   AbstractControl,
@@ -24,6 +25,7 @@ import {
 import {
   Observable,
   Subscription,
+  distinctUntilChanged,
   filter,
   finalize,
   firstValueFrom,
@@ -84,18 +86,14 @@ import {
   PRODUCTS_COLUMNS_FULL,
   TRADE_GOODS_COLUMNS,
   TRADE_GOODS_COLUMNS_FULL,
-  CATALOG_ARTICLES_COLUMNS,
-  CATALOG_ARTICLES_COLUMNS_FULL,
+  TRADE_GOOD_CATEGORIES_COLUMNS,
+  TRADE_GOOD_CATEGORIES_COLUMNS_FULL,
+  TRADE_GOOD_SUBCATEGORIES_COLUMNS,
+  TRADE_GOOD_SUBCATEGORIES_COLUMNS_FULL,
   CATALOG_COMPLEXES_COLUMNS,
   CATALOG_COMPLEXES_COLUMNS_FULL,
-  CATALOG_PRODUCTS_COLUMNS,
-  CATALOG_PRODUCTS_COLUMNS_FULL,
 } from './dictionaries-page-table-columns';
-import {
-  catalogArticlePayloadFromValues,
-  catalogProductPayloadFromValues,
-  complexPayloadFromValues,
-} from './dictionaries-page-catalog-suite';
+import { complexPayloadFromValues } from './dictionaries-page-catalog-suite';
 import { productPayloadFromValues } from './dictionaries-page-products';
 import { tradeGoodPayloadFromValues } from './dictionaries-page-trade-goods';
 import {
@@ -130,8 +128,8 @@ import {
   ProductionDetailsStore,
   ProductsStore,
   TradeGoodsStore,
-  CatalogArticlesStore,
-  CatalogProductsStore,
+  TradeGoodCategoriesStore,
+  TradeGoodSubcategoriesStore,
   ComplexesStore,
   ProductionWorkTypesStore,
   RolesStore,
@@ -160,7 +158,9 @@ import {
 } from '@srm/products-data-access';
 import {
   TRADE_GOODS_REPOSITORY,
+  type TradeGoodCategoryInput,
   type TradeGoodItem,
+  type TradeGoodSubcategoryInput,
   type TradeGoodsRepository,
 } from '@srm/trade-goods-data-access';
 import { type ClientItemInput, formatClientFio } from '@srm/clients-data-access';
@@ -288,9 +288,14 @@ export class DictionariesPage implements OnDestroy {
       }
       return;
     }
-    if (key === null || !rows.some((r) => r.key === key)) {
+    if (key === null) {
       this.hubBoardSelectedKey.set(rows[0].key);
+      return;
     }
+    if (rows.some((r) => r.key === key)) {
+      return;
+    }
+    this.hubBoardSelectedKey.set(rows[0].key);
   });
 
   selectHubBoardRow(key: string, event?: Event): void {
@@ -325,11 +330,11 @@ export class DictionariesPage implements OnDestroy {
       case 'catalogComplexModal':
         this.openCatalogComplexCreate();
         break;
-      case 'catalogProductModal':
-        this.openCatalogProductCreate();
+      case 'tradeGoodCategoryModal':
+        this.openTradeGoodCategoriesCreate();
         break;
-      case 'catalogArticleModal':
-        this.openCatalogArticleCreate();
+      case 'tradeGoodSubcategoryModal':
+        this.openTradeGoodSubcategoriesCreate();
         break;
     }
   }
@@ -347,10 +352,10 @@ export class DictionariesPage implements OnDestroy {
   readonly productsStore = inject(ProductsStore);
   private readonly productsRepository = inject<ProductsRepository>(PRODUCTS_REPOSITORY);
   readonly tradeGoodsStore = inject(TradeGoodsStore);
+  readonly tradeGoodCategoriesStore = inject(TradeGoodCategoriesStore);
+  readonly tradeGoodSubcategoriesStore = inject(TradeGoodSubcategoriesStore);
   private readonly tradeGoodsRepository = inject<TradeGoodsRepository>(TRADE_GOODS_REPOSITORY);
   readonly complexesStore = inject(ComplexesStore);
-  readonly catalogProductsStore = inject(CatalogProductsStore);
-  readonly catalogArticlesStore = inject(CatalogArticlesStore);
 
   /** Полные данные для режима просмотра изделия (все поля и строки состава из API). */
   readonly productViewItem = signal<ProductItem | null>(null);
@@ -400,12 +405,46 @@ export class DictionariesPage implements OnDestroy {
   readonly isProductsViewMode = signal(false);
   readonly isTradeGoodsModalOpen = signal(false);
   readonly isTradeGoodsViewMode = signal(false);
+  readonly isTradeGoodCategoriesModalOpen = signal(false);
+  readonly isTradeGoodCategoriesViewMode = signal(false);
+  readonly isTradeGoodSubcategoriesModalOpen = signal(false);
+  readonly isTradeGoodSubcategoriesViewMode = signal(false);
+  /** Куда вернуться после закрытия модалки товара (deep-link с КП: `?returnTo=`). */
+  private readonly tradeGoodsReturnUrl = signal<string | null>(null);
+  /** Ошибка последнего сохранения товара (API). */
+  readonly tradeGoodsSaveError = signal<string | null>(null);
+  /** Подтверждение удаления товара (поверх модалки редактирования, z-index выше 1500). */
+  readonly isTradeGoodDeleteConfirmOpen = signal(false);
+  readonly tradeGoodDeleteConfirmBackdropZIndex = 1600;
+  /** Превью с сервера при редактировании (пока не выбраны новые файлы). */
+  readonly tradeGoodPhotoUrlsServer = signal<string[]>([]);
+  readonly tradeGoodPendingPreviewUrls = signal<string[]>([]);
+  readonly tradeGoodPendingFiles = signal<File[]>([]);
+  /** Какое фото главное для карточки и КП: индекс в `tradeGoodPhotoPreviewRows` (0-based). */
+  readonly tradeGoodPhotoPrimarySlot = signal(0);
+  /** Сначала уже сохранённые на сервере, затем новые выбранные файлы (blob URL). */
+  readonly tradeGoodPhotoPreviewRows = computed(() => {
+    return [...this.tradeGoodPhotoUrlsServer(), ...this.tradeGoodPendingPreviewUrls()];
+  });
+
+  /** Главное превью (для обратной совместимости с блоком под артикулом). */
+  readonly tradeGoodEditPhotoUrl = computed(() => {
+    const rows = this.tradeGoodPhotoPreviewRows();
+    if (rows.length > 0) {
+      const i = Math.min(this.tradeGoodPhotoPrimarySlot(), Math.max(0, rows.length - 1));
+      return rows[i] ?? '';
+    }
+    const editId = this.tradeGoodsStore.editId();
+    if (!editId) return '';
+    const v = this.tradeGoodViewItem();
+    if (v?.id === editId) {
+      const u = v.photoUrl?.trim();
+      if (u) return u;
+    }
+    return this.tradeGoodsStore.items().find((x) => x.id === editId)?.photoUrl?.trim() ?? '';
+  });
   readonly isCatalogComplexModalOpen = signal(false);
   readonly isCatalogComplexViewMode = signal(false);
-  readonly isCatalogProductModalOpen = signal(false);
-  readonly isCatalogProductViewMode = signal(false);
-  readonly isCatalogArticleModalOpen = signal(false);
-  readonly isCatalogArticleViewMode = signal(false);
   readonly isMaterialCharacteristicsModalOpen = signal(false);
   readonly isMaterialCharacteristicsViewMode = signal(false);
   readonly isMaterialsModalOpen = signal(false);
@@ -497,6 +536,7 @@ export class DictionariesPage implements OnDestroy {
   private readonly router = inject(Router);
   private readonly location = inject(Location);
   private readonly route = inject(ActivatedRoute);
+  private readonly http = inject(HttpClient);
   /** Цепочка «Новый материал» → характеристика: состояние вне экземпляра страницы (см. сервис). */
   private readonly materialStandaloneFlow = inject(DictionariesMaterialStandaloneFlowService);
   /** Полноэкранный маршрут `/справочники/новый-материал` (форма материала без модалки). */
@@ -614,6 +654,10 @@ export class DictionariesPage implements OnDestroy {
   readonly productsColumnsFull = PRODUCTS_COLUMNS_FULL;
   readonly tradeGoodsColumns = TRADE_GOODS_COLUMNS;
   readonly tradeGoodsColumnsFull = TRADE_GOODS_COLUMNS_FULL;
+  readonly tradeGoodCategoriesColumns = TRADE_GOOD_CATEGORIES_COLUMNS;
+  readonly tradeGoodCategoriesColumnsFull = TRADE_GOOD_CATEGORIES_COLUMNS_FULL;
+  readonly tradeGoodSubcategoriesColumns = TRADE_GOOD_SUBCATEGORIES_COLUMNS;
+  readonly tradeGoodSubcategoriesColumnsFull = TRADE_GOOD_SUBCATEGORIES_COLUMNS_FULL;
   readonly materialCharacteristicsColumnsPreview = MATERIAL_CHARACTERISTICS_COLUMNS_PREVIEW;
   readonly materialCharacteristicsColumnsFull = MATERIAL_CHARACTERISTICS_COLUMNS_FULL;
   readonly materialsColumnsPreview = MATERIALS_COLUMNS_PREVIEW;
@@ -674,26 +718,22 @@ export class DictionariesPage implements OnDestroy {
     this.tradeGoodsColumns,
     this.tradeGoodsColumnsFull,
   );
+  readonly tradeGoodCategoriesColumnsForTile = this.columnsForTile(
+    'tradeGoodCategories',
+    this.tradeGoodCategoriesColumns,
+    this.tradeGoodCategoriesColumnsFull,
+  );
+  readonly tradeGoodSubcategoriesColumnsForTile = this.columnsForTile(
+    'tradeGoodSubcategories',
+    this.tradeGoodSubcategoriesColumns,
+    this.tradeGoodSubcategoriesColumnsFull,
+  );
   readonly catalogComplexesColumns = CATALOG_COMPLEXES_COLUMNS;
   readonly catalogComplexesColumnsFull = CATALOG_COMPLEXES_COLUMNS_FULL;
-  readonly catalogProductsColumns = CATALOG_PRODUCTS_COLUMNS;
-  readonly catalogProductsColumnsFull = CATALOG_PRODUCTS_COLUMNS_FULL;
-  readonly catalogArticlesColumns = CATALOG_ARTICLES_COLUMNS;
-  readonly catalogArticlesColumnsFull = CATALOG_ARTICLES_COLUMNS_FULL;
   readonly catalogComplexesColumnsForTile = this.columnsForTile(
     'catalogComplexes',
     this.catalogComplexesColumns,
     this.catalogComplexesColumnsFull,
-  );
-  readonly catalogProductsColumnsForTile = this.columnsForTile(
-    'catalogProducts',
-    this.catalogProductsColumns,
-    this.catalogProductsColumnsFull,
-  );
-  readonly catalogArticlesColumnsForTile = this.columnsForTile(
-    'catalogArticles',
-    this.catalogArticlesColumns,
-    this.catalogArticlesColumnsFull,
   );
 
   /** Колонки мини-таблицы состава в раскрытии строки «Изделия» (`app-ui-spec-table`). */
@@ -859,11 +899,70 @@ export class DictionariesPage implements OnDestroy {
     code: [''],
     name: ['', [Validators.required, Validators.minLength(2)]],
     description: [''],
+    categoryId: [''],
+    subcategoryId: [''],
+    unitCode: [''],
     priceRub: [null as number | null],
     costRub: [null as number | null],
     notes: [''],
     isActive: [true],
     lines: this.fb.array<FormGroup>([]),
+  });
+
+  private readonly tradeGoodsCategoryIdSig = toSignal(
+    this.tradeGoodsForm.controls.categoryId.valueChanges.pipe(
+      startWith(this.tradeGoodsForm.controls.categoryId.value as string),
+    ),
+    { initialValue: '' },
+  );
+
+  readonly tradeGoodSubcategorySelectOptions = computed(() => {
+    const cat = String(this.tradeGoodsCategoryIdSig() ?? '').trim();
+    if (!cat) return [] as ReadonlyArray<{ id: string; label: string }>;
+    return this.tradeGoodSubcategoriesStore
+      .items()
+      .filter((s) => s.categoryId === cat && s.isActive)
+      .map((s) => ({ id: s.id, label: s.name }))
+      .sort((a, b) => a.label.localeCompare(b.label, 'ru'));
+  });
+
+  /**
+   * Ед. изм. в товаре хранится как `unitCode` (строка); в справочнике единиц — `code`, иначе подставляем `name`.
+   * См. справочник «Единицы измерения» на хабе.
+   */
+  readonly tradeGoodUnitCatalogOptions = computed(() =>
+    this.unitsStore
+      .items()
+      .filter((x) => x.isActive)
+      .map((item) => {
+        const value = (item.code?.trim() || item.name.trim() || '').trim();
+        return { value, label: `${item.name} (${item.code?.trim() || '—'})` };
+      })
+      .filter((o) => o.value.length > 0)
+      .sort((a, b) => a.label.localeCompare(b.label, 'ru')),
+  );
+
+  /** Опции селекта «Ед. изм.»; если в записи устаревший код — одна строка «не из справочника». */
+  tradeGoodUnitSelectOptions(): { value: string; label: string }[] {
+    const base = this.tradeGoodUnitCatalogOptions();
+    const cur = this.tradeGoodsForm.controls.unitCode.value?.trim() ?? '';
+    if (cur && !base.some((o) => o.value === cur)) {
+      return [{ value: cur, label: `${cur} (не из справочника)` }, ...base];
+    }
+    return base;
+  }
+
+  readonly tradeGoodCategoriesForm = this.fb.nonNullable.group({
+    name: ['', [Validators.required, Validators.minLength(1)]],
+    sortOrder: [0, [Validators.required]],
+    isActive: [true],
+  });
+
+  readonly tradeGoodSubcategoriesForm = this.fb.nonNullable.group({
+    categoryId: ['', Validators.required],
+    name: ['', [Validators.required, Validators.minLength(1)]],
+    sortOrder: [0, [Validators.required]],
+    isActive: [true],
   });
 
   readonly materialCharacteristicsForm = this.fb.nonNullable.group({
@@ -921,30 +1020,14 @@ export class DictionariesPage implements OnDestroy {
     isActive: [true],
   });
 
-  readonly catalogProductForm = this.fb.nonNullable.group({
-    complexId: ['', Validators.required],
-    name: ['', [Validators.required, Validators.minLength(1)]],
-    code: [''],
-    description: [''],
-    price: [0, [Validators.required, Validators.min(0)]],
-    isActive: [true],
-  });
-
-  readonly catalogArticleForm = this.fb.nonNullable.group({
-    productId: ['', Validators.required],
-    name: ['', [Validators.required, Validators.minLength(1)]],
-    code: [''],
-    description: [''],
-    qty: [1, [Validators.required, Validators.min(1)]],
-    sortOrder: [0, [Validators.required, Validators.min(0)]],
-    isActive: [true],
-  });
-
   readonly kpPhotosForm = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.minLength(1)]],
     organizationId: ['', Validators.required],
     photoTitle: ['', [Validators.required, Validators.minLength(1)]],
-    photoUrl: ['', Validators.required],
+    /** Имя файла в uploads/kp-photos/{organizationId}/ на сервере. */
+    photoFileName: [''],
+    /** Внешний или data URL (если картинка не из папки на сервере). */
+    photoExternalUrl: [''],
     isActive: [true],
   });
 
@@ -1113,9 +1196,9 @@ export class DictionariesPage implements OnDestroy {
     this.productionDetailsStore.loadItems();
     this.productsStore.loadItems();
     this.tradeGoodsStore.loadItems();
+    this.tradeGoodCategoriesStore.loadItems();
+    this.tradeGoodSubcategoriesStore.loadItems();
     this.complexesStore.loadItems();
-    this.catalogProductsStore.loadItems();
-    this.catalogArticlesStore.loadItems();
     this.clientsStore.loadItems();
     this.organizationsStore.loadItems();
 
@@ -1158,6 +1241,39 @@ export class DictionariesPage implements OnDestroy {
           this.organizationsForm.controls.kpp.setValue('', { emitEvent: false });
         }
       })
+    );
+
+    this.sub.add(
+      this.tradeGoodsForm.controls.categoryId.valueChanges.subscribe(() => {
+        this.tradeGoodsForm.controls.subcategoryId.setValue('', { emitEvent: false });
+      }),
+    );
+
+    /** Deep-link с конструктора КП: `/справочники?editTradeGood=<uuid>`. */
+    this.sub.add(
+      this.route.queryParamMap
+        .pipe(
+          map((q) => q.get('editTradeGood')),
+          distinctUntilChanged(),
+          filter((id): id is string => !!id && id.trim().length > 0),
+        )
+        .subscribe((id) => {
+          void this.applyEditTradeGoodFromQuery(id.trim());
+        }),
+    );
+
+    /**
+     * ui-modal переносит хост в `document.body`; при переходе на другой маршрут (например «КП») без
+     * явного закрытия модалки иногда остаётся «хвост» в DOM. Снимаем все модалки до смены маршрута.
+     */
+    this.sub.add(
+      this.router.events.pipe(filter((e): e is NavigationStart => e instanceof NavigationStart)).subscribe((e) => {
+        const currentPath = (this.router.url ?? '').split('?')[0] ?? '';
+        if (!currentPath.startsWith('/справочники')) return;
+        const targetPath = (e.url ?? '').split('?')[0] ?? '';
+        if (targetPath.startsWith('/справочники')) return;
+        this.drainDictionaryModalsOnLeaveHub();
+      }),
     );
 
     effect(() => {
@@ -1687,11 +1803,54 @@ export class DictionariesPage implements OnDestroy {
   }
 
   closeTradeGoodsModal(): void {
+    const back = this.tradeGoodsReturnUrl();
+    this.tradeGoodsReturnUrl.set(null);
+    this.resetTradeGoodsModalState();
+    if (back) {
+      void this.router.navigateByUrl(back);
+    }
+  }
+
+  /** Состояние формы товара без навигации (см. drain при уходе с /справочники). */
+  private resetTradeGoodsModalState(): void {
+    this.tradeGoodsSaveError.set(null);
+    this.isTradeGoodDeleteConfirmOpen.set(false);
+    this.revokeTradeGoodBlobUrls();
+    this.tradeGoodPhotoUrlsServer.set([]);
+    this.tradeGoodPendingPreviewUrls.set([]);
+    this.tradeGoodPendingFiles.set([]);
+    this.tradeGoodPhotoPrimarySlot.set(0);
     this.tradeGoodViewItem.set(null);
     this.tradeGoodsStore.resetForm();
     this.clearTradeGoodLines();
     this.isTradeGoodsViewMode.set(false);
     this.isTradeGoodsModalOpen.set(false);
+  }
+
+  /**
+   * Закрыть все модалки хаба без переходов — только сигналы, чтобы *ngIf снял ui-modal с body до размонтирования страницы.
+   */
+  private drainDictionaryModalsOnLeaveHub(): void {
+    this.tradeGoodsReturnUrl.set(null);
+    this.resetTradeGoodsModalState();
+    this.isWorkTypesModalOpen.set(false);
+    this.isProductionDetailsModalOpen.set(false);
+    this.isProductsModalOpen.set(false);
+    this.isCatalogComplexModalOpen.set(false);
+    this.isMaterialCharacteristicsModalOpen.set(false);
+    this.isMaterialsModalOpen.set(false);
+    this.isGeometriesModalOpen.set(false);
+    this.isUnitsModalOpen.set(false);
+    this.isKpPhotosModalOpen.set(false);
+    this.isColorsModalOpen.set(false);
+    this.isCoatingsModalOpen.set(false);
+    this.isClientsModalOpen.set(false);
+    this.isOrganizationsModalOpen.set(false);
+    this.isSurfaceFinishesModalOpen.set(false);
+    this.isRolesModalOpen.set(false);
+    this.isUsersModalOpen.set(false);
+    this.isTradeGoodCategoriesModalOpen.set(false);
+    this.isTradeGoodSubcategoriesModalOpen.set(false);
   }
 
   private clearTradeGoodLines(): void {
@@ -1716,6 +1875,67 @@ export class DictionariesPage implements OnDestroy {
     this.recalcTradeGoodPriceDefaults();
   }
 
+  private revokeTradeGoodBlobUrls(): void {
+    for (const u of this.tradeGoodPendingPreviewUrls()) {
+      if (u.startsWith('blob:')) URL.revokeObjectURL(u);
+    }
+  }
+
+  /** Для POST /photos: бэкенд перезаписывает все файлы — в теле должны быть и старые (с сервера), и новые. */
+  private async buildTradeGoodPhotoFilesForUpload(): Promise<File[]> {
+    const serverUrls = this.tradeGoodPhotoUrlsServer();
+    const pending = this.tradeGoodPendingFiles();
+    if (serverUrls.length === 0) {
+      return [...pending];
+    }
+    const blobs = await firstValueFrom(
+      forkJoin(serverUrls.map((url) => this.http.get(url, { responseType: 'blob' }))),
+    );
+    const fromServer: File[] = blobs.map((blob, i) => {
+      const url = serverUrls[i]!;
+      const tail = url.split('/').pop() ?? `photo-${i + 1}.jpg`;
+      const name = decodeURIComponent(tail);
+      return new File([blob], name, { type: blob.type || 'image/jpeg' });
+    });
+    return [...fromServer, ...pending];
+  }
+
+  onTradeGoodPhotosPick(ev: Event): void {
+    const input = ev.target as HTMLInputElement;
+    const files = input.files ? Array.from(input.files) : [];
+    /* Пустой change иногда приходит после programmatic input.value='' — не затирать уже выбранные превью. */
+    if (files.length === 0) {
+      return;
+    }
+    const prevFiles = this.tradeGoodPendingFiles();
+    const prevBlobs = this.tradeGoodPendingPreviewUrls();
+    const newBlobs = files.map((f) => URL.createObjectURL(f));
+    this.tradeGoodPendingFiles.set([...prevFiles, ...files]);
+    this.tradeGoodPendingPreviewUrls.set([...prevBlobs, ...newBlobs]);
+    /* Главное не сбрасываем — остаётся на текущем слоте, пока пользователь сам не выберет другое. */
+    /* Сброс value — в следующей микрозадаче, чтобы не словить лишний change с пустым списком в том же тике. */
+    queueMicrotask(() => {
+      input.value = '';
+    });
+  }
+
+  setTradeGoodPhotoPrimarySlot(index: number): void {
+    this.tradeGoodPhotoPrimarySlot.set(index);
+  }
+
+  tradeGoodCodeHint(): string {
+    const c = this.tradeGoodsForm.controls.code.value?.trim();
+    return c && c.length > 0 ? c : 'АРТИКУЛ';
+  }
+
+  private tradeGoodPrimaryIndexForPayload(): number {
+    const rows = this.tradeGoodPhotoPreviewRows();
+    const n = rows.length;
+    if (n === 0) return 1;
+    const slot = Math.min(this.tradeGoodPhotoPrimarySlot(), n - 1);
+    return slot + 1;
+  }
+
   recalcTradeGoodPriceDefaults(): void {
     let price = 0;
     let cost = 0;
@@ -1734,6 +1954,12 @@ export class DictionariesPage implements OnDestroy {
   }
 
   private resetTradeGoodsCreateForm(): void {
+    this.tradeGoodsSaveError.set(null);
+    this.revokeTradeGoodBlobUrls();
+    this.tradeGoodPhotoUrlsServer.set([]);
+    this.tradeGoodPendingPreviewUrls.set([]);
+    this.tradeGoodPendingFiles.set([]);
+    this.tradeGoodPhotoPrimarySlot.set(0);
     this.tradeGoodViewItem.set(null);
     this.isTradeGoodsViewMode.set(false);
     this.tradeGoodsForm.enable({ emitEvent: false });
@@ -1744,12 +1970,48 @@ export class DictionariesPage implements OnDestroy {
       code: '',
       name: '',
       description: '',
+      categoryId: '',
+      subcategoryId: '',
+      unitCode: '',
       priceRub: null,
       costRub: null,
       notes: '',
       isActive: true,
     });
     this.recalcTradeGoodPriceDefaults();
+  }
+
+  private async applyEditTradeGoodFromQuery(id: string): Promise<void> {
+    this.tradeGoodsSaveError.set(null);
+    const returnTo = this.sanitizeInternalReturnUrl(this.route.snapshot.queryParamMap.get('returnTo'));
+    this.hubBoardSelectedKey.set('tradeGoods');
+    await this.openTradeGoodsEdit(id);
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { editTradeGood: null, returnTo: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+    if (this.isTradeGoodsModalOpen()) {
+      this.tradeGoodsReturnUrl.set(returnTo);
+    } else {
+      this.tradeGoodsReturnUrl.set(null);
+    }
+  }
+
+  /** Только внутренние пути приложения (без open-redirect). */
+  private sanitizeInternalReturnUrl(raw: string | null | undefined): string | null {
+    if (raw == null || typeof raw !== 'string') return null;
+    let t = raw.trim();
+    try {
+      t = decodeURIComponent(t);
+    } catch {
+      return null;
+    }
+    if (!t.startsWith('/') || t.startsWith('//')) return null;
+    if (t.includes('://') || t.includes('\\')) return null;
+    if (t.length > 512) return null;
+    return t;
   }
 
   openTradeGoodsCreate(): void {
@@ -1765,6 +2027,7 @@ export class DictionariesPage implements OnDestroy {
 
   async openTradeGoodsEdit(id: string): Promise<void> {
     if (!this.permissions.crud().canEdit) return;
+    this.tradeGoodsSaveError.set(null);
     this.isTradeGoodsViewMode.set(false);
     this.tradeGoodsForm.enable({ emitEvent: false });
     let item: TradeGoodItem;
@@ -1775,6 +2038,19 @@ export class DictionariesPage implements OnDestroy {
     }
     this.tradeGoodViewItem.set(item);
     this.tradeGoodsStore.startEdit(item.id);
+    this.revokeTradeGoodBlobUrls();
+    this.tradeGoodPendingPreviewUrls.set([]);
+    this.tradeGoodPendingFiles.set([]);
+    const urls =
+      item.photoUrls?.length > 0
+        ? [...item.photoUrls]
+        : item.photoUrl?.trim()
+          ? [item.photoUrl.trim()]
+          : [];
+    this.tradeGoodPhotoUrlsServer.set(urls);
+    const maxIdx = Math.max(0, urls.length - 1);
+    const primarySlot = Math.min(Math.max(0, (item.photoPrimaryIndex ?? 1) - 1), maxIdx);
+    this.tradeGoodPhotoPrimarySlot.set(urls.length > 0 ? primarySlot : 0);
     this.clearTradeGoodLines();
     const sortedLines = [...item.lines].sort((a, b) => a.sortOrder - b.sortOrder);
     for (const line of sortedLines) {
@@ -1784,6 +2060,9 @@ export class DictionariesPage implements OnDestroy {
       code: item.code ?? '',
       name: item.name,
       description: item.description ?? '',
+      categoryId: item.categoryId ?? '',
+      subcategoryId: item.subcategoryId ?? '',
+      unitCode: item.unitCode ?? '',
       priceRub: item.priceRub,
       costRub: item.costRub,
       notes: item.notes ?? '',
@@ -1805,6 +2084,48 @@ export class DictionariesPage implements OnDestroy {
     this.tradeGoodsStore.delete(id);
   }
 
+  deleteTradeGoodFromModal(): void {
+    if (!this.permissions.crud().canDelete) return;
+    const id = this.tradeGoodsStore.editId();
+    if (!id) return;
+    this.tradeGoodsSaveError.set(null);
+    this.isTradeGoodDeleteConfirmOpen.set(true);
+  }
+
+  cancelTradeGoodDeleteConfirm(): void {
+    this.isTradeGoodDeleteConfirmOpen.set(false);
+  }
+
+  async confirmTradeGoodDeleteFromModal(): Promise<void> {
+    if (!this.permissions.crud().canDelete) return;
+    const id = this.tradeGoodsStore.editId();
+    if (!id) {
+      this.cancelTradeGoodDeleteConfirm();
+      return;
+    }
+    this.cancelTradeGoodDeleteConfirm();
+    this.tradeGoodsSaveError.set(null);
+    try {
+      await firstValueFrom(this.tradeGoodsRepository.remove(id));
+      const items = await firstValueFrom(this.tradeGoodsRepository.getItems());
+      this.tradeGoodsStore.applyLoadedItems(items);
+      this.closeTradeGoodsModal();
+    } catch (e: unknown) {
+      const msg =
+        e instanceof HttpErrorResponse
+          ? (typeof e.error === 'object' &&
+              e.error &&
+              'message' in e.error &&
+              String((e.error as { message?: unknown }).message).trim()
+              ? String((e.error as { message: string }).message)
+              : e.status === 0
+                ? 'Нет сети или сервер недоступен'
+                : `Ошибка удаления (${e.status})`)
+          : 'Не удалось удалить товар';
+      this.tradeGoodsSaveError.set(msg);
+    }
+  }
+
   async submitTradeGoods(): Promise<void> {
     const raw = this.tradeGoodsForm.getRawValue();
     const lines = (raw.lines as Array<{ productId: string; qty: number }>).filter((l) =>
@@ -1816,10 +2137,14 @@ export class DictionariesPage implements OnDestroy {
           code: String(raw.code ?? ''),
           name: String(raw.name ?? ''),
           description: String(raw.description ?? ''),
+          categoryId: String(raw.categoryId ?? ''),
+          subcategoryId: String(raw.subcategoryId ?? ''),
+          unitCode: String(raw.unitCode ?? ''),
           priceRub: raw.priceRub,
           costRub: raw.costRub,
           notes: String(raw.notes ?? ''),
           isActive: raw.isActive,
+          photoPrimaryIndex: this.tradeGoodPrimaryIndexForPayload(),
           lines: [],
         }),
         isValid: false,
@@ -1827,14 +2152,22 @@ export class DictionariesPage implements OnDestroy {
       this.tradeGoodsForm.markAllAsTouched();
       return;
     }
+    if (this.tradeGoodPendingFiles().length > 0 && !String(raw.code ?? '').trim()) {
+      this.tradeGoodsSaveError.set('Укажите артикул товара — по нему сохраняются имена файлов фото.');
+      return;
+    }
     const payload = tradeGoodPayloadFromValues({
       code: String(raw.code ?? ''),
       name: raw.name,
       description: String(raw.description ?? ''),
+      categoryId: String(raw.categoryId ?? ''),
+      subcategoryId: String(raw.subcategoryId ?? ''),
+      unitCode: String(raw.unitCode ?? ''),
       priceRub: raw.priceRub,
       costRub: raw.costRub,
       notes: String(raw.notes ?? ''),
       isActive: raw.isActive,
+      photoPrimaryIndex: this.tradeGoodPrimaryIndexForPayload(),
       lines: lines.map((l) => ({
         productId: String(l.productId).trim(),
         qty: Number(l.qty) > 0 ? Number(l.qty) : 1,
@@ -1846,16 +2179,48 @@ export class DictionariesPage implements OnDestroy {
       scrollToFirstInvalidControlInForm('trade-goods-form', this.doc);
       return;
     }
+    this.tradeGoodsSaveError.set(null);
     try {
       const editId = this.tradeGoodsStore.editId();
+      let savedId: string | null = editId;
       if (editId) {
         await firstValueFrom(this.tradeGoodsRepository.update(editId, payload));
       } else {
-        await firstValueFrom(this.tradeGoodsRepository.create(payload));
+        const created = await firstValueFrom(this.tradeGoodsRepository.create(payload));
+        savedId = created.id;
       }
+      const pendingNew = this.tradeGoodPendingFiles();
+      if (pendingNew.length > 0 && savedId) {
+        const primary = this.tradeGoodPrimaryIndexForPayload();
+        let files: File[];
+        try {
+          files = await this.buildTradeGoodPhotoFilesForUpload();
+        } catch {
+          this.tradeGoodsSaveError.set(
+            'Не удалось подготовить фото: проверьте доступ к уже загруженным снимкам и повторите сохранение.',
+          );
+          return;
+        }
+        await firstValueFrom(this.tradeGoodsRepository.uploadPhotos(savedId, files, primary));
+      }
+      this.revokeTradeGoodBlobUrls();
+      this.tradeGoodPendingPreviewUrls.set([]);
+      this.tradeGoodPendingFiles.set([]);
       const items = await firstValueFrom(this.tradeGoodsRepository.getItems());
       this.tradeGoodsStore.applyLoadedItems(items);
-    } catch {
+    } catch (e: unknown) {
+      const msg =
+        e instanceof HttpErrorResponse
+          ? (typeof e.error === 'object' &&
+              e.error &&
+              'message' in e.error &&
+              String((e.error as { message?: unknown }).message).trim()
+              ? String((e.error as { message: string }).message)
+              : e.status === 0
+                ? 'Нет сети или сервер недоступен'
+                : `Ошибка сохранения (${e.status})`)
+          : 'Не удалось сохранить товар';
+      this.tradeGoodsSaveError.set(msg);
       return;
     }
     this.closeTradeGoodsModal();
@@ -2599,7 +2964,8 @@ export class DictionariesPage implements OnDestroy {
       name: '',
       organizationId: '',
       photoTitle: '',
-      photoUrl: '',
+      photoFileName: '',
+      photoExternalUrl: '',
       isActive: true,
     });
   }
@@ -3097,6 +3463,207 @@ export class DictionariesPage implements OnDestroy {
     this.isUnitsModalOpen.set(false);
   }
 
+  openTradeGoodCategoriesCreate(): void {
+    if (!this.permissions.crud().canCreate) return;
+    this.isTradeGoodCategoriesViewMode.set(false);
+    this.tradeGoodCategoriesForm.enable({ emitEvent: false });
+    this.tradeGoodCategoriesStore.startCreate();
+    this.tradeGoodCategoriesForm.reset({
+      name: '',
+      sortOrder: 0,
+      isActive: true,
+    });
+    this.isTradeGoodCategoriesModalOpen.set(true);
+  }
+
+  openTradeGoodCategoriesEdit(id: string): void {
+    if (!this.permissions.crud().canEdit) return;
+    this.isTradeGoodCategoriesViewMode.set(false);
+    this.tradeGoodCategoriesForm.enable({ emitEvent: false });
+    const item = this.tradeGoodCategoriesStore.items().find((x) => x.id === id);
+    if (!item) return;
+    this.tradeGoodCategoriesStore.startEdit(item.id);
+    this.tradeGoodCategoriesForm.reset({
+      name: item.name ?? '',
+      sortOrder: item.sortOrder ?? 0,
+      isActive: item.isActive,
+    });
+    this.isTradeGoodCategoriesModalOpen.set(true);
+  }
+
+  closeTradeGoodCategoriesModal(): void {
+    this.tradeGoodCategoriesStore.resetForm();
+    this.isTradeGoodCategoriesViewMode.set(false);
+    this.isTradeGoodCategoriesModalOpen.set(false);
+  }
+
+  submitTradeGoodCategories(): void {
+    const raw = this.tradeGoodCategoriesForm.getRawValue();
+    const payload: TradeGoodCategoryInput = {
+      name: String(raw.name ?? '').trim(),
+      sortOrder: Number(raw.sortOrder) || 0,
+      isActive: Boolean(raw.isActive),
+    };
+    if (this.tradeGoodCategoriesForm.invalid) {
+      this.tradeGoodCategoriesStore.submit({ value: payload, isValid: false });
+      this.tradeGoodCategoriesForm.markAllAsTouched();
+      scrollToFirstInvalidControlInForm('trade-good-categories-form', this.doc);
+      return;
+    }
+    this.tradeGoodCategoriesStore.submit({ value: payload, isValid: true });
+    this.tradeGoodsStore.loadItems();
+    this.tradeGoodSubcategoriesStore.loadItems();
+    this.closeTradeGoodCategoriesModal();
+  }
+
+  deleteTradeGoodCategory(id: string): void {
+    if (!this.permissions.crud().canDelete) return;
+    this.tradeGoodCategoriesStore.delete(id);
+    if (this.tradeGoodsForm.controls.categoryId.value === id) {
+      this.tradeGoodsForm.patchValue({ categoryId: '', subcategoryId: '' });
+    }
+    this.tradeGoodsStore.loadItems();
+    this.tradeGoodSubcategoriesStore.loadItems();
+  }
+
+  duplicateTradeGoodCategory(id: string): void {
+    if (!this.permissions.can('crud.duplicate')) return;
+    const item = this.tradeGoodCategoriesStore.items().find((x) => x.id === id);
+    if (!item) return;
+    this.isTradeGoodCategoriesViewMode.set(false);
+    this.tradeGoodCategoriesForm.enable({ emitEvent: false });
+    this.tradeGoodCategoriesStore.startCreate();
+    this.tradeGoodCategoriesForm.reset({
+      name: item.name ? `${item.name} (копия)` : '',
+      sortOrder: item.sortOrder ?? 0,
+      isActive: item.isActive,
+    });
+    this.isTradeGoodCategoriesModalOpen.set(true);
+  }
+
+  openTradeGoodCategoriesView(id: string): void {
+    const item = this.tradeGoodCategoriesStore.items().find((x) => x.id === id);
+    if (!item) return;
+    this.tradeGoodCategoriesStore.resetForm();
+    this.tradeGoodCategoriesForm.reset({
+      name: item.name ?? '',
+      sortOrder: item.sortOrder ?? 0,
+      isActive: item.isActive,
+    });
+    this.tradeGoodCategoriesForm.disable({ emitEvent: false });
+    this.isTradeGoodCategoriesViewMode.set(true);
+    this.isTradeGoodCategoriesModalOpen.set(true);
+  }
+
+  openTradeGoodSubcategoriesCreate(): void {
+    if (!this.permissions.crud().canCreate) return;
+    this.isTradeGoodSubcategoriesViewMode.set(false);
+    this.tradeGoodSubcategoriesForm.enable({ emitEvent: false });
+    this.tradeGoodSubcategoriesStore.startCreate();
+    this.tradeGoodSubcategoriesForm.reset({
+      categoryId: '',
+      name: '',
+      sortOrder: 0,
+      isActive: true,
+    });
+    this.isTradeGoodSubcategoriesModalOpen.set(true);
+  }
+
+  openTradeGoodSubcategoriesEdit(id: string): void {
+    if (!this.permissions.crud().canEdit) return;
+    this.isTradeGoodSubcategoriesViewMode.set(false);
+    this.tradeGoodSubcategoriesForm.enable({ emitEvent: false });
+    const item = this.tradeGoodSubcategoriesStore.items().find((x) => x.id === id);
+    if (!item) return;
+    this.tradeGoodSubcategoriesStore.startEdit(item.id);
+    this.tradeGoodSubcategoriesForm.reset({
+      categoryId: item.categoryId ?? '',
+      name: item.name ?? '',
+      sortOrder: item.sortOrder ?? 0,
+      isActive: item.isActive,
+    });
+    this.isTradeGoodSubcategoriesModalOpen.set(true);
+  }
+
+  closeTradeGoodSubcategoriesModal(): void {
+    this.tradeGoodSubcategoriesStore.resetForm();
+    this.isTradeGoodSubcategoriesViewMode.set(false);
+    this.isTradeGoodSubcategoriesModalOpen.set(false);
+  }
+
+  submitTradeGoodSubcategories(): void {
+    const raw = this.tradeGoodSubcategoriesForm.getRawValue();
+    const payload: TradeGoodSubcategoryInput = {
+      categoryId: String(raw.categoryId ?? '').trim(),
+      name: String(raw.name ?? '').trim(),
+      sortOrder: Number(raw.sortOrder) || 0,
+      isActive: Boolean(raw.isActive),
+    };
+    if (this.tradeGoodSubcategoriesForm.invalid) {
+      this.tradeGoodSubcategoriesStore.submit({ value: payload, isValid: false });
+      this.tradeGoodSubcategoriesForm.markAllAsTouched();
+      scrollToFirstInvalidControlInForm('trade-good-subcategories-form', this.doc);
+      return;
+    }
+    this.tradeGoodSubcategoriesStore.submit({ value: payload, isValid: true });
+    this.tradeGoodsStore.loadItems();
+    this.closeTradeGoodSubcategoriesModal();
+  }
+
+  deleteTradeGoodSubcategory(id: string): void {
+    if (!this.permissions.crud().canDelete) return;
+    this.tradeGoodSubcategoriesStore.delete(id);
+    if (this.tradeGoodsForm.controls.subcategoryId.value === id) {
+      this.tradeGoodsForm.patchValue({ subcategoryId: '' });
+    }
+    this.tradeGoodsStore.loadItems();
+  }
+
+  duplicateTradeGoodSubcategory(id: string): void {
+    if (!this.permissions.can('crud.duplicate')) return;
+    const item = this.tradeGoodSubcategoriesStore.items().find((x) => x.id === id);
+    if (!item) return;
+    this.isTradeGoodSubcategoriesViewMode.set(false);
+    this.tradeGoodSubcategoriesForm.enable({ emitEvent: false });
+    this.tradeGoodSubcategoriesStore.startCreate();
+    this.tradeGoodSubcategoriesForm.reset({
+      categoryId: item.categoryId ?? '',
+      name: item.name ? `${item.name} (копия)` : '',
+      sortOrder: item.sortOrder ?? 0,
+      isActive: item.isActive,
+    });
+    this.isTradeGoodSubcategoriesModalOpen.set(true);
+  }
+
+  openTradeGoodSubcategoriesView(id: string): void {
+    const item = this.tradeGoodSubcategoriesStore.items().find((x) => x.id === id);
+    if (!item) return;
+    this.tradeGoodSubcategoriesStore.resetForm();
+    this.tradeGoodSubcategoriesForm.reset({
+      categoryId: item.categoryId ?? '',
+      name: item.name ?? '',
+      sortOrder: item.sortOrder ?? 0,
+      isActive: item.isActive,
+    });
+    this.tradeGoodSubcategoriesForm.disable({ emitEvent: false });
+    this.isTradeGoodSubcategoriesViewMode.set(true);
+    this.isTradeGoodSubcategoriesModalOpen.set(true);
+  }
+
+  isTradeGoodCategoriesInvalid(controlName: keyof typeof this.tradeGoodCategoriesForm.controls): boolean {
+    const c = this.tradeGoodCategoriesForm.controls[controlName];
+    return !!(c && c.invalid && (c.touched || this.tradeGoodCategoriesStore.formSubmitAttempted()));
+  }
+
+  isTradeGoodSubcategoriesInvalid(controlName: keyof typeof this.tradeGoodSubcategoriesForm.controls): boolean {
+    const c = this.tradeGoodSubcategoriesForm.controls[controlName];
+    return !!(c && c.invalid && (c.touched || this.tradeGoodSubcategoriesStore.formSubmitAttempted()));
+  }
+
+  getTradeGoodCategoryNameForId(id: string): string {
+    return this.tradeGoodCategoriesStore.items().find((x) => x.id === id)?.name ?? '—';
+  }
+
   submitUnits(): void {
     const payload = this.buildUnitsPayload();
     if (this.unitsForm.invalid) {
@@ -3214,9 +3781,6 @@ export class DictionariesPage implements OnDestroy {
   deleteCatalogComplex(id: string): void {
     if (!this.permissions.crud().canDelete) return;
     this.complexesStore.delete(id);
-    if (this.catalogProductForm.controls.complexId.value === id) {
-      this.catalogProductForm.controls.complexId.setValue('');
-    }
   }
 
   duplicateCatalogComplex(id: string): void {
@@ -3250,211 +3814,6 @@ export class DictionariesPage implements OnDestroy {
     this.isCatalogComplexModalOpen.set(true);
   }
 
-  openCatalogProductCreate(): void {
-    if (!this.permissions.crud().canCreate) return;
-    this.isCatalogProductViewMode.set(false);
-    this.catalogProductForm.enable({ emitEvent: false });
-    this.catalogProductsStore.startCreate();
-    this.catalogProductForm.reset({
-      complexId: '',
-      name: '',
-      code: '',
-      description: '',
-      price: 0,
-      isActive: true,
-    });
-    this.isCatalogProductModalOpen.set(true);
-  }
-
-  openCatalogProductEdit(id: string): void {
-    if (!this.permissions.crud().canEdit) return;
-    this.isCatalogProductViewMode.set(false);
-    this.catalogProductForm.enable({ emitEvent: false });
-    const item = this.catalogProductsStore.items().find((x) => x.id === id);
-    if (!item) return;
-    this.catalogProductsStore.startEdit(item.id);
-    this.catalogProductForm.reset({
-      complexId: item.complexId,
-      name: item.name ?? '',
-      code: item.code ?? '',
-      description: item.description ?? '',
-      price: item.price,
-      isActive: item.isActive,
-    });
-    this.isCatalogProductModalOpen.set(true);
-  }
-
-  closeCatalogProductModal(): void {
-    this.catalogProductsStore.resetForm();
-    this.isCatalogProductViewMode.set(false);
-    this.isCatalogProductModalOpen.set(false);
-  }
-
-  submitCatalogProduct(): void {
-    const raw = this.catalogProductForm.getRawValue();
-    const payload = catalogProductPayloadFromValues(raw);
-    if (this.catalogProductForm.invalid) {
-      this.catalogProductsStore.submit({ value: payload, isValid: false });
-      this.catalogProductForm.markAllAsTouched();
-      scrollToFirstInvalidControlInForm('catalog-product-form', this.doc);
-      return;
-    }
-    this.catalogProductsStore.submit({ value: payload, isValid: true });
-    this.closeCatalogProductModal();
-  }
-
-  deleteCatalogProduct(id: string): void {
-    if (!this.permissions.crud().canDelete) return;
-    this.catalogProductsStore.delete(id);
-    if (this.catalogArticleForm.controls.productId.value === id) {
-      this.catalogArticleForm.controls.productId.setValue('');
-    }
-  }
-
-  duplicateCatalogProduct(id: string): void {
-    if (!this.permissions.can('crud.duplicate')) return;
-    const item = this.catalogProductsStore.items().find((x) => x.id === id);
-    if (!item) return;
-    this.isCatalogProductViewMode.set(false);
-    this.catalogProductForm.enable({ emitEvent: false });
-    this.catalogProductsStore.startCreate();
-    this.catalogProductForm.reset({
-      complexId: item.complexId,
-      name: item.name ? `${item.name} (копия)` : '',
-      code: item.code ?? '',
-      description: item.description ?? '',
-      price: item.price,
-      isActive: item.isActive,
-    });
-    this.isCatalogProductModalOpen.set(true);
-  }
-
-  openCatalogProductView(id: string): void {
-    const item = this.catalogProductsStore.items().find((x) => x.id === id);
-    if (!item) return;
-    this.catalogProductsStore.resetForm();
-    this.catalogProductForm.reset({
-      complexId: item.complexId,
-      name: item.name ?? '',
-      code: item.code ?? '',
-      description: item.description ?? '',
-      price: item.price,
-      isActive: item.isActive,
-    });
-    this.catalogProductForm.disable({ emitEvent: false });
-    this.isCatalogProductViewMode.set(true);
-    this.isCatalogProductModalOpen.set(true);
-  }
-
-  openCatalogArticleCreate(): void {
-    if (!this.permissions.crud().canCreate) return;
-    this.isCatalogArticleViewMode.set(false);
-    this.catalogArticleForm.enable({ emitEvent: false });
-    this.catalogArticlesStore.startCreate();
-    this.catalogArticleForm.reset({
-      productId: '',
-      name: '',
-      code: '',
-      description: '',
-      qty: 1,
-      sortOrder: 0,
-      isActive: true,
-    });
-    this.isCatalogArticleModalOpen.set(true);
-  }
-
-  openCatalogArticleEdit(id: string): void {
-    if (!this.permissions.crud().canEdit) return;
-    this.isCatalogArticleViewMode.set(false);
-    this.catalogArticleForm.enable({ emitEvent: false });
-    const item = this.catalogArticlesStore.items().find((x) => x.id === id);
-    if (!item) return;
-    this.catalogArticlesStore.startEdit(item.id);
-    this.catalogArticleForm.reset({
-      productId: item.productId,
-      name: item.name ?? '',
-      code: item.code ?? '',
-      description: item.description ?? '',
-      qty: item.qty,
-      sortOrder: item.sortOrder,
-      isActive: item.isActive,
-    });
-    this.isCatalogArticleModalOpen.set(true);
-  }
-
-  closeCatalogArticleModal(): void {
-    this.catalogArticlesStore.resetForm();
-    this.isCatalogArticleViewMode.set(false);
-    this.isCatalogArticleModalOpen.set(false);
-  }
-
-  submitCatalogArticle(): void {
-    const raw = this.catalogArticleForm.getRawValue();
-    const payload = catalogArticlePayloadFromValues(raw);
-    if (this.catalogArticleForm.invalid) {
-      this.catalogArticlesStore.submit({ value: payload, isValid: false });
-      this.catalogArticleForm.markAllAsTouched();
-      scrollToFirstInvalidControlInForm('catalog-article-form', this.doc);
-      return;
-    }
-    this.catalogArticlesStore.submit({ value: payload, isValid: true });
-    this.closeCatalogArticleModal();
-  }
-
-  deleteCatalogArticle(id: string): void {
-    if (!this.permissions.crud().canDelete) return;
-    this.catalogArticlesStore.delete(id);
-  }
-
-  duplicateCatalogArticle(id: string): void {
-    if (!this.permissions.can('crud.duplicate')) return;
-    const item = this.catalogArticlesStore.items().find((x) => x.id === id);
-    if (!item) return;
-    this.isCatalogArticleViewMode.set(false);
-    this.catalogArticleForm.enable({ emitEvent: false });
-    this.catalogArticlesStore.startCreate();
-    this.catalogArticleForm.reset({
-      productId: item.productId,
-      name: item.name ? `${item.name} (копия)` : '',
-      code: item.code ?? '',
-      description: item.description ?? '',
-      qty: item.qty,
-      sortOrder: item.sortOrder,
-      isActive: item.isActive,
-    });
-    this.isCatalogArticleModalOpen.set(true);
-  }
-
-  openCatalogArticleView(id: string): void {
-    const item = this.catalogArticlesStore.items().find((x) => x.id === id);
-    if (!item) return;
-    this.catalogArticlesStore.resetForm();
-    this.catalogArticleForm.reset({
-      productId: item.productId,
-      name: item.name ?? '',
-      code: item.code ?? '',
-      description: item.description ?? '',
-      qty: item.qty,
-      sortOrder: item.sortOrder,
-      isActive: item.isActive,
-    });
-    this.catalogArticleForm.disable({ emitEvent: false });
-    this.isCatalogArticleViewMode.set(true);
-    this.isCatalogArticleModalOpen.set(true);
-  }
-
-  catalogProductComplexViewLabel(): string {
-    const id = this.catalogProductForm.controls.complexId.value;
-    const c = this.complexesStore.items().find((x) => x.id === id);
-    return c?.name ?? '—';
-  }
-
-  catalogArticleProductViewLabel(): string {
-    const id = this.catalogArticleForm.controls.productId.value;
-    const p = this.catalogProductsStore.items().find((x) => x.id === id);
-    return p?.name ?? '—';
-  }
-
   openKpPhotosCreate(): void {
     if (!this.permissions.crud().canCreate) return;
     this.navigateToStandaloneDictionaryCreate('kpPhotos');
@@ -3471,7 +3830,8 @@ export class DictionariesPage implements OnDestroy {
       name: item.name ?? '',
       organizationId: item.organizationId ?? '',
       photoTitle: item.photoTitle ?? '',
-      photoUrl: item.photoUrl ?? '',
+      photoFileName: item.photoFileName ?? '',
+      photoExternalUrl: item.photoExternalUrl ?? '',
       isActive: item.isActive,
     });
     this.isKpPhotosModalOpen.set(true);
@@ -3512,7 +3872,8 @@ export class DictionariesPage implements OnDestroy {
       name: item.name ? `${item.name} (копия)` : '',
       organizationId: item.organizationId ?? '',
       photoTitle: item.photoTitle ?? '',
-      photoUrl: item.photoUrl ?? '',
+      photoFileName: item.photoFileName ?? '',
+      photoExternalUrl: item.photoExternalUrl ?? '',
       isActive: item.isActive,
     });
     this.isKpPhotosModalOpen.set(true);
@@ -3526,7 +3887,8 @@ export class DictionariesPage implements OnDestroy {
       name: item.name ?? '',
       organizationId: item.organizationId ?? '',
       photoTitle: item.photoTitle ?? '',
-      photoUrl: item.photoUrl ?? '',
+      photoFileName: item.photoFileName ?? '',
+      photoExternalUrl: item.photoExternalUrl ?? '',
       isActive: item.isActive,
     });
     this.kpPhotosForm.disable({ emitEvent: false });
@@ -3541,25 +3903,21 @@ export class DictionariesPage implements OnDestroy {
     return this.organizationsStore.options().find((o) => o.id === id)?.label ?? '—';
   }
 
-  onKpPhotoFileSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    input.value = '';
-    if (!file || !file.type.startsWith('image/')) {
-      return;
+  /**
+   * Превью в форме: приоритет файла в `/media/kp-photos/{org}/{file}`,
+   * иначе внешний или data URL из поля «Доп. URL».
+   */
+  kpPhotoPreviewUrl(): string {
+    const org = this.kpPhotosForm.controls.organizationId.value?.trim() ?? '';
+    const file = this.kpPhotosForm.controls.photoFileName.value?.trim() ?? '';
+    const external = this.kpPhotosForm.controls.photoExternalUrl.value?.trim() ?? '';
+    if (org && file) {
+      return `/media/kp-photos/${encodeURIComponent(org)}/${encodeURIComponent(file)}`;
     }
-    const maxBytes = 1.5 * 1024 * 1024;
-    if (file.size > maxBytes) {
-      window.alert('Файл слишком большой. Максимум 1,5 МБ.');
-      return;
+    if (external && (external.startsWith('http') || external.startsWith('data:'))) {
+      return external;
     }
-    const reader = new FileReader();
-    reader.onload = () => {
-      const url = typeof reader.result === 'string' ? reader.result : '';
-      this.kpPhotosForm.controls.photoUrl.setValue(url);
-      this.kpPhotosForm.controls.photoUrl.markAsDirty();
-    };
-    reader.readAsDataURL(file);
+    return '';
   }
 
   openRolesCreate(): void {
@@ -5124,22 +5482,6 @@ export class DictionariesPage implements OnDestroy {
     );
   }
 
-  isCatalogProductInvalid(controlName: keyof typeof this.catalogProductForm.controls): boolean {
-    const control = this.catalogProductForm.controls[controlName];
-    return (
-      control.invalid &&
-      (control.touched || control.dirty || this.catalogProductsStore.formSubmitAttempted())
-    );
-  }
-
-  isCatalogArticleInvalid(controlName: keyof typeof this.catalogArticleForm.controls): boolean {
-    const control = this.catalogArticleForm.controls[controlName];
-    return (
-      control.invalid &&
-      (control.touched || control.dirty || this.catalogArticlesStore.formSubmitAttempted())
-    );
-  }
-
   isKpPhotosInvalid(controlName: keyof typeof this.kpPhotosForm.controls): boolean {
     const control = this.kpPhotosForm.controls[controlName];
     return (
@@ -5357,7 +5699,8 @@ export class DictionariesPage implements OnDestroy {
       name: c.name.value,
       organizationId: c.organizationId.value,
       photoTitle: c.photoTitle.value,
-      photoUrl: c.photoUrl.value,
+      photoFileName: c.photoFileName.value,
+      photoUrl: c.photoExternalUrl.value,
       isActive: c.isActive.value,
     });
   }

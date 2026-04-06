@@ -34,6 +34,7 @@ export const KpPhotosStore = signalStore(
           hubLine: [item.name, item.organizationName].filter(Boolean).join(' · '),
           organizationName: item.organizationName,
           photoTitle: item.photoTitle,
+          photoFileName: item.photoFileName,
           photoUrl: item.photoUrl,
           isActiveLabel: item.isActive ? 'Да' : 'Нет',
         }))

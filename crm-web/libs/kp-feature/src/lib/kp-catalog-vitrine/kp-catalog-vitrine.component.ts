@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, Output, computed, signal } from '@angular/core';
-import { LucideShoppingCart, LucideStar } from '@lucide/angular';
+import { LucidePencil, LucideShoppingCart } from '@lucide/angular';
 import {
   FiltersBarComponent,
   ProductCardComponent,
@@ -10,10 +10,13 @@ import {
 import { KP_CATALOG_DEMO_PRODUCTS } from './kp-catalog-demo-products';
 import type { KpCatalogProduct } from './kp-catalog-product.model';
 import {
+  KP_CATALOG_SUBCATEGORY_NONE_VALUE,
   calcKpCatalogProductPageCount,
   filterSortProductsForVitrine,
+  formatKpCatalogCardMetaLine,
   formatKpCatalogPriceRuble,
-  picsumImageUrl,
+  kpCatalogSubcategoryText,
+  normalizeKpImageSrcForDisplay,
   sliceKpCatalogVisibleProducts,
   tryParseKpCatalogPageSize,
   type KpCatalogProductSort,
@@ -27,8 +30,8 @@ import {
     ProductCardComponent,
     UiButtonComponent,
     UiPaginationComponent,
+    LucidePencil,
     LucideShoppingCart,
-    LucideStar,
   ],
   templateUrl: './kp-catalog-vitrine.component.html',
   styleUrl: './kp-catalog-vitrine.component.scss',
@@ -51,6 +54,7 @@ export class KpCatalogVitrineComponent {
   readonly productSearch = signal('');
   readonly productSort = signal<KpCatalogProductSort>('priceDesc');
   readonly productCategory = signal<'all' | string>('all');
+  readonly productSubcategory = signal<string>('all');
   readonly productPage = signal(1);
   /** Карточек на странице витрины (по умолчанию). */
   readonly productPageSize = signal(12);
@@ -60,6 +64,9 @@ export class KpCatalogVitrineComponent {
 
   @Output() readonly addToKp = new EventEmitter<KpCatalogProduct>();
 
+  /** Переход к редактированию записи в справочнике (только для `source === 'trade_good'`). */
+  @Output() readonly editInDictionary = new EventEmitter<KpCatalogProduct>();
+
   readonly productCategoryOptions = computed<FilterOption[]>(() => {
     const categories = Array.from(new Set(this.productsInternal().map((p) => p.category))).sort((a, b) =>
       a.localeCompare(b),
@@ -67,6 +74,25 @@ export class KpCatalogVitrineComponent {
     return [{ value: 'all', label: 'Категория: все' }].concat(
       categories.map((c) => ({ value: c, label: `Категория: ${c}` })),
     );
+  });
+
+  /** Варианты подкатегории только при выбранной категории (не «все»). */
+  readonly productSubcategoryOptions = computed<FilterOption[]>(() => {
+    const cat = this.productCategory();
+    if (cat === 'all') return [];
+    const products = this.productsInternal().filter((p) => p.category === cat);
+    const subs = new Set<string>();
+    let hasEmpty = false;
+    for (const p of products) {
+      const s = kpCatalogSubcategoryText(p);
+      if (s) subs.add(s);
+      else hasEmpty = true;
+    }
+    const sorted = Array.from(subs).sort((a, b) => a.localeCompare(b, 'ru'));
+    const opts: FilterOption[] = [{ value: 'all', label: 'Подкатегория: все' }];
+    if (hasEmpty) opts.push({ value: KP_CATALOG_SUBCATEGORY_NONE_VALUE, label: 'Без подкатегории' });
+    for (const s of sorted) opts.push({ value: s, label: `Подкатегория: ${s}` });
+    return opts.length > 1 ? opts : [];
   });
 
   readonly productSortOptions: FilterOption[] = [
@@ -79,6 +105,7 @@ export class KpCatalogVitrineComponent {
       this.productsInternal(),
       this.productSearch(),
       this.productCategory(),
+      this.productSubcategory(),
       this.productSort(),
     );
   });
@@ -105,6 +132,12 @@ export class KpCatalogVitrineComponent {
 
   onProductCategory(value: string): void {
     this.productCategory.set(value || 'all');
+    this.productSubcategory.set('all');
+    this.productPage.set(1);
+  }
+
+  onProductSubcategory(value: string): void {
+    this.productSubcategory.set(value || 'all');
     this.productPage.set(1);
   }
 
@@ -123,11 +156,21 @@ export class KpCatalogVitrineComponent {
     this.addToKp.emit(p);
   }
 
+  onEditInDictionary(p: KpCatalogProduct): void {
+    if (p.source !== 'trade_good') return;
+    this.editInDictionary.emit(p);
+  }
+
   formatPrice(rub: number): string {
     return formatKpCatalogPriceRuble(rub);
   }
 
+  cardMetaLine(p: KpCatalogProduct): string {
+    return formatKpCatalogCardMetaLine(p);
+  }
+
+  /** Только реальный URL с API; без внешних placeholder-картинок. */
   imageUrl(p: KpCatalogProduct): string {
-    return picsumImageUrl(p.imageSeed, 640, 640);
+    return normalizeKpImageSrcForDisplay(String(p.imageUrl ?? '').trim());
   }
 }

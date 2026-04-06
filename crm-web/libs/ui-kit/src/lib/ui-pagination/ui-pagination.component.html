@@ -6,20 +6,36 @@
     (clicked)="go(page - 1)"
     aria-label="Предыдущая страница"
   >
-    <span class="paginationIcon"><svg lucideChevronLeft [size]="18"></svg></span>
+    <span class="paginationIcon paginationIcon--prevNext" aria-hidden="true"
+      ><svg lucideChevronLeft [size]="22"></svg
+    ></span>
   </app-ui-button>
 
-  <div class="pages" role="list">
-    <app-ui-button
-      *ngFor="let p of pages()"
-      [variant]="p === page ? 'primary' : 'soft'"
-      [square]="true"
-      (clicked)="go(p)"
-      role="listitem"
-      [attr.aria-current]="p === page ? 'page' : null"
-    >
-      {{ p }}
-    </app-ui-button>
+  <div class="pages" role="group" aria-label="Номера страниц">
+    <ng-container *ngFor="let item of pagesWithGaps()">
+      <span *ngIf="item === 'gap'" class="pagination__ellipsis" aria-hidden="true">…</span>
+      <app-ui-button
+        *ngIf="item !== 'gap' && item !== pageCount"
+        [variant]="item === page ? 'primary' : 'soft'"
+        [square]="true"
+        (clicked)="go(item)"
+        [attr.aria-current]="item === page ? 'page' : null"
+        [attr.aria-label]="'Страница ' + item"
+      >
+        {{ item }}
+      </app-ui-button>
+      <button
+        *ngIf="item !== 'gap' && item === pageCount"
+        type="button"
+        class="pagination__lastPage"
+        [class.pagination__lastPage--current]="page === pageCount"
+        (click)="go(item)"
+        [attr.aria-current]="page === pageCount ? 'page' : null"
+        [attr.aria-label]="'Последняя страница, ' + pageCount"
+      >
+        {{ item }}
+      </button>
+    </ng-container>
   </div>
 
   <app-ui-button
@@ -29,7 +45,9 @@
     (clicked)="go(page + 1)"
     aria-label="Следующая страница"
   >
-    <span class="paginationIcon"><svg lucideChevronRight [size]="18"></svg></span>
+    <span class="paginationIcon paginationIcon--prevNext" aria-hidden="true"
+      ><svg lucideChevronRight [size]="22"></svg
+    ></span>
   </app-ui-button>
 </nav>
 

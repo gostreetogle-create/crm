@@ -48,6 +48,16 @@
         <app-ui-button variant="soft" type="button" (clicked)="refresh()">Обновить</app-ui-button>
       </div>
 
+      @if (s.migrations.pendingNames.length > 0) {
+        <p class="sysMigrationHint" role="status">
+          <span class="sysMigrationHintLead">Нужно применить миграции Prisma.</span>
+          В списке:
+          <span class="sysMigrationNames">{{ formatPendingMigrationNames(s.migrations.pendingNames) }}</span>
+          Откройте «Предупреждения и команды» — там команды для Windows (PowerShell) и Docker; на проде не используйте
+          <code class="sysInlineCode">migrate reset</code>.
+        </p>
+      }
+
       @if (copyHint(); as hint) {
         <p class="sysHint" role="status">{{ hint }}</p>
       }

@@ -1,6 +1,6 @@
 # Название файла: .md — Обзор backend-map (автогенерация)
 
-> **Сгенерировано:** `2026-04-04T15:01:04.792Z`  
+> **Сгенерировано:** `2026-04-06T08:27:51.944Z`  
 > **Не править вручную.** Источник правды — JSON в этой же папке. Обновление: `node scripts/generate-backend-map-overview.cjs`
 
 ---
@@ -552,7 +552,7 @@
 [
   {
     "method": "GET",
-    "path": "/api/admin/system/status",
+    "path": "/api/system/status",
     "summary": "Статус БД, миграции, тексты предупреждений и команд для UI «Система и обслуживание»"
   },
   {
@@ -632,8 +632,93 @@
   },
   {
     "method": "POST",
-    "path": "/api/admin/bulk/units",
-    "summary": "Массовое создание единиц измерения (JSON body: items[])"
+    "path": "/api/bulk/units",
+    "summary": "Массовое создание единиц измерения (JSON: items[]); право admin.bulk.units"
+  },
+  {
+    "method": "GET",
+    "path": "/api/bulk/units/export",
+    "summary": "Экспорт всех единиц в JSON { items } для массового импорта; право admin.bulk.units"
+  },
+  {
+    "method": "POST",
+    "path": "/api/bulk/colors",
+    "summary": "Массовое создание цветов RAL (JSON: items[]); право admin.bulk.colors"
+  },
+  {
+    "method": "GET",
+    "path": "/api/bulk/colors/export",
+    "summary": "Экспорт всех цветов в JSON { items }; право admin.bulk.colors"
+  },
+  {
+    "method": "POST",
+    "path": "/api/bulk/surface-finishes",
+    "summary": "Массовое создание типов отделки (JSON: items[]); право admin.bulk.surface_finishes"
+  },
+  {
+    "method": "GET",
+    "path": "/api/bulk/surface-finishes/export",
+    "summary": "Экспорт типов отделки в JSON { items }; право admin.bulk.surface_finishes"
+  },
+  {
+    "method": "POST",
+    "path": "/api/bulk/coatings",
+    "summary": "Массовое создание покрытий (JSON: items[]); право admin.bulk.coatings"
+  },
+  {
+    "method": "GET",
+    "path": "/api/bulk/coatings/export",
+    "summary": "Экспорт покрытий в JSON { items }; право admin.bulk.coatings"
+  },
+  {
+    "method": "POST",
+    "path": "/api/bulk/geometries",
+    "summary": "Массовое создание геометрий (JSON: items[]); право admin.bulk.geometries"
+  },
+  {
+    "method": "GET",
+    "path": "/api/bulk/geometries/export",
+    "summary": "Экспорт геометрий в JSON { items }; право admin.bulk.geometries"
+  },
+  {
+    "method": "POST",
+    "path": "/api/bulk/material-characteristics",
+    "summary": "Массовое создание характеристик материалов (JSON: items[]); право admin.bulk.material_characteristics"
+  },
+  {
+    "method": "GET",
+    "path": "/api/bulk/material-characteristics/export",
+    "summary": "Экспорт характеристик материалов в JSON { items }; право admin.bulk.material_characteristics"
+  },
+  {
+    "method": "POST",
+    "path": "/api/bulk/materials",
+    "summary": "Массовое создание материалов (JSON: items[]); право admin.bulk.materials"
+  },
+  {
+    "method": "GET",
+    "path": "/api/bulk/materials/export",
+    "summary": "Экспорт материалов в JSON { items }; право admin.bulk.materials"
+  },
+  {
+    "method": "POST",
+    "path": "/api/bulk/production-work-types",
+    "summary": "Массовое создание видов работ (JSON: items[]); право admin.bulk.production_work_types"
+  },
+  {
+    "method": "GET",
+    "path": "/api/bulk/production-work-types/export",
+    "summary": "Экспорт видов работ в JSON { items }; право admin.bulk.production_work_types"
+  },
+  {
+    "method": "POST",
+    "path": "/api/bulk/trade-goods",
+    "summary": "Массовое создание товаров (JSON: items[] с lines[]); право admin.bulk.trade_goods"
+  },
+  {
+    "method": "GET",
+    "path": "/api/bulk/trade-goods/export",
+    "summary": "Экспорт товаров с составом в JSON { items }; право admin.bulk.trade_goods"
   }
 ]
 ```

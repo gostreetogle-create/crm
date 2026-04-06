@@ -2,7 +2,7 @@
 
 **Доменная модель и отличие от производственного изделия:** [`docs/domain/catalog-suite-guide.md`](../domain/catalog-suite-guide.md).
 
-**Код (фронт):** секция **«Каталог»** на хабе `/справочники`, три плитки; сторы `ComplexesStore`, `CatalogProductsStore`, `CatalogArticlesStore`; репозитории в `crm-web/libs/catalog-suite-data-access/`; формы и модалки в `dictionaries-page` + пейлоады в `dictionaries-page-catalog-suite.ts`.
+**Код (фронт):** секция **«Каталог»** на хабе `/справочники`: **одна** плитка **«Комплексы»** (как у остальных справочников — строка с зелёным «+»); **каталожные товары** и **позиции каталога** открываются из **вложенного** блока **«Товары»** (выпадающий список под кнопкой «Комплексы», не отдельная плитка). Сторы: `ComplexesStore`, `CatalogProductsStore`, `CatalogArticlesStore`; репозитории в `crm-web/libs/catalog-suite-data-access/`; формы и модалки в `dictionaries-page` + пейлоады в `dictionaries-page-catalog-suite.ts`.
 
 **Код (бэк):** DTO `backend/src/lib/catalog-suite.dto.ts`; роуты под префиксом authed API с проверкой **`dict.hub.catalog_suite`** (см. `backend/README.md`).
 
@@ -10,11 +10,13 @@
 
 ## Плитки хаба и права
 
-| Ключ плитки (`hubBoard`) | Заголовок в UI | Право (все три → одно) |
-|--------------------------|----------------|-------------------------|
-| `catalogComplexes` | Комплексы | `dict.hub.catalog_suite` |
-| `catalogProducts` | Каталожные товары | то же |
-| `catalogArticles` | Позиции каталога | то же |
+| Ключ (`hubBoard` / выбор) | Где в UI | Право |
+|---------------------------|----------|--------|
+| `catalogComplexes` | Кнопка **«Комплексы»** | `dict.hub.catalog_suite` |
+| `catalogProducts` | Селект **«Товары»** → «Каталожные товары» | то же |
+| `catalogArticles` | Селект **«Товары»** → «Позиции каталога» | то же |
+
+На доске хаба в конфиге (`dictionaries-hub-board.config.ts`) перечислена только плитка `catalogComplexes`; режимы `catalogProducts` и `catalogArticles` переключаются селектом (см. `dictionaries-page.html`, секция `dictionary-hub-section-catalog`).
 
 Маппинг плитка → ключ права: `crm-web/libs/authz-core/src/lib/dict-hub-permissions.ts`.
 

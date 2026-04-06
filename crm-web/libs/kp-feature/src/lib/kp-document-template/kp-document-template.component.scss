@@ -56,8 +56,8 @@
   height: 100%;
   max-height: 100%;
   overflow: auto;
-  padding-left: 14mm;
-  padding-right: 14mm;
+  padding-left: 4mm;
+  padding-right: 4mm;
   padding-bottom: 10mm;
 }
 
@@ -98,6 +98,7 @@
 
 .kp-sheet__table-wrap {
   margin-top: 0;
+  --kp-thumb-max: 80px;
 }
 
 /* Подсказка при переносе таблицы на следующий лист (экран и печать) */
@@ -110,13 +111,73 @@
   color: rgba(16, 24, 40, 0.62);
 }
 
-/* Строк на листе (без подписи) + кнопка «+» под таблицей (только экран; см. kp-no-print) */
+/* Строк на листе + кнопка «+» под таблицей (только экран; см. kp-no-print) */
 .kp-sheet__addRow {
   margin-top: 6px;
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-start;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.35rem 0.5rem;
+}
+
+.kp-sheet__rowsPerPageGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  font-size: 9pt;
+  color: rgba(16, 24, 40, 0.75);
+  white-space: nowrap;
+}
+
+.kp-sheet__rowsPerPageLabel {
+  font-weight: 600;
+}
+
+.kp-sheet__photoSize {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  font-size: 9pt;
+  color: rgba(16, 24, 40, 0.75);
+  white-space: nowrap;
+}
+
+.kp-sheet__photoSizeLabel {
+  font-weight: 600;
+}
+
+.kp-sheet__photoSizeInput {
+  box-sizing: border-box;
+  width: 2.75rem;
+  height: var(--ui-row-action-size, 28px);
+  margin: 0;
+  padding: 0 0.25rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--surface, rgba(255, 255, 255, 0.96));
+  color: inherit;
+  font: inherit;
+  font-size: 9.5pt;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.kp-sheet__photoSizeInput:focus {
+  outline: 2px solid rgba(59, 130, 246, 0.45);
+  outline-offset: 0;
+}
+
+.kp-sheet__photoSizeInput.kp-sheet__cell-input--invalid {
+  border-color: var(--danger, #dc2626);
+}
+
+.kp-sheet__photoSizeUnit {
+  font-variant-numeric: tabular-nums;
 }
 
 .kp-sheet__rowsPerPageInput {
@@ -140,6 +201,10 @@
   outline-offset: 0;
 }
 
+.kp-sheet__rowsPerPageInput.kp-sheet__cell-input--invalid {
+  border-color: var(--danger, #dc2626);
+}
+
 .kp-sheet__table {
   width: 100%;
   border-collapse: collapse;
@@ -156,7 +221,7 @@
 .kp-sheet__table td {
   border: 1px solid var(--kp-table-grid);
   padding: 6px 8px;
-  vertical-align: top;
+  vertical-align: middle;
 }
 
 .kp-sheet__table th {
@@ -174,7 +239,10 @@
 }
 
 .kp-sheet__col-image {
-  width: 56px;
+  box-sizing: border-box;
+  min-width: calc(var(--kp-thumb-max, 80px) + 8px);
+  width: auto;
+  max-width: min(220px, 40vw);
   text-align: center;
   vertical-align: middle;
 }
@@ -267,14 +335,33 @@
   outline-offset: 0;
 }
 
+.kp-sheet__cell-input--invalid {
+  border-color: var(--danger, #dc2626);
+}
+
 .kp-sheet__cell-input--name {
   min-width: 120px;
+}
+
+.kp-sheet__col-description {
+  min-width: 7rem;
+  max-width: 42%;
+  vertical-align: middle;
+}
+
+.kp-sheet__cell-input--description {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 2.5rem;
+  max-height: 6rem;
+  resize: vertical;
+  line-height: 1.35;
 }
 
 .kp-sheet__col-qtyCell,
 .kp-sheet__col-unitCell {
   text-align: center;
-  vertical-align: middle;
 }
 
 .kp-sheet__cell-input--qty,
@@ -323,19 +410,10 @@
   font-variant-numeric: tabular-nums;
 }
 
-.kp-sheet__cell-input--url {
-  font-size: 8pt;
-  min-width: 0;
-}
-
-.kp-sheet__imageCell {
-  margin-bottom: 4px;
-}
-
 .kp-sheet__thumb {
   display: block;
-  max-width: 48px;
-  max-height: 40px;
+  max-width: var(--kp-thumb-max, 80px);
+  max-height: var(--kp-thumb-max, 80px);
   width: auto;
   height: auto;
   margin: 0 auto;
@@ -499,6 +577,7 @@
 
   /* Поля ввода в печати выглядят как обычный текст */
   .kp-sheet__cell-input,
+  textarea.kp-sheet__cell-input,
   .kp-sheet__totalLead--vat .kp-sheet__cell-input,
   .kp-sheet__vatAmountWrap .kp-sheet__cell-input {
     border: none !important;
@@ -508,6 +587,9 @@
     outline: none !important;
     box-shadow: none !important;
     color: inherit !important;
+    resize: none !important;
+    max-height: none !important;
+    min-height: 0 !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }

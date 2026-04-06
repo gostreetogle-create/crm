@@ -14,6 +14,8 @@ export * from './lib/kp-photos.store';
 export * from './lib/production-details.store';
 export * from './lib/products.store';
 export * from './lib/trade-goods.store';
+export * from './lib/trade-good-categories.store';
+export * from './lib/trade-good-subcategories.store';
 export * from './lib/complexes.store';
 export * from './lib/catalog-products.store';
 export * from './lib/catalog-articles.store';

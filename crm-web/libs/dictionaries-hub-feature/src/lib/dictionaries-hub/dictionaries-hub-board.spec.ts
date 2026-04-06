@@ -15,8 +15,7 @@ describe('dictionaries-hub-board', () => {
     const rows = filterHubBoardRowsByPermission(HUB_BOARD_DICTIONARY_ROW_DEFS, () => true);
     const cols = buildHubBoardSectionColumns(rows);
     expect(cols.map((c) => c.sectionId)).toEqual([
-      'dictionary-hub-section-production',
-      'dictionary-hub-section-catalog',
+      'dictionary-hub-section-goods',
       'dictionary-hub-section-surface',
       'dictionary-hub-section-clients',
       'dictionary-hub-section-commercial',

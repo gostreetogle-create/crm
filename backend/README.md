@@ -45,7 +45,11 @@ Express + TypeScript + Prisma + PostgreSQL.
 2. **`backend/`** — `npm run dev` (порт **3000**).
 3. **`crm-web/`** — `npm start` / `nx serve` (порт **4200**).
 
-Прокси: `crm-web/proxy.conf.json` перенаправляет `/api` на `127.0.0.1:3000`. Подробности и порядок запуска: `docs/frontend/backend-enable-runbook.md`, правило Cursor `.cursor/rules/local-dev-launch.mdc`.
+Прокси: `crm-web/proxy.conf.json` перенаправляет `/api` и `/media` на `127.0.0.1:3000`. Подробности и порядок запуска: `docs/frontend/backend-enable-runbook.md`, правило Cursor `.cursor/rules/local-dev-launch.mdc`.
+
+### Фото товаров (справочник «Товары»)
+
+Файлы кладутся в каталог из **`TRADE_GOODS_PHOTOS_DIR`** (по умолчанию `backend/uploads/trade-goods-photos`). Имя файла должно совпадать с **артикулом** товара (`code`), например `TG-001.jpg` (поддерживаются `.jpg`, `.jpeg`, `.png`, `.webp`, `.gif`). Раздача: **`GET /media/trade-goods/<имя-файла>`**. В API списка и карточки товара поле **`photoUrl`** заполняется, если файл найден.
 
 ## Прод (Docker)
 

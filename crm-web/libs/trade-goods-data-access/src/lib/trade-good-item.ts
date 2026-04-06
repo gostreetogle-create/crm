@@ -17,10 +17,22 @@ export type TradeGoodItem = {
   code: string | null;
   name: string;
   description: string | null;
+  categoryId: string | null;
+  subcategoryId: string | null;
+  /** Подписи из справочников (для таблиц и КП). */
+  category: string | null;
+  subcategory: string | null;
+  unitCode: string | null;
   priceRub: number | null;
   costRub: number | null;
   notes: string | null;
   isActive: boolean;
+  /** Слот главного фото `артикул_N` на диске (1-based). */
+  photoPrimaryIndex: number;
+  /** Все загруженные снимки (`/media/trade-goods/…`). */
+  photoUrls: string[];
+  /** Главное фото для карточек и КП (по `photoPrimaryIndex`). */
+  photoUrl: string;
   createdAt: string;
   updatedAt: string;
   lines: TradeGoodLineDto[];
@@ -36,10 +48,19 @@ export type TradeGoodListItem = {
   code: string | null;
   name: string;
   description: string | null;
+  categoryId: string | null;
+  subcategoryId: string | null;
+  category: string | null;
+  subcategory: string | null;
+  unitCode: string | null;
   priceRub: number | null;
   costRub: number | null;
   notes: string | null;
   isActive: boolean;
+  photoPrimaryIndex: number;
+  photoUrls: string[];
+  /** Главное фото для списков и КП. */
+  photoUrl: string;
   linesCount: number;
   productsSummary: string;
   compositionLines: TradeGoodCompositionLineListItem[];
@@ -58,9 +79,17 @@ export type TradeGoodItemInput = {
   code: string | null;
   name: string;
   description: string | null;
+  categoryId: string | null;
+  subcategoryId: string | null;
+  /** Устаревшие строки: бэкенд создаёт записи справочника при импорте. */
+  category?: string | null;
+  subcategory?: string | null;
+  unitCode: string | null;
   priceRub: number | null;
   costRub: number | null;
   notes: string | null;
   isActive: boolean;
+  /** Какой снимок главный (`артикул_N`, 1-based); при смене без новой загрузки — только PUT. */
+  photoPrimaryIndex?: number;
   lines: TradeGoodLineInput[];
 };

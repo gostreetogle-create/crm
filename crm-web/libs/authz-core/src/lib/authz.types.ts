@@ -29,7 +29,25 @@ export type PermissionKey =
   | 'crud.edit'
   | 'crud.delete'
   | 'crud.duplicate'
-  | 'admin.bulk.units';
+  | 'admin.bulk.all'
+  | 'admin.bulk.units'
+  | 'admin.bulk.colors'
+  | 'admin.bulk.surface_finishes'
+  | 'admin.bulk.coatings'
+  | 'admin.bulk.geometries'
+  | 'admin.bulk.material_characteristics'
+  | 'admin.bulk.materials'
+  | 'admin.bulk.production_work_types'
+  | 'admin.bulk.clients'
+  | 'admin.bulk.organizations'
+  | 'admin.bulk.kp_photos'
+  | 'admin.bulk.users'
+  | 'admin.bulk.production_details'
+  | 'admin.bulk.manufactured_products'
+  | 'admin.bulk.complexes'
+  | 'admin.bulk.catalog_products'
+  | 'admin.bulk.roles'
+  | 'admin.bulk.trade_goods';
 
 export type CrudPermissions = {
   canCreate: boolean;

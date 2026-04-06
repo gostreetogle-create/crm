@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "start": "nx serve",
+    "start": "nx serve crm-web --host 0.0.0.0 --port 4200",
     "build": "nx build",
     "test": "nx test",
     "check:dictionaries-page-size": "node scripts/check-dictionaries-page-size.cjs",

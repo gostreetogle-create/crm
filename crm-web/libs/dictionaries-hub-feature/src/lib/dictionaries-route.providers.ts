@@ -16,10 +16,10 @@ import {
   ProductionWorkTypesStore,
   SurfaceFinishesStore,
   TradeGoodsStore,
+  TradeGoodCategoriesStore,
+  TradeGoodSubcategoriesStore,
   UnitsStore,
   ComplexesStore,
-  CatalogProductsStore,
-  CatalogArticlesStore,
 } from '@srm/dictionaries-state';
 import { COATINGS_REPOSITORY, CoatingsHttpRepository } from '@srm/coatings-data-access';
 import { GEOMETRIES_REPOSITORY, GeometriesHttpRepository } from '@srm/geometries-data-access';
@@ -34,7 +34,14 @@ import {
   ProductionDetailsHttpRepository,
 } from '@srm/production-details-data-access';
 import { PRODUCTS_REPOSITORY, ProductsHttpRepository } from '@srm/products-data-access';
-import { TRADE_GOODS_REPOSITORY, TradeGoodsHttpRepository } from '@srm/trade-goods-data-access';
+import {
+  TRADE_GOODS_REPOSITORY,
+  TradeGoodsHttpRepository,
+  TRADE_GOOD_CATEGORIES_REPOSITORY,
+  TradeGoodCategoriesHttpRepository,
+  TRADE_GOOD_SUBCATEGORIES_REPOSITORY,
+  TradeGoodSubcategoriesHttpRepository,
+} from '@srm/trade-goods-data-access';
 import {
   PRODUCTION_WORK_TYPES_REPOSITORY,
   ProductionWorkTypesHttpRepository,
@@ -45,14 +52,7 @@ import {
 } from '@srm/surface-finishes-data-access';
 import { KP_PHOTOS_REPOSITORY, KpPhotosHttpRepository } from '@srm/kp-photos-data-access';
 import { UNITS_REPOSITORY, UnitsHttpRepository } from '@srm/units-data-access';
-import {
-  CATALOG_ARTICLES_REPOSITORY,
-  CatalogArticlesHttpRepository,
-  CATALOG_PRODUCTS_REPOSITORY,
-  CatalogProductsHttpRepository,
-  COMPLEXES_REPOSITORY,
-  ComplexesHttpRepository,
-} from '@srm/catalog-suite-data-access';
+import { COMPLEXES_REPOSITORY, ComplexesHttpRepository } from '@srm/catalog-suite-data-access';
 
 /**
  * Route-level providers for the unified dictionaries hub (`/справочники`).
@@ -102,6 +102,12 @@ export const DICTIONARIES_ROUTE_PROVIDERS: Provider[] = [
   TradeGoodsHttpRepository,
   TradeGoodsStore,
   { provide: TRADE_GOODS_REPOSITORY, useExisting: TradeGoodsHttpRepository },
+  TradeGoodCategoriesHttpRepository,
+  TradeGoodCategoriesStore,
+  { provide: TRADE_GOOD_CATEGORIES_REPOSITORY, useExisting: TradeGoodCategoriesHttpRepository },
+  TradeGoodSubcategoriesHttpRepository,
+  TradeGoodSubcategoriesStore,
+  { provide: TRADE_GOOD_SUBCATEGORIES_REPOSITORY, useExisting: TradeGoodSubcategoriesHttpRepository },
   ClientsHttpRepository,
   ClientsStore,
   { provide: CLIENTS_REPOSITORY, useExisting: ClientsHttpRepository },
@@ -114,10 +120,4 @@ export const DICTIONARIES_ROUTE_PROVIDERS: Provider[] = [
   ComplexesHttpRepository,
   ComplexesStore,
   { provide: COMPLEXES_REPOSITORY, useExisting: ComplexesHttpRepository },
-  CatalogProductsHttpRepository,
-  CatalogProductsStore,
-  { provide: CATALOG_PRODUCTS_REPOSITORY, useExisting: CatalogProductsHttpRepository },
-  CatalogArticlesHttpRepository,
-  CatalogArticlesStore,
-  { provide: CATALOG_ARTICLES_REPOSITORY, useExisting: CatalogArticlesHttpRepository },
 ];

@@ -240,11 +240,26 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
-  gap: 6px;
   flex-shrink: 0;
+  min-width: 0;
+}
+
+/* Кнопки лежат внутри одного проецируемого узла `[product-actions]` — gap на футере их не разделяет. */
+.productCard__actions ::ng-deep [product-actions] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2mm;
+  min-width: 0;
 }
 
 .productCard__actions--solo {
+  width: 100%;
+  justify-content: flex-end;
+}
+
+.productCard__actions--solo ::ng-deep [product-actions] {
   width: 100%;
   justify-content: flex-end;
 }

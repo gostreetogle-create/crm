@@ -31,4 +31,21 @@
       }
     </select>
   </label>
+
+  @if (secondaryFilterOptions.length) {
+    <label class="filterField">
+      <span class="filterIcon filterIcon--muted" aria-hidden="true">
+        <svg lucideFunnel [size]="18"></svg>
+      </span>
+      <select
+        [value]="selectedSecondaryFilter"
+        (change)="onSecondaryFilter($any($event.target).value)"
+        aria-label="Подкатегория"
+      >
+        @for (option of secondaryFilterOptions; track option.value) {
+          <option [value]="option.value">{{ option.label }}</option>
+        }
+      </select>
+    </label>
+  }
 </div>

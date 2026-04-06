@@ -14,7 +14,9 @@ import {
   ViewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormArray, FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { FormArray, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
+import { TRADE_GOODS_REPOSITORY } from '@srm/trade-goods-data-access';
 import { KP_RECIPIENT_ORG_PREFIX } from '../../kp-document-template/kp-document-template.component';
 import { PageShellComponent, UiButtonComponent } from '@srm/ui-kit';
 import { KpCatalogVitrineComponent } from '../../kp-catalog-vitrine/kp-catalog-vitrine.component';
@@ -23,7 +25,18 @@ import {
   KpDocumentTemplateComponent,
   type KpLineItem,
 } from '../../kp-document-template/kp-document-template.component';
-import { calcKpTotalFromLines, calcKpVatAmountFromTotalWithoutRounding, picsumImageUrl } from '../../kp-utils';
+import {
+  calcKpTotalFromLines,
+  calcKpVatAmountFromTotalWithoutRounding,
+  formatKpQtyString,
+  kpLineQtyOrPriceValidator,
+  kpPhotoThumbMaxPxValidator,
+  kpRowsPerPageValidator,
+  kpVatAmountOptionalValidator,
+  kpVatPercentValidator,
+  mapTradeGoodListItemToKpCatalogProduct,
+  parseKpNumber,
+} from '../../kp-utils';
 import { KpRecipientToolbarComponent } from '../../kp-recipient-toolbar/kp-recipient-toolbar.component';
 import { LucidePrinter } from '@lucide/angular';
 import { resolveKpOrganizationContactId } from '../../kp-utils';
@@ -50,12 +63,20 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
   private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
   private readonly kpBuilderFacade = inject(KpBuilderFacade);
+  private readonly tradeGoodsRepository = inject(TRADE_GOODS_REPOSITORY);
+  private readonly router = inject(Router);
 
   /** Справочник организаций для выпадающего списка в шаблоне КП. */
   readonly organizations = this.kpBuilderFacade.organizations;
 
   /** Контактные лица (для выбора по организации). */
   readonly clients = this.kpBuilderFacade.clients;
+
+  /**
+   * Витрина КП: товары из справочника (`GET /api/trade-goods`).
+   * `undefined` — загрузка не удалась → витрина покажет демо-ассортимент; массив (в т.ч. пустой) — данные с сервера.
+   */
+  readonly kpCatalogProducts = signal<KpCatalogProduct[] | undefined>(undefined);
 
   @ViewChild('previewHost', { read: ElementRef }) previewHost?: ElementRef<HTMLElement>;
 
@@ -74,7 +95,7 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
 
   readonly form = this.fb.group({
     /** Сколько строк на одном листе; следующие — на следующем листе (фон 2стр). */
-    rowsPerPage: this.fb.nonNullable.control('12'),
+    rowsPerPage: this.fb.nonNullable.control('12', [kpRowsPerPageValidator()]),
     /**
      * Получатель КП: `org:<id>` (организация) или `contact:<id>` (контактное лицо), пусто — не выбрано.
      */
@@ -86,13 +107,15 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
      */
     organizationContactId: this.fb.nonNullable.control(''),
     /** Ставка НДС, % (по умолчанию 22). */
-    vatPercent: this.fb.nonNullable.control('22'),
+    vatPercent: this.fb.nonNullable.control('22', [kpVatPercentValidator()]),
     /** Сумма НДС в рублях (редактируемая; изначально считается от итога). */
-    vatAmount: this.fb.nonNullable.control(''),
+    vatAmount: this.fb.nonNullable.control('', [kpVatAmountOptionalValidator()]),
+    /** Максимальный размер миниатюры в колонке «Фото», px. */
+    photoThumbMaxPx: this.fb.nonNullable.control('80', [kpPhotoThumbMaxPxValidator()]),
     lines: this.fb.array([
-      this.lineGroup('Профиль алюминиевый ПА-01', '10', 'м', '1250.50', ''),
-      this.lineGroup('Поликарбонат сотовый 8 мм', '24', 'м²', '890', ''),
-      this.lineGroup('Крепёж комплект', '5', 'компл.', '450', ''),
+      this.lineGroup('Профиль алюминиевый ПА-01', '10', 'м', '1250.50', '', '', ''),
+      this.lineGroup('Поликарбонат сотовый 8 мм', '24', 'м²', '890', '', '', ''),
+      this.lineGroup('Крепёж комплект', '5', 'компл.', '450', '', '', ''),
     ]),
   });
 
@@ -119,6 +142,25 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
     this.recalculateVatAmountFromTotal();
 
     this.kpBuilderFacade.init(this.destroyRef);
+
+    this.tradeGoodsRepository
+      .getItems()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (items) => {
+          this.ngZone.run(() => {
+            const mapped = items
+              .filter((t) => t.isActive)
+              .map(mapTradeGoodListItemToKpCatalogProduct);
+            this.kpCatalogProducts.set(mapped);
+          });
+        },
+        error: () => {
+          this.ngZone.run(() => {
+            this.kpCatalogProducts.set(undefined);
+          });
+        },
+      });
 
     this.form.controls.recipient.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -219,22 +261,59 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
 
   /** Новая строка с типовыми значениями для быстрого ввода. */
   addLine(): void {
-    this.lines().push(this.lineGroup('', '1', 'шт.', '0', ''));
+    this.lines().push(this.lineGroup('', '1', 'шт.', '0', '', '', ''));
   }
 
-  /** Добавить позицию из витрины в таблицу КП и в PDF. */
+  /** Добавить позицию из витрины в таблицу КП и в PDF. Тот же товар — увеличить кол-во, не дублировать строку. */
   addFromVitrine(p: KpCatalogProduct): void {
-    const imageUrl = picsumImageUrl(p.imageSeed, 200, 200);
-    this.lines().push(this.lineGroup(p.title, '1', 'шт.', String(p.price), imageUrl));
+    const direct = String(p.imageUrl ?? '').trim();
+    const imageUrl =
+      direct && (direct.startsWith('/') || direct.startsWith('http://') || direct.startsWith('https://'))
+        ? direct
+        : '';
+    const unit = p.defaultUnit?.trim() || 'шт.';
+    const linesArr = this.lines();
+    const existingIdx = linesArr.controls.findIndex(
+      (ctrl) => String(ctrl.get('catalogProductId')?.value ?? '').trim() === p.id,
+    );
+    if (existingIdx >= 0) {
+      const g = linesArr.at(existingIdx);
+      const cur = parseKpNumber(g.get('qty')?.value);
+      g.patchValue({ qty: formatKpQtyString(cur + 1) });
+      return;
+    }
+    linesArr.push(
+      this.lineGroup(p.title, '1', unit, String(p.price), imageUrl, p.description?.trim() ?? '', p.id),
+    );
   }
 
-  private lineGroup(name: string, qty: string, unit: string, price: string, imageUrl: string) {
+  /** Справочники: модалка редактирования товара; `returnTo` — возврат после закрытия. */
+  navigateToEditTradeGood(p: KpCatalogProduct): void {
+    if (p.source !== 'trade_good') return;
+    const returnTo = this.router.url.split('?')[0] || '/коммерческое';
+    void this.router.navigate(['/справочники'], {
+      queryParams: { editTradeGood: p.id, returnTo },
+    });
+  }
+
+  private lineGroup(
+    name: string,
+    qty: string,
+    unit: string,
+    price: string,
+    imageUrl: string,
+    description = '',
+    catalogProductId = '',
+  ) {
+    const qtyPrice = kpLineQtyOrPriceValidator();
     return this.fb.group({
-      name: this.fb.nonNullable.control(name),
-      qty: this.fb.nonNullable.control(qty),
-      unit: this.fb.nonNullable.control(unit),
-      price: this.fb.nonNullable.control(price),
-      imageUrl: this.fb.nonNullable.control(imageUrl),
+      name: this.fb.nonNullable.control(name, [Validators.maxLength(500)]),
+      description: this.fb.nonNullable.control(description, [Validators.maxLength(2000)]),
+      qty: this.fb.nonNullable.control(qty, [qtyPrice]),
+      unit: this.fb.nonNullable.control(unit, [Validators.maxLength(64)]),
+      price: this.fb.nonNullable.control(price, [qtyPrice]),
+      imageUrl: this.fb.nonNullable.control(imageUrl, [Validators.maxLength(2048)]),
+      catalogProductId: this.fb.nonNullable.control(catalogProductId, [Validators.maxLength(128)]),
     });
   }
 

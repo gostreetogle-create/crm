@@ -1,5 +1,15 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, HostListener, Input, Output, TemplateRef } from '@angular/core';
+import {
+  Component,
+  EventEmitter,
+  HostListener,
+  Input,
+  OnChanges,
+  OnInit,
+  Output,
+  SimpleChanges,
+  TemplateRef,
+} from '@angular/core';
 import {
   LucideChevronDown,
   LucideCopy,
@@ -11,6 +21,7 @@ import {
 import { FactRow, PageHeaderComponent } from '../page-header/page-header.component';
 import { UiModal as UiModalComponent } from '../modal/public-api';
 import { UiButtonComponent } from '../ui-button/ui-button.component';
+import { UiPaginationComponent } from '../ui-pagination/ui-pagination.component';
 import { CrudRowActionsMenuComponent } from './crud-row-actions-menu/crud-row-actions-menu.component';
 
 export type TableColumn = {
@@ -37,12 +48,13 @@ export type CrudTableRow = Record<string, unknown>;
     LucideTrash2,
     UiModalComponent,
     UiButtonComponent,
+    UiPaginationComponent,
     CrudRowActionsMenuComponent,
   ],
   templateUrl: './crud-layout.html',
   styleUrl: './crud-layout.scss',
 })
-export class CrudLayoutComponent {
+export class CrudLayoutComponent implements OnInit, OnChanges {
   /** `menu` — одна кнопка «⋯» и список действий (компактно, как в CRM). `icons` — прежние отдельные кнопки. */
   @Input() rowActionsLayout: 'icons' | 'menu' = 'icons';
 
@@ -85,6 +97,16 @@ export class CrudLayoutComponent {
    */
   @Input() expandableRows = false;
   @Input() expandRowTemplate: TemplateRef<unknown> | null = null;
+  /**
+   * Клиентская пагинация по отфильтрованным строкам (после поиска по названию).
+   * Как на витрине КП: «На странице» + `app-ui-pagination` справа в тулбаре.
+   */
+  @Input() tablePagination = false;
+  @Input() tablePageSize = 15;
+  /** Варианты для селекта «На странице». */
+  @Input() tablePageSizeOptions: readonly number[] = [10, 15, 25, 50];
+  /** `compact` — минимальные отступы в ячейках (хаб справочников). */
+  @Input() tableDensity: 'default' | 'compact' = 'default';
   @Output() view = new EventEmitter<string>();
   @Output() create = new EventEmitter<void>();
   @Output() duplicate = new EventEmitter<string>();
@@ -99,6 +121,28 @@ export class CrudLayoutComponent {
 
   /** Раскрытая строка таблицы (одна за раз), по `id` записи. */
   expandedRowId: string | null = null;
+
+  /** Текущая страница (1-based) при `tablePagination`. */
+  tableCurrentPage = 1;
+  /** Эффективный размер страницы (синхронизируется с `tablePageSize`). */
+  effectivePageSize = 15;
+
+  ngOnInit(): void {
+    this.effectivePageSize = this.tablePageSize;
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['tablePageSize']) {
+      this.effectivePageSize = this.tablePageSize;
+      this.tableCurrentPage = 1;
+    }
+    if (changes['data']) {
+      const pc = this.tablePageCount;
+      if (this.tableCurrentPage > pc) {
+        this.tableCurrentPage = Math.max(1, pc);
+      }
+    }
+  }
 
   /** Безопасный фон для квадрата-образца (только #RGB / #RRGGBB). */
   swatchBackground(row: Record<string, unknown> | null | undefined, hexKey: string | undefined): string {
@@ -166,12 +210,30 @@ export class CrudLayoutComponent {
     return this.data.filter((row) => this.rowMatchesName(row, term));
   }
 
-  /** Строки тела таблицы и мобильных карточек (с учётом maxTableBodyRows). */
+  get tablePageCount(): number {
+    const n = this.visibleData.length;
+    if (!this.tablePagination || this.effectivePageSize <= 0) {
+      return 1;
+    }
+    return Math.max(1, Math.ceil(n / this.effectivePageSize));
+  }
+
+  /** Страница для `app-ui-pagination` (не выходит за пределы при смене данных / поиска). */
+  get clampedTablePage(): number {
+    return Math.min(Math.max(1, this.tableCurrentPage), this.tablePageCount);
+  }
+
+  /** Строки тела таблицы и мобильных карточек (с учётом maxTableBodyRows и пагинации). */
   get crudTableBodyRows(): CrudTableRow[] {
     const rows = this.visibleData;
     const max = this.maxTableBodyRows;
     if (max != null && Number.isFinite(max) && max >= 0) {
       return rows.slice(0, Math.floor(max));
+    }
+    if (this.tablePagination && this.effectivePageSize > 0) {
+      const page = this.clampedTablePage;
+      const start = (page - 1) * this.effectivePageSize;
+      return rows.slice(start, start + this.effectivePageSize);
     }
     return rows;
   }
@@ -205,6 +267,24 @@ export class CrudLayoutComponent {
   onNameSearchInput(event: Event): void {
     const value = (event.target as HTMLInputElement | null)?.value ?? '';
     this.nameSearchTerm = value;
+    this.tableCurrentPage = 1;
+  }
+
+  onTablePageChange(page: number): void {
+    this.tableCurrentPage = page;
+    this.expandedRowId = null;
+    this.openRowMenuIndex = null;
+  }
+
+  onTablePageSizeChange(event: Event): void {
+    const raw = Number((event.target as HTMLSelectElement | null)?.value);
+    if (!Number.isFinite(raw) || raw <= 0) {
+      return;
+    }
+    this.effectivePageSize = Math.floor(raw);
+    this.tableCurrentPage = 1;
+    this.expandedRowId = null;
+    this.openRowMenuIndex = null;
   }
 
   @HostListener('document:pointerdown', ['$event'])

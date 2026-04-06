@@ -9,47 +9,40 @@ export type HubBoardDictionaryRowDef = {
   title: string;
 };
 
+/**
+ * Секция «Товар»: порядок сверху вниз — комплексы и торговые сущности, затем производственные справочники, затем остальное (единицы, категории).
+ */
 export const HUB_BOARD_DICTIONARY_ROW_DEFS: readonly HubBoardDictionaryRowDef[] = [
-  { section: 'Материалы и производство', sectionId: 'dictionary-hub-section-production', key: 'materials', title: 'Материалы' },
+  { section: 'Товар', sectionId: 'dictionary-hub-section-goods', key: 'catalogComplexes', title: 'Комплексы' },
+  { section: 'Товар', sectionId: 'dictionary-hub-section-goods', key: 'tradeGoods', title: 'Товары' },
+  { section: 'Товар', sectionId: 'dictionary-hub-section-goods', key: 'products', title: 'Изделия' },
+  { section: 'Товар', sectionId: 'dictionary-hub-section-goods', key: 'productionDetails', title: 'Детали' },
+  { section: 'Товар', sectionId: 'dictionary-hub-section-goods', key: 'workTypes', title: 'Вид работ' },
+  { section: 'Товар', sectionId: 'dictionary-hub-section-goods', key: 'materials', title: 'Материалы' },
   {
-    section: 'Материалы и производство',
-    sectionId: 'dictionary-hub-section-production',
+    section: 'Товар',
+    sectionId: 'dictionary-hub-section-goods',
     key: 'materialCharacteristics',
     title: 'Характеристики материала',
   },
-  { section: 'Материалы и производство', sectionId: 'dictionary-hub-section-production', key: 'workTypes', title: 'Вид работ' },
-  { section: 'Материалы и производство', sectionId: 'dictionary-hub-section-production', key: 'units', title: 'Единицы измерения' },
   {
-    section: 'Материалы и производство',
-    sectionId: 'dictionary-hub-section-production',
+    section: 'Товар',
+    sectionId: 'dictionary-hub-section-goods',
     key: 'geometries',
     title: 'Форма и габаритные размеры',
   },
-  { section: 'Материалы и производство', sectionId: 'dictionary-hub-section-production', key: 'productionDetails', title: 'Детали' },
-  { section: 'Материалы и производство', sectionId: 'dictionary-hub-section-production', key: 'products', title: 'Изделия' },
+  { section: 'Товар', sectionId: 'dictionary-hub-section-goods', key: 'units', title: 'Единицы измерения' },
   {
-    section: 'Материалы и производство',
-    sectionId: 'dictionary-hub-section-production',
-    key: 'tradeGoods',
-    title: 'Товары',
+    section: 'Товар',
+    sectionId: 'dictionary-hub-section-goods',
+    key: 'tradeGoodCategories',
+    title: 'Категории товаров',
   },
   {
-    section: 'Каталог',
-    sectionId: 'dictionary-hub-section-catalog',
-    key: 'catalogComplexes',
-    title: 'Комплексы',
-  },
-  {
-    section: 'Каталог',
-    sectionId: 'dictionary-hub-section-catalog',
-    key: 'catalogProducts',
-    title: 'Каталожные товары',
-  },
-  {
-    section: 'Каталог',
-    sectionId: 'dictionary-hub-section-catalog',
-    key: 'catalogArticles',
-    title: 'Позиции каталога',
+    section: 'Товар',
+    sectionId: 'dictionary-hub-section-goods',
+    key: 'tradeGoodSubcategories',
+    title: 'Подкатегории товаров',
   },
   { section: 'Цвет, отделка и покрытия', sectionId: 'dictionary-hub-section-surface', key: 'colors', title: 'Цвета (RAL)' },
   {
@@ -72,8 +65,7 @@ export const HUB_BOARD_DICTIONARY_ROW_DEFS: readonly HubBoardDictionaryRowDef[] 
 ];
 
 export const HUB_BOARD_SECTION_ORDER: readonly string[] = [
-  'dictionary-hub-section-production',
-  'dictionary-hub-section-catalog',
+  'dictionary-hub-section-goods',
   'dictionary-hub-section-surface',
   'dictionary-hub-section-clients',
   'dictionary-hub-section-commercial',

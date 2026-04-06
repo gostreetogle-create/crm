@@ -88,6 +88,10 @@ export class UiModal implements AfterViewInit, OnDestroy {
     if (!isPlatformBrowser(this.platformId)) {
       return;
     }
+    const host = this.hostRef.nativeElement;
+    if (host.parentNode) {
+      host.parentNode.removeChild(host);
+    }
     UiModal.openModalCount = Math.max(0, UiModal.openModalCount - 1);
     if (UiModal.openModalCount === 0) {
       this.doc.documentElement.style.overflow = '';

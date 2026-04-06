@@ -22,10 +22,14 @@ function idFor(code: string): string {
 }
 
 export const ROLE_ID_SYSTEM_ADMIN = idFor('admin');
-export const ROLE_ID_SYSTEM_EDITOR = idFor('editor');
-export const ROLE_ID_SYSTEM_VIEWER = idFor('viewer');
-export const ROLE_ID_SEED_DIRECTOR = idFor('director');
-export const ROLE_ID_SEED_ACCOUNTANT = idFor('accountant');
+/**
+ * Канон одна роль — администратор. Старые константы оставлены для совместимости импортов;
+ * все указывают на тот же id (`role-sys-admin`).
+ */
+export const ROLE_ID_SYSTEM_EDITOR = ROLE_ID_SYSTEM_ADMIN;
+export const ROLE_ID_SYSTEM_VIEWER = ROLE_ID_SYSTEM_ADMIN;
+export const ROLE_ID_SEED_DIRECTOR = ROLE_ID_SYSTEM_ADMIN;
+export const ROLE_ID_SEED_ACCOUNTANT = ROLE_ID_SYSTEM_ADMIN;
 
 /** Начальные роли для UI (тот же JSON, что Prisma seed). */
 export const ROLES_SEED: readonly RoleItem[] = rows.map((r) => ({

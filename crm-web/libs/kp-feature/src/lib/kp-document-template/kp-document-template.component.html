@@ -80,7 +80,10 @@
               </div>
             }
         }
-        <section class="kp-sheet__table-wrap">
+        <section
+          class="kp-sheet__table-wrap"
+          [style.--kp-thumb-max.px]="photoThumbMaxPxEffective()"
+        >
           <table class="kp-sheet__table">
             <thead>
               <tr>
@@ -89,6 +92,9 @@
                   <th class="kp-sheet__col-image">Фото</th>
                 }
                 <th class="kp-sheet__col-name">Наименование</th>
+                @if (showDescriptionColumn()) {
+                  <th class="kp-sheet__col-description">Описание</th>
+                }
                 <th class="kp-sheet__col-qty">Кол-во</th>
                 <th class="kp-sheet__col-unit">Ед.</th>
                 <th class="kp-sheet__col-price">Цена</th>
@@ -104,20 +110,14 @@
                     @if (!showPhotoColumn()) {
                       <input type="hidden" formControlName="imageUrl" />
                     }
+                    @if (!showDescriptionColumn()) {
+                      <input type="hidden" formControlName="description" />
+                    }
                     {{ chunk.displayOffset + pos + 1 }}
                   </td>
                   @if (showPhotoColumn()) {
                     <td class="kp-sheet__col-image">
-                      <div class="kp-sheet__imageCell kp-no-print">
-                        <input
-                          type="url"
-                          formControlName="imageUrl"
-                          class="kp-sheet__cell-input kp-sheet__cell-input--url"
-                          placeholder="https://…"
-                          autocomplete="off"
-                          aria-label="URL изображения"
-                        />
-                      </div>
+                      <input type="hidden" formControlName="imageUrl" />
                       @if (imageSrcForDisplay(globalIdx)) {
                         <img
                           class="kp-sheet__thumb"
@@ -133,14 +133,27 @@
                       type="text"
                       formControlName="name"
                       class="kp-sheet__cell-input kp-sheet__cell-input--name"
+                      [class.kp-sheet__cell-input--invalid]="lineFieldInvalid(globalIdx, 'name')"
                       aria-label="Наименование"
                     />
                   </td>
+                  @if (showDescriptionColumn()) {
+                    <td class="kp-sheet__col-description">
+                      <textarea
+                        formControlName="description"
+                        rows="2"
+                        class="kp-sheet__cell-input kp-sheet__cell-input--description"
+                        [class.kp-sheet__cell-input--invalid]="lineFieldInvalid(globalIdx, 'description')"
+                        aria-label="Описание товара"
+                      ></textarea>
+                    </td>
+                  }
                   <td class="kp-sheet__col-qtyCell">
                     <input
                       type="text"
                       formControlName="qty"
                       class="kp-sheet__cell-input kp-sheet__cell-input--qty"
+                      [class.kp-sheet__cell-input--invalid]="lineFieldInvalid(globalIdx, 'qty')"
                       inputmode="decimal"
                       aria-label="Количество"
                     />
@@ -150,6 +163,7 @@
                       type="text"
                       formControlName="unit"
                       class="kp-sheet__cell-input kp-sheet__cell-input--unit"
+                      [class.kp-sheet__cell-input--invalid]="lineFieldInvalid(globalIdx, 'unit')"
                       aria-label="Единица"
                     />
                   </td>
@@ -159,6 +173,7 @@
                         type="text"
                         formControlName="price"
                         class="kp-sheet__cell-input kp-sheet__cell-input--num kp-sheet__cell-input--priceField"
+                        [class.kp-sheet__cell-input--invalid]="lineFieldInvalid(globalIdx, 'price')"
                         inputmode="decimal"
                         aria-label="Цена"
                       />
@@ -196,14 +211,18 @@
           @if (chunkIndex === 0) {
             <div class="kp-sheet__addRow kp-no-print">
               @if (rowsPerPageCtrl) {
-                <input
-                  type="text"
-                  class="kp-sheet__rowsPerPageInput"
-                  [formControl]="rowsPerPageCtrl"
-                  inputmode="numeric"
-                  autocomplete="off"
-                  aria-label="Строк таблицы на одном листе"
-                />
+                <label class="kp-sheet__rowsPerPageGroup">
+                  <span class="kp-sheet__rowsPerPageLabel">строк</span>
+                  <input
+                    type="text"
+                    class="kp-sheet__rowsPerPageInput"
+                    [formControl]="rowsPerPageCtrl"
+                    [class.kp-sheet__cell-input--invalid]="formCtrlInvalid(rowsPerPageCtrl)"
+                    inputmode="numeric"
+                    autocomplete="off"
+                    aria-label="Строк таблицы на одном листе"
+                  />
+                </label>
               }
               <app-ui-button
                 type="button"
@@ -215,6 +234,45 @@
               >
                 <svg lucidePlus [size]="18" aria-hidden="true"></svg>
               </app-ui-button>
+              @if (showAddDescriptionColumnButton()) {
+                <app-ui-button
+                  type="button"
+                  variant="primary"
+                  [square]="true"
+                  ariaLabel="Показать колонку «Описание»"
+                  title="Описание"
+                  (clicked)="enableDescriptionColumn()"
+                >
+                  <svg lucideFileText [size]="18" aria-hidden="true"></svg>
+                </app-ui-button>
+              }
+              @if (showHideDescriptionColumnButton()) {
+                <app-ui-button
+                  type="button"
+                  variant="primary"
+                  [square]="true"
+                  ariaLabel="Скрыть колонку «Описание»"
+                  title="Скрыть описание"
+                  (clicked)="hideDescriptionColumn()"
+                >
+                  <svg lucideEyeOff [size]="18" aria-hidden="true"></svg>
+                </app-ui-button>
+              }
+              @if (showPhotoColumn() && photoThumbMaxPxCtrl) {
+                <label class="kp-sheet__photoSize">
+                  <span class="kp-sheet__photoSizeLabel">Фото</span>
+                  <input
+                    type="text"
+                    class="kp-sheet__photoSizeInput"
+                    [formControl]="photoThumbMaxPxCtrl"
+                    [class.kp-sheet__cell-input--invalid]="formCtrlInvalid(photoThumbMaxPxCtrl)"
+                    inputmode="numeric"
+                    autocomplete="off"
+                    aria-label="Размер миниатюры в колонке Фото, пикселей"
+                  />
+                  <span class="kp-sheet__photoSizeUnit" aria-hidden="true">px</span>
+                </label>
+              }
             </div>
           }
 
@@ -229,6 +287,7 @@
                     type="text"
                     class="kp-sheet__cell-input kp-sheet__vatInput--pct"
                     [formControl]="vatPercentCtrl"
+                    [class.kp-sheet__cell-input--invalid]="formCtrlInvalid(vatPercentCtrl)"
                     inputmode="decimal"
                     aria-label="Процент НДС"
                   />
@@ -240,6 +299,7 @@
                     type="text"
                     class="kp-sheet__cell-input kp-sheet__vatInput--sum"
                     [formControl]="vatAmountCtrl"
+                    [class.kp-sheet__cell-input--invalid]="formCtrlInvalid(vatAmountCtrl)"
                     inputmode="decimal"
                     aria-label="Сумма НДС"
                   />

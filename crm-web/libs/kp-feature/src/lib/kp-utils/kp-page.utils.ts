@@ -42,6 +42,17 @@ export function shouldShowPhotoColumn(
   return false;
 }
 
+/** Колонка «Описание» — если хотя бы у одной строки непустой текст (после trim). */
+export function shouldShowDescriptionColumn(
+  totalLines: number,
+  hasDescriptionAt: (index: number) => boolean,
+): boolean {
+  for (let i = 0; i < totalLines; i++) {
+    if (hasDescriptionAt(i)) return true;
+  }
+  return false;
+}
+
 /**
  * Разбиение на чанки A4 по уже вычисленному порядку.
  */
