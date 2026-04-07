@@ -191,6 +191,7 @@ const BulkTradeGoodsBodySchema = z.object({
             z.object({
               productId: z.string().uuid().optional(),
               productCode: z.string().trim().min(1).optional(),
+              productName: z.string().trim().min(1).optional(),
               qty: z.number().positive().optional(),
             }),
           )
@@ -534,8 +535,24 @@ bulkRouter.post("/trade-goods", requireEffectiveBulkPermissionKey("admin.bulk.tr
         for (let li = 0; li < it.lines.length; li++) {
           const line = it.lines[li]!;
           let resolvedProductId: string | null = null;
-          if (line.productId && line.productId.trim()) {
-            resolvedProductId = line.productId.trim();
+          if (line.productName && line.productName.trim()) {
+            const name = line.productName.trim();
+            const matches = await prisma.manufacturedProduct.findMany({
+              where: { name: { equals: name, mode: "insensitive" } },
+              select: { id: true },
+              take: 2,
+            });
+            if (matches.length > 1) {
+              hasLineResolutionError = true;
+              errors.push({
+                index: i,
+                message:
+                  `trade_good_line_product_name_ambiguous at line ${li}. ` +
+                  `Найдено несколько изделий с именем \"${name}\"; используйте productCode или productId.`,
+              });
+              continue;
+            }
+            resolvedProductId = matches[0]?.id ?? null;
           } else if (line.productCode && line.productCode.trim()) {
             const code = line.productCode.trim();
             const productByCode = await prisma.manufacturedProduct.findFirst({
@@ -543,6 +560,8 @@ bulkRouter.post("/trade-goods", requireEffectiveBulkPermissionKey("admin.bulk.tr
               select: { id: true },
             });
             resolvedProductId = productByCode?.id ?? null;
+          } else if (line.productId && line.productId.trim()) {
+            resolvedProductId = line.productId.trim();
           }
           if (!resolvedProductId) {
             hasLineResolutionError = true;
@@ -550,7 +569,7 @@ bulkRouter.post("/trade-goods", requireEffectiveBulkPermissionKey("admin.bulk.tr
               index: i,
               message:
                 `trade_good_line_product_ref_missing_or_not_found at line ${li}. ` +
-                `Укажите productId (uuid) или productCode (code изделия из manufactured_products).`,
+                `Укажите productName (имя), productCode (code) или productId (uuid) изделия из manufactured_products.`,
             });
             continue;
           }
