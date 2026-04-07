@@ -100,7 +100,7 @@ const skTradeGood = {
   costRub: null as number | null,
   notes: "",
   isActive: true,
-  lines: [{ productId: "", qty: 1 }],
+  lines: [{ productId: "", productCode: "", qty: 1 }],
 };
 
 /** Тело для скачивания: тот же формат, что ожидает POST массового импорта. При пустой БД — один объект-шаблон с пустыми полями. */
@@ -232,7 +232,7 @@ export async function exportBulkTradeGoods() {
   const rows = await prisma.tradeGood.findMany({
     orderBy: { name: "asc" },
     include: {
-      lines: { orderBy: { sortOrder: "asc" } },
+      lines: { orderBy: { sortOrder: "asc" }, include: { product: { select: { code: true } } } },
       category: true,
       subcategory: true,
     },
@@ -250,6 +250,7 @@ export async function exportBulkTradeGoods() {
     isActive: g.isActive,
     lines: g.lines.map((l) => ({
       productId: l.productId,
+      productCode: l.product?.code ?? "",
       qty: l.qty,
     })),
   }));

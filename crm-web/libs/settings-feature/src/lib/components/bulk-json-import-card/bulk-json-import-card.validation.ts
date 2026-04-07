@@ -183,16 +183,18 @@ export function validateBulkDraftForTarget(
         }
         const lines = o['lines'];
         if (!Array.isArray(lines) || lines.length === 0) {
-          return `Элемент ${i}: укажите непустой массив lines с productId.`;
+          return `Элемент ${i}: укажите непустой массив lines с productId или productCode.`;
         }
         for (let j = 0; j < lines.length; j++) {
           const line = lines[j];
           if (!line || typeof line !== 'object') {
             return `Элемент ${i}, строка состава ${j}: ожидается объект.`;
           }
-          const pid = (line as { productId?: unknown }).productId;
-          if (typeof pid !== 'string' || !pid.trim()) {
-            return `Элемент ${i}, строка состава ${j}: нужен productId (uuid изделия).`;
+          const ref = line as { productId?: unknown; productCode?: unknown };
+          const hasProductId = typeof ref.productId === 'string' && ref.productId.trim().length > 0;
+          const hasProductCode = typeof ref.productCode === 'string' && ref.productCode.trim().length > 0;
+          if (!hasProductId && !hasProductCode) {
+            return `Элемент ${i}, строка состава ${j}: нужен productId (uuid) или productCode (код изделия).`;
           }
         }
       }

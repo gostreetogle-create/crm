@@ -189,7 +189,8 @@ const BulkTradeGoodsBodySchema = z.object({
         lines: z
           .array(
             z.object({
-              productId: z.string().uuid(),
+              productId: z.string().uuid().optional(),
+              productCode: z.string().trim().min(1).optional(),
               qty: z.number().positive().optional(),
             }),
           )
@@ -528,11 +529,65 @@ bulkRouter.post("/trade-goods", requireEffectiveBulkPermissionKey("admin.bulk.tr
     for (let i = 0; i < items.length; i++) {
       const it = items[i]!;
       try {
-        const normLines = it.lines.map((l, idx) => ({
-          productId: l.productId,
-          sortOrder: idx,
-          qty: l.qty ?? 1,
-        }));
+        const normLines = [] as Array<{ productId: string; sortOrder: number; qty: number }>;
+        let hasLineResolutionError = false;
+        for (let li = 0; li < it.lines.length; li++) {
+          const line = it.lines[li]!;
+          let resolvedProductId: string | null = null;
+          if (line.productId && line.productId.trim()) {
+            resolvedProductId = line.productId.trim();
+          } else if (line.productCode && line.productCode.trim()) {
+            const code = line.productCode.trim();
+            const productByCode = await prisma.manufacturedProduct.findFirst({
+              where: { code: { equals: code, mode: "insensitive" } },
+              select: { id: true },
+            });
+            resolvedProductId = productByCode?.id ?? null;
+          }
+          if (!resolvedProductId) {
+            hasLineResolutionError = true;
+            errors.push({
+              index: i,
+              message:
+                `trade_good_line_product_ref_missing_or_not_found at line ${li}. ` +
+                `Укажите productId (uuid) или productCode (code изделия из manufactured_products).`,
+            });
+            continue;
+          }
+          normLines.push({
+            productId: resolvedProductId,
+            sortOrder: li,
+            qty: line.qty ?? 1,
+          });
+        }
+        if (hasLineResolutionError) {
+          continue;
+        }
+        if (normLines.length === 0) {
+          errors.push({
+            index: i,
+            message: "trade_good_lines_empty_after_resolution: не удалось разрешить ни одной строки состава",
+          });
+          continue;
+        }
+        const uniqueProductIds = Array.from(new Set(normLines.map((l) => l.productId)));
+        const existingProducts = await prisma.manufacturedProduct.findMany({
+          where: { id: { in: uniqueProductIds } },
+          select: { id: true },
+        });
+        const existingSet = new Set(existingProducts.map((p) => p.id));
+        const missingProductIds = uniqueProductIds.filter((id) => !existingSet.has(id));
+        if (missingProductIds.length > 0) {
+          const preview = missingProductIds.slice(0, 5).join(", ");
+          errors.push({
+            index: i,
+            message:
+              `trade_good_lines_product_ids_not_found: ${missingProductIds.length}. ` +
+              `Сначала импортируйте изделия (Products / manufactured products), затем товары. ` +
+              `Отсутствуют id: ${preview}${missingProductIds.length > 5 ? " ..." : ""}`,
+          });
+          continue;
+        }
         const sums = await sumPriceAndCostFromProducts(normLines);
         const priceRub = numOrNull(it.priceRub) ?? sums.price;
         const costRub = numOrNull(it.costRub) ?? sums.cost;
