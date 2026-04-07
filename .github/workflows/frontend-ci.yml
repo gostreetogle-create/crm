@@ -53,3 +53,29 @@ jobs:
 
       - name: Build affected
         run: npx nx affected -t build --base=origin/main --head=HEAD --parallel=2
+
+  smoke-e2e:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    defaults:
+      run:
+        working-directory: crm-web
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: "crm-web/package-lock.json"
+
+      - name: Install
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run srm-front smoke e2e
+        run: npm run e2e:smoke

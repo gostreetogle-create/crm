@@ -8,3 +8,21 @@
 4. В хабе: одна модалка создания записи без 500 в сети.
 
 CI: после установки Playwright достаточно одного spec на пункты 1–2.
+
+## Автоматизация (Playwright, минимальный smoke)
+
+Текущий минимальный автоспек: `crm-web/e2e/srm-front-e2e-smoke.spec.ts`
+
+Покрывает:
+
+1. login → переход на `/справочники` (через mock `auth/login` и `auth/me`);
+2. несуществующий путь → экран `404`;
+3. `/forbidden` → экран `403`.
+
+Локальный запуск из `crm-web/`:
+
+```bash
+npm run e2e:smoke
+```
+
+CI: job `smoke-e2e` добавлен в `.github/workflows/frontend-ci.yml` как **non-blocking** (`continue-on-error: true`).
