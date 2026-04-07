@@ -195,7 +195,7 @@
       standaloneFormActions
       [viewMode]="isTradeGoodsViewMode()"
       [formId]="'trade-goods-form'"
-      [submitLabel]="tradeGoodsStore.isEditMode() ? 'Сохранить изменения' : 'Создать товар'"
+      [submitLabel]="tradeGoodsStore.isEditMode() ? 'Сохранить изменения' : (tradeGoodsForm.controls.kind.value === 'COMPLEX' ? 'Создать комплекс' : 'Создать товар')"
       (dismiss)="navigateBackFromStandaloneDictionaryCreate()"
     />
   </app-dictionary-standalone-create-shell>
@@ -1240,10 +1240,10 @@
   *ngIf="isTradeGoodsModalOpen()"
   [title]="
     isTradeGoodsViewMode()
-      ? 'Просмотр товара'
+      ? (tradeGoodsForm.controls.kind.value === 'COMPLEX' ? 'Просмотр комплекса' : 'Просмотр товара')
       : tradeGoodsStore.isEditMode()
-        ? 'Редактирование товара'
-        : 'Новый товар'
+        ? (tradeGoodsForm.controls.kind.value === 'COMPLEX' ? 'Редактирование комплекса' : 'Редактирование товара')
+        : (tradeGoodsForm.controls.kind.value === 'COMPLEX' ? 'Новый комплекс' : 'Новый товар')
   "
   [content]="tradeGoodsContentTpl"
   [actions]="tradeGoodsActionsTpl"
@@ -1254,7 +1254,7 @@
 
 <ui-modal
   *ngIf="isTradeGoodDeleteConfirmOpen()"
-  title="Удалить товар?"
+  [title]="tradeGoodsForm.controls.kind.value === 'COMPLEX' ? 'Удалить комплекс?' : 'Удалить товар?'"
   [content]="tradeGoodDeleteConfirmContentTpl"
   [actions]="tradeGoodDeleteConfirmActionsTpl"
   size="sm"
@@ -1263,12 +1263,16 @@
 ></ui-modal>
 
 <ng-template #tradeGoodDeleteConfirmContentTpl>
-  <p class="dictionaryMuted">Товар будет удалён без возможности восстановления из интерфейса.</p>
+  <p class="dictionaryMuted">
+    {{ tradeGoodsForm.controls.kind.value === 'COMPLEX' ? 'Комплекс' : 'Товар' }} будет удалён без возможности восстановления из интерфейса.
+    Если есть связи в составе других товаров, можно удалить только текущий товар (без каскада) или удалить вместе со связанными строками состава.
+  </p>
 </ng-template>
 
 <ng-template #tradeGoodDeleteConfirmActionsTpl>
   <app-ui-button variant="soft" type="button" (clicked)="cancelTradeGoodDeleteConfirm()">Отмена</app-ui-button>
-  <app-ui-button variant="danger" type="button" (clicked)="confirmTradeGoodDeleteFromModal()">Удалить</app-ui-button>
+  <app-ui-button variant="danger" type="button" (clicked)="confirmTradeGoodDeleteFromModal(false)">Удалить только товар</app-ui-button>
+  <app-ui-button variant="danger" type="button" (clicked)="confirmTradeGoodDeleteFromModal(true)">Удалить товар и связанные</app-ui-button>
 </ng-template>
 
 <ng-template #productionDetailsContentTpl>
@@ -1698,6 +1702,9 @@
       <div class="productSpecView">
         <header class="productSpecView__hero">
           <div class="productSpecView__heroTop">
+            <span class="productSpecView__badge productSpecView__badge--kind">
+              {{ tg.kind === 'COMPLEX' ? 'Комплекс' : 'Товар' }}
+            </span>
             <span class="productSpecView__badge" [class.productSpecView__badge--off]="!tg.isActive">
               {{ tg.isActive ? 'Активен' : 'Неактивен' }}
             </span>
@@ -1722,7 +1729,7 @@
           @if ((tg.description ?? '').trim()) {
             <p class="productSpecView__description">{{ tg.description }}</p>
           }
-          @if (tg.photoUrls.length > 0) {
+          @if ((tg.photoUrls?.length ?? 0) > 0) {
             <div class="tradeGoodViewPhotos kpPhotoPreview--tradeGoodHero">
               @for (u of tg.photoUrls!; track $index) {
                 <figure
@@ -1736,7 +1743,7 @@
                 </figure>
               }
             </div>
-          } @else if (tg.photoUrl.trim()) {
+          } @else if ((tg.photoUrl ?? '').trim()) {
             <div class="kpPhotoPreview kpPhotoPreview--tradeGoodHero">
               <img [src]="tg.photoUrl" alt="" />
             </div>
@@ -1815,7 +1822,7 @@
         <p class="dictionaryHubLoadError" role="alert">{{ tradeGoodsSaveError() }}</p>
       }
       <fieldset class="dictionaryFormSection">
-        <legend>Товар</legend>
+        <legend>Карточка торговой позиции</legend>
         <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
           <app-ui-form-field class="dictionaryFieldRowFull" label="Артикул">
             <input type="text" formControlName="code" placeholder="Нужен для имён файлов фото" />
@@ -1849,7 +1856,7 @@
           </div>
           @if (tradeGoodPhotoPreviewRows().length > 0) {
             <div class="tradeGoodPhotoPicker__grid dictionaryFieldRowFull" role="radiogroup" aria-label="Главное фото">
-              @for (src of tradeGoodPhotoPreviewRows(); track src) {
+              @for (src of tradeGoodPhotoPreviewRows(); track $index) {
                 <label
                   class="tradeGoodPhotoPicker__tile"
                   [class.tradeGoodPhotoPicker__tile--selected]="tradeGoodPhotoPrimarySlot() === $index"
@@ -1868,7 +1875,7 @@
               }
             </div>
           } @else if (tradeGoodEditPhotoUrl()) {
-            <div class="dictionaryFieldRowFull kpPhotoPreview">
+            <div class="dictionaryFieldRowFull kpPhotoPreview tradeGoodPhotoPicker__singleFallback">
               <img [src]="tradeGoodEditPhotoUrl()" alt="" />
             </div>
           }
@@ -1883,11 +1890,14 @@
               }
             </select>
           </app-ui-form-field>
-          <app-ui-form-field label="Тип" [required]="true">
+          <app-ui-form-field class="dictionaryFieldRowFull" label="Тип" [required]="true">
             <select formControlName="kind" (change)="recalcTradeGoodPriceDefaults()">
               <option value="ITEM">Товар</option>
               <option value="COMPLEX">Комплекс</option>
             </select>
+            <p class="dictionaryMuted tradeGoodKindHint">
+              Товар — в составе изделия (производство). Комплекс — в составе другие товары этой же карточки.
+            </p>
           </app-ui-form-field>
           <app-ui-form-field label="Подкатегория">
             <select formControlName="subcategoryId">
@@ -1943,7 +1953,7 @@
         <div formArrayName="lines">
           @for (line of tradeGoodLinesFormArray.controls; track $index; let i = $index) {
             <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2 productLineRow" [formGroupName]="i">
-              <app-ui-form-field [label]="tradeGoodsForm.controls.kind.value === 'COMPLEX' ? 'Товар' : 'Изделие'" [required]="true">
+              <app-ui-form-field [label]="tradeGoodsForm.controls.kind.value === 'COMPLEX' ? 'Товар' : 'Изделие'">
                 <div class="colorRefRow">
                   @if (tradeGoodsForm.controls.kind.value === 'COMPLEX') {
                     <select formControlName="tradeGoodId" (change)="recalcTradeGoodPriceDefaults()">
@@ -1977,7 +1987,7 @@
                   }
                 </div>
               </app-ui-form-field>
-              <app-ui-form-field label="Количество" [required]="true">
+              <app-ui-form-field label="Количество">
                 <input
                   type="number"
                   formControlName="qty"
@@ -2027,13 +2037,13 @@
         variant="danger"
         (clicked)="deleteTradeGoodFromModal()"
       >
-        Удалить товар
+        {{ tradeGoodsForm.controls.kind.value === 'COMPLEX' ? 'Удалить комплекс' : 'Удалить товар' }}
       </app-ui-button>
     }
     <app-ui-modal-form-actions
       [viewMode]="isTradeGoodsViewMode()"
       [formId]="'trade-goods-form'"
-      [submitLabel]="tradeGoodsStore.isEditMode() ? 'Сохранить изменения' : 'Создать товар'"
+      [submitLabel]="tradeGoodsStore.isEditMode() ? 'Сохранить изменения' : (tradeGoodsForm.controls.kind.value === 'COMPLEX' ? 'Создать комплекс' : 'Создать товар')"
       (dismiss)="closeTradeGoodsModal()"
     />
   </div>
