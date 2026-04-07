@@ -5,6 +5,7 @@ export function tradeGoodPayloadFromValues(v: {
   code: string;
   name: string;
   description: string;
+  kind: 'ITEM' | 'COMPLEX';
   categoryId: string;
   subcategoryId: string;
   unitCode: string;
@@ -14,7 +15,7 @@ export function tradeGoodPayloadFromValues(v: {
   isActive: boolean;
   /** Номер главного слота `артикул_N` (1-based). */
   photoPrimaryIndex: number;
-  lines: Array<{ productId: string; qty: number }>;
+  lines: Array<{ productId: string | null; tradeGoodId: string | null; qty: number }>;
 }): TradeGoodItemInput {
   return {
     code: v.code.trim() || null,
@@ -27,10 +28,12 @@ export function tradeGoodPayloadFromValues(v: {
     costRub: v.costRub,
     notes: v.notes.trim() || null,
     isActive: v.isActive,
+    kind: v.kind,
     photoPrimaryIndex: v.photoPrimaryIndex,
     lines: v.lines.map((line, idx) => ({
       sortOrder: idx,
-      productId: line.productId,
+      productId: line.productId?.trim() || null,
+      tradeGoodId: line.tradeGoodId?.trim() || null,
       qty: line.qty > 0 ? line.qty : 1,
     })),
   };

@@ -13,7 +13,6 @@ export type HubBoardDictionaryRowDef = {
  * Секция «Товар»: порядок сверху вниз — комплексы и торговые сущности, затем производственные справочники, затем остальное (единицы, категории).
  */
 export const HUB_BOARD_DICTIONARY_ROW_DEFS: readonly HubBoardDictionaryRowDef[] = [
-  { section: 'Товар', sectionId: 'dictionary-hub-section-goods', key: 'catalogComplexes', title: 'Комплексы' },
   { section: 'Товар', sectionId: 'dictionary-hub-section-goods', key: 'tradeGoods', title: 'Товары' },
   { section: 'Товар', sectionId: 'dictionary-hub-section-goods', key: 'products', title: 'Изделия' },
   { section: 'Товар', sectionId: 'dictionary-hub-section-goods', key: 'productionDetails', title: 'Детали' },

@@ -1,7 +1,8 @@
 export type TradeGoodLineDto = {
   id: string;
   sortOrder: number;
-  productId: string;
+  productId: string | null;
+  tradeGoodId: string | null;
   qty: number;
   product: {
     id: string;
@@ -9,7 +10,15 @@ export type TradeGoodLineDto = {
     name: string;
     priceRub: number | null;
     costRub: number | null;
-  };
+  } | null;
+  tradeGood: {
+    id: string;
+    code: string | null;
+    name: string;
+    priceRub: number | null;
+    costRub: number | null;
+    kind: 'ITEM' | 'COMPLEX';
+  } | null;
 };
 
 export type TradeGoodItem = {
@@ -27,6 +36,7 @@ export type TradeGoodItem = {
   costRub: number | null;
   notes: string | null;
   isActive: boolean;
+  kind: 'ITEM' | 'COMPLEX';
   /** Слот главного фото `артикул_N` на диске (1-based). */
   photoPrimaryIndex: number;
   /** Все загруженные снимки (`/media/trade-goods/…`). */
@@ -57,6 +67,7 @@ export type TradeGoodListItem = {
   costRub: number | null;
   notes: string | null;
   isActive: boolean;
+  kind: 'ITEM' | 'COMPLEX';
   photoPrimaryIndex: number;
   photoUrls: string[];
   /** Главное фото для списков и КП. */
@@ -71,7 +82,8 @@ export type TradeGoodListItem = {
 export type TradeGoodLineInput = {
   id?: string | null;
   sortOrder?: number;
-  productId: string;
+  productId?: string | null;
+  tradeGoodId?: string | null;
   qty?: number;
 };
 
@@ -89,6 +101,7 @@ export type TradeGoodItemInput = {
   costRub: number | null;
   notes: string | null;
   isActive: boolean;
+  kind: 'ITEM' | 'COMPLEX';
   /** Какой снимок главный (`артикул_N`, 1-based); при смене без новой загрузки — только PUT. */
   photoPrimaryIndex?: number;
   lines: TradeGoodLineInput[];

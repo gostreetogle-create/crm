@@ -181,21 +181,38 @@ export function validateBulkDraftForTarget(
         if (!nonEmptyString(o['name'])) {
           return `Элемент ${i}: нужно непустое поле name.`;
         }
+        const kindRaw = String(o['kind'] ?? 'ITEM').trim().toUpperCase();
+        if (kindRaw !== 'ITEM' && kindRaw !== 'COMPLEX') {
+          return `Элемент ${i}: kind должен быть ITEM или COMPLEX.`;
+        }
         const lines = o['lines'];
         if (!Array.isArray(lines) || lines.length === 0) {
-          return `Элемент ${i}: укажите непустой массив lines с productName, productCode или productId.`;
+          return `Элемент ${i}: укажите непустой массив lines.`;
         }
         for (let j = 0; j < lines.length; j++) {
           const line = lines[j];
           if (!line || typeof line !== 'object') {
             return `Элемент ${i}, строка состава ${j}: ожидается объект.`;
           }
-          const ref = line as { productId?: unknown; productCode?: unknown; productName?: unknown };
+          const ref = line as {
+            productId?: unknown;
+            productCode?: unknown;
+            productName?: unknown;
+            tradeGoodId?: unknown;
+            tradeGoodCode?: unknown;
+            tradeGoodName?: unknown;
+          };
           const hasProductId = typeof ref.productId === 'string' && ref.productId.trim().length > 0;
           const hasProductCode = typeof ref.productCode === 'string' && ref.productCode.trim().length > 0;
           const hasProductName = typeof ref.productName === 'string' && ref.productName.trim().length > 0;
-          if (!hasProductId && !hasProductCode && !hasProductName) {
-            return `Элемент ${i}, строка состава ${j}: нужен productName (имя), productCode (код) или productId (uuid).`;
+          const hasTradeGoodId = typeof ref.tradeGoodId === 'string' && ref.tradeGoodId.trim().length > 0;
+          const hasTradeGoodCode = typeof ref.tradeGoodCode === 'string' && ref.tradeGoodCode.trim().length > 0;
+          const hasTradeGoodName = typeof ref.tradeGoodName === 'string' && ref.tradeGoodName.trim().length > 0;
+          if (kindRaw === 'ITEM' && !hasProductId && !hasProductCode && !hasProductName) {
+            return `Элемент ${i}, строка состава ${j}: для ITEM нужен productName/productCode/productId.`;
+          }
+          if (kindRaw === 'COMPLEX' && !hasTradeGoodId && !hasTradeGoodCode && !hasTradeGoodName) {
+            return `Элемент ${i}, строка состава ${j}: для COMPLEX нужен tradeGoodName/tradeGoodCode/tradeGoodId.`;
           }
         }
       }

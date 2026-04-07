@@ -36,6 +36,7 @@ export const TradeGoodsStore = signalStore(
             name: item.name,
             code,
             hubLine,
+            kindLabel: item.kind === 'COMPLEX' ? 'Комплекс' : 'Товар',
             codeLabel: code || '—',
             categoryLabel: item.category?.trim() ? item.category.trim() : '—',
             subcategoryLabel: item.subcategory?.trim() ? item.subcategory.trim() : '—',

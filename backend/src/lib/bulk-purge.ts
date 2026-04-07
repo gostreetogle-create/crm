@@ -18,9 +18,7 @@ export type BulkPurgeSegment =
   | "kp-photos"
   | "users"
   | "production-details"
-  | "manufactured-products"
-  | "complexes"
-  | "catalog-products";
+  | "manufactured-products";
 
 export function isBulkPurgeSegment(s: string): s is BulkPurgeSegment {
   return (
@@ -39,9 +37,7 @@ export function isBulkPurgeSegment(s: string): s is BulkPurgeSegment {
     s === "kp-photos" ||
     s === "users" ||
     s === "production-details" ||
-    s === "manufactured-products" ||
-    s === "complexes" ||
-    s === "catalog-products"
+    s === "manufactured-products"
   );
 }
 
@@ -64,8 +60,6 @@ export function bulkPurgeSegmentToPermissionKey(segment: BulkPurgeSegment): stri
     users: "admin.bulk.users",
     "production-details": "admin.bulk.production_details",
     "manufactured-products": "admin.bulk.manufactured_products",
-    complexes: "admin.bulk.complexes",
-    "catalog-products": "admin.bulk.catalog_products",
   };
   return m[segment];
 }
@@ -141,15 +135,6 @@ export async function purgeBulkSegment(segment: BulkPurgeSegment): Promise<{ del
     case "manufactured-products": {
       await prisma.tradeGoodLine.deleteMany({});
       return { deleted: (await prisma.manufacturedProduct.deleteMany()).count };
-    }
-    case "complexes": {
-      await prisma.article.deleteMany({});
-      await prisma.product.deleteMany({});
-      return { deleted: (await prisma.complex.deleteMany()).count };
-    }
-    case "catalog-products": {
-      await prisma.article.deleteMany({});
-      return { deleted: (await prisma.product.deleteMany()).count };
     }
   }
 }

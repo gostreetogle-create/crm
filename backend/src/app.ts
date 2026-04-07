@@ -19,9 +19,6 @@ import { productsRouter } from "./routes/products.routes.js";
 import { tradeGoodsRouter } from "./routes/trade-goods.routes.js";
 import { tradeGoodCategoriesRouter } from "./routes/trade-good-categories.routes.js";
 import { tradeGoodSubcategoriesRouter } from "./routes/trade-good-subcategories.routes.js";
-import { complexesRouter } from "./routes/complexes.routes.js";
-import { catalogProductsRouter } from "./routes/catalog-products.routes.js";
-import { catalogArticlesRouter } from "./routes/catalog-articles.routes.js";
 import { rolesReadRouter, rolesWriteRouter } from "./routes/roles.routes.js";
 import {
   authzMatrixDiagnosticsRouter,
@@ -36,7 +33,6 @@ import { systemAdminRouter } from "./routes/system-admin.routes.js";
 import { bulkRouter } from "./routes/bulk.routes.js";
 import { authAuthedRouter, authPublicRouter } from "./routes/auth.routes.js";
 import { requireAdmin, requireAuth } from "./middleware/auth-jwt.js";
-import { requireDictionaryHubPermission } from "./middleware/require-dict-hub-permission.js";
 import { httpErrorHandler } from "./middleware/http-error.js";
 import { requestContextMiddleware } from "./middleware/request-context.js";
 
@@ -101,12 +97,6 @@ export function createApp() {
   authed.use("/trade-good-categories", tradeGoodCategoriesRouter);
   authed.use("/trade-good-subcategories", tradeGoodSubcategoriesRouter);
 
-  const catalogSuiteRouter = express.Router();
-  catalogSuiteRouter.use(requireDictionaryHubPermission("dict.hub.catalog_suite"));
-  catalogSuiteRouter.use("/complexes", complexesRouter);
-  catalogSuiteRouter.use("/catalog-products", catalogProductsRouter);
-  catalogSuiteRouter.use("/catalog-articles", catalogArticlesRouter);
-  authed.use(catalogSuiteRouter);
   authed.use("/clients", clientsRouter);
   authed.use("/organizations", organizationsRouter);
   authed.use("/commercial-offers", commercialOffersRouter);

@@ -325,10 +325,11 @@ export class DictionariesPage implements OnDestroy {
         this.navigateToNewMaterialCharacteristicPage();
         break;
       case 'standalone':
-        this.navigateToStandaloneDictionaryCreate(target.key);
-        break;
-      case 'catalogComplexModal':
-        this.openCatalogComplexCreate();
+        if (target.key === 'tradeGoods') {
+          this.openTradeGoodsCreateInModal();
+        } else {
+          this.navigateToStandaloneDictionaryCreate(target.key);
+        }
         break;
       case 'tradeGoodCategoryModal':
         this.openTradeGoodCategoriesCreate();
@@ -539,6 +540,18 @@ export class DictionariesPage implements OnDestroy {
   private readonly http = inject(HttpClient);
   /** Цепочка «Новый материал» → характеристика: состояние вне экземпляра страницы (см. сервис). */
   private readonly materialStandaloneFlow = inject(DictionariesMaterialStandaloneFlowService);
+  private standaloneCreateKeyFromUrl(): StandaloneDictionaryCreateKey | null {
+    const pathnameRaw = this.doc?.defaultView?.location?.pathname ?? '';
+    const routerPathRaw = this.router.url.split('?')[0] ?? '';
+    const cleanPathname = decodeURIComponent(pathnameRaw);
+    const cleanRouterPath = decodeURIComponent(routerPathRaw);
+    const pathnameSegment = cleanPathname.split('/').filter(Boolean).pop() ?? '';
+    const routerSegment = cleanRouterPath.split('/').filter(Boolean).pop() ?? '';
+    const byPath = STANDALONE_DICTIONARY_CREATE.find(
+      (x) => x.path === pathnameSegment || x.path === routerSegment,
+    );
+    return byPath?.key ?? null;
+  }
   /** Полноэкранный маршрут `/справочники/новый-материал` (форма материала без модалки). */
   readonly isNewMaterialPageRoute = toSignal(
     this.router.events.pipe(
@@ -564,15 +577,10 @@ export class DictionariesPage implements OnDestroy {
     this.router.events.pipe(
       filter((e): e is NavigationEnd => e instanceof NavigationEnd),
       startWith(null),
-      map((): StandaloneDictionaryCreateKey | null => {
-        const raw = this.route.snapshot.data['standaloneCreate'];
-        return isStandaloneDictionaryCreateKey(raw) ? raw : null;
-      }),
+      map((): StandaloneDictionaryCreateKey | null => this.standaloneCreateKeyFromUrl()),
     ),
     {
-      initialValue: isStandaloneDictionaryCreateKey(this.route.snapshot.data['standaloneCreate'])
-        ? this.route.snapshot.data['standaloneCreate']
-        : null,
+      initialValue: this.standaloneCreateKeyFromUrl(),
     },
   );
 
@@ -761,7 +769,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   readonly tradeGoodCompositionSpecColumns: UiSpecTableColumn[] = [
-    { key: 'productLabel', label: 'Изделие', tone: 'emphasis' },
+    { key: 'productLabel', label: 'Компонент', tone: 'emphasis' },
     { key: 'qtyLabel', label: 'Кол-во', tone: 'muted', align: 'end' },
   ];
 
@@ -899,6 +907,7 @@ export class DictionariesPage implements OnDestroy {
     code: [''],
     name: ['', [Validators.required, Validators.minLength(2)]],
     description: [''],
+    kind: ['ITEM' as 'ITEM' | 'COMPLEX'],
     categoryId: [''],
     subcategoryId: [''],
     unitCode: [''],
@@ -1198,7 +1207,6 @@ export class DictionariesPage implements OnDestroy {
     this.tradeGoodsStore.loadItems();
     this.tradeGoodCategoriesStore.loadItems();
     this.tradeGoodSubcategoriesStore.loadItems();
-    this.complexesStore.loadItems();
     this.clientsStore.loadItems();
     this.organizationsStore.loadItems();
 
@@ -1728,10 +1736,10 @@ export class DictionariesPage implements OnDestroy {
     return [...tg.lines]
       .sort((a, b) => a.sortOrder - b.sortOrder)
       .map((line) => ({
-        productLabel: labelFor(line.product),
+        productLabel: line.product ? labelFor(line.product) : line.tradeGood ? labelFor(line.tradeGood) : '—',
         qtyLabel: line.qty,
-        priceLabel: line.product.priceRub != null ? `${line.product.priceRub} ₽` : '—',
-        costLabel: line.product.costRub != null ? `${line.product.costRub} ₽` : '—',
+        priceLabel: (line.product?.priceRub ?? line.tradeGood?.priceRub) != null ? `${line.product?.priceRub ?? line.tradeGood?.priceRub} ₽` : '—',
+        costLabel: (line.product?.costRub ?? line.tradeGood?.costRub) != null ? `${line.product?.costRub ?? line.tradeGood?.costRub} ₽` : '—',
         lineId: line.id,
         productId: line.productId,
       }));
@@ -1859,14 +1867,15 @@ export class DictionariesPage implements OnDestroy {
     }
   }
 
-  private newTradeGoodLineGroup(init?: Partial<{ productId: string; qty: number }>): FormGroup {
+  private newTradeGoodLineGroup(init?: Partial<{ productId: string; tradeGoodId: string; qty: number }>): FormGroup {
     return this.fb.nonNullable.group({
-      productId: [init?.productId ?? '', Validators.required],
+      productId: [init?.productId ?? ''],
+      tradeGoodId: [init?.tradeGoodId ?? ''],
       qty: [init?.qty ?? 1, [Validators.required, Validators.min(0.0001)]],
     });
   }
 
-  addTradeGoodLine(initial?: Partial<{ productId: string; qty: number }>): void {
+  addTradeGoodLine(initial?: Partial<{ productId: string; tradeGoodId: string; qty: number }>): void {
     this.tradeGoodLinesFormArray.push(this.newTradeGoodLineGroup(initial));
   }
 
@@ -1939,15 +1948,27 @@ export class DictionariesPage implements OnDestroy {
   recalcTradeGoodPriceDefaults(): void {
     let price = 0;
     let cost = 0;
+    const kind = this.tradeGoodsForm.controls.kind.value;
     for (const ctrl of this.tradeGoodLinesFormArray.controls) {
       const g = ctrl as FormGroup;
       const pid = String(g.get('productId')?.value ?? '').trim();
+      const tgId = String(g.get('tradeGoodId')?.value ?? '').trim();
       const q = Number(g.get('qty')?.value ?? 1);
-      if (!pid || !Number.isFinite(q) || q <= 0) continue;
-      const p = this.productsStore.items().find((x) => x.id === pid);
-      if (p) {
-        price += (p.priceRub ?? 0) * q;
-        cost += (p.costRub ?? 0) * q;
+      if (!Number.isFinite(q) || q <= 0) continue;
+      if (kind === 'COMPLEX') {
+        if (!tgId) continue;
+        const t = this.tradeGoodsStore.items().find((x) => x.id === tgId);
+        if (t) {
+          price += (t.priceRub ?? 0) * q;
+          cost += (t.costRub ?? 0) * q;
+        }
+      } else {
+        if (!pid) continue;
+        const p = this.productsStore.items().find((x) => x.id === pid);
+        if (p) {
+          price += (p.priceRub ?? 0) * q;
+          cost += (p.costRub ?? 0) * q;
+        }
       }
     }
     this.tradeGoodsForm.patchValue({ priceRub: price, costRub: cost });
@@ -1970,6 +1991,7 @@ export class DictionariesPage implements OnDestroy {
       code: '',
       name: '',
       description: '',
+      kind: 'ITEM',
       categoryId: '',
       subcategoryId: '',
       unitCode: '',
@@ -2016,7 +2038,7 @@ export class DictionariesPage implements OnDestroy {
 
   openTradeGoodsCreate(): void {
     if (!this.permissions.crud().canCreate) return;
-    this.navigateToStandaloneDictionaryCreate('tradeGoods');
+    this.openTradeGoodsCreateInModal();
   }
 
   openTradeGoodsCreateInModal(): void {
@@ -2054,12 +2076,17 @@ export class DictionariesPage implements OnDestroy {
     this.clearTradeGoodLines();
     const sortedLines = [...item.lines].sort((a, b) => a.sortOrder - b.sortOrder);
     for (const line of sortedLines) {
-      this.addTradeGoodLine({ productId: line.productId, qty: line.qty });
+      this.addTradeGoodLine({
+        productId: line.productId ?? '',
+        tradeGoodId: line.tradeGoodId ?? '',
+        qty: line.qty,
+      });
     }
     this.tradeGoodsForm.reset({
       code: item.code ?? '',
       name: item.name,
       description: item.description ?? '',
+      kind: item.kind ?? 'ITEM',
       categoryId: item.categoryId ?? '',
       subcategoryId: item.subcategoryId ?? '',
       unitCode: item.unitCode ?? '',
@@ -2128,15 +2155,21 @@ export class DictionariesPage implements OnDestroy {
 
   async submitTradeGoods(): Promise<void> {
     const raw = this.tradeGoodsForm.getRawValue();
-    const lines = (raw.lines as Array<{ productId: string; qty: number }>).filter((l) =>
-      String(l.productId ?? '').trim(),
-    );
+    const kind = raw.kind === 'COMPLEX' ? 'COMPLEX' : 'ITEM';
+    const lines = (raw.lines as Array<{ productId?: string; tradeGoodId?: string; qty: number }>)
+      .map((l) => ({
+        productId: String(l.productId ?? '').trim(),
+        tradeGoodId: String(l.tradeGoodId ?? '').trim(),
+        qty: Number(l.qty),
+      }))
+      .filter((l) => (kind === 'COMPLEX' ? l.tradeGoodId : l.productId));
     if (lines.length === 0) {
       this.tradeGoodsStore.submit({
         value: tradeGoodPayloadFromValues({
           code: String(raw.code ?? ''),
           name: String(raw.name ?? ''),
           description: String(raw.description ?? ''),
+          kind,
           categoryId: String(raw.categoryId ?? ''),
           subcategoryId: String(raw.subcategoryId ?? ''),
           unitCode: String(raw.unitCode ?? ''),
@@ -2160,6 +2193,7 @@ export class DictionariesPage implements OnDestroy {
       code: String(raw.code ?? ''),
       name: raw.name,
       description: String(raw.description ?? ''),
+      kind,
       categoryId: String(raw.categoryId ?? ''),
       subcategoryId: String(raw.subcategoryId ?? ''),
       unitCode: String(raw.unitCode ?? ''),
@@ -2169,7 +2203,8 @@ export class DictionariesPage implements OnDestroy {
       isActive: raw.isActive,
       photoPrimaryIndex: this.tradeGoodPrimaryIndexForPayload(),
       lines: lines.map((l) => ({
-        productId: String(l.productId).trim(),
+        productId: kind === 'ITEM' ? String(l.productId).trim() : null,
+        tradeGoodId: kind === 'COMPLEX' ? String(l.tradeGoodId).trim() : null,
         qty: Number(l.qty) > 0 ? Number(l.qty) : 1,
       })),
     });
@@ -2976,7 +3011,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   private initStandaloneDictionaryCreateFromRoute(): void {
-    const sc = this.route.snapshot.data['standaloneCreate'];
+    const sc = this.standaloneCreateKey();
     if (!isStandaloneDictionaryCreateKey(sc)) {
       return;
     }

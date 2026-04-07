@@ -13,7 +13,7 @@ import {
   exportBulkUnits,
 } from "../lib/bulk-export.js";
 import { prisma } from "../lib/prisma.js";
-import { numOrNull, strOrNull, sumPriceAndCostFromProducts } from "../lib/trade-good-pricing.js";
+import { numOrNull, strOrNull, sumPriceAndCostFromTradeGoodLines } from "../lib/trade-good-pricing.js";
 import { resolveTradeGoodCategoryIdsFromNames } from "../lib/trade-good-classification-resolve.js";
 import {
   bulkPurgeSegmentToPermissionKey,
@@ -186,12 +186,16 @@ const BulkTradeGoodsBodySchema = z.object({
         costRub: z.number().optional().nullable(),
         notes: z.string().trim().optional().nullable(),
         isActive: z.boolean().optional().default(true),
+        kind: z.enum(["ITEM", "COMPLEX"]).optional(),
         lines: z
           .array(
             z.object({
               productId: z.string().uuid().optional(),
               productCode: z.string().trim().min(1).optional(),
               productName: z.string().trim().min(1).optional(),
+              tradeGoodId: z.string().uuid().optional(),
+              tradeGoodCode: z.string().trim().min(1).optional(),
+              tradeGoodName: z.string().trim().min(1).optional(),
               qty: z.number().positive().optional(),
             }),
           )
@@ -530,11 +534,48 @@ bulkRouter.post("/trade-goods", requireEffectiveBulkPermissionKey("admin.bulk.tr
     for (let i = 0; i < items.length; i++) {
       const it = items[i]!;
       try {
-        const normLines = [] as Array<{ productId: string; sortOrder: number; qty: number }>;
+        const kind = it.kind ?? "ITEM";
+        const normLines = [] as Array<{
+          productId: string | null;
+          tradeGoodId: string | null;
+          sortOrder: number;
+          qty: number;
+        }>;
         let hasLineResolutionError = false;
         for (let li = 0; li < it.lines.length; li++) {
           const line = it.lines[li]!;
           let resolvedProductId: string | null = null;
+          let resolvedTradeGoodId: string | null = null;
+
+          if (line.tradeGoodId && line.tradeGoodId.trim()) {
+            resolvedTradeGoodId = line.tradeGoodId.trim();
+          } else if (line.tradeGoodCode && line.tradeGoodCode.trim()) {
+            const code = line.tradeGoodCode.trim();
+            const tgByCode = await prisma.tradeGood.findFirst({
+              where: { code: { equals: code, mode: "insensitive" } },
+              select: { id: true },
+            });
+            resolvedTradeGoodId = tgByCode?.id ?? null;
+          } else if (line.tradeGoodName && line.tradeGoodName.trim()) {
+            const name = line.tradeGoodName.trim();
+            const matches = await prisma.tradeGood.findMany({
+              where: { name: { equals: name, mode: "insensitive" } },
+              select: { id: true },
+              take: 2,
+            });
+            if (matches.length > 1) {
+              hasLineResolutionError = true;
+              errors.push({
+                index: i,
+                message:
+                  `trade_good_line_name_ambiguous at line ${li}. ` +
+                  `Найдено несколько товаров с именем \"${name}\"; используйте tradeGoodCode или tradeGoodId.`,
+              });
+              continue;
+            }
+            resolvedTradeGoodId = matches[0]?.id ?? null;
+          }
+
           if (line.productName && line.productName.trim()) {
             const name = line.productName.trim();
             const matches = await prisma.manufacturedProduct.findMany({
@@ -563,18 +604,31 @@ bulkRouter.post("/trade-goods", requireEffectiveBulkPermissionKey("admin.bulk.tr
           } else if (line.productId && line.productId.trim()) {
             resolvedProductId = line.productId.trim();
           }
-          if (!resolvedProductId) {
+
+          if (kind === "ITEM" && !resolvedProductId) {
             hasLineResolutionError = true;
             errors.push({
               index: i,
               message:
                 `trade_good_line_product_ref_missing_or_not_found at line ${li}. ` +
-                `Укажите productName (имя), productCode (code) или productId (uuid) изделия из manufactured_products.`,
+                `Для ITEM укажите productName, productCode или productId.`,
             });
             continue;
           }
+          if (kind === "COMPLEX" && !resolvedTradeGoodId) {
+            hasLineResolutionError = true;
+            errors.push({
+              index: i,
+              message:
+                `trade_good_line_trade_good_ref_missing_or_not_found at line ${li}. ` +
+                `Для COMPLEX укажите tradeGoodName, tradeGoodCode или tradeGoodId.`,
+            });
+            continue;
+          }
+
           normLines.push({
-            productId: resolvedProductId,
+            productId: kind === "ITEM" ? resolvedProductId : null,
+            tradeGoodId: kind === "COMPLEX" ? resolvedTradeGoodId : null,
             sortOrder: li,
             qty: line.qty ?? 1,
           });
@@ -589,25 +643,10 @@ bulkRouter.post("/trade-goods", requireEffectiveBulkPermissionKey("admin.bulk.tr
           });
           continue;
         }
-        const uniqueProductIds = Array.from(new Set(normLines.map((l) => l.productId)));
-        const existingProducts = await prisma.manufacturedProduct.findMany({
-          where: { id: { in: uniqueProductIds } },
-          select: { id: true },
-        });
-        const existingSet = new Set(existingProducts.map((p) => p.id));
-        const missingProductIds = uniqueProductIds.filter((id) => !existingSet.has(id));
-        if (missingProductIds.length > 0) {
-          const preview = missingProductIds.slice(0, 5).join(", ");
-          errors.push({
-            index: i,
-            message:
-              `trade_good_lines_product_ids_not_found: ${missingProductIds.length}. ` +
-              `Сначала импортируйте изделия (Products / manufactured products), затем товары. ` +
-              `Отсутствуют id: ${preview}${missingProductIds.length > 5 ? " ..." : ""}`,
-          });
-          continue;
-        }
-        const sums = await sumPriceAndCostFromProducts(normLines);
+
+        const sums = await sumPriceAndCostFromTradeGoodLines(
+          normLines.map((l) => ({ productId: l.productId, tradeGoodId: l.tradeGoodId, qty: l.qty })),
+        );
         const priceRub = numOrNull(it.priceRub) ?? sums.price;
         const costRub = numOrNull(it.costRub) ?? sums.cost;
         const row = await prisma.$transaction(async (tx) => {
@@ -624,12 +663,21 @@ bulkRouter.post("/trade-goods", requireEffectiveBulkPermissionKey("admin.bulk.tr
               costRub,
               notes: strOrNull(it.notes),
               isActive: it.isActive ?? true,
+              kind,
               lines: {
-                create: normLines.map((line) => ({
-                  sortOrder: line.sortOrder,
-                  productId: line.productId,
-                  qty: line.qty,
-                })),
+                create: normLines.map((line) =>
+                  line.productId
+                    ? {
+                        sortOrder: line.sortOrder,
+                        qty: line.qty,
+                        product: { connect: { id: line.productId } },
+                      }
+                    : {
+                        sortOrder: line.sortOrder,
+                        qty: line.qty,
+                        componentTradeGood: { connect: { id: String(line.tradeGoodId) } },
+                      },
+                ),
               },
             },
           });

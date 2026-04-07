@@ -126,8 +126,16 @@ export class BulkJsonImportCardComponent {
   readonly loading = signal(false);
   readonly loadingExport = signal(false);
   readonly loadingPurge = signal(false);
+  readonly loadingTemplatePreview = signal(false);
+  readonly templatePreviewText = signal<string>(`${EMPTY_BULK_JSON}\n`);
+  readonly templatePreviewHint = signal<string>('');
+  readonly dbRowsCount = signal<number | null>(null);
   /** Успешная локальная проверка — разрешает «Сохранить в БД». */
   readonly validatedOk = signal(false);
+
+  constructor() {
+    this.refreshTemplatePreview();
+  }
 
   onTargetSelect(ev: Event): void {
     const raw = (ev.target as HTMLSelectElement).value;
@@ -141,6 +149,48 @@ export class BulkJsonImportCardComponent {
     this.errorText.set('');
     this.lastResult.set('');
     this.validatedOk.set(false);
+    this.dbRowsCount.set(null);
+    this.refreshTemplatePreview();
+  }
+
+  private refreshTemplatePreview(): void {
+    const t = this.currentTarget();
+    if (!this.canUseBulkEditor()) {
+      this.templatePreviewText.set(`${EMPTY_BULK_JSON}\n`);
+      this.templatePreviewHint.set('Нет прав на массовый JSON — показан базовый пустой шаблон.');
+      this.dbRowsCount.set(null);
+      return;
+    }
+    if (this.canExportFromApi() && t.apiSegment) {
+      this.loadingTemplatePreview.set(true);
+      this.api.exportBulk(t.apiSegment).subscribe({
+        next: (data) => {
+          this.loadingTemplatePreview.set(false);
+          const count = Array.isArray(data?.items) ? data.items.length : null;
+          this.dbRowsCount.set(count);
+          this.templatePreviewText.set(`${JSON.stringify(data, null, 2)}\n`);
+          this.templatePreviewHint.set(
+            'Шаблон загружен с сервера для выбранной таблицы. Можете копировать и заполнять.',
+          );
+        },
+        error: () => {
+          this.loadingTemplatePreview.set(false);
+          this.dbRowsCount.set(null);
+          this.templatePreviewText.set(`${EMPTY_BULK_JSON}\n`);
+          this.templatePreviewHint.set(
+            'Не удалось загрузить шаблон с сервера — показан базовый шаблон { "items": [] }.',
+          );
+        },
+      });
+      return;
+    }
+    this.templatePreviewText.set(`${EMPTY_BULK_JSON}\n`);
+    this.dbRowsCount.set(null);
+    this.templatePreviewHint.set(
+      t.hasEndpoint
+        ? 'Нет права на снимок из БД для этой таблицы — показан базовый шаблон.'
+        : 'Для этой таблицы endpoint ещё не подключён — показан базовый шаблон.',
+    );
   }
 
   downloadJson(): void {

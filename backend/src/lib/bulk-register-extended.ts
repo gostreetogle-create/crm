@@ -1,13 +1,10 @@
 import bcrypt from "bcryptjs";
 import type { Router } from "express";
 import { z } from "zod";
-import { Prisma } from "@prisma/client";
 import { prisma } from "./prisma.js";
 import { computeProductionDetailTotals } from "./production-detail-pricing.js";
 import {
-  exportBulkCatalogProducts,
   exportBulkClients,
-  exportBulkComplexes,
   exportBulkKpPhotos,
   exportBulkManufacturedProducts,
   exportBulkOrganizations,
@@ -171,37 +168,6 @@ const BulkMpSchema = z.object({
     .max(MAX_ITEMS),
 });
 
-const BulkCxSchema = z.object({
-  items: z
-    .array(
-      z.object({
-        id: z.string().uuid().optional(),
-        name: z.string().trim().min(1),
-        code: z.union([z.string(), z.null(), z.undefined()]).optional(),
-        description: z.union([z.string(), z.null(), z.undefined()]).optional(),
-        isActive: z.boolean().optional().default(true),
-      }),
-    )
-    .min(1)
-    .max(MAX_ITEMS),
-});
-
-const BulkCatProdSchema = z.object({
-  items: z
-    .array(
-      z.object({
-        id: z.string().uuid().optional(),
-        complexId: z.string().uuid(),
-        name: z.string().trim().min(1),
-        code: z.union([z.string(), z.null(), z.undefined()]).optional(),
-        description: z.union([z.string(), z.null(), z.undefined()]).optional(),
-        price: z.number().nonnegative(),
-        isActive: z.boolean().optional().default(true),
-      }),
-    )
-    .min(1)
-    .max(MAX_ITEMS),
-});
 
 function pdDataFromZod(p: z.infer<typeof BulkPdSchema>["items"][number]) {
   const qty = p.qty != null && Number.isFinite(p.qty) && p.qty > 0 ? p.qty : 1;
@@ -522,82 +488,6 @@ export function registerBulkExtendedRoutes(bulkRouter: Router): void {
     },
   );
 
-  bulkRouter.post("/complexes", requireEffectiveBulkPermissionKey("admin.bulk.complexes"), async (req, res, next) => {
-    try {
-      const parsed = BulkCxSchema.safeParse(req.body);
-      if (!parsed.success) {
-        res.status(400).json({ ok: false, error: "invalid_body", details: parsed.error.flatten() });
-        return;
-      }
-      const created: Array<{ index: number; id: string }> = [];
-      const errors: Array<{ index: number; message: string }> = [];
-      for (let i = 0; i < parsed.data.items.length; i++) {
-        const it = parsed.data.items[i]!;
-        try {
-          const data = {
-            name: it.name,
-            code: strOrNull(it.code),
-            description: strOrNull(it.description),
-            isActive: it.isActive ?? true,
-          };
-          if (it.id) {
-            const row = await prisma.complex.update({ where: { id: it.id }, data });
-            created.push({ index: i, id: row.id });
-          } else {
-            const row = await prisma.complex.create({ data });
-            created.push({ index: i, id: row.id });
-          }
-        } catch (e: unknown) {
-          errors.push({ index: i, message: e instanceof Error ? e.message : "failed" });
-        }
-      }
-      res.json({ ok: errors.length === 0, created, errors });
-    } catch (e) {
-      next(e);
-    }
-  });
-
-  bulkRouter.post("/catalog-products", requireEffectiveBulkPermissionKey("admin.bulk.catalog_products"), async (req, res, next) => {
-    try {
-      const parsed = BulkCatProdSchema.safeParse(req.body);
-      if (!parsed.success) {
-        res.status(400).json({ ok: false, error: "invalid_body", details: parsed.error.flatten() });
-        return;
-      }
-      const created: Array<{ index: number; id: string }> = [];
-      const errors: Array<{ index: number; message: string }> = [];
-      for (let i = 0; i < parsed.data.items.length; i++) {
-        const it = parsed.data.items[i]!;
-        try {
-          const cx = await prisma.complex.findUnique({ where: { id: it.complexId } });
-          if (!cx) {
-            errors.push({ index: i, message: "invalid_complex" });
-            continue;
-          }
-          const data = {
-            complexId: it.complexId,
-            name: it.name,
-            code: strOrNull(it.code),
-            description: strOrNull(it.description),
-            price: new Prisma.Decimal(it.price),
-            isActive: it.isActive ?? true,
-          };
-          if (it.id) {
-            const row = await prisma.product.update({ where: { id: it.id }, data });
-            created.push({ index: i, id: row.id });
-          } else {
-            const row = await prisma.product.create({ data });
-            created.push({ index: i, id: row.id });
-          }
-        } catch (e: unknown) {
-          errors.push({ index: i, message: e instanceof Error ? e.message : "failed" });
-        }
-      }
-      res.json({ ok: errors.length === 0, created, errors });
-    } catch (e) {
-      next(e);
-    }
-  });
 
   bulkRouter.get("/clients/export", requireEffectiveBulkPermissionKey("admin.bulk.clients"), async (_req, res, next) => {
     try {
@@ -637,20 +527,6 @@ export function registerBulkExtendedRoutes(bulkRouter: Router): void {
   bulkRouter.get("/manufactured-products/export", requireEffectiveBulkPermissionKey("admin.bulk.manufactured_products"), async (_req, res, next) => {
     try {
       res.json(await exportBulkManufacturedProducts());
-    } catch (e) {
-      next(e);
-    }
-  });
-  bulkRouter.get("/complexes/export", requireEffectiveBulkPermissionKey("admin.bulk.complexes"), async (_req, res, next) => {
-    try {
-      res.json(await exportBulkComplexes());
-    } catch (e) {
-      next(e);
-    }
-  });
-  bulkRouter.get("/catalog-products/export", requireEffectiveBulkPermissionKey("admin.bulk.catalog_products"), async (_req, res, next) => {
-    try {
-      res.json(await exportBulkCatalogProducts());
     } catch (e) {
       next(e);
     }

@@ -164,6 +164,11 @@ enum CommercialOfferStatus {
   CANCELLED
 }
 
+enum TradeGoodKind {
+  ITEM
+  COMPLEX
+}
+
 /// Шапка коммерческого предложения (строки позиций — отдельный шаг).
 model CommercialOffer {
   id             String                @id @default(uuid())
@@ -455,7 +460,8 @@ model TradeGood {
   priceRub      Float?
   costRub       Float?
   notes         String?
-  isActive      Boolean @default(true)
+  isActive      Boolean      @default(true)
+  kind          TradeGoodKind @default(ITEM)
   /// Какой снимок главный для карточек и КП: `артикул_N.ext` (1 = первый файл `_1`).
   photoPrimaryIndex Int @default(1) @map("photo_primary_index")
   createdAt     DateTime @default(now())
@@ -464,7 +470,8 @@ model TradeGood {
   category    TradeGoodCategory?    @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   subcategory TradeGoodSubcategory? @relation(fields: [subcategoryId], references: [id], onDelete: SetNull)
 
-  lines TradeGoodLine[]
+  lines            TradeGoodLine[] @relation("TradeGoodParentLines")
+  componentInLines TradeGoodLine[] @relation("TradeGoodComponentLines")
 
   @@index([categoryId])
   @@index([subcategoryId])
@@ -476,17 +483,20 @@ model TradeGoodLine {
   id          String @id @default(uuid())
   tradeGoodId String
   sortOrder   Int    @default(0)
-  productId   String
+  productId   String?
+  componentTradeGoodId String? @map("component_trade_good_id")
   qty         Float  @default(1)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  tradeGood TradeGood           @relation(fields: [tradeGoodId], references: [id], onDelete: Cascade)
-  product   ManufacturedProduct @relation(fields: [productId], references: [id], onDelete: Restrict)
+  tradeGood          TradeGood            @relation("TradeGoodParentLines", fields: [tradeGoodId], references: [id], onDelete: Cascade)
+  product            ManufacturedProduct? @relation(fields: [productId], references: [id], onDelete: Restrict)
+  componentTradeGood TradeGood?           @relation("TradeGoodComponentLines", fields: [componentTradeGoodId], references: [id], onDelete: Restrict)
 
   @@index([tradeGoodId])
   @@index([productId])
+  @@index([componentTradeGoodId])
   @@map("trade_good_lines")
 }
 

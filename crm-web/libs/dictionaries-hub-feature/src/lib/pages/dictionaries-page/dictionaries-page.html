@@ -1821,21 +1821,31 @@
             <input type="text" formControlName="code" placeholder="Нужен для имён файлов фото" />
           </app-ui-form-field>
           <p class="dictionaryMuted dictionaryFieldRowFull">
-            Фото для карточки и КП: можно выбирать файлы несколько раз — новые добавляются к списку. При сохранении на сервере
-            имена файлов
-            <code>{{ tradeGoodCodeHint() }}_1.jpg</code>, <code>_2</code>, <code>_3</code> … Главное изображение — только
-            радиокнопкой (по умолчанию не переключается при добавлении фото).
+            Фото карточки и КП. Можно добавлять файлы в несколько подходов — новые фото не заменяют старые. Главное фото
+            выбирается радиокнопкой под превью. Имена на сервере формируются по артикулу:
+            <code>{{ tradeGoodCodeHint() }}_1.jpg</code>, <code>_2</code>, <code>_3</code> …
           </p>
           <div class="dictionaryFieldRowFull tradeGoodPhotoPicker">
-            <label class="tradeGoodPhotoPicker__file">
-              <span class="muted">Выбрать файлы</span>
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/gif"
-                multiple
-                (change)="onTradeGoodPhotosPick($event)"
-              />
-            </label>
+            <input
+              #tradeGoodPhotosInput
+              class="tradeGoodPhotoPicker__nativeInput"
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              multiple
+              (change)="onTradeGoodPhotosPick($event)"
+            />
+            <div class="tradeGoodPhotoPicker__controls">
+              <app-ui-button type="button" variant="soft" (clicked)="tradeGoodPhotosInput.click()">
+                Добавить фото
+              </app-ui-button>
+              <span class="tradeGoodPhotoPicker__summary muted">
+                @if (tradeGoodPendingFiles().length > 0) {
+                  Выбрано новых файлов: {{ tradeGoodPendingFiles().length }}
+                } @else {
+                  Новые файлы пока не выбраны
+                }
+              </span>
+            </div>
           </div>
           @if (tradeGoodPhotoPreviewRows().length > 0) {
             <div class="tradeGoodPhotoPicker__grid dictionaryFieldRowFull" role="radiogroup" aria-label="Главное фото">
@@ -1871,6 +1881,12 @@
               @for (o of tradeGoodCategoriesStore.options(); track o.id) {
                 <option [value]="o.id">{{ o.label }}</option>
               }
+            </select>
+          </app-ui-form-field>
+          <app-ui-form-field label="Тип" [required]="true">
+            <select formControlName="kind" (change)="recalcTradeGoodPriceDefaults()">
+              <option value="ITEM">Товар</option>
+              <option value="COMPLEX">Комплекс</option>
             </select>
           </app-ui-form-field>
           <app-ui-form-field label="Подкатегория">
@@ -1910,33 +1926,54 @@
       </fieldset>
 
       <fieldset class="dictionaryFormSection">
-        <legend>Состав: одно или несколько изделий</legend>
+        <legend>
+          @if (tradeGoodsForm.controls.kind.value === 'COMPLEX') {
+            Состав: один или несколько товаров
+          } @else {
+            Состав: одно или несколько изделий
+          }
+        </legend>
         <p class="muted dictionaryFieldRowFull">
-          В каждой строке выберите изделие и количество. Цена и себестоимость можно пересчитать по сумме позиций.
+          @if (tradeGoodsForm.controls.kind.value === 'COMPLEX') {
+            В каждой строке выберите товар и количество. Цена и себестоимость можно пересчитать по сумме позиций.
+          } @else {
+            В каждой строке выберите изделие и количество. Цена и себестоимость можно пересчитать по сумме позиций.
+          }
         </p>
         <div formArrayName="lines">
           @for (line of tradeGoodLinesFormArray.controls; track $index; let i = $index) {
             <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2 productLineRow" [formGroupName]="i">
-              <app-ui-form-field label="Изделие" [required]="true">
+              <app-ui-form-field [label]="tradeGoodsForm.controls.kind.value === 'COMPLEX' ? 'Товар' : 'Изделие'" [required]="true">
                 <div class="colorRefRow">
-                  <select formControlName="productId" (change)="recalcTradeGoodPriceDefaults()">
-                    <option value="">— выберите изделие —</option>
-                    @for (p of productsStore.items(); track p.id) {
-                      @if (p.isActive) {
-                        <option [value]="p.id">{{ p.code?.trim() ? p.code + ' — ' + p.name : p.name }}</option>
+                  @if (tradeGoodsForm.controls.kind.value === 'COMPLEX') {
+                    <select formControlName="tradeGoodId" (change)="recalcTradeGoodPriceDefaults()">
+                      <option value="">— выберите товар —</option>
+                      @for (t of tradeGoodsStore.items(); track t.id) {
+                        @if (t.isActive && t.id !== tradeGoodsStore.editId()) {
+                          <option [value]="t.id">{{ t.code?.trim() ? t.code + ' — ' + t.name : t.name }}</option>
+                        }
                       }
+                    </select>
+                  } @else {
+                    <select formControlName="productId" (change)="recalcTradeGoodPriceDefaults()">
+                      <option value="">— выберите изделие —</option>
+                      @for (p of productsStore.items(); track p.id) {
+                        @if (p.isActive) {
+                          <option [value]="p.id">{{ p.code?.trim() ? p.code + ' — ' + p.name : p.name }}</option>
+                        }
+                      }
+                    </select>
+                    @if (permissions.crud().canCreate) {
+                      <app-ui-button
+                        type="button"
+                        [square]="true"
+                        ariaLabel="Новое изделие"
+                        title="Создать изделие (отдельная страница)"
+                        (clicked)="navigateToStandaloneDictionaryCreate('products')"
+                      >
+                        <span class="squareIconTone squareIconTone--affirm"><svg lucidePlus [size]="18"></svg></span>
+                      </app-ui-button>
                     }
-                  </select>
-                  @if (permissions.crud().canCreate) {
-                    <app-ui-button
-                      type="button"
-                      [square]="true"
-                      ariaLabel="Новое изделие"
-                      title="Создать изделие (отдельная страница)"
-                      (clicked)="navigateToStandaloneDictionaryCreate('products')"
-                    >
-                      <span class="squareIconTone squareIconTone--affirm"><svg lucidePlus [size]="18"></svg></span>
-                    </app-ui-button>
                   }
                 </div>
               </app-ui-form-field>
@@ -1956,14 +1993,24 @@
           }
         </div>
         <div class="dictionaryFieldRowFull">
-          <app-ui-button type="button" variant="soft" (clicked)="addTradeGoodLine()">+ Добавить изделие в состав</app-ui-button>
+          <app-ui-button type="button" variant="soft" (clicked)="addTradeGoodLine()">
+            @if (tradeGoodsForm.controls.kind.value === 'COMPLEX') {
+              + Добавить товар в состав
+            } @else {
+              + Добавить изделие в состав
+            }
+          </app-ui-button>
         </div>
         <div class="dictionaryFieldRowFull tradeGoodRecalcRow">
           <app-ui-button type="button" variant="soft" (clicked)="recalcTradeGoodPriceDefaults()">
-            Подставить сумму по изделиям (цена и себестоимость)
+            @if (tradeGoodsForm.controls.kind.value === 'COMPLEX') {
+              Подставить сумму по товарам (цена и себестоимость)
+            } @else {
+              Подставить сумму по изделиям (цена и себестоимость)
+            }
           </app-ui-button>
           <p class="muted tradeGoodRecalcRow__hint">
-            Учитывает строки состава выше и подставляет суммы в поля «Цена» и «Себестоимость» в блоке «Товар».
+            Учитывает строки состава выше и подставляет суммы в поля «Цена» и «Себестоимость».
           </p>
         </div>
       </fieldset>

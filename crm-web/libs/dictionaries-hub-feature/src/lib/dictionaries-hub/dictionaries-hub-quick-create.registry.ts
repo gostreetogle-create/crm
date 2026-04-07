@@ -7,7 +7,6 @@ export type HubBoardQuickCreateTarget =
   | { kind: 'newMaterialPage' }
   | { kind: 'newMaterialCharacteristicPage' }
   | { kind: 'standalone'; key: StandaloneDictionaryCreateKey }
-  | { kind: 'catalogComplexModal' }
   | { kind: 'tradeGoodCategoryModal' }
   | { kind: 'tradeGoodSubcategoryModal' };
 
@@ -30,7 +29,6 @@ export const HUB_BOARD_QUICK_CREATE = {
   tradeGoods: { kind: 'standalone', key: 'tradeGoods' },
   tradeGoodCategories: { kind: 'tradeGoodCategoryModal' },
   tradeGoodSubcategories: { kind: 'tradeGoodSubcategoryModal' },
-  catalogComplexes: { kind: 'catalogComplexModal' },
 } as const satisfies Record<string, HubBoardQuickCreateTarget>;
 
 export type HubBoardQuickCreateKey = keyof typeof HUB_BOARD_QUICK_CREATE;

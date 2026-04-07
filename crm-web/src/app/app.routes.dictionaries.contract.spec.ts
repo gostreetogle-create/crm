@@ -19,4 +19,12 @@ describe('app.routes /справочники contract', () => {
       .sort();
     expect(redirects).toEqual([...DICTIONARIES_PUBLIC_REDIRECT_SEGMENTS].sort());
   });
+
+  it('keeps index child route exact-match only (prevents standalone deep-link shadowing)', () => {
+    const dict = appRoutes.find((r) => r.path === 'справочники');
+    const children = dict?.children as Route[] | undefined;
+    const indexChild = (children ?? []).find((c) => c.path === '');
+    expect(indexChild).toBeDefined();
+    expect(indexChild?.pathMatch).toBe('full');
+  });
 });

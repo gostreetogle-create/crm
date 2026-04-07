@@ -101,15 +101,16 @@ export const TRADE_GOODS_COLUMNS: TableColumn[] = [{ key: 'hubLine', label: 'Т�
 
 export const TRADE_GOODS_COLUMNS_FULL: TableColumn[] = [
   { key: 'name', label: 'Наименование' },
+  { key: 'kindLabel', label: 'Тип' },
   { key: 'codeLabel', label: 'Артикул' },
   { key: 'categoryLabel', label: 'Категория' },
   { key: 'subcategoryLabel', label: 'Подкатегория' },
   { key: 'unitCodeLabel', label: 'Ед. изм.' },
   { key: 'descriptionLabel', label: 'Описание' },
-  { key: 'productsSummaryLabel', label: 'Изделия в составе' },
+  { key: 'productsSummaryLabel', label: 'Состав' },
   { key: 'priceLabel', label: 'Цена ₽' },
   { key: 'costLabel', label: 'Себестоимость ₽' },
-  { key: 'linesCountLabel', label: 'Позиций (изделий)' },
+  { key: 'linesCountLabel', label: 'Позиций в составе' },
   { key: 'notesLabel', label: 'Заметка' },
   { key: 'isActiveLabel', label: 'Активен' },
 ];

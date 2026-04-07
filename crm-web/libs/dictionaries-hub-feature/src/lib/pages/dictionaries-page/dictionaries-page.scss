@@ -678,8 +678,22 @@
   margin-right: auto;
 }
 
-.tradeGoodPhotoPicker__file input[type='file'] {
-  max-width: 100%;
+.tradeGoodPhotoPicker__nativeInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.tradeGoodPhotoPicker__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 0.9rem;
+}
+
+.tradeGoodPhotoPicker__summary {
   font-size: 0.8125rem;
 }
 

@@ -21,6 +21,7 @@ export const appRoutes: Route[] = [
     children: [
       {
         path: '',
+        pathMatch: 'full',
         loadComponent: () =>
           import('@srm/dictionaries-hub-feature').then((m) => m.DictionariesPage),
       },

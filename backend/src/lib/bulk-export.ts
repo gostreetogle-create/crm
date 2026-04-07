@@ -100,7 +100,18 @@ const skTradeGood = {
   costRub: null as number | null,
   notes: "",
   isActive: true,
-  lines: [{ productName: "", productCode: "", productId: "", qty: 1 }],
+  kind: "ITEM" as const,
+  lines: [
+    {
+      productName: "",
+      productCode: "",
+      productId: "",
+      tradeGoodName: "",
+      tradeGoodCode: "",
+      tradeGoodId: "",
+      qty: 1,
+    },
+  ],
 };
 
 /** Тело для скачивания: тот же формат, что ожидает POST массового импорта. При пустой БД — один объект-шаблон с пустыми полями. */
@@ -232,7 +243,13 @@ export async function exportBulkTradeGoods() {
   const rows = await prisma.tradeGood.findMany({
     orderBy: { name: "asc" },
     include: {
-      lines: { orderBy: { sortOrder: "asc" }, include: { product: { select: { name: true, code: true } } } },
+      lines: {
+        orderBy: { sortOrder: "asc" },
+        include: {
+          product: { select: { name: true, code: true } },
+          componentTradeGood: { select: { id: true, code: true, name: true } },
+        },
+      },
       category: true,
       subcategory: true,
     },
@@ -248,10 +265,14 @@ export async function exportBulkTradeGoods() {
     costRub: g.costRub,
     notes: g.notes ?? "",
     isActive: g.isActive,
+    kind: g.kind,
     lines: g.lines.map((l) => ({
       productName: l.product?.name ?? "",
       productCode: l.product?.code ?? "",
       productId: l.productId,
+      tradeGoodName: l.componentTradeGood?.name ?? "",
+      tradeGoodCode: l.componentTradeGood?.code ?? "",
+      tradeGoodId: l.componentTradeGood?.id ?? "",
       qty: l.qty,
     })),
   }));

@@ -16,7 +16,7 @@ import {
   assertTradeGoodCategoryPair,
   resolveTradeGoodCategoryIdsFromNames,
 } from "../lib/trade-good-classification-resolve.js";
-import { numOrNull, strOrNull, sumPriceAndCostFromProducts } from "../lib/trade-good-pricing.js";
+import { numOrNull, strOrNull, sumPriceAndCostFromTradeGoodLines } from "../lib/trade-good-pricing.js";
 
 export const tradeGoodsRouter = Router();
 
@@ -42,8 +42,18 @@ const nullableUuid = z.union([z.string().uuid(), z.null(), z.undefined()]).optio
 const LineInputSchema = z.object({
   id: nullableString,
   sortOrder: z.number().int().optional(),
-  productId: z.string().min(1),
+  productId: nullableUuid,
+  tradeGoodId: nullableUuid,
   qty: z.number().positive().optional(),
+}).superRefine((line, ctx) => {
+  const refs = [line.productId ? 1 : 0, line.tradeGoodId ? 1 : 0].reduce((a, b) => a + b, 0);
+  if (refs !== 1) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "line must have exactly one reference: productId or tradeGoodId",
+      path: ["productId"],
+    });
+  }
 });
 
 const InputSchema = z.object({
@@ -61,6 +71,7 @@ const InputSchema = z.object({
   costRub: nullableNumber,
   notes: nullableString,
   isActive: z.boolean(),
+  kind: z.enum(["ITEM", "COMPLEX"]).optional(),
   /** Главное фото для карточек и КП: номер слота `артикул_N` (1-based). */
   photoPrimaryIndex: z.number().int().min(1).max(30).optional(),
   lines: z.array(LineInputSchema).min(1),
@@ -74,6 +85,16 @@ const listLineInclude = {
       name: true,
       priceRub: true,
       costRub: true,
+    },
+  },
+  componentTradeGood: {
+    select: {
+      id: true,
+      code: true,
+      name: true,
+      priceRub: true,
+      costRub: true,
+      kind: true,
     },
   },
 } as const;
@@ -148,31 +169,7 @@ async function resolveClassificationForInput(
   }
 }
 
-type TradeGoodRowWithLines = {
-  id: string;
-  code: string | null;
-  name: string;
-  description: string | null;
-  categoryId: string | null;
-  subcategoryId: string | null;
-  unitCode: string | null;
-  priceRub: number | null;
-  costRub: number | null;
-  notes: string | null;
-  isActive: boolean;
-  photoPrimaryIndex: number;
-  createdAt: Date;
-  updatedAt: Date;
-  category: { id: string; name: string } | null;
-  subcategory: { id: string; name: string; categoryId: string } | null;
-  lines: Array<{
-    id: string;
-    sortOrder: number;
-    productId: string;
-    qty: number;
-    product: { id: string; code: string | null; name: string; priceRub: number | null; costRub: number | null };
-  }>;
-};
+type TradeGoodRowWithLines = any;
 
 function mapTradeGood(row: TradeGoodRowWithLines) {
   const primaryIdx = row.photoPrimaryIndex >= 1 ? row.photoPrimaryIndex : 1;
@@ -190,17 +187,20 @@ function mapTradeGood(row: TradeGoodRowWithLines) {
     costRub: row.costRub,
     notes: row.notes,
     isActive: row.isActive,
+    kind: row.kind,
     photoPrimaryIndex: primaryIdx,
     photoUrls: listTradeGoodPhotoPublicUrls(config.tradeGoodsPhotosDir, row.code),
     photoUrl: tradeGoodPhotoUrlJson(row.code, primaryIdx),
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
-    lines: row.lines.map((l) => ({
+    lines: row.lines.map((l: any) => ({
       id: l.id,
       sortOrder: l.sortOrder,
       productId: l.productId,
+      tradeGoodId: l.componentTradeGoodId,
       qty: l.qty,
       product: l.product,
+      tradeGood: l.componentTradeGood,
     })),
   };
 }
@@ -209,10 +209,19 @@ function mapTradeGoodListItem(
   g: TradeGoodRowWithLines,
   lines: TradeGoodRowWithLines["lines"],
 ): Record<string, unknown> {
-  const productLabels = lines.map((l) => {
-    const code = l.product.code?.trim();
+  const productLabels = lines.map((l: any) => {
+    const productCode = l.product?.code?.trim();
+    const tradeGoodCode = l.componentTradeGood?.code?.trim();
     const q = l.qty;
-    const base = code ? `${code} — ${l.product.name}` : l.product.name;
+    const base = l.product
+      ? productCode
+        ? `${productCode} — ${l.product.name}`
+        : l.product.name
+      : l.componentTradeGood
+        ? tradeGoodCode
+          ? `${tradeGoodCode} — ${l.componentTradeGood.name}`
+          : l.componentTradeGood.name
+        : "—";
     return q !== 1 ? `${base} ×${q}` : base;
   });
   const productsSummary = productLabels.length ? productLabels.join("; ") : "—";
@@ -231,19 +240,46 @@ function mapTradeGoodListItem(
     costRub: g.costRub,
     notes: g.notes,
     isActive: g.isActive,
+    kind: g.kind,
     photoPrimaryIndex: primaryIdx,
     photoUrls: listTradeGoodPhotoPublicUrls(config.tradeGoodsPhotosDir, g.code),
     photoUrl: tradeGoodPhotoUrlJson(g.code, primaryIdx),
     linesCount: lines.length,
     productsSummary,
-    compositionLines: lines.map((l) => ({
-      productLabel: l.product.code?.trim()
-        ? `${l.product.code.trim()} — ${l.product.name}`
-        : l.product.name,
+    compositionLines: lines.map((l: any) => ({
+      productLabel: l.product
+        ? l.product.code?.trim()
+          ? `${l.product.code.trim()} — ${l.product.name}`
+          : l.product.name
+        : l.componentTradeGood
+          ? l.componentTradeGood.code?.trim()
+            ? `${l.componentTradeGood.code.trim()} — ${l.componentTradeGood.name}`
+            : l.componentTradeGood.name
+          : "—",
       qty: l.qty,
     })),
     createdAt: g.createdAt.toISOString(),
     updatedAt: g.updatedAt.toISOString(),
+  };
+}
+
+function tradeGoodLineCreateData(line: {
+  sortOrder: number;
+  qty: number;
+  productId: string | null;
+  tradeGoodId: string | null;
+}) {
+  if (line.productId) {
+    return {
+      sortOrder: line.sortOrder,
+      qty: line.qty,
+      product: { connect: { id: line.productId } },
+    };
+  }
+  return {
+    sortOrder: line.sortOrder,
+    qty: line.qty,
+    componentTradeGood: { connect: { id: String(line.tradeGoodId) } },
   };
 }
 
@@ -306,11 +342,14 @@ tradeGoodsRouter.post("/", async (req, res, next) => {
     }
     const p = parsed.data;
     const normLines = p.lines.map((l, idx) => ({
-      productId: l.productId,
+      productId: l.productId ?? null,
+      tradeGoodId: l.tradeGoodId ?? null,
       sortOrder: l.sortOrder ?? idx,
       qty: l.qty ?? 1,
     }));
-    const sums = await sumPriceAndCostFromProducts(normLines);
+    const sums = await sumPriceAndCostFromTradeGoodLines(
+      normLines.map((l) => ({ productId: l.productId, tradeGoodId: l.tradeGoodId, qty: l.qty })),
+    );
     const priceRub = numOrNull(p.priceRub) ?? sums.price;
     const costRub = numOrNull(p.costRub) ?? sums.cost;
 
@@ -328,13 +367,10 @@ tradeGoodsRouter.post("/", async (req, res, next) => {
           costRub,
           notes: strOrNull(p.notes),
           isActive: p.isActive,
+          kind: p.kind ?? "ITEM",
           photoPrimaryIndex: p.photoPrimaryIndex ?? 1,
           lines: {
-            create: normLines.map((line) => ({
-              sortOrder: line.sortOrder,
-              productId: line.productId,
-              qty: line.qty,
-            })),
+            create: normLines.map((line) => tradeGoodLineCreateData(line)),
           },
         },
         include: {
@@ -438,11 +474,14 @@ tradeGoodsRouter.put("/:id", async (req, res, next) => {
     }
     const p = parsed.data;
     const normLines = p.lines.map((l, idx) => ({
-      productId: l.productId,
+      productId: l.productId ?? null,
+      tradeGoodId: l.tradeGoodId ?? null,
       sortOrder: l.sortOrder ?? idx,
       qty: l.qty ?? 1,
     }));
-    const sums = await sumPriceAndCostFromProducts(normLines);
+    const sums = await sumPriceAndCostFromTradeGoodLines(
+      normLines.map((l) => ({ productId: l.productId, tradeGoodId: l.tradeGoodId, qty: l.qty })),
+    );
     const priceRub = numOrNull(p.priceRub) ?? sums.price;
     const costRub = numOrNull(p.costRub) ?? sums.cost;
 
@@ -474,13 +513,10 @@ tradeGoodsRouter.put("/:id", async (req, res, next) => {
           costRub,
           notes: strOrNull(p.notes),
           isActive: p.isActive,
+          kind: p.kind ?? "ITEM",
           ...(p.photoPrimaryIndex !== undefined ? { photoPrimaryIndex: p.photoPrimaryIndex } : {}),
           lines: {
-            create: normLines.map((line) => ({
-              sortOrder: line.sortOrder,
-              productId: line.productId,
-              qty: line.qty,
-            })),
+            create: normLines.map((line) => tradeGoodLineCreateData(line)),
           },
         },
         include: {

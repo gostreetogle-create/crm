@@ -84,6 +84,34 @@
   margin-bottom: 12px;
 }
 
+.bulkTemplatePreview {
+  margin: 0 0 12px;
+}
+
+.bulkTemplatePreview__head {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.bulkTemplatePreview__pre {
+  max-height: 260px;
+}
+
+.bulkCountBadge {
+  margin-left: auto;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border-color));
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
 .bulkFileStatus {
   margin: 0 0 10px;
   font-size: var(--font-size-small, 14px);
