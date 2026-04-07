@@ -73,6 +73,7 @@
 | 42 | 2026-04-05 | Push: каталог/комплексы (articles, products, trade goods, complexes), миграции Prisma, отступ под фикс-шапкой, nginx SPA для кириллицы, сообщения после restore, deploy env и правило prebuilt-web | backend, crm-web, deploy, docs, .cursor | `a4eeeaa` |
 | 43 | 2026-04-07 | Push в `origin/main`: торговые позиции (фото/модалки/удаление), API trade-goods пустой состав и bulk JSON пустые строки, КП суммы без лишних `.00`, витрина КП, журнал отката | backend, crm-web, docs, .cursor | `b27b7c7` |
 | 44 | 2026-04-07 | Push в `origin/main`: backend doctor + CI authz-check (skip без БД), асинхронная/строгая загрузка фото trade-goods, чистка warnings и helper preview-форматтеров | backend, crm-web, .github, docs | `b8267c1` |
+| 45 | 2026-04-07 | Push в `origin/main`: units API чеклист — обязательный/уникальный `code`, ошибки `field/message`, фильтрация и пагинация GET, аудит CRUD операций единиц | backend | `2ec0a6c` |
 
 ---
 
