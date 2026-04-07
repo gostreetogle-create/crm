@@ -1722,21 +1722,21 @@
           @if ((tg.description ?? '').trim()) {
             <p class="productSpecView__description">{{ tg.description }}</p>
           }
-          @if ((tg.photoUrls?.length ?? 0) > 0) {
+          @if (tg.photoUrls.length > 0) {
             <div class="tradeGoodViewPhotos kpPhotoPreview--tradeGoodHero">
               @for (u of tg.photoUrls!; track $index) {
                 <figure
                   class="kpPhotoPreview tradeGoodViewPhotos__item"
-                  [class.tradeGoodViewPhotos__item--primary]="($index + 1) === (tg.photoPrimaryIndex ?? 1)"
+                  [class.tradeGoodViewPhotos__item--primary]="($index + 1) === tg.photoPrimaryIndex"
                 >
                   <img [src]="u" alt="" />
-                  @if (($index + 1) === (tg.photoPrimaryIndex ?? 1)) {
+                  @if (($index + 1) === tg.photoPrimaryIndex) {
                     <figcaption class="tradeGoodViewPhotos__badge">Главное</figcaption>
                   }
                 </figure>
               }
             </div>
-          } @else if ((tg.photoUrl ?? '').trim()) {
+          } @else if (tg.photoUrl.trim()) {
             <div class="kpPhotoPreview kpPhotoPreview--tradeGoodHero">
               <img [src]="tg.photoUrl" alt="" />
             </div>
@@ -3877,7 +3877,7 @@
     <div class="dictionaryFormSection">
       <p>
         Категория:
-        <strong>{{ getTradeGoodCategoryNameForId(tradeGoodSubcategoriesForm.controls.categoryId.value ?? '') }}</strong>
+        <strong>{{ getTradeGoodCategoryNameForId(tradeGoodSubcategoriesForm.controls.categoryId.value) }}</strong>
       </p>
       <p><strong>{{ tradeGoodSubcategoriesForm.controls.name.value }}</strong></p>
       <p>Порядок: {{ tradeGoodSubcategoriesForm.controls.sortOrder.value }}</p>
@@ -3955,7 +3955,7 @@
       <p><strong>{{ kpPhotosForm.controls.name.value }}</strong></p>
       <p>Организация: {{ kpPhotoOrganizationLabel() }}</p>
       <p>Название фото: {{ kpPhotosForm.controls.photoTitle.value }}</p>
-      @if (kpPhotosForm.controls.photoFileName.value?.trim()) {
+      @if (kpPhotosForm.controls.photoFileName.value.trim()) {
         <p>Файл на сервере: {{ kpPhotosForm.controls.photoFileName.value }}</p>
       }
       @if (kpPhotoPreviewUrl()) {
