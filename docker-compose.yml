@@ -1,3 +1,7 @@
+# Запуск из корня репозитория (например /volume1/docker/crm):
+#   docker compose --env-file deploy/.env up -d
+# Секреты и CORS — в deploy/.env (см. deploy/.env.example).
+# Cloudflare Tunnel не в этом compose: поднимайте отдельно из ../tunnel (токен в tunnel/.env).
 services:
   postgres:
     image: postgres:16-alpine
@@ -5,7 +9,6 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: crm
-      # Имя CRM_* чтобы пустая переменная POSTGRES_PASSWORD в Windows не ломала подстановку.
       POSTGRES_PASSWORD: ${CRM_POSTGRES_PASSWORD:-crm}
       POSTGRES_DB: crm
     volumes:
@@ -21,7 +24,7 @@ services:
 
   backend:
     build:
-      context: ..
+      context: .
       dockerfile: deploy/Dockerfile.backend
     container_name: crm_backend
     restart: unless-stopped
@@ -33,13 +36,9 @@ services:
       PORT: 3000
       CORS_ORIGIN: ${CORS_ORIGIN}
       JWT_SECRET: ${JWT_SECRET}
-      # Не создавать слабого пользователя director/director при seed в контейнере.
       SEED_DIRECTOR_USER: "0"
-      # Должен совпадать с паролем пользователя crm в уже существующем volume Postgres (смена CRM_POSTGRES_PASSWORD в .env без сброса volume ломает подключение).
       DATABASE_URL: postgresql://crm:${CRM_POSTGRES_PASSWORD:-crm}@postgres:5432/crm?schema=public
-      # Тот же DSN без ?schema= для pg_dump/pg_restore; пусто — в коде отрежется query у DATABASE_URL.
       BACKUP_DATABASE_URL: ${BACKUP_DATABASE_URL:-}
-      # Путь к каталогу deploy на сервере — подставляется в подсказку после restore, если не удалось переподключить Prisma.
       CRM_DEPLOY_DIR: ${CRM_DEPLOY_DIR:-/opt/crm/deploy}
       BACKUP_DIR: /var/lib/crm/backups
     volumes:
@@ -47,7 +46,6 @@ services:
     ports:
       - "${BACKEND_PORT:-3000}:3000"
     healthcheck:
-      # 127.0.0.1 — надёжнее localhost на некоторых образах; migrate+seed на слабом VPS могут занять минуту+.
       test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:3000/health > /dev/null || exit 1']
       interval: 15s
       timeout: 5s
@@ -56,16 +54,15 @@ services:
 
   web:
     build:
-      context: ..
+      context: .
       dockerfile: deploy/Dockerfile.web
     container_name: crm_web
     restart: unless-stopped
     depends_on:
       backend:
         condition: service_healthy
-    # Готовая статика с хоста (загрузите dist/crm-web/browser/ — см. deploy/README.md). Не коммитится в git.
     volumes:
-      - ./prebuilt-web:/usr/share/nginx/html:ro
+      - ./deploy/prebuilt-web:/usr/share/nginx/html:ro
     ports:
       - "${WEB_PORT:-8080}:80"
     healthcheck:

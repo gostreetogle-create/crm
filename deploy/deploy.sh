@@ -1,6 +1,34 @@
 #!/usr/bin/env bash
 set -euo pipefail
-cd "$(dirname "$0")"
+
+# Один и тот же сценарий: Synology DSM, Ubuntu Server, и т.д. Нужен bash (не «sh»).
+if [[ -z "${BASH_VERSION:-}" ]]; then
+  echo "[deploy] Запустите через bash: bash \"$(basename "$0")\" (из каталога deploy/)" >&2
+  exit 1
+fi
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+cd "${SCRIPT_DIR}"
+
+# Сначала deploy/, затем корень репозитория (канон: docker-compose.yml в корне, см. комментарий в compose).
+COMPOSE_FILE=""
+for dir in "${SCRIPT_DIR}" "${REPO_ROOT}"; do
+  for candidate in docker-compose.yml compose.yaml compose.yml; do
+    if [[ -f "${dir}/${candidate}" ]]; then
+      COMPOSE_FILE="${dir}/${candidate}"
+      break 2
+    fi
+  done
+done
+if [[ -z "${COMPOSE_FILE}" ]]; then
+  echo "[deploy] Ошибка: нет docker-compose.yml / compose.yaml / compose.yml в ${SCRIPT_DIR} или ${REPO_ROOT}" >&2
+  exit 1
+fi
+
+dc() {
+  docker compose -f "${COMPOSE_FILE}" --env-file "${SCRIPT_DIR}/.env" "$@"
+}
 
 [[ -f .env ]] || cp .env.example .env
 source .env
@@ -25,7 +53,6 @@ if [[ "${CORS_ORIGIN}" == "*" ]]; then
   exit 1
 fi
 
-REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PREBUILT_DIR="${REPO_ROOT}/deploy/prebuilt-web"
 PREBUILT_ZIP="${REPO_ROOT}/deploy/prebuilt-web.zip"
 
@@ -51,7 +78,7 @@ if git -C "${REPO_ROOT}" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
 fi
 
 echo "[deploy] Подтягиваю образы (если есть в registry)..."
-docker compose --env-file .env pull || true
+dc pull || true
 
 # Один архив вместо сотен файлов: положите deploy/prebuilt-web.zip на сервер — распакуем в prebuilt-web/ и удалим zip.
 if [[ -f "${PREBUILT_ZIP}" ]]; then
@@ -89,35 +116,49 @@ export WEB_BUILD_ID
 echo "[deploy] WEB_BUILD_ID=${WEB_BUILD_ID}"
 
 # Мета-тег в index.html на диске сервера (том read-only в контейнере снимается с хоста).
+# sed -i: GNU (Ubuntu, большинство NAS) vs BSD (macOS при сборке на Mac) — оба варианта.
 if [[ -f "${PREBUILT_DIR}/index.html" ]]; then
-  sed -i '/name="crm-build"/d' "${PREBUILT_DIR}/index.html" 2>/dev/null || true
-  sed -i "s#</head>#<meta name=\"crm-build\" content=\"${WEB_BUILD_ID}\"></head>#" "${PREBUILT_DIR}/index.html" || true
+  if sed --version >/dev/null 2>&1; then
+    sed -i '/name="crm-build"/d' "${PREBUILT_DIR}/index.html" 2>/dev/null || true
+    sed -i "s#</head>#<meta name=\"crm-build\" content=\"${WEB_BUILD_ID}\"></head>#" "${PREBUILT_DIR}/index.html" || true
+  else
+    sed -i '' '/name="crm-build"/d' "${PREBUILT_DIR}/index.html" 2>/dev/null || true
+    sed -i '' "s#</head>#<meta name=\"crm-build\" content=\"${WEB_BUILD_ID}\"></head>#" "${PREBUILT_DIR}/index.html" || true
+  fi
 fi
 
-docker compose --env-file .env build web
-docker compose --env-file .env build backend
+dc build web
+dc build backend
 
 echo "[deploy] Запуск контейнеров..."
-docker compose --env-file .env up -d --remove-orphans
+dc up -d --remove-orphans
 
 echo "[deploy] Проверяю health backend..."
-for i in {1..30}; do
-  if curl -fsS "http://localhost:${BACKEND_PORT:-3000}/health" >/dev/null 2>&1; then
+BACKEND_HEALTH_URL="http://127.0.0.1:${BACKEND_PORT:-3000}/health"
+curl_health() {
+  curl -fsS --connect-timeout 3 --max-time 10 "${BACKEND_HEALTH_URL}" >/dev/null 2>&1
+}
+for i in {1..45}; do
+  if curl_health; then
     break
   fi
   sleep 2
 done
 
-if ! curl -fsS "http://localhost:${BACKEND_PORT:-3000}/health" >/dev/null 2>&1; then
+if ! curl_health; then
   echo "[deploy] Ошибка: backend не отвечает, последние логи:"
-  docker compose --env-file .env logs backend --tail 60
+  dc logs backend --tail 60
   exit 1
 fi
 
 echo "[deploy] Проверяю ответ nginx (web)..."
+WEB_ROOT_URL="http://127.0.0.1:${WEB_PORT:-8080}/"
+curl_web_ok() {
+  curl -fsS --connect-timeout 3 --max-time 10 "${WEB_ROOT_URL}" >/dev/null 2>&1
+}
 web_ok=0
-for i in {1..30}; do
-  if curl -fsS "http://127.0.0.1:${WEB_PORT:-8080}/" >/dev/null 2>&1; then
+for i in {1..45}; do
+  if curl_web_ok; then
     web_ok=1
     break
   fi
@@ -127,11 +168,11 @@ done
 if [[ "${web_ok}" -eq 1 ]]; then
   echo "[deploy] Web (nginx) отвечает на GET / (порт ${WEB_PORT:-8080})."
 else
-  echo "[deploy] Предупреждение: web не ответил за ~60 с на http://127.0.0.1:${WEB_PORT:-8080}/"
+  echo "[deploy] Предупреждение: web не ответил за ~90 с на ${WEB_ROOT_URL}"
   echo "[deploy] Состояние контейнеров:"
-  docker compose --env-file .env ps -a
+  dc ps -a
   echo "[deploy] Последние логи web:"
-  docker compose --env-file .env logs web --tail 120
+  dc logs web --tail 120
 fi
 
 echo "[deploy] Готово: deploy выполнен успешно."
