@@ -21,6 +21,19 @@
     </select>
   </label>
 
+  @if (middleFilterOptions.length) {
+    <label class="filterField">
+      <span class="filterIcon filterIcon--muted" aria-hidden="true">
+        <svg lucideFunnel [size]="18"></svg>
+      </span>
+      <select [value]="selectedMiddleFilter" (change)="onMiddleFilter($any($event.target).value)">
+        @for (option of middleFilterOptions; track option.value) {
+          <option [value]="option.value">{{ option.label }}</option>
+        }
+      </select>
+    </label>
+  }
+
   <label class="filterField">
     <span class="filterIcon filterIcon--muted" aria-hidden="true">
       <svg lucideFunnel [size]="18"></svg>

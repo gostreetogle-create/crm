@@ -53,6 +53,7 @@ export class KpCatalogVitrineComponent {
 
   readonly productSearch = signal('');
   readonly productSort = signal<KpCatalogProductSort>('priceDesc');
+  readonly productKind = signal<'all' | 'ITEM' | 'COMPLEX'>('all');
   readonly productCategory = signal<'all' | string>('all');
   readonly productSubcategory = signal<string>('all');
   readonly productPage = signal(1);
@@ -100,9 +101,18 @@ export class KpCatalogVitrineComponent {
     { value: 'priceAsc', label: 'Сортировка: цена ↑' },
   ];
 
+  readonly productKindOptions: FilterOption[] = [
+    { value: 'all', label: 'Тип: все' },
+    { value: 'ITEM', label: 'Тип: товар' },
+    { value: 'COMPLEX', label: 'Тип: комплекс' },
+  ];
+
   readonly filteredProducts = computed(() => {
+    const kind = this.productKind();
+    const productsByKind =
+      kind === 'all' ? this.productsInternal() : this.productsInternal().filter((p) => p.kind === kind);
     return filterSortProductsForVitrine(
-      this.productsInternal(),
+      productsByKind,
       this.productSearch(),
       this.productCategory(),
       this.productSubcategory(),
@@ -133,6 +143,15 @@ export class KpCatalogVitrineComponent {
   onProductCategory(value: string): void {
     this.productCategory.set(value || 'all');
     this.productSubcategory.set('all');
+    this.productPage.set(1);
+  }
+
+  onProductKindChange(value: string): void {
+    if (value === 'ITEM' || value === 'COMPLEX') {
+      this.productKind.set(value);
+    } else {
+      this.productKind.set('all');
+    }
     this.productPage.set(1);
   }
 

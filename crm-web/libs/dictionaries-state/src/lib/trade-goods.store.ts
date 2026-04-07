@@ -30,7 +30,8 @@ export const TradeGoodsStore = signalStore(
       items()
         .map((item) => {
           const code = item.code?.trim() ?? '';
-          const hubLine = code ? `${code} — ${item.name}` : item.name;
+          const kindShort = item.kind === 'COMPLEX' ? 'Комплекс' : 'Товар';
+          const hubLine = code ? `${kindShort} · ${code} — ${item.name}` : `${kindShort} · ${item.name}`;
           return {
             id: item.id,
             name: item.name,

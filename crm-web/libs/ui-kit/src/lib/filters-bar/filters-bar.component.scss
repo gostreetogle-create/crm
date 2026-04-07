@@ -8,8 +8,16 @@
   gap: var(--ui-nav-gap);
 }
 
+:host.filtersBarHost--middle .filtersBar {
+  grid-template-columns: 1.2fr 1fr 1fr 1fr;
+}
+
 :host.filtersBarHost--secondary .filtersBar {
   grid-template-columns: 1.2fr 1fr 1fr 1fr;
+}
+
+:host.filtersBarHost--middle-secondary .filtersBar {
+  grid-template-columns: 1.2fr 1fr 1fr 1fr 1fr;
 }
 
 .filterField {

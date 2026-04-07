@@ -1948,6 +1948,7 @@ export class DictionariesPage implements OnDestroy {
   recalcTradeGoodPriceDefaults(): void {
     let price = 0;
     let cost = 0;
+    let matchedLines = 0;
     const kind = this.tradeGoodsForm.controls.kind.value;
     for (const ctrl of this.tradeGoodLinesFormArray.controls) {
       const g = ctrl as FormGroup;
@@ -1959,6 +1960,7 @@ export class DictionariesPage implements OnDestroy {
         if (!tgId) continue;
         const t = this.tradeGoodsStore.items().find((x) => x.id === tgId);
         if (t) {
+          matchedLines += 1;
           price += (t.priceRub ?? 0) * q;
           cost += (t.costRub ?? 0) * q;
         }
@@ -1966,11 +1968,14 @@ export class DictionariesPage implements OnDestroy {
         if (!pid) continue;
         const p = this.productsStore.items().find((x) => x.id === pid);
         if (p) {
+          matchedLines += 1;
           price += (p.priceRub ?? 0) * q;
           cost += (p.costRub ?? 0) * q;
         }
       }
     }
+    // Не затираем вручную введённую цену при смене типа или пока строки не подходят под текущий kind.
+    if (matchedLines === 0) return;
     this.tradeGoodsForm.patchValue({ priceRub: price, costRub: cost });
   }
 
@@ -2123,7 +2128,7 @@ export class DictionariesPage implements OnDestroy {
     this.isTradeGoodDeleteConfirmOpen.set(false);
   }
 
-  async confirmTradeGoodDeleteFromModal(): Promise<void> {
+  async confirmTradeGoodDeleteFromModal(deleteRelated?: boolean): Promise<void> {
     if (!this.permissions.crud().canDelete) return;
     const id = this.tradeGoodsStore.editId();
     if (!id) {
@@ -2133,7 +2138,9 @@ export class DictionariesPage implements OnDestroy {
     this.cancelTradeGoodDeleteConfirm();
     this.tradeGoodsSaveError.set(null);
     try {
-      await firstValueFrom(this.tradeGoodsRepository.remove(id));
+      await firstValueFrom(
+        this.tradeGoodsRepository.remove(id, deleteRelated ? { deleteRelated: true } : undefined),
+      );
       const items = await firstValueFrom(this.tradeGoodsRepository.getItems());
       this.tradeGoodsStore.applyLoadedItems(items);
       this.closeTradeGoodsModal();
@@ -2163,28 +2170,8 @@ export class DictionariesPage implements OnDestroy {
         qty: Number(l.qty),
       }))
       .filter((l) => (kind === 'COMPLEX' ? l.tradeGoodId : l.productId));
-    if (lines.length === 0) {
-      this.tradeGoodsStore.submit({
-        value: tradeGoodPayloadFromValues({
-          code: String(raw.code ?? ''),
-          name: String(raw.name ?? ''),
-          description: String(raw.description ?? ''),
-          kind,
-          categoryId: String(raw.categoryId ?? ''),
-          subcategoryId: String(raw.subcategoryId ?? ''),
-          unitCode: String(raw.unitCode ?? ''),
-          priceRub: raw.priceRub,
-          costRub: raw.costRub,
-          notes: String(raw.notes ?? ''),
-          isActive: raw.isActive,
-          photoPrimaryIndex: this.tradeGoodPrimaryIndexForPayload(),
-          lines: [],
-        }),
-        isValid: false,
-      });
-      this.tradeGoodsForm.markAllAsTouched();
-      return;
-    }
+    // Пустой состав допустим: после смены kind старые строки (напр. только productId) отфильтровываются —
+    // раньше здесь был ранний return без API и сохранение «молчало».
     if (this.tradeGoodPendingFiles().length > 0 && !String(raw.code ?? '').trim()) {
       this.tradeGoodsSaveError.set('Укажите артикул товара — по нему сохраняются имена файлов фото.');
       return;

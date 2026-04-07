@@ -42,11 +42,18 @@ const nullableUuid = z.union([z.string().uuid(), z.null(), z.undefined()]).optio
 const LineInputSchema = z.object({
   id: nullableString,
   sortOrder: z.number().int().optional(),
-  productId: nullableUuid,
-  tradeGoodId: nullableUuid,
+  productId: z.preprocess(
+    (v) => (v === "" ? null : v),
+    z.union([z.string().uuid(), z.null(), z.undefined()]).optional(),
+  ),
+  tradeGoodId: z.preprocess(
+    (v) => (v === "" ? null : v),
+    z.union([z.string().uuid(), z.null(), z.undefined()]).optional(),
+  ),
   qty: z.number().positive().optional(),
 }).superRefine((line, ctx) => {
   const refs = [line.productId ? 1 : 0, line.tradeGoodId ? 1 : 0].reduce((a, b) => a + b, 0);
+  if (refs === 0) return;
   if (refs !== 1) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
@@ -74,8 +81,27 @@ const InputSchema = z.object({
   kind: z.enum(["ITEM", "COMPLEX"]).optional(),
   /** Главное фото для карточек и КП: номер слота `артикул_N` (1-based). */
   photoPrimaryIndex: z.number().int().min(1).max(30).optional(),
-  lines: z.array(LineInputSchema).min(1),
+  lines: z.array(LineInputSchema).optional().default([]),
 });
+
+type TradeGoodLineInputNorm = {
+  sortOrder: number;
+  qty: number;
+  productId: string | null;
+  tradeGoodId: string | null;
+};
+
+function normalizeTradeGoodInputLines(lines: z.infer<typeof LineInputSchema>[]): TradeGoodLineInputNorm[] {
+  return lines
+    .map((l, idx) => ({
+      productId: l.productId && String(l.productId).trim() ? String(l.productId).trim() : null,
+      tradeGoodId: l.tradeGoodId && String(l.tradeGoodId).trim() ? String(l.tradeGoodId).trim() : null,
+      sortOrder: l.sortOrder ?? idx,
+      qty: l.qty ?? 1,
+    }))
+    .filter((l) => l.productId || l.tradeGoodId)
+    .map((l, idx) => ({ ...l, sortOrder: idx }));
+}
 
 const listLineInclude = {
   product: {
@@ -341,12 +367,7 @@ tradeGoodsRouter.post("/", async (req, res, next) => {
       return;
     }
     const p = parsed.data;
-    const normLines = p.lines.map((l, idx) => ({
-      productId: l.productId ?? null,
-      tradeGoodId: l.tradeGoodId ?? null,
-      sortOrder: l.sortOrder ?? idx,
-      qty: l.qty ?? 1,
-    }));
+    const normLines = normalizeTradeGoodInputLines(p.lines);
     const sums = await sumPriceAndCostFromTradeGoodLines(
       normLines.map((l) => ({ productId: l.productId, tradeGoodId: l.tradeGoodId, qty: l.qty })),
     );
@@ -473,12 +494,7 @@ tradeGoodsRouter.put("/:id", async (req, res, next) => {
       return;
     }
     const p = parsed.data;
-    const normLines = p.lines.map((l, idx) => ({
-      productId: l.productId ?? null,
-      tradeGoodId: l.tradeGoodId ?? null,
-      sortOrder: l.sortOrder ?? idx,
-      qty: l.qty ?? 1,
-    }));
+    const normLines = normalizeTradeGoodInputLines(p.lines);
     const sums = await sumPriceAndCostFromTradeGoodLines(
       normLines.map((l) => ({ productId: l.productId, tradeGoodId: l.tradeGoodId, qty: l.qty })),
     );

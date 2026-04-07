@@ -199,7 +199,8 @@ const BulkTradeGoodsBodySchema = z.object({
               qty: z.number().positive().optional(),
             }),
           )
-          .min(1),
+          .optional()
+          .default([]),
       }),
     )
     .min(1)
@@ -544,6 +545,16 @@ bulkRouter.post("/trade-goods", requireEffectiveBulkPermissionKey("admin.bulk.tr
         let hasLineResolutionError = false;
         for (let li = 0; li < it.lines.length; li++) {
           const line = it.lines[li]!;
+          const hasAnyLineRef =
+            (line.tradeGoodId && line.tradeGoodId.trim()) ||
+            (line.tradeGoodCode && line.tradeGoodCode.trim()) ||
+            (line.tradeGoodName && line.tradeGoodName.trim()) ||
+            (line.productName && line.productName.trim()) ||
+            (line.productCode && line.productCode.trim()) ||
+            (line.productId && line.productId.trim());
+          if (!hasAnyLineRef) {
+            continue;
+          }
           let resolvedProductId: string | null = null;
           let resolvedTradeGoodId: string | null = null;
 
@@ -629,18 +640,11 @@ bulkRouter.post("/trade-goods", requireEffectiveBulkPermissionKey("admin.bulk.tr
           normLines.push({
             productId: kind === "ITEM" ? resolvedProductId : null,
             tradeGoodId: kind === "COMPLEX" ? resolvedTradeGoodId : null,
-            sortOrder: li,
+            sortOrder: normLines.length,
             qty: line.qty ?? 1,
           });
         }
         if (hasLineResolutionError) {
-          continue;
-        }
-        if (normLines.length === 0) {
-          errors.push({
-            index: i,
-            message: "trade_good_lines_empty_after_resolution: не удалось разрешить ни одной строки состава",
-          });
           continue;
         }
 

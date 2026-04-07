@@ -5,21 +5,6 @@
   min-width: 0;
 }
 
-/* Заголовок страницы КП — те же визуальные веса, что и у .kp-builder__page-title */
-.kp-vitrine__pageToolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 1rem;
-  min-width: 0;
-}
-
-.kp-vitrine__pageTitle {
-  margin: 0 0 0.15rem;
-  font-size: var(--font-size-page-title, 1.5rem);
-  font-weight: 700;
-}
-
 /* Панель: фильтры слева, справа — «На странице» + пагинация (как в макете КП). */
 .kp-vitrine__toolbar {
   display: flex;
@@ -34,6 +19,19 @@
 .kp-vitrine__filtersWrap {
   flex: 1 1 280px;
   min-width: 0;
+}
+
+.kp-vitrine__filtersRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.kp-vitrine__filtersBar {
+  flex: 1 1 520px;
+  min-width: 260px;
 }
 
 .kp-vitrine__toolbarExtra {
@@ -82,7 +80,7 @@
 /* Плотная витрина: как в типичном интернет-магазине — несколько узких карточек в ряд */
 .kp-vitrine__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 10px;
 }
 

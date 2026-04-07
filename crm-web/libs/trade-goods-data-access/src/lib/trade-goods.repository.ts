@@ -11,5 +11,5 @@ export interface TradeGoodsRepository {
   update(id: string, input: TradeGoodItemInput): Observable<TradeGoodItem>;
   /** POST multipart: `files` + `primaryIndex` (1-based). */
   uploadPhotos(id: string, files: File[], primaryIndex: number): Observable<TradeGoodItem>;
-  remove(id: string): Observable<void>;
+  remove(id: string, options?: { deleteRelated?: boolean }): Observable<void>;
 }

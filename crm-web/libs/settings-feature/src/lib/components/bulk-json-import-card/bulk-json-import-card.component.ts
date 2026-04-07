@@ -332,6 +332,7 @@ export class BulkJsonImportCardComponent {
         this.validatedOk.set(false);
         this.loadedFileLabel.set(null);
         this.jsonDraft = EMPTY_BULK_JSON;
+        this.refreshTemplatePreview();
       },
       error: (err: unknown) => {
         this.loadingPurge.set(false);
@@ -375,6 +376,7 @@ export class BulkJsonImportCardComponent {
           this.validatedOk.set(false);
           this.loadedFileLabel.set(null);
           this.jsonDraft = EMPTY_BULK_JSON;
+          this.refreshTemplatePreview();
         }
       },
       error: (err: unknown) => {

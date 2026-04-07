@@ -25,6 +25,7 @@ export function mapTradeGoodListItemToKpCatalogProduct(tg: TradeGoodListItem): K
     ...(photo ? { imageUrl: photo } : {}),
     defaultUnit,
     source: 'trade_good',
+    kind: tg.kind,
     description: tg.description?.trim() ?? '',
   };
 }

@@ -14,20 +14,26 @@ export type FilterOption = {
   styleUrl: './filters-bar.component.scss',
   host: {
     '[class.filtersBarHost--secondary]': 'secondaryFilterOptions.length > 0',
+    '[class.filtersBarHost--middle]': 'middleFilterOptions.length > 0',
+    '[class.filtersBarHost--middle-secondary]': 'middleFilterOptions.length > 0 && secondaryFilterOptions.length > 0',
   },
 })
 export class FiltersBarComponent {
   @Input() searchPlaceholder = 'Поиск...';
   @Input() sortOptions: FilterOption[] = [];
+  /** Дополнительный фильтр между сортировкой и основным фильтром (например «Тип»). */
+  @Input() middleFilterOptions: FilterOption[] = [];
   @Input() filterOptions: FilterOption[] = [];
   /** Второй выпадающий список (например подкатегория); пустой — не рендерится. */
   @Input() secondaryFilterOptions: FilterOption[] = [];
   @Input() selectedSort = '';
+  @Input() selectedMiddleFilter = '';
   @Input() selectedFilter = '';
   @Input() selectedSecondaryFilter = '';
 
   @Output() readonly searchChange = new EventEmitter<string>();
   @Output() readonly sortChange = new EventEmitter<string>();
+  @Output() readonly middleFilterChange = new EventEmitter<string>();
   @Output() readonly filterChange = new EventEmitter<string>();
   @Output() readonly secondaryFilterChange = new EventEmitter<string>();
 
@@ -37,6 +43,10 @@ export class FiltersBarComponent {
 
   onSort(value: string): void {
     this.sortChange.emit(value);
+  }
+
+  onMiddleFilter(value: string): void {
+    this.middleFilterChange.emit(value);
   }
 
   onFilter(value: string): void {

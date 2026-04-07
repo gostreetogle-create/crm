@@ -180,7 +180,7 @@ export const BULK_JSON_TARGETS: readonly BulkJsonTarget[] = [
     id: 'trade_goods',
     label: 'Товары',
     methodLine: 'POST /api/bulk/trade-goods',
-    detailHint: `${WORKFLOW} Шапка: code, name, kind (ITEM/COMPLEX), description, priceRub, costRub (опц.), notes, isActive. Обязательно lines (минимум 1): для ITEM -> productName/productCode/productId (изделие), для COMPLEX -> tradeGoodName/tradeGoodCode/tradeGoodId (товар). Фото карточки — в JSON не входят; положите файл на сервер в TRADE_GOODS_PHOTOS_DIR с именем как артикул. Право: admin.bulk.trade_goods.`,
+    detailHint: `${WORKFLOW} Шапка: code, name, kind (ITEM/COMPLEX), description, priceRub, costRub (опц.), notes, isActive. Массив lines опционален (можно без состава); если строки есть — для ITEM укажите productName/productCode/productId (изделие), для COMPLEX — tradeGoodName/tradeGoodCode/tradeGoodId (товар). Пустые строки-шаблоны в составе игнорируются. Фото карточки — в JSON не входят; положите файл на сервер в TRADE_GOODS_PHOTOS_DIR с именем как артикул. Право: admin.bulk.trade_goods.`,
     downloadFileName: 'bulk-trade-goods-data.json',
     hasEndpoint: true,
     submitPermission: 'admin.bulk.trade_goods',

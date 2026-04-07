@@ -185,10 +185,11 @@ export function validateBulkDraftForTarget(
         if (kindRaw !== 'ITEM' && kindRaw !== 'COMPLEX') {
           return `Элемент ${i}: kind должен быть ITEM или COMPLEX.`;
         }
-        const lines = o['lines'];
-        if (!Array.isArray(lines) || lines.length === 0) {
-          return `Элемент ${i}: укажите непустой массив lines.`;
+        const linesRaw = o['lines'];
+        if (linesRaw != null && !Array.isArray(linesRaw)) {
+          return `Элемент ${i}: поле lines должно быть массивом или отсутствовать.`;
         }
+        const lines = (linesRaw as unknown[] | undefined) ?? [];
         for (let j = 0; j < lines.length; j++) {
           const line = lines[j];
           if (!line || typeof line !== 'object') {
@@ -208,6 +209,16 @@ export function validateBulkDraftForTarget(
           const hasTradeGoodId = typeof ref.tradeGoodId === 'string' && ref.tradeGoodId.trim().length > 0;
           const hasTradeGoodCode = typeof ref.tradeGoodCode === 'string' && ref.tradeGoodCode.trim().length > 0;
           const hasTradeGoodName = typeof ref.tradeGoodName === 'string' && ref.tradeGoodName.trim().length > 0;
+          const hasAnyRef =
+            hasProductId ||
+            hasProductCode ||
+            hasProductName ||
+            hasTradeGoodId ||
+            hasTradeGoodCode ||
+            hasTradeGoodName;
+          if (!hasAnyRef) {
+            continue;
+          }
           if (kindRaw === 'ITEM' && !hasProductId && !hasProductCode && !hasProductName) {
             return `Элемент ${i}, строка состава ${j}: для ITEM нужен productName/productCode/productId.`;
           }

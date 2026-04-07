@@ -24,6 +24,8 @@ export type KpCatalogProduct = {
   defaultUnit?: string;
   /** Источник строки (демо / справочник товаров) — для отладки и будущей связи с БД КП. */
   source?: 'demo' | 'trade_good';
+  /** Тип товара из справочника: товар или комплекс. */
+  kind?: 'ITEM' | 'COMPLEX';
   /** Текст из справочника «Товары» → колонка «Описание» в КП. */
   description?: string;
 };

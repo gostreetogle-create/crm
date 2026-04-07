@@ -182,7 +182,7 @@
                   </td>
                   <td class="kp-sheet__num kp-sheet__col-sumCell">
                     <span class="kp-sheet__sumWithRub">
-                      <span class="kp-sheet__sumValue">{{ lineSumAt(globalIdx) | number: '1.2-2' }}</span>
+                      <span class="kp-sheet__sumValue">{{ lineSumAt(globalIdx) | number: '1.0-2' }}</span>
                       <span class="kp-sheet__rubSuffix" aria-hidden="true">₽</span>
                     </span>
                   </td>
@@ -279,7 +279,7 @@
           @if (showTotalOnChunk(chunkIndex)) {
             <div class="kp-sheet__totalsBlock">
               <span class="kp-sheet__totalLead kp-sheet__totalLead--grand">Итого:</span>
-              <span class="kp-sheet__totalAmount">{{ computedTotal() | number: '1.2-2' }} ₽</span>
+              <span class="kp-sheet__totalAmount">{{ computedTotal() | number: '1.0-2' }} ₽</span>
               @if (vatPercentCtrl && vatAmountCtrl) {
                 <div class="kp-sheet__totalLead kp-sheet__totalLead--vat">
                   <span class="kp-sheet__vatLabel">В том числе НДС</span>
@@ -306,7 +306,7 @@
                   <span class="kp-sheet__rubSuffix" aria-hidden="true">₽</span>
                 </div>
                 <span class="kp-sheet__totalLead kp-sheet__totalLead--pay">Всего к оплате:</span>
-                <span class="kp-sheet__totalAmount kp-sheet__totalAmount--pay">{{ totalPayable() | number: '1.2-2' }} ₽</span>
+                <span class="kp-sheet__totalAmount kp-sheet__totalAmount--pay">{{ totalPayable() | number: '1.0-2' }} ₽</span>
               }
             </div>
           }

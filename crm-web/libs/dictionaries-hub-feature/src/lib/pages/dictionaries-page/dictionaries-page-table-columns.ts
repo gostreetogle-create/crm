@@ -96,8 +96,8 @@ export const TRADE_GOOD_SUBCATEGORIES_COLUMNS_FULL: TableColumn[] = [
   { key: 'isActiveLabel', label: 'Активна' },
 ];
 
-/** Товар = набор изделий (отдельно от «Изделия»). */
-export const TRADE_GOODS_COLUMNS: TableColumn[] = [{ key: 'hubLine', label: 'Товар' }];
+/** Торговая позиция: товар (изделие в составе) или комплекс (другие товары в составе). */
+export const TRADE_GOODS_COLUMNS: TableColumn[] = [{ key: 'hubLine', label: 'Позиция' }];
 
 export const TRADE_GOODS_COLUMNS_FULL: TableColumn[] = [
   { key: 'name', label: 'Наименование' },

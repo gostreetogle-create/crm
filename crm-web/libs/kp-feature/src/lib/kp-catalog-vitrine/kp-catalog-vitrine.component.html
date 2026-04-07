@@ -1,28 +1,29 @@
 <section class="kp-vitrine" aria-label="Коммерческое предложение, витрина каталога">
-  <header class="kp-vitrine__pageToolbar kp-no-print">
-    <h1 class="kp-vitrine__pageTitle">Коммерческое предложение</h1>
-  </header>
-
   <div class="kp-vitrine__toolbar">
     <div class="kp-vitrine__filtersWrap">
-      <app-filters-bar
-        searchPlaceholder="Поиск по товарам / артикулу..."
-        [sortOptions]="productSortOptions"
-        [filterOptions]="productCategoryOptions()"
-        [secondaryFilterOptions]="productSubcategoryOptions()"
-        [selectedSort]="productSort()"
-        [selectedFilter]="productCategory()"
-        [selectedSecondaryFilter]="productSubcategory()"
-        (searchChange)="onProductSearch($event)"
-        (sortChange)="onProductSortChange($event)"
-        (filterChange)="onProductCategory($event)"
-        (secondaryFilterChange)="onProductSubcategory($event)"
-      ></app-filters-bar>
+      <div class="kp-vitrine__filtersRow">
+        <app-filters-bar
+          class="kp-vitrine__filtersBar"
+          searchPlaceholder="Поиск по товарам / артикулу..."
+          [sortOptions]="productSortOptions"
+          [middleFilterOptions]="productKindOptions"
+          [filterOptions]="productCategoryOptions()"
+          [secondaryFilterOptions]="productSubcategoryOptions()"
+          [selectedSort]="productSort()"
+          [selectedMiddleFilter]="productKind()"
+          [selectedFilter]="productCategory()"
+          [selectedSecondaryFilter]="productSubcategory()"
+          (searchChange)="onProductSearch($event)"
+          (sortChange)="onProductSortChange($event)"
+          (middleFilterChange)="onProductKindChange($event)"
+          (filterChange)="onProductCategory($event)"
+          (secondaryFilterChange)="onProductSubcategory($event)"
+        ></app-filters-bar>
+      </div>
     </div>
 
     <div class="kp-vitrine__toolbarExtra">
       <label class="kp-vitrine__pageSize">
-        <span class="kp-vitrine__pageSizeLabel">На странице</span>
         <select
           class="kp-vitrine__pageSizeSelect"
           [value]="productPageSize()"

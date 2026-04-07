@@ -421,6 +421,7 @@
   border-radius: var(--radius-card, 8px);
   overflow: hidden;
   border: 1px solid var(--border-color);
+  background: var(--surface-soft, color-mix(in srgb, var(--border-color) 12%, transparent));
 
   img {
     display: block;
@@ -484,6 +485,8 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .productSpecView__badge {
@@ -502,6 +505,11 @@
 .productSpecView__badge--off {
   opacity: 0.72;
   background: rgba(255, 255, 255, 0.35);
+}
+
+.productSpecView__badge--kind {
+  font-weight: 700;
+  letter-spacing: 0.04em;
 }
 
 .productSpecView__title {
@@ -721,16 +729,34 @@
 .tradeGoodPhotoPicker__thumb {
   display: block;
   width: 120px;
-  height: 90px;
+  height: 96px;
   border-radius: var(--ui-radius-md, 6px);
   overflow: hidden;
   border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.12));
+  background: var(--surface-soft, color-mix(in srgb, var(--border-color) 10%, transparent));
 
   img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
   }
+}
+
+/** Одно фото с сервера при редактировании (без сетки слотов) — не обрезать по высоте как «полоску». */
+.tradeGoodPhotoPicker__singleFallback.kpPhotoPreview {
+  max-width: min(100%, 360px);
+
+  img {
+    max-height: min(52vh, 320px);
+    width: 100%;
+    object-fit: contain;
+  }
+}
+
+.tradeGoodKindHint {
+  margin: 0.35rem 0 0;
+  max-width: 40rem;
+  line-height: 1.35;
 }
 
 .tradeGoodPhotoPicker__tile--selected .tradeGoodPhotoPicker__thumb {
@@ -748,12 +774,16 @@
 .tradeGoodViewPhotos__item {
   position: relative;
   margin: 0;
-  max-width: 200px;
+  max-width: min(100%, 240px);
+  background: color-mix(in srgb, var(--surface-soft, #fff) 88%, transparent);
+  border-radius: var(--ui-radius-md, 6px);
+  overflow: hidden;
 
   img {
     display: block;
-    max-width: 100%;
-    height: auto;
+    width: 100%;
+    max-height: min(48vh, 280px);
+    object-fit: contain;
     border-radius: var(--ui-radius-md, 6px);
   }
 }

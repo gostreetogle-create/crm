@@ -40,7 +40,8 @@ export class TradeGoodsHttpRepository implements TradeGoodsRepository {
     return this.http.post<TradeGoodItem>(this.endpoint(`/${id}/photos`), fd);
   }
 
-  remove(id: string): Observable<void> {
-    return this.http.delete<void>(this.endpoint(`/${id}`));
+  remove(id: string, options?: { deleteRelated?: boolean }): Observable<void> {
+    const q = options?.deleteRelated ? '?deleteRelated=1' : '';
+    return this.http.delete<void>(this.endpoint(`/${id}${q}`));
   }
 }
