@@ -71,6 +71,7 @@
 | 40 | 2026-04-04 | Снят Excel с хаба и админки: `POST /api/admin/bulk/units`, карточка в админ-настройках, `admin.bulk.units`; удалены excel-dictionaries и xlsx; MC utils → bulk-import; доки и backend-map | backend, crm-web, docs, scripts, справочники | `fcc319b` |
 | 41 | 2026-04-04 | Docker web build: дефолт `NG_BUILD_MAX_WORKERS=1`, heap 3072 МБ, `NX_VERBOSE_LOGGING`; compose args + runbook про OOM на VPS | deploy, docs | `4c850d6` |
 | 42 | 2026-04-05 | Push: каталог/комплексы (articles, products, trade goods, complexes), миграции Prisma, отступ под фикс-шапкой, nginx SPA для кириллицы, сообщения после restore, deploy env и правило prebuilt-web | backend, crm-web, deploy, docs, .cursor | `a4eeeaa` |
+| 43 | 2026-04-07 | Push в `origin/main`: торговые позиции (фото/модалки/удаление), API trade-goods пустой состав и bulk JSON пустые строки, КП суммы без лишних `.00`, витрина КП, журнал отката | backend, crm-web, docs, .cursor | `b27b7c7` |
 
 ---
 
