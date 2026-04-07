@@ -33,6 +33,11 @@ export const bulkRouter = Router();
 
 const MAX_ITEMS = 5000;
 
+/** Пустая строка в JSON-шаблоне → undefined, иначе Zod падает на `uuid` / `min(1)` у optional-полей. */
+function emptyStrToUndefined<T extends z.ZodTypeAny>(schema: T) {
+  return z.preprocess((v) => (v === "" ? undefined : v), schema);
+}
+
 const BulkUnitsBodySchema = z.object({
   items: z
     .array(
@@ -190,13 +195,16 @@ const BulkTradeGoodsBodySchema = z.object({
         lines: z
           .array(
             z.object({
-              productId: z.string().uuid().optional(),
-              productCode: z.string().trim().min(1).optional(),
-              productName: z.string().trim().min(1).optional(),
-              tradeGoodId: z.string().uuid().optional(),
-              tradeGoodCode: z.string().trim().min(1).optional(),
-              tradeGoodName: z.string().trim().min(1).optional(),
-              qty: z.number().positive().optional(),
+              productId: emptyStrToUndefined(z.string().uuid().optional()),
+              productCode: emptyStrToUndefined(z.string().trim().min(1).optional()),
+              productName: emptyStrToUndefined(z.string().trim().min(1).optional()),
+              tradeGoodId: emptyStrToUndefined(z.string().uuid().optional()),
+              tradeGoodCode: emptyStrToUndefined(z.string().trim().min(1).optional()),
+              tradeGoodName: emptyStrToUndefined(z.string().trim().min(1).optional()),
+              qty: z.preprocess(
+                (v) => (v === "" || v === null ? undefined : v),
+                z.number().positive().optional(),
+              ),
             }),
           )
           .optional()
