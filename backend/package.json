@@ -7,12 +7,14 @@
     "dev": "tsx watch src/server.ts",
     "build": "prisma generate && npx tsc -p tsconfig.json",
     "start": "node dist/server.js",
+    "doctor": "tsx scripts/backend-preflight-check.ts",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
     "db:reset": "prisma migrate reset --force",
     "authz:check": "tsx scripts/authz-integrity-check.ts",
+    "authz:check:ci": "tsx scripts/authz-integrity-check.ts --skip-no-db",
     "db:studio": "prisma studio"
   },
   "dependencies": {

@@ -144,13 +144,35 @@ export function clearTradeGoodPhotoFiles(dir: string, articleCode: string | null
   }
 }
 
-export function extFromImageMime(mime: string | undefined): string {
+export async function clearTradeGoodPhotoFilesAsync(
+  dir: string,
+  articleCode: string | null | undefined,
+): Promise<void> {
+  const stem = stemFromTradeGoodArticleCode(articleCode);
+  if (!stem || !fs.existsSync(dir) || !fs.statSync(dir).isDirectory()) return;
+
+  const names = await fs.promises.readdir(dir);
+  const reNumbered = new RegExp(`^${escapeRegex(stem)}_[0-9]+\\.[^.]+$`, "i");
+  const reLegacy = new RegExp(`^${escapeRegex(stem)}\\.[^.]+$`, "i");
+  await Promise.all(
+    names.map(async (name) => {
+      if (!(reNumbered.test(name) || reLegacy.test(name))) return;
+      try {
+        await fs.promises.unlink(path.join(dir, name));
+      } catch {
+        /* ignore */
+      }
+    }),
+  );
+}
+
+export function extFromImageMime(mime: string | undefined): string | null {
   const m = (mime ?? "").toLowerCase();
   if (m === "image/jpeg") return ".jpg";
   if (m === "image/png") return ".png";
   if (m === "image/webp") return ".webp";
   if (m === "image/gif") return ".gif";
-  return ".jpg";
+  return null;
 }
 
 /**

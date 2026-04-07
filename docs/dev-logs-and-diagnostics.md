@@ -53,6 +53,15 @@ CRM_DIAGNOSTIC_LOG_FILE=/var/log/crm/diagnostic.log
 3. По `path` + `stack` локализовать роут / сервис.  
 4. Проверить миграции: в `backend/` `npx prisma migrate status`.
 
+## Быстрый smoke перед push/PR (backend)
+
+В `backend/`:
+
+1. `npm run doctor` — preflight окружения и зависимостей.
+2. `npm run build` — `prisma generate + tsc`.
+3. `npm run authz:check` — строгая проверка матрицы при доступной БД.
+4. Если БД временно недоступна в CI/smoke: `npm run authz:check:ci` (выведет SKIP, не уронит пайплайн).
+
 ## Что сознательно не делаем здесь
 
 Нет тяжёлого APM, нет отправки каждого запроса на внешний сервис. При необходимости позже можно подключить Sentry/OpenTelemetry отдельно.

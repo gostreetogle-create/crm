@@ -1,11 +1,11 @@
-import fs from "node:fs";
+import { promises as fs } from "node:fs";
 import path from "node:path";
 import { Router } from "express";
 import multer from "multer";
 import { z } from "zod";
 import { config } from "../config.js";
 import {
-  clearTradeGoodPhotoFiles,
+  clearTradeGoodPhotoFilesAsync,
   extFromImageMime,
   listTradeGoodPhotoPublicUrls,
   resolveTradeGoodPhotoDisplayUrl,
@@ -429,6 +429,14 @@ tradeGoodsRouter.post(
         res.status(400).json({ error: "no_files" });
         return;
       }
+      const unsupported = files.find((f) => !extFromImageMime(f.mimetype));
+      if (unsupported) {
+        res.status(400).json({
+          error: "unsupported_file_type",
+          message: `Допустимы только изображения jpeg/png/webp/gif. Получено: ${unsupported.mimetype || "unknown"}`,
+        });
+        return;
+      }
       const row = await prisma.tradeGood.findUnique({ where: { id } });
       if (!row) {
         res.status(404).json({ error: "not_found" });
@@ -455,16 +463,18 @@ tradeGoodsRouter.post(
           primaryOneBased = n;
         }
       }
-      clearTradeGoodPhotoFiles(config.tradeGoodsPhotosDir, code);
+      await clearTradeGoodPhotoFilesAsync(config.tradeGoodsPhotosDir, code);
       const dir = config.tradeGoodsPhotosDir;
-      if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-      }
+      await fs.mkdir(dir, { recursive: true });
       for (let i = 0; i < files.length; i++) {
         const f = files[i]!;
         const ext = extFromImageMime(f.mimetype);
+        if (!ext) {
+          res.status(400).json({ error: "unsupported_file_type" });
+          return;
+        }
         const name = `${stem}_${i + 1}${ext}`;
-        fs.writeFileSync(path.join(dir, name), f.buffer);
+        await fs.writeFile(path.join(dir, name), f.buffer);
       }
       const updated = await prisma.tradeGood.update({
         where: { id },
@@ -510,10 +520,10 @@ tradeGoodsRouter.put("/:id", async (req, res, next) => {
       const oldStem = stemFromTradeGoodArticleCode(existing.code);
       const newStem = stemFromTradeGoodArticleCode(strOrNull(p.code));
       if (oldStem && newStem && oldStem !== newStem) {
-        clearTradeGoodPhotoFiles(config.tradeGoodsPhotosDir, existing.code);
+        await clearTradeGoodPhotoFilesAsync(config.tradeGoodsPhotosDir, existing.code);
       }
       if (oldStem && !newStem) {
-        clearTradeGoodPhotoFiles(config.tradeGoodsPhotosDir, existing.code);
+        await clearTradeGoodPhotoFilesAsync(config.tradeGoodsPhotosDir, existing.code);
       }
       await tx.tradeGoodLine.deleteMany({ where: { tradeGoodId: id } });
       return tx.tradeGood.update({
@@ -573,7 +583,7 @@ tradeGoodsRouter.delete("/:id", async (req, res, next) => {
       return;
     }
     if (row.code) {
-      clearTradeGoodPhotoFiles(config.tradeGoodsPhotosDir, row.code);
+      await clearTradeGoodPhotoFilesAsync(config.tradeGoodsPhotosDir, row.code);
     }
     await prisma.tradeGood.delete({ where: { id } });
     res.status(204).send();

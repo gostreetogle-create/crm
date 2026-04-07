@@ -25,10 +25,16 @@ Express + TypeScript + Prisma + PostgreSQL.
 
 4. **Проверка матрицы прав** (роли в БД ↔ ключи в `authz_matrix`):  
    `npm run authz:check`  
+   Если БД недоступна, можно выполнить «мягкий» режим для CI/локальных smoke-проверок без падения пайплайна:  
+   `npm run authz:check:ci`  
    Отчёт для админа также: `GET /api/authz-matrix/diagnostics` (см. `docs/frontend/authz-matrix-runbook.md`).  
    **`GET /api/authz-matrix`** отдаёт матрицу из БД после той же санитизации, что и `PUT` (неизвестные `roleId`, неверные ключи, согласование `dict.hub.*` с `page.dictionaries`) — см. `src/lib/authz-matrix-sanitize.ts`.
 
-5. Запуск: `npm run dev` → `http://localhost:3000`  
+5. **Preflight backend** (быстрый self-check окружения и зависимостей):  
+   `npm run doctor`  
+   Проверяет базовую готовность (`DATABASE_URL`/`.env`, `node_modules`, `multer`, Prisma client artifacts).
+
+6. Запуск: `npm run dev` → `http://localhost:3000`  
    - `GET /health`, `GET /api/health`  
    - `GET|POST /api/units`, `PUT|DELETE /api/units/:id`  
    - Каталог комплексов / товаров / позиций (JWT): `GET|POST /api/complexes`, `PUT|DELETE /api/complexes/:id`; `GET|POST /api/catalog-products` (фильтр `?complexId=`), `PUT|DELETE /api/catalog-products/:id`; `GET|POST /api/catalog-articles` (фильтр `?productId=`), `PUT|DELETE /api/catalog-articles/:id`. Производственные изделия по-прежнему `/api/products`.

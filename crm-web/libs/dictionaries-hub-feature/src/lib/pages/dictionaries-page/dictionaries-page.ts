@@ -103,6 +103,11 @@ import {
   organizationKindToLegalForm,
 } from './dictionaries-page-form-utils';
 import {
+  formatContactsSubtitle,
+  formatMaterialPriceRub,
+  formatOrganizationSubtitle,
+} from './dictionaries-page-preview-formatters';
+import {
   clientPayloadFromForm,
   coatingPayloadFromValues,
   colorsPayloadFromFormRaw,
@@ -5240,9 +5245,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   materialViewPriceFormatted(): string {
-    const v = this.materialsForm.controls.purchasePriceRub.value;
-    const n = typeof v === 'number' && !Number.isNaN(v) ? v : 0;
-    return new Intl.NumberFormat('ru-RU').format(n);
+    return formatMaterialPriceRub(this.materialsForm.controls.purchasePriceRub.value);
   }
 
   /** ФИО контакта для презентационной карточки просмотра. */
@@ -5252,19 +5255,12 @@ export class DictionariesPage implements OnDestroy {
 
   clientsPreviewSubtitle(): string {
     const v = this.clientsForm.getRawValue();
-    return [v.phone?.trim(), v.email?.trim()].filter(Boolean).join(' · ');
+    return formatContactsSubtitle(v.phone, v.email);
   }
 
   organizationsPreviewSubtitle(): string {
     const v = this.organizationsForm.getRawValue();
-    const parts: string[] = [];
-    if (v.shortName?.trim()) {
-      parts.push(v.shortName.trim());
-    }
-    if (v.inn?.trim()) {
-      parts.push('ИНН ' + v.inn.trim());
-    }
-    return parts.join(' · ');
+    return formatOrganizationSubtitle(v.shortName, v.inn);
   }
 
   geometryShapeLabelForView(): string {

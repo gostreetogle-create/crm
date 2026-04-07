@@ -1729,7 +1729,7 @@
           @if ((tg.description ?? '').trim()) {
             <p class="productSpecView__description">{{ tg.description }}</p>
           }
-          @if ((tg.photoUrls?.length ?? 0) > 0) {
+          @if (tg.photoUrls.length > 0) {
             <div class="tradeGoodViewPhotos kpPhotoPreview--tradeGoodHero">
               @for (u of tg.photoUrls!; track $index) {
                 <figure
@@ -1743,7 +1743,7 @@
                 </figure>
               }
             </div>
-          } @else if ((tg.photoUrl ?? '').trim()) {
+          } @else if (tg.photoUrl.trim()) {
             <div class="kpPhotoPreview kpPhotoPreview--tradeGoodHero">
               <img [src]="tg.photoUrl" alt="" />
             </div>
