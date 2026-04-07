@@ -1,41 +1,80 @@
-Скопируй всё ниже и полностью замени содержимое файла deploy/README.md:
-Markdown# Как обновлять сайт
+# Деплой CRM — краткая инструкция
 
-### Обновление на сервере (основная инструкция)
+## Где что лежит
 
-1. На компьютере выполни по порядку:
+| Путь | Назначение |
+|------|------------|
+| **`docker-compose.yml`** (корень репозитория) | Описание сервисов Postgres / backend / web |
+| **`deploy/deploy.sh`** | Скрипт деплоя (из каталога `deploy/`) |
+| **`deploy/.env`** | Секреты и порты (в git не коммитится, шаблон — `.env.example`) |
+| **`deploy/prebuilt-web/`** | Статика SPA для nginx (в git не коммитится) |
+| **`deploy/prebuilt-web.zip`** | Один архив со статикой для заливки на сервер (в git не коммитится) |
+
+Контейнер **web** монтирует **`./deploy/prebuilt-web`** относительно **корня репозитория** (см. `docker-compose.yml`).
+
+---
+
+## 1. Собрать фронт на ПК
+
+Из **корня репозитория**:
+
+```powershell
+cd crm-web
+node scripts/sync-canonical-roles.cjs
+npx nx run crm-web:build:production
+cd ..
+powershell -ExecutionPolicy Bypass -File deploy/scripts/pack-prebuilt-web.ps1
+```
+
+Появится **`deploy/prebuilt-web.zip`** и (после успешного pack) содержимое должно совпадать с **`crm-web/dist/crm-web/browser/`**.
+
+### Репозиторий на сетевом диске (`\\сервер\…`, Synology Drive)
+
+**Nx не запускается**, если текущий каталог — UNC. Варианты:
+
+1. **Буква диска:**  
+   `subst T: \\сервер\путь\crm` → работать из `T:\crm-web` (см. подробности в `README.detailed.md`).
+
+2. **Сборка на локальный диск**, затем копирование в `deploy/prebuilt-web`:
+
    ```powershell
-   cd D:\crm
-   cd crm-web
-   node scripts/sync-canonical-roles.cjs
-   npx nx run crm-web:build:production
-   cd ..
+   npx nx run crm-web:build:production --outputPath=C:\Users\ВАШ_ПОЛЬЗОВАТЕЛЬ\AppData\Local\Temp\crm-web-nx-out
+   robocopy C:\Users\ВАШ_ПОЛЬЗОВАТЕЛЬ\AppData\Local\Temp\crm-web-nx-out\browser deploy\prebuilt-web /MIR
    powershell -ExecutionPolicy Bypass -File deploy/scripts/pack-prebuilt-web.ps1
+   ```
 
-Скопируй файл deploy\prebuilt-web.zip на сервер в папку /opt/crm/deploy/
-На сервере выполни:Bashcd /opt/crm/deploy
-./deploy.sh
+Если `pack-prebuilt-web.ps1` ругается на отсутствие `dist\crm-web\browser`, после `robocopy` архив можно собрать вручную из **`deploy/prebuilt-web`** (см. скрипт — те же пути в zip через `/`).
 
+---
 
-Локальный перезапуск (на компьютере)
-PowerShellcd 
-D:\crm
-docker compose -f deploy\docker-compose.yml --env-file deploy\.env down
-docker compose -f deploy\docker-compose.yml --env-file deploy\.env up -d
+## 2. Залить на сервер и поднять
 
-Полезные команды
+**Вариант A — ZIP:** положите **`prebuilt-web.zip`** в **`…/deploy/`** рядом с **`deploy.sh`**, затем:
 
-Посмотреть логи бэкенда: docker compose logs -f backend
-Перезапустить только бэкенд: docker compose restart backend
-
-Первый раз на сервере: скопируй .env.example в .env и заполни данные.
-
-### Резервное копирование базы
-
-Для корректной работы авто-бэкапов рекомендуется добавить в `deploy/.env`:
-
-```
-BACKUP_DATABASE_URL=postgresql://crm:ВАШ_ПАРОЛЬ@postgres:5432/crm
+```bash
+cd /путь/к/репо/deploy
+bash ./deploy.sh
 ```
 
-Строка **без кавычек**. После правки `deploy/.env` пересоздай backend: `docker compose --env-file deploy/.env up -d --force-recreate backend`. Если в логах всё ещё `localhost` — переменная не попала в контейнер (или API крутится не в Docker — тогда тот же ключ нужен в `backend/.env` с хостом `localhost`).
+**Вариант B — только папка:** синхронизируйте содержимое **`deploy/prebuilt-web/`** на сервер, затем из **корня репо**:
+
+```bash
+export HOME=/путь/к/репо
+cd /путь/к/репо
+docker compose -f docker-compose.yml --env-file deploy/.env up -d --force-recreate web
+```
+
+Подставьте свой путь (например **`/volume1/docker/crm`** на Synology).
+
+---
+
+## 3. Synology (коротко)
+
+- **Git** на NAS не обязателен: обновляйте код с ПК (сеть / Drive) и пересобирайте контейнеры.
+- Перед **`docker compose build`** при ошибках вроде `mkdir /var/services/homes`:  
+  `export HOME=/volume1/docker/crm` и при необходимости `export DOCKER_BUILDKIT=0`.
+- Если **`permission denied`** к **`/var/run/docker.sock`** при том, что пользователь в группе **`docker`**:  
+  `sudo chown root:docker /var/run/docker.sock` и `sudo chmod 660 /var/run/docker.sock` (после перезагрузки может сброситься).
+- **`CORS_ORIGIN`** в **`deploy/.env`** должен совпадать с URL в браузере (не только `localhost`, если заходите по IP или через туннель).
+
+Подробнее: **`deploy/README.detailed.md`**.

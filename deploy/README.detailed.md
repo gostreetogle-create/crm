@@ -57,6 +57,36 @@ npx nx run crm-web:build:production
 
 Артефакты появятся в **`crm-web/dist/crm-web/browser/`**.
 
+#### Windows: репозиторий на UNC (`\\сервер\…`, Synology Drive)
+
+Инструменты вроде **Nx** часто **не стартуют**, если текущий каталог — сетевой путь без буквы диска.
+
+**Вариант 1 — подставить букву диска (из cmd или PowerShell):**
+
+```powershell
+subst T: \\ВАШ_СЕРВЕР\путь\crm
+cd T:\crm-web
+node scripts/sync-canonical-roles.cjs
+npx nx run crm-web:build:production
+cd ..
+powershell -ExecutionPolicy Bypass -File deploy/scripts/pack-prebuilt-web.ps1
+subst T: /d
+```
+
+**Вариант 2 — вывод сборки на локальный диск**, затем зеркально в **`deploy/prebuilt-web`** (если при сборке на сетевой папке падает удаление/создание каталогов, например `kp-media`):
+
+```powershell
+cd crm-web   # лучше тоже через subst или локальный клон
+$out = "$env:LOCALAPPDATA\Temp\crm-web-nx-out"
+if (Test-Path $out) { Remove-Item -Recurse -Force $out }
+npx nx run crm-web:build:production --outputPath=$out
+robocopy "$out\browser" "..\deploy\prebuilt-web" /MIR
+cd ..
+powershell -ExecutionPolicy Bypass -File deploy/scripts/pack-prebuilt-web.ps1
+```
+
+Если **`pack-prebuilt-web.ps1`** требует именно **`crm-web\dist\crm-web\browser`**, после **`robocopy`** содержимое уже в **`deploy/prebuilt-web`** — можно собрать **`prebuilt-web.zip`** тем же способом, что внутри скрипта (архив с путями через **`/`**), либо временно скопировать **`browser`** в **`dist\crm-web\browser`** и запустить скрипт.
+
 ### Шаг 3 — рекомендуется: один ZIP
 
 **Windows (PowerShell), из корня репо:**
@@ -146,9 +176,9 @@ docker compose --env-file .env logs -f --tail=200 backend
 Из корня репозитория:
 
 ```bash
-docker compose -f deploy/docker-compose.yml --env-file deploy/.env up -d postgres
+docker compose -f docker-compose.yml --env-file deploy/.env up -d postgres
 # или без deploy/.env:
-docker compose -f deploy/docker-compose.yml up -d postgres
+docker compose -f docker-compose.yml up -d postgres
 ```
 
 ---
@@ -184,6 +214,18 @@ bash deploy/scripts/reset-local-dev-database.sh
 - **Контейнер `backend` в Docker:** задайте `BACKUP_DATABASE_URL=postgresql://crm:ПАРОЛЬ@postgres:5432/crm` в **`deploy/.env`** (без кавычек вокруг URL), затем **`docker compose --env-file .env up -d --force-recreate backend`**. Обычного `restart` может не хватить, если переменная добавлена впервые.
 - **`npm run dev` на машине разработчика:** `deploy/.env` процесс Node **не читает** — продублируйте `BACKUP_DATABASE_URL` в **`backend/.env`**, хост **`127.0.0.1`** или **`localhost`**, не `postgres`.
 - После деплоя смотрите лог при первом бэкапе: строка `[db-backup] pg_dump/pg_restore: используется BACKUP_DATABASE_URL → postgres:5432` или `… DATABASE_URL (fallback) → …` — так видно, какой путь сработал.
+
+---
+
+## Synology NAS (DSM)
+
+- **Путь к проекту** часто вида **`/volume1/docker/crm`**. Compose и команды выполняйте из **корня репозитория**:  
+  `docker compose -f docker-compose.yml --env-file deploy/.env …`
+- **Git** в SSH может отсутствовать — обновление кода с ПК через общую папку / Drive / `rsync` нормальная схема; **`deploy/.env`** на NAS не перезаписывайте.
+- **`docker compose build`**: при ошибках **`mkdir /var/services/homes`** задайте **`export HOME=/volume1/docker/crm`** (или другой каталог на томе данных); при странном поведении BuildKit: **`export DOCKER_BUILDKIT=0`** и **`export COMPOSE_DOCKER_CLI_BUILD=0`**.
+- **`permission denied`** на **`/var/run/docker.sock`** при членстве в группе **`docker`**: проверьте **`ls -l /var/run/docker.sock`**. Если группа **`root`**, а не **`docker`**:  
+  `sudo chown root:docker /var/run/docker.sock` и **`sudo chmod 660 /var/run/docker.sock`**. После перезагрузки NAS права иногда сбрасываются — повторите или оформите задачу при загрузке.
+- Предупреждение SSH **`Could not chdir to home directory …/homes/ПОЛЬЗОВАТЕЛЬ`**: включите **службу user home** в DSM или не обращайте внимание; на деплой не влияет.
 
 ---
 
