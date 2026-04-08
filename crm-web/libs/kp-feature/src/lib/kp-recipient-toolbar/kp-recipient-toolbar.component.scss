@@ -22,6 +22,10 @@
   max-width: 100%;
 }
 
+.kp-recipient-toolbar__fieldRow app-ui-button[variant='soft'] {
+  opacity: 0.95;
+}
+
 .kp-recipient-toolbar__contactPick {
   display: flex;
   flex-direction: column;

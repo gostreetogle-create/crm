@@ -1378,9 +1378,6 @@
           >
             <input type="text" formControlName="name" placeholder="Напр. Кронштейн К-12" />
           </app-ui-form-field>
-          <app-ui-form-field label="Код">
-            <input type="text" formControlName="code" />
-          </app-ui-form-field>
           <app-ui-form-field
             label="Количество"
             [required]="true"
@@ -1390,6 +1387,9 @@
             "
           >
             <input type="number" formControlName="qty" min="0.0001" step="any" />
+          </app-ui-form-field>
+          <app-ui-form-field label="Код">
+            <input type="text" formControlName="code" />
           </app-ui-form-field>
           <app-ui-form-field label="Заметки" [wide]="true">
             <textarea rows="2" formControlName="notes"></textarea>
@@ -1651,11 +1651,11 @@
       <fieldset class="dictionaryFormSection" editorMain>
         <legend>Изделие</legend>
         <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
-          <app-ui-form-field label="Артикул">
-            <input type="text" formControlName="code" placeholder="Необязательно, уникально" />
-          </app-ui-form-field>
           <app-ui-form-field label="Наименование" [required]="true">
             <input type="text" formControlName="name" placeholder="Напр. Секция А-1" />
+          </app-ui-form-field>
+          <app-ui-form-field label="Артикул">
+            <input type="text" formControlName="code" placeholder="Необязательно, уникально" />
           </app-ui-form-field>
           <app-ui-form-field label="Описание" [wide]="true">
             <textarea rows="2" formControlName="description" placeholder="Текст для клиента; внутренние пометки — в «Заметки»"></textarea>
@@ -2227,10 +2227,6 @@
           <input type="text" formControlName="name" />
         </app-ui-form-field>
 
-        <app-ui-form-field label="Код позиции">
-          <input type="text" formControlName="code" />
-        </app-ui-form-field>
-
         <app-ui-form-field
           class="dictionaryFieldRowFull"
           label="Характеристика материала"
@@ -2349,6 +2345,9 @@
           [errorText]="materialsPurchasePriceErrorText()"
         >
           <input type="number" formControlName="purchasePriceRub" min="1" step="1" />
+        </app-ui-form-field>
+        <app-ui-form-field label="Код позиции">
+          <input type="text" formControlName="code" />
         </app-ui-form-field>
       </div>
     </fieldset>
@@ -2607,21 +2606,20 @@
         <legend>ФИО</legend>
         <ui-form-grid [columns]="3">
           <app-ui-form-field
-            label="Фамилия"
-            [required]="true"
-            [invalid]="isClientsInvalid('lastName')"
-            [errorText]="isClientsInvalid('lastName') ? 'Минимум 2 символа' : ''"
-          >
-            <input type="text" formControlName="lastName" autocomplete="family-name" />
-          </app-ui-form-field>
-
-          <app-ui-form-field
             label="Имя"
             [required]="true"
             [invalid]="isClientsInvalid('firstName')"
             [errorText]="isClientsInvalid('firstName') ? 'Минимум 2 символа' : ''"
           >
             <input type="text" formControlName="firstName" autocomplete="given-name" />
+          </app-ui-form-field>
+
+          <app-ui-form-field
+            label="Фамилия"
+            [invalid]="isClientsInvalid('lastName')"
+            [errorText]="''"
+          >
+            <input type="text" formControlName="lastName" autocomplete="family-name" />
           </app-ui-form-field>
 
           <app-ui-form-field label="Отчество" [invalid]="isClientsInvalid('patronymic')" [errorText]="''">
@@ -2852,12 +2850,6 @@
       <fieldset class="dictionaryFormSection">
         <legend>Карточка организации</legend>
         <ui-form-grid [columns]="3">
-          <app-ui-form-field label="Вид организации" [invalid]="false" [errorText]="''">
-            <select formControlName="organizationKind">
-              <option value="OOO">ООО</option>
-              <option value="IP">ИП</option>
-            </select>
-          </app-ui-form-field>
           <app-ui-form-field
             class="uiFormGrid__full"
             label="Полное наименование"
@@ -2867,6 +2859,12 @@
             [errorText]="isOrganizationsInvalid('name') ? 'Минимум 2 символа' : ''"
           >
             <input type="text" formControlName="name" placeholder="ООО &quot;Пример&quot;" />
+          </app-ui-form-field>
+          <app-ui-form-field label="Вид организации" [invalid]="false" [errorText]="''">
+            <select formControlName="organizationKind">
+              <option value="OOO">ООО</option>
+              <option value="IP">ИП</option>
+            </select>
           </app-ui-form-field>
 
           <app-ui-form-field label="Короткое наименование" [invalid]="false" [errorText]="''">

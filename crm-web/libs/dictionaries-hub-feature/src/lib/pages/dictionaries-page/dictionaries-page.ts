@@ -1108,7 +1108,7 @@ export class DictionariesPage implements OnDestroy {
   });
 
   readonly clientsForm = this.fb.nonNullable.group({
-    lastName: ['', [Validators.required, Validators.minLength(2)]],
+    lastName: [''],
     firstName: ['', [Validators.required, Validators.minLength(2)]],
     patronymic: [''],
     address: [''],

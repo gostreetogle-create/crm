@@ -84,6 +84,17 @@
     >
       <svg lucidePlus [size]="18" aria-hidden="true"></svg>
     </app-ui-button>
+    <app-ui-button
+      type="button"
+      variant="soft"
+      [square]="true"
+      [disabled]="!selectedOrganization()"
+      ariaLabel="Редактировать выбранную организацию"
+      title="Редактировать организацию"
+      (clicked)="openEditOrganization()"
+    >
+      <svg lucidePencil [size]="18" aria-hidden="true"></svg>
+    </app-ui-button>
   </div>
   @if (selectedOrganization(); as orgPick) {
     @if (contactsLinkedToOrganization(orgPick).length > 0) {

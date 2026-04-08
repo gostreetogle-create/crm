@@ -12,7 +12,7 @@ import { Router } from '@angular/router';
 import type { ClientItem } from '@srm/clients-data-access';
 import { DICTIONARIES_HUB_BASE, STANDALONE_DICTIONARY_CREATE } from '@srm/dictionaries-hub-feature';
 import type { OrganizationItem } from '@srm/organizations-data-access';
-import { LucidePlus } from '@lucide/angular';
+import { LucidePencil, LucidePlus } from '@lucide/angular';
 import { UiButtonComponent } from '@srm/ui-kit';
 import {
   filterKpClients,
@@ -30,7 +30,7 @@ import {
 @Component({
   selector: 'app-kp-recipient-toolbar',
   standalone: true,
-  imports: [ReactiveFormsModule, UiButtonComponent, LucidePlus],
+  imports: [ReactiveFormsModule, UiButtonComponent, LucidePlus, LucidePencil],
   templateUrl: './kp-recipient-toolbar.component.html',
   styleUrl: './kp-recipient-toolbar.component.scss',
 })
@@ -57,6 +57,20 @@ export class KpRecipientToolbarComponent {
       return;
     }
     void this.router.navigateByUrl(`${DICTIONARIES_HUB_BASE}/${seg}`);
+  }
+
+  openEditOrganization(): void {
+    const org = this.selectedOrganization();
+    if (!org) {
+      return;
+    }
+    const seg = this.pathForStandaloneCreate('organizations');
+    if (!seg) {
+      return;
+    }
+    void this.router.navigate([DICTIONARIES_HUB_BASE, seg], {
+      queryParams: { mode: 'edit', id: org.id },
+    });
   }
 
   openAddContact(): void {

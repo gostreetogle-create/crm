@@ -19,6 +19,7 @@ import { NgIf } from '@angular/common';
   host: {
     '[class.wide]': 'wide',
     '[class.invalid]': 'invalid',
+    '[class.required]': 'required',
     class: 'ui-form-field',
   },
 })
