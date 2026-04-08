@@ -44,6 +44,12 @@
   min-width: 0;
 }
 
+.kp-vitrine__viewSwitch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .kp-vitrine__pageSize {
   display: inline-flex;
   align-items: center;
@@ -88,5 +94,104 @@
   .kp-vitrine__grid {
     grid-template-columns: 1fr;
   }
+}
+
+.kp-vitrine__tableWrap {
+  overflow: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.kp-vitrine__table {
+  width: 100%;
+  min-width: 680px;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.kp-vitrine__table th,
+.kp-vitrine__table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border-color-soft, var(--border-color));
+  vertical-align: middle;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.kp-vitrine__table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  text-align: left;
+  font-weight: 700;
+  background: color-mix(in srgb, var(--surface) 92%, #ffffff 8%);
+  color: var(--text-secondary);
+}
+
+.kp-vitrine__cellName {
+  min-width: 220px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.kp-vitrine__cellSku {
+  white-space: nowrap;
+  color: var(--text-secondary);
+}
+
+.kp-vitrine__colPhoto,
+.kp-vitrine__cellPhoto {
+  width: 64px;
+  min-width: 64px;
+  text-align: center;
+}
+
+.kp-vitrine__cellPhoto img {
+  inline-size: 44px;
+  block-size: 44px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--border-color-soft, var(--border-color));
+  background: color-mix(in srgb, var(--surface) 92%, #ffffff 8%);
+}
+
+.kp-vitrine__photoPlaceholder {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.kp-vitrine__colPrice,
+.kp-vitrine__cellPrice {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.kp-vitrine__colActions,
+.kp-vitrine__cellActions {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.kp-vitrine__cellActions {
+  vertical-align: middle;
+}
+
+.kp-vitrine__actionsRow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.kp-vitrine__empty {
+  margin: 6px 0 0;
+  padding: 10px 12px;
+  border: 1px dashed var(--border-color);
+  border-radius: 10px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  background: color-mix(in srgb, var(--surface) 94%, #ffffff 6%);
 }
 

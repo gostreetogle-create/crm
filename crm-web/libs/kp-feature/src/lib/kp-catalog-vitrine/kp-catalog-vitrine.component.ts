@@ -7,7 +7,6 @@ import {
   UiButtonComponent,
   UiPaginationComponent,
 } from '@srm/ui-kit';
-import { KP_CATALOG_DEMO_PRODUCTS } from './kp-catalog-demo-products';
 import type { KpCatalogProduct } from './kp-catalog-product.model';
 import {
   KP_CATALOG_SUBCATEGORY_NONE_VALUE,
@@ -37,19 +36,17 @@ import {
   styleUrl: './kp-catalog-vitrine.component.scss',
 })
 export class KpCatalogVitrineComponent {
+  readonly catalogViewMode = signal<'cards' | 'table'>('cards');
+
   /**
-   * Список из каталога. Не задан — демо из `kp-catalog-demo-products.ts`.
-   * Пустой массив — пустая витрина. Пример: `[catalogProducts]="productsFromApi()"`.
+   * Список из каталога.
+   * Не задан или пустой — пустая витрина (без demo-данных).
    */
   @Input() set catalogProducts(value: readonly KpCatalogProduct[] | null | undefined) {
-    if (value === undefined) {
-      this.productsInternal.set([...KP_CATALOG_DEMO_PRODUCTS]);
-      return;
-    }
     this.productsInternal.set(value ? [...value] : []);
   }
 
-  private readonly productsInternal = signal<KpCatalogProduct[]>([...KP_CATALOG_DEMO_PRODUCTS]);
+  private readonly productsInternal = signal<KpCatalogProduct[]>([]);
 
   readonly productSearch = signal('');
   readonly productSort = signal<KpCatalogProductSort>('priceDesc');
@@ -169,6 +166,10 @@ export class KpCatalogVitrineComponent {
     if (n == null) return;
     this.productPageSize.set(n);
     this.productPage.set(1);
+  }
+
+  setCatalogViewMode(mode: 'cards' | 'table'): void {
+    this.catalogViewMode.set(mode);
   }
 
   onAddToKp(p: KpCatalogProduct): void {

@@ -23,6 +23,24 @@
     </div>
 
     <div class="kp-vitrine__toolbarExtra">
+      <div class="kp-vitrine__viewSwitch" role="group" aria-label="Вид витрины">
+        <app-ui-button
+          type="button"
+          [variant]="catalogViewMode() === 'cards' ? 'primary' : 'soft'"
+          (clicked)="setCatalogViewMode('cards')"
+          aria-label="Показать витрину карточками"
+        >
+          Карточки
+        </app-ui-button>
+        <app-ui-button
+          type="button"
+          [variant]="catalogViewMode() === 'table' ? 'primary' : 'soft'"
+          (clicked)="setCatalogViewMode('table')"
+          aria-label="Показать витрину таблицей"
+        >
+          Таблица
+        </app-ui-button>
+      </div>
       <label class="kp-vitrine__pageSize">
         <select
           class="kp-vitrine__pageSizeSelect"
@@ -45,44 +63,109 @@
     </div>
   </div>
 
-  <div class="kp-vitrine__grid">
-    @for (p of visibleProducts(); track p.id) {
-      <app-product-card
-        [title]="p.title"
-        [subtitle]="cardMetaLine(p)"
-        skuLabel="Артикул"
-        [skuValue]="p.sku"
-        [price]="formatPrice(p.price)"
-        [imageSrc]="imageUrl(p)"
-      >
-        <div product-actions>
-          <app-ui-button
-            type="button"
-            variant="soft"
-            [square]="true"
-            [disabled]="p.source !== 'trade_good'"
-            aria-label="Редактировать товар в справочнике"
-            [title]="
-              p.source === 'trade_good'
-                ? 'Редактировать в справочнике'
-                : 'Доступно только для товаров из справочника «Товары» (не демо)'
-            "
-            (clicked)="onEditInDictionary(p)"
-          >
-            <svg lucidePencil [size]="18"></svg>
-          </app-ui-button>
-          <app-ui-button
-            type="button"
-            variant="primary"
-            [square]="true"
-            aria-label="Добавить в коммерческое предложение"
-            title="В КП"
-            (clicked)="onAddToKp(p)"
-          >
-            <svg lucideShoppingCart [size]="18"></svg>
-          </app-ui-button>
-        </div>
-      </app-product-card>
-    }
-  </div>
+  @if (catalogViewMode() === 'cards') {
+    <div class="kp-vitrine__grid">
+      @for (p of visibleProducts(); track p.id) {
+        <app-product-card
+          [title]="p.title"
+          [subtitle]="cardMetaLine(p)"
+          skuLabel="Артикул"
+          [skuValue]="p.sku"
+          [price]="formatPrice(p.price)"
+          [imageSrc]="imageUrl(p)"
+        >
+          <div product-actions>
+            <app-ui-button
+              type="button"
+              variant="soft"
+              [square]="true"
+              [disabled]="p.source !== 'trade_good'"
+              aria-label="Редактировать товар в справочнике"
+              [title]="
+                p.source === 'trade_good'
+                  ? 'Редактировать в справочнике'
+                  : 'Доступно только для товаров из справочника «Товары» (не демо)'
+              "
+              (clicked)="onEditInDictionary(p)"
+            >
+              <svg lucidePencil [size]="18"></svg>
+            </app-ui-button>
+            <app-ui-button
+              type="button"
+              variant="primary"
+              [square]="true"
+              aria-label="Добавить в коммерческое предложение"
+              title="В КП"
+              (clicked)="onAddToKp(p)"
+            >
+              <svg lucideShoppingCart [size]="18"></svg>
+            </app-ui-button>
+          </div>
+        </app-product-card>
+      }
+    </div>
+  } @else {
+    <div class="kp-vitrine__tableWrap">
+      <table class="kp-vitrine__table" aria-label="Товары в табличном виде">
+        <thead>
+          <tr>
+            <th class="kp-vitrine__colPhoto">Фото</th>
+            <th>Артикул</th>
+            <th>Наименование</th>
+            <th class="kp-vitrine__colPrice">Цена</th>
+            <th class="kp-vitrine__colActions">Действия</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of visibleProducts(); track p.id) {
+            <tr>
+              <td class="kp-vitrine__cellPhoto">
+                @if (imageUrl(p)) {
+                  <img [src]="imageUrl(p)" [alt]="p.title" loading="lazy" decoding="async" />
+                } @else {
+                  <span class="kp-vitrine__photoPlaceholder">—</span>
+                }
+              </td>
+              <td class="kp-vitrine__cellSku">{{ p.sku }}</td>
+              <td class="kp-vitrine__cellName">{{ p.title }}</td>
+              <td class="kp-vitrine__cellPrice">{{ formatPrice(p.price) }}</td>
+              <td class="kp-vitrine__cellActions">
+                <div class="kp-vitrine__actionsRow">
+                  <app-ui-button
+                    type="button"
+                    variant="soft"
+                    [square]="true"
+                    [disabled]="p.source !== 'trade_good'"
+                    aria-label="Редактировать товар в справочнике"
+                    [title]="
+                      p.source === 'trade_good'
+                        ? 'Редактировать в справочнике'
+                        : 'Доступно только для товаров из справочника «Товары»'
+                    "
+                    (clicked)="onEditInDictionary(p)"
+                  >
+                    <svg lucidePencil [size]="16"></svg>
+                  </app-ui-button>
+                  <app-ui-button
+                    type="button"
+                    variant="primary"
+                    [square]="true"
+                    aria-label="Добавить в коммерческое предложение"
+                    title="В КП"
+                    (clicked)="onAddToKp(p)"
+                  >
+                    <svg lucideShoppingCart [size]="16"></svg>
+                  </app-ui-button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  @if (visibleProducts().length === 0) {
+    <p class="kp-vitrine__empty">По выбранным фильтрам товары не найдены.</p>
+  }
 </section>

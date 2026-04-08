@@ -74,9 +74,9 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
 
   /**
    * Витрина КП: товары из справочника (`GET /api/trade-goods`).
-   * `undefined` — загрузка не удалась → витрина покажет демо-ассортимент; массив (в т.ч. пустой) — данные с сервера.
+   * При ошибке/пустом ответе показываем пустую витрину без demo-данных.
    */
-  readonly kpCatalogProducts = signal<KpCatalogProduct[] | undefined>(undefined);
+  readonly kpCatalogProducts = signal<KpCatalogProduct[]>([]);
 
   @ViewChild('previewHost', { read: ElementRef }) previewHost?: ElementRef<HTMLElement>;
 
@@ -112,11 +112,8 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
     vatAmount: this.fb.nonNullable.control('', [kpVatAmountOptionalValidator()]),
     /** Максимальный размер миниатюры в колонке «Фото», px. */
     photoThumbMaxPx: this.fb.nonNullable.control('80', [kpPhotoThumbMaxPxValidator()]),
-    lines: this.fb.array([
-      this.lineGroup('Профиль алюминиевый ПА-01', '10', 'м', '1250.50', '', '', ''),
-      this.lineGroup('Поликарбонат сотовый 8 мм', '24', 'м²', '890', '', '', ''),
-      this.lineGroup('Крепёж комплект', '5', 'компл.', '450', '', '', ''),
-    ]),
+    // Стартуем с одной пустой строки, чтобы в КП не попадали моковые позиции.
+    lines: this.fb.array([this.lineGroup('', '1', 'шт.', '0', '', '', '')]),
   });
 
   /**
@@ -157,7 +154,7 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
         },
         error: () => {
           this.ngZone.run(() => {
-            this.kpCatalogProducts.set(undefined);
+            this.kpCatalogProducts.set([]);
           });
         },
       });
