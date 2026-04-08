@@ -64,7 +64,15 @@ export function createApp() {
   }
   app.use(
     "/media/kp-photos",
-    express.static(config.kpPhotosDir, { index: false, fallthrough: false }),
+    // Профессиональная схема: versioned URLs (`?v=<mtime>`) + длинный cache-control.
+    // Тогда F5 быстрый (берём из кэша), а при замене файла URL меняется и браузер
+    // автоматически подтягивает свежую картинку без ручного сброса кэша.
+    express.static(config.kpPhotosDir, {
+      index: false,
+      fallthrough: false,
+      maxAge: 365 * 24 * 60 * 60 * 1000, // 1 year
+      immutable: true,
+    }),
   );
 
   if (!fs.existsSync(config.tradeGoodsPhotosDir)) {
@@ -72,7 +80,12 @@ export function createApp() {
   }
   app.use(
     "/media/trade-goods",
-    express.static(config.tradeGoodsPhotosDir, { index: false, fallthrough: false }),
+    express.static(config.tradeGoodsPhotosDir, {
+      index: false,
+      fallthrough: false,
+      maxAge: 365 * 24 * 60 * 60 * 1000, // 1 year
+      immutable: true,
+    }),
   );
 
   app.get("/health", (_req, res) => res.json({ ok: true }));

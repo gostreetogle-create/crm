@@ -61,6 +61,16 @@ export function kpPhotoPublicPath(organizationId: string, fileNameOnDisk: string
   return `/media/kp-photos/${org}/${file}`;
 }
 
+function appendVersion(url: string, absPath: string): string {
+  try {
+    const st = fs.statSync(absPath);
+    const v = Math.floor(st.mtimeMs);
+    return `${url}?v=${v}`;
+  } catch {
+    return url;
+  }
+}
+
 /** URL для превью: файл на диске имеет приоритет над полем photoUrl (внешняя / data URL). */
 export function resolveKpPhotoDisplayUrl(
   rootDir: string,
@@ -72,7 +82,7 @@ export function resolveKpPhotoDisplayUrl(
   if (abs) {
     const orgDir = path.join(rootDir, organizationId);
     const rel = path.relative(orgDir, abs).split(path.sep).join("/");
-    return kpPhotoPublicPath(organizationId, rel);
+    return appendVersion(kpPhotoPublicPath(organizationId, rel), abs);
   }
   const u = photoUrl?.trim();
   return u && u.length > 0 ? u : null;

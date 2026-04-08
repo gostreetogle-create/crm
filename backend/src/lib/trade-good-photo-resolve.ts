@@ -34,6 +34,16 @@ export function tradeGoodPhotoPublicPath(fileNameOnDisk: string): string {
   return `/media/trade-goods/${encodeURIComponent(fileNameOnDisk)}`;
 }
 
+function appendVersion(url: string, absPath: string): string {
+  try {
+    const st = fs.statSync(absPath);
+    const v = Math.floor(st.mtimeMs);
+    return `${url}?v=${v}`;
+  } catch {
+    return url;
+  }
+}
+
 type NumberedPhoto = { n: number; name: string };
 
 function collectNumberedPhotos(rootDir: string, stem: string): NumberedPhoto[] {
@@ -106,11 +116,16 @@ export function listTradeGoodPhotoPublicUrls(
 
   const numbered = collectNumberedPhotos(rootDir, stem);
   if (numbered.length > 0) {
-    return numbered.map((x) => tradeGoodPhotoPublicPath(x.name));
+    return numbered.map((x) => {
+      const abs = path.join(rootDir, x.name);
+      return appendVersion(tradeGoodPhotoPublicPath(x.name), abs);
+    });
   }
 
   const legacy = findLegacyBasename(rootDir, stem);
-  return legacy ? [tradeGoodPhotoPublicPath(legacy)] : [];
+  if (!legacy) return [];
+  const abs = path.join(rootDir, legacy);
+  return [appendVersion(tradeGoodPhotoPublicPath(legacy), abs)];
 }
 
 export function resolveTradeGoodPhotoDisplayUrl(
@@ -120,7 +135,7 @@ export function resolveTradeGoodPhotoDisplayUrl(
 ): string | null {
   const abs = findTradeGoodPrimaryPhotoAbsPath(rootDir, articleCode, photoPrimaryIndex);
   if (!abs) return null;
-  return tradeGoodPhotoPublicPath(path.basename(abs));
+  return appendVersion(tradeGoodPhotoPublicPath(path.basename(abs)), abs);
 }
 
 /**
