@@ -30,6 +30,17 @@ dc() {
   docker compose -f "${COMPOSE_FILE}" --env-file "${SCRIPT_DIR}/.env" "$@"
 }
 
+ensure_clean_container_name() {
+  local name="$1"
+  local id
+  id="$(docker ps -aq --filter "name=^${name}$" | head -n1 || true)"
+  if [[ -z "${id}" ]]; then
+    return 0
+  fi
+  echo "[deploy] Найден контейнер с именем ${name} (id=${id}), удаляю для избежания name-conflict..."
+  docker rm -f "${id}" >/dev/null
+}
+
 [[ -f .env ]] || cp .env.example .env
 source .env
 
@@ -131,6 +142,11 @@ dc build web
 dc build backend
 
 echo "[deploy] Запуск контейнеров..."
+# На Ubuntu/Synology часто остаются контейнеры с теми же именами от ручных запусков/старого compose.
+# Перед up очищаем имена, чтобы не падать с "container name ... is already in use".
+ensure_clean_container_name "crm_postgres"
+ensure_clean_container_name "crm_backend"
+ensure_clean_container_name "crm_web"
 dc up -d --remove-orphans
 
 echo "[deploy] Проверяю health backend..."
