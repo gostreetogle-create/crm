@@ -17,6 +17,8 @@ export const STANDALONE_DICTIONARY_CREATE = [
   { key: 'productionDetails', path: 'новая-деталь', title: 'Новая деталь' },
   { key: 'products', path: 'новое-изделие', title: 'Новое изделие' },
   { key: 'tradeGoods', path: 'новый-товар', title: 'Новая торговая позиция (товар или комплекс)' },
+  { key: 'tradeGoodCategories', path: 'новая-категория-товаров', title: 'Новая категория товаров' },
+  { key: 'tradeGoodSubcategories', path: 'новая-подкатегория-товаров', title: 'Новая подкатегория товаров' },
 ] as const;
 
 export type StandaloneDictionaryCreateKey = (typeof STANDALONE_DICTIONARY_CREATE)[number]['key'];

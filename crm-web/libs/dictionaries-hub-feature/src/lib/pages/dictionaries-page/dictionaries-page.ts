@@ -330,17 +330,7 @@ export class DictionariesPage implements OnDestroy {
         this.navigateToNewMaterialCharacteristicPage();
         break;
       case 'standalone':
-        if (target.key === 'tradeGoods') {
-          this.openTradeGoodsCreateInModal();
-        } else {
-          this.navigateToStandaloneDictionaryCreate(target.key);
-        }
-        break;
-      case 'tradeGoodCategoryModal':
-        this.openTradeGoodCategoriesCreate();
-        break;
-      case 'tradeGoodSubcategoryModal':
-        this.openTradeGoodSubcategoriesCreate();
+        this.navigateToStandaloneDictionaryCreate(target.key);
         break;
     }
   }
@@ -590,13 +580,42 @@ export class DictionariesPage implements OnDestroy {
   );
 
   standaloneDictionaryTitle(key: StandaloneDictionaryCreateKey): string {
-    return STANDALONE_DICTIONARY_CREATE.find((x) => x.key === key)?.title ?? '';
+    const base = STANDALONE_DICTIONARY_CREATE.find((x) => x.key === key)?.title ?? '';
+    const mode = this.standaloneActionModeFromQuery();
+    if (mode === 'edit') return base.replace(/^Новый|^Новая|^Новое/, 'Редактирование');
+    if (mode === 'copy') return base.replace(/^Новый|^Новая|^Новое/, 'Копия');
+    return base;
+  }
+
+  standaloneMaterialPageTitle(): string {
+    const mode = this.standaloneActionModeFromQuery();
+    if (mode === 'edit') return 'Редактирование материала';
+    if (mode === 'copy') return 'Копия материала';
+    return 'Новый материал';
+  }
+
+  standaloneMaterialCharacteristicPageTitle(): string {
+    const mode = this.standaloneActionModeFromQuery();
+    if (mode === 'edit') return 'Редактирование характеристики материала';
+    if (mode === 'copy') return 'Копия характеристики материала';
+    return 'Новая характеристика материала';
   }
 
   /** После успешного submit на полноэкранном create — шаг назад по истории (канон playbook). */
   private finishStandaloneDictionaryCreateIfMatch(key: StandaloneDictionaryCreateKey): void {
     if (this.standaloneCreateKey() !== key) return;
     this.location.back();
+  }
+
+  private standaloneActionModeFromQuery(): 'create' | 'edit' | 'copy' {
+    const mode = (this.route.snapshot.queryParamMap.get('mode') ?? 'create').toLowerCase();
+    if (mode === 'edit' || mode === 'copy') return mode;
+    return 'create';
+  }
+
+  private standaloneActionIdFromQuery(): string | null {
+    const raw = (this.route.snapshot.queryParamMap.get('id') ?? '').trim();
+    return raw.length > 0 ? raw : null;
   }
 
   /**
@@ -1308,6 +1327,7 @@ export class DictionariesPage implements OnDestroy {
 
   openWorkTypesEdit(id: string): void {
     if (!this.permissions.crud().canEdit) return;
+    if (this.shouldNavigateToStandaloneAction('workTypes', 'edit', id)) return;
     this.isWorkTypesViewMode.set(false);
     this.workTypesForm.enable({ emitEvent: false });
     const item = this.productionWorkTypesStore.items().find((x) => x.id === id);
@@ -1375,6 +1395,7 @@ export class DictionariesPage implements OnDestroy {
 
   duplicateWorkType(id: string): void {
     if (!this.permissions.can('crud.duplicate')) return;
+    if (this.shouldNavigateToStandaloneAction('workTypes', 'copy', id)) return;
     const item = this.productionWorkTypesStore.items().find((x) => x.id === id);
     if (!item) return;
     this.isWorkTypesViewMode.set(false);
@@ -1571,15 +1592,10 @@ export class DictionariesPage implements OnDestroy {
     this.navigateToStandaloneDictionaryCreate('products');
   }
 
-  /** Создание из плитки «+» без перехода на отдельный URL: модалка (как часть хаба). */
-  openProductsCreateInModal(): void {
-    if (!this.permissions.crud().canCreate) return;
-    this.resetProductsCreateForm();
-    this.isProductsModalOpen.set(true);
-  }
 
   async openProductsEdit(id: string): Promise<void> {
     if (!this.permissions.crud().canEdit) return;
+    if (this.shouldNavigateToStandaloneAction('products', 'edit', id)) return;
     this.isProductsViewMode.set(false);
     this.productsForm.enable({ emitEvent: false });
     let item: ProductItem;
@@ -2048,17 +2064,12 @@ export class DictionariesPage implements OnDestroy {
 
   openTradeGoodsCreate(): void {
     if (!this.permissions.crud().canCreate) return;
-    this.openTradeGoodsCreateInModal();
-  }
-
-  openTradeGoodsCreateInModal(): void {
-    if (!this.permissions.crud().canCreate) return;
-    this.resetTradeGoodsCreateForm();
-    this.isTradeGoodsModalOpen.set(true);
+    this.navigateToStandaloneDictionaryCreate('tradeGoods');
   }
 
   async openTradeGoodsEdit(id: string): Promise<void> {
     if (!this.permissions.crud().canEdit) return;
+    if (this.shouldNavigateToStandaloneAction('tradeGoods', 'edit', id)) return;
     this.tradeGoodsSaveError.set(null);
     this.isTradeGoodsViewMode.set(false);
     this.tradeGoodsForm.enable({ emitEvent: false });
@@ -2292,6 +2303,7 @@ export class DictionariesPage implements OnDestroy {
 
   openProductionDetailsEdit(id: string): void {
     if (!this.permissions.crud().canEdit) return;
+    if (this.shouldNavigateToStandaloneAction('productionDetails', 'edit', id)) return;
     this.isProductionDetailsViewMode.set(false);
     this.productionDetailsForm.enable({ emitEvent: false });
     const item = this.productionDetailsStore.items().find((x) => x.id === id);
@@ -2361,6 +2373,7 @@ export class DictionariesPage implements OnDestroy {
 
   duplicateProductionDetail(id: string): void {
     if (!this.permissions.can('crud.duplicate')) return;
+    if (this.shouldNavigateToStandaloneAction('productionDetails', 'copy', id)) return;
     const item = this.productionDetailsStore.items().find((x) => x.id === id);
     if (!item) return;
     this.isProductionDetailsViewMode.set(false);
@@ -2520,6 +2533,18 @@ export class DictionariesPage implements OnDestroy {
 
   /** Инициализация формы на полноэкранном маршруте (без модалки). */
   private initNewMaterialStandaloneForm(): void {
+    const mode = (this.route.snapshot.queryParamMap.get('mode') ?? 'create').toLowerCase();
+    const id = (this.route.snapshot.queryParamMap.get('id') ?? '').trim();
+    if (mode === 'edit' && id) {
+      this.openMaterialsEdit(id);
+      this.isMaterialsModalOpen.set(false);
+      return;
+    }
+    if (mode === 'copy' && id) {
+      this.duplicateMaterial(id);
+      this.isMaterialsModalOpen.set(false);
+      return;
+    }
     if (!this.permissions.crud().canCreate) return;
     const pendingMcId = this.materialStandaloneFlow.consumePendingMaterialCharacteristicId();
     this.resetMaterialsCreateForm();
@@ -2528,17 +2553,23 @@ export class DictionariesPage implements OnDestroy {
     }
   }
 
-  navigateToNewMaterialPage(): void {
-    if (!this.permissions.crud().canCreate) return;
-    void this.router.navigate(['/справочники', 'новый-материал']);
+  navigateToNewMaterialPage(mode: 'create' | 'edit' | 'copy' = 'create', id?: string): void {
+    if (mode === 'create' && !this.permissions.crud().canCreate) return;
+    if (mode === 'edit' && !this.permissions.crud().canEdit) return;
+    if (mode === 'copy' && !this.permissions.can('crud.duplicate')) return;
+    const queryParams = mode === 'create' ? {} : { mode, id: (id ?? '').trim() || null };
+    void this.router.navigate(['/справочники', 'новый-материал'], { queryParams });
   }
 
-  navigateToNewMaterialCharacteristicPage(): void {
-    if (!this.permissions.crud().canCreate) return;
+  navigateToNewMaterialCharacteristicPage(mode: 'create' | 'edit' | 'copy' = 'create', id?: string): void {
+    if (mode === 'create' && !this.permissions.crud().canCreate) return;
+    if (mode === 'edit' && !this.permissions.crud().canEdit) return;
+    if (mode === 'copy' && !this.permissions.can('crud.duplicate')) return;
     if (this.isNewMaterialPageRoute()) {
       this.materialStandaloneFlow.markChainFromMaterialStandalone();
     }
-    void this.router.navigate(['/справочники', 'новая-характеристика-материала']);
+    const queryParams = mode === 'create' ? {} : { mode, id: (id ?? '').trim() || null };
+    void this.router.navigate(['/справочники', 'новая-характеристика-материала'], { queryParams });
   }
 
   /**
@@ -2587,9 +2618,33 @@ export class DictionariesPage implements OnDestroy {
 
   navigateToStandaloneDictionaryCreate(key: StandaloneDictionaryCreateKey): void {
     if (!this.permissions.crud().canCreate) return;
+    this.navigateToStandaloneDictionaryAction(key, 'create');
+  }
+
+  private navigateToStandaloneDictionaryAction(
+    key: StandaloneDictionaryCreateKey,
+    mode: 'create' | 'edit' | 'copy',
+    id?: string,
+  ): void {
     const row = STANDALONE_DICTIONARY_CREATE.find((x) => x.key === key);
     if (!row) return;
-    void this.router.navigate(['/справочники', row.path]);
+    const queryParams =
+      mode === 'create' ? {} : { mode, id: (id ?? '').trim() || null };
+    void this.router.navigate(['/справочники', row.path], { queryParams });
+  }
+
+  private shouldNavigateToStandaloneAction(
+    key: StandaloneDictionaryCreateKey,
+    mode: 'edit' | 'copy',
+    id: string,
+  ): boolean {
+    if (this.standaloneCreateKey() === key) return false;
+    this.navigateToStandaloneDictionaryAction(key, mode, id);
+    return true;
+  }
+
+  private isStandaloneRouteFor(key: StandaloneDictionaryCreateKey): boolean {
+    return this.standaloneCreateKey() === key;
   }
 
   navigateBackFromStandaloneDictionaryCreate(): void {
@@ -2608,6 +2663,8 @@ export class DictionariesPage implements OnDestroy {
       productionDetails: () => this.closeProductionDetailsModal(),
       products: () => this.closeProductsModal(),
       tradeGoods: () => this.closeTradeGoodsModal(),
+      tradeGoodCategories: () => this.closeTradeGoodCategoriesModal(),
+      tradeGoodSubcategories: () => this.closeTradeGoodSubcategoriesModal(),
     });
     this.resetAllDictionaryHubQuickAddFlags();
     this.location.back();
@@ -2650,6 +2707,10 @@ export class DictionariesPage implements OnDestroy {
 
   openMaterialsEdit(id: string): void {
     if (!this.permissions.crud().canEdit) return;
+    if (!this.isNewMaterialPageRoute() && !this.isNewMaterialCharacteristicPageRoute()) {
+      this.navigateToNewMaterialPage('edit', id);
+      return;
+    }
     this.isMaterialsViewMode.set(false);
     this.materialsForm.enable({ emitEvent: false });
     const item = this.materialsStore.items().find((x) => x.id === id);
@@ -2730,6 +2791,10 @@ export class DictionariesPage implements OnDestroy {
 
   duplicateMaterial(id: string): void {
     if (!this.permissions.can('crud.duplicate')) return;
+    if (!this.isNewMaterialPageRoute() && !this.isNewMaterialCharacteristicPageRoute()) {
+      this.navigateToNewMaterialPage('copy', id);
+      return;
+    }
     const item = this.materialsStore.items().find((x) => x.id === id);
     if (!item) return;
     this.isMaterialsViewMode.set(false);
@@ -2798,6 +2863,18 @@ export class DictionariesPage implements OnDestroy {
   }
 
   private initNewMaterialCharacteristicStandaloneForm(): void {
+    const mode = (this.route.snapshot.queryParamMap.get('mode') ?? 'create').toLowerCase();
+    const id = (this.route.snapshot.queryParamMap.get('id') ?? '').trim();
+    if (mode === 'edit' && id) {
+      this.openMaterialCharacteristicsEdit(id);
+      this.isMaterialCharacteristicsModalOpen.set(false);
+      return;
+    }
+    if (mode === 'copy' && id) {
+      this.duplicateMaterialCharacteristic(id);
+      this.isMaterialCharacteristicsModalOpen.set(false);
+      return;
+    }
     if (!this.permissions.crud().canCreate) return;
     this.resetMaterialCharacteristicsCreateForm();
   }
@@ -3007,6 +3084,24 @@ export class DictionariesPage implements OnDestroy {
     if (!isStandaloneDictionaryCreateKey(sc)) {
       return;
     }
+    const mode = this.standaloneActionModeFromQuery();
+    const id = this.standaloneActionIdFromQuery();
+    if (mode !== 'create') {
+      if (!id) {
+        this.initStandaloneDictionaryCreateFromRouteFallback(sc);
+        return;
+      }
+      if (mode === 'edit') {
+        this.initStandaloneDictionaryEditFromRoute(sc, id);
+        return;
+      }
+      this.initStandaloneDictionaryCopyFromRoute(sc, id);
+      return;
+    }
+    this.initStandaloneDictionaryCreateFromRouteFallback(sc);
+  }
+
+  private initStandaloneDictionaryCreateFromRouteFallback(sc: StandaloneDictionaryCreateKey): void {
     const inits: Record<StandaloneDictionaryCreateKey, () => void> = {
       workTypes: () => this.initWorkTypesStandaloneCreate(),
       units: () => this.initUnitsStandaloneCreate(),
@@ -3022,8 +3117,85 @@ export class DictionariesPage implements OnDestroy {
       productionDetails: () => this.initProductionDetailsStandaloneCreate(),
       products: () => this.initProductsStandaloneCreate(),
       tradeGoods: () => this.initTradeGoodsStandaloneCreate(),
+      tradeGoodCategories: () => this.initTradeGoodCategoriesStandaloneCreate(),
+      tradeGoodSubcategories: () => this.initTradeGoodSubcategoriesStandaloneCreate(),
     };
     inits[sc]();
+  }
+
+  private initStandaloneDictionaryEditFromRoute(sc: StandaloneDictionaryCreateKey, id: string): void {
+    const inits: Partial<Record<StandaloneDictionaryCreateKey, () => void | Promise<void>>> = {
+      workTypes: () => this.openWorkTypesEdit(id),
+      units: () => this.openUnitsEdit(id),
+      geometries: () => this.openGeometriesEdit(id),
+      colors: () => this.openColorsEdit(id),
+      surfaceFinishes: () => this.openSurfaceFinishesEdit(id),
+      coatings: () => this.openCoatingsEdit(id),
+      organizations: () => this.openOrganizationsEdit(id),
+      clients: () => this.openClientsEdit(id),
+      roles: () => this.openRolesEdit(id),
+      users: () => this.openUsersEdit(id),
+      kpPhotos: () => this.openKpPhotosEdit(id),
+      productionDetails: () => this.openProductionDetailsEdit(id),
+      products: () => this.openProductsEdit(id),
+      tradeGoods: () => this.openTradeGoodsEdit(id),
+      tradeGoodCategories: () => this.openTradeGoodCategoriesEdit(id),
+      tradeGoodSubcategories: () => this.openTradeGoodSubcategoriesEdit(id),
+    };
+    const run = inits[sc];
+    if (!run) {
+      this.initStandaloneDictionaryCreateFromRouteFallback(sc);
+      return;
+    }
+    Promise.resolve(run()).finally(() => this.closeStandaloneModalForKey(sc));
+  }
+
+  private initStandaloneDictionaryCopyFromRoute(sc: StandaloneDictionaryCreateKey, id: string): void {
+    const inits: Partial<Record<StandaloneDictionaryCreateKey, () => void>> = {
+      workTypes: () => this.duplicateWorkType(id),
+      units: () => this.duplicateUnit(id),
+      geometries: () => this.duplicateGeometry(id),
+      colors: () => this.duplicateColor(id),
+      surfaceFinishes: () => this.duplicateSurfaceFinish(id),
+      coatings: () => this.duplicateCoating(id),
+      organizations: () => this.duplicateOrganization(id),
+      clients: () => this.duplicateClient(id),
+      roles: () => this.duplicateRole(id),
+      users: () => this.duplicateUser(id),
+      kpPhotos: () => this.duplicateKpPhoto(id),
+      productionDetails: () => this.duplicateProductionDetail(id),
+      tradeGoodCategories: () => this.duplicateTradeGoodCategory(id),
+      tradeGoodSubcategories: () => this.duplicateTradeGoodSubcategory(id),
+    };
+    const run = inits[sc];
+    if (!run) {
+      this.initStandaloneDictionaryCreateFromRouteFallback(sc);
+      return;
+    }
+    run();
+    this.closeStandaloneModalForKey(sc);
+  }
+
+  private closeStandaloneModalForKey(sc: StandaloneDictionaryCreateKey): void {
+    const closers: Partial<Record<StandaloneDictionaryCreateKey, () => void>> = {
+      workTypes: () => this.isWorkTypesModalOpen.set(false),
+      units: () => this.isUnitsModalOpen.set(false),
+      geometries: () => this.isGeometriesModalOpen.set(false),
+      colors: () => this.isColorsModalOpen.set(false),
+      surfaceFinishes: () => this.isSurfaceFinishesModalOpen.set(false),
+      coatings: () => this.isCoatingsModalOpen.set(false),
+      organizations: () => this.isOrganizationsModalOpen.set(false),
+      clients: () => this.isClientsModalOpen.set(false),
+      roles: () => this.isRolesModalOpen.set(false),
+      users: () => this.isUsersModalOpen.set(false),
+      kpPhotos: () => this.isKpPhotosModalOpen.set(false),
+      productionDetails: () => this.isProductionDetailsModalOpen.set(false),
+      products: () => this.isProductsModalOpen.set(false),
+      tradeGoods: () => this.isTradeGoodsModalOpen.set(false),
+      tradeGoodCategories: () => this.isTradeGoodCategoriesModalOpen.set(false),
+      tradeGoodSubcategories: () => this.isTradeGoodSubcategoriesModalOpen.set(false),
+    };
+    closers[sc]?.();
   }
 
   openMaterialCharacteristicsCreate(): void {
@@ -3042,6 +3214,10 @@ export class DictionariesPage implements OnDestroy {
 
   openMaterialCharacteristicsEdit(id: string): void {
     if (!this.permissions.crud().canEdit) return;
+    if (!this.isNewMaterialCharacteristicPageRoute()) {
+      this.navigateToNewMaterialCharacteristicPage('edit', id);
+      return;
+    }
     this.isMaterialCharacteristicsViewMode.set(false);
     this.materialCharacteristicsForm.enable({ emitEvent: false });
     const item = this.materialCharacteristicsStore.items().find((x) => x.id === id);
@@ -3231,6 +3407,10 @@ export class DictionariesPage implements OnDestroy {
 
   duplicateMaterialCharacteristic(id: string): void {
     if (!this.permissions.can('crud.duplicate')) return;
+    if (!this.isNewMaterialCharacteristicPageRoute()) {
+      this.navigateToNewMaterialCharacteristicPage('copy', id);
+      return;
+    }
     const item = this.materialCharacteristicsStore.items().find((x) => x.id === id);
     if (!item) return;
     this.isMaterialCharacteristicsViewMode.set(false);
@@ -3315,6 +3495,7 @@ export class DictionariesPage implements OnDestroy {
 
   openGeometriesEdit(id: string): void {
     if (!this.permissions.crud().canEdit) return;
+    if (this.shouldNavigateToStandaloneAction('geometries', 'edit', id)) return;
     this.isGeometriesViewMode.set(false);
     this.geometriesForm.enable({ emitEvent: false });
     const item = this.geometriesStore.items().find((x) => x.id === id);
@@ -3409,6 +3590,7 @@ export class DictionariesPage implements OnDestroy {
 
   duplicateGeometry(id: string): void {
     if (!this.permissions.can('crud.duplicate')) return;
+    if (this.shouldNavigateToStandaloneAction('geometries', 'copy', id)) return;
     const item = this.geometriesStore.items().find((x) => x.id === id);
     if (!item) return;
     this.isGeometriesViewMode.set(false);
@@ -3469,6 +3651,7 @@ export class DictionariesPage implements OnDestroy {
 
   openUnitsEdit(id: string): void {
     if (!this.permissions.crud().canEdit) return;
+    if (this.shouldNavigateToStandaloneAction('units', 'edit', id)) return;
     this.isUnitsViewMode.set(false);
     this.unitsForm.enable({ emitEvent: false });
     const item = this.unitsStore.items().find((x) => x.id === id);
@@ -3490,8 +3673,37 @@ export class DictionariesPage implements OnDestroy {
     this.isUnitsModalOpen.set(false);
   }
 
+  private initTradeGoodCategoriesStandaloneCreate(): void {
+    if (!this.permissions.crud().canCreate) return;
+    this.isTradeGoodCategoriesViewMode.set(false);
+    this.tradeGoodCategoriesForm.enable({ emitEvent: false });
+    this.tradeGoodCategoriesStore.startCreate();
+    this.tradeGoodCategoriesForm.reset({
+      name: '',
+      sortOrder: 0,
+      isActive: true,
+    });
+  }
+
+  private initTradeGoodSubcategoriesStandaloneCreate(): void {
+    if (!this.permissions.crud().canCreate) return;
+    this.isTradeGoodSubcategoriesViewMode.set(false);
+    this.tradeGoodSubcategoriesForm.enable({ emitEvent: false });
+    this.tradeGoodSubcategoriesStore.startCreate();
+    this.tradeGoodSubcategoriesForm.reset({
+      categoryId: '',
+      name: '',
+      sortOrder: 0,
+      isActive: true,
+    });
+  }
+
   openTradeGoodCategoriesCreate(): void {
     if (!this.permissions.crud().canCreate) return;
+    if (this.standaloneCreateKey() !== 'tradeGoodCategories') {
+      this.navigateToStandaloneDictionaryCreate('tradeGoodCategories');
+      return;
+    }
     this.isTradeGoodCategoriesViewMode.set(false);
     this.tradeGoodCategoriesForm.enable({ emitEvent: false });
     this.tradeGoodCategoriesStore.startCreate();
@@ -3505,6 +3717,7 @@ export class DictionariesPage implements OnDestroy {
 
   openTradeGoodCategoriesEdit(id: string): void {
     if (!this.permissions.crud().canEdit) return;
+    if (this.shouldNavigateToStandaloneAction('tradeGoodCategories', 'edit', id)) return;
     this.isTradeGoodCategoriesViewMode.set(false);
     this.tradeGoodCategoriesForm.enable({ emitEvent: false });
     const item = this.tradeGoodCategoriesStore.items().find((x) => x.id === id);
@@ -3541,6 +3754,7 @@ export class DictionariesPage implements OnDestroy {
     this.tradeGoodsStore.loadItems();
     this.tradeGoodSubcategoriesStore.loadItems();
     this.closeTradeGoodCategoriesModal();
+    this.finishStandaloneDictionaryCreateIfMatch('tradeGoodCategories');
   }
 
   deleteTradeGoodCategory(id: string): void {
@@ -3555,6 +3769,7 @@ export class DictionariesPage implements OnDestroy {
 
   duplicateTradeGoodCategory(id: string): void {
     if (!this.permissions.can('crud.duplicate')) return;
+    if (this.shouldNavigateToStandaloneAction('tradeGoodCategories', 'copy', id)) return;
     const item = this.tradeGoodCategoriesStore.items().find((x) => x.id === id);
     if (!item) return;
     this.isTradeGoodCategoriesViewMode.set(false);
@@ -3584,6 +3799,10 @@ export class DictionariesPage implements OnDestroy {
 
   openTradeGoodSubcategoriesCreate(): void {
     if (!this.permissions.crud().canCreate) return;
+    if (this.standaloneCreateKey() !== 'tradeGoodSubcategories') {
+      this.navigateToStandaloneDictionaryCreate('tradeGoodSubcategories');
+      return;
+    }
     this.isTradeGoodSubcategoriesViewMode.set(false);
     this.tradeGoodSubcategoriesForm.enable({ emitEvent: false });
     this.tradeGoodSubcategoriesStore.startCreate();
@@ -3598,6 +3817,7 @@ export class DictionariesPage implements OnDestroy {
 
   openTradeGoodSubcategoriesEdit(id: string): void {
     if (!this.permissions.crud().canEdit) return;
+    if (this.shouldNavigateToStandaloneAction('tradeGoodSubcategories', 'edit', id)) return;
     this.isTradeGoodSubcategoriesViewMode.set(false);
     this.tradeGoodSubcategoriesForm.enable({ emitEvent: false });
     const item = this.tradeGoodSubcategoriesStore.items().find((x) => x.id === id);
@@ -3635,6 +3855,7 @@ export class DictionariesPage implements OnDestroy {
     this.tradeGoodSubcategoriesStore.submit({ value: payload, isValid: true });
     this.tradeGoodsStore.loadItems();
     this.closeTradeGoodSubcategoriesModal();
+    this.finishStandaloneDictionaryCreateIfMatch('tradeGoodSubcategories');
   }
 
   deleteTradeGoodSubcategory(id: string): void {
@@ -3648,6 +3869,7 @@ export class DictionariesPage implements OnDestroy {
 
   duplicateTradeGoodSubcategory(id: string): void {
     if (!this.permissions.can('crud.duplicate')) return;
+    if (this.shouldNavigateToStandaloneAction('tradeGoodSubcategories', 'copy', id)) return;
     const item = this.tradeGoodSubcategoriesStore.items().find((x) => x.id === id);
     if (!item) return;
     this.isTradeGoodSubcategoriesViewMode.set(false);
@@ -3727,6 +3949,7 @@ export class DictionariesPage implements OnDestroy {
 
   duplicateUnit(id: string): void {
     if (!this.permissions.can('crud.duplicate')) return;
+    if (this.shouldNavigateToStandaloneAction('units', 'copy', id)) return;
     const item = this.unitsStore.items().find((x) => x.id === id);
     if (!item) return;
     this.isUnitsViewMode.set(false);
@@ -3848,6 +4071,7 @@ export class DictionariesPage implements OnDestroy {
 
   openKpPhotosEdit(id: string): void {
     if (!this.permissions.crud().canEdit) return;
+    if (this.shouldNavigateToStandaloneAction('kpPhotos', 'edit', id)) return;
     this.isKpPhotosViewMode.set(false);
     this.kpPhotosForm.enable({ emitEvent: false });
     const item = this.kpPhotosStore.items().find((x) => x.id === id);
@@ -3890,6 +4114,7 @@ export class DictionariesPage implements OnDestroy {
 
   duplicateKpPhoto(id: string): void {
     if (!this.permissions.can('crud.duplicate')) return;
+    if (this.shouldNavigateToStandaloneAction('kpPhotos', 'copy', id)) return;
     const item = this.kpPhotosStore.items().find((x) => x.id === id);
     if (!item) return;
     this.isKpPhotosViewMode.set(false);
@@ -3954,6 +4179,7 @@ export class DictionariesPage implements OnDestroy {
 
   openRolesEdit(id: string): void {
     if (!this.permissions.crud().canEdit) return;
+    if (this.shouldNavigateToStandaloneAction('roles', 'edit', id)) return;
     const item = this.rolesStore.roleById(id);
     if (!item) return;
     this.rolesFormDomId.set('roles-form--modal');
@@ -4085,6 +4311,7 @@ export class DictionariesPage implements OnDestroy {
 
   duplicateRole(id: string): void {
     if (!this.permissions.can('crud.duplicate')) return;
+    if (this.shouldNavigateToStandaloneAction('roles', 'copy', id)) return;
     const item = this.rolesStore.roleById(id);
     if (!item || item.isSystem) return;
     this.rolesFormDomId.set('roles-form--modal');
@@ -4109,6 +4336,7 @@ export class DictionariesPage implements OnDestroy {
 
   openUsersEdit(id: string): void {
     if (!this.permissions.crud().canEdit) return;
+    if (this.shouldNavigateToStandaloneAction('users', 'edit', id)) return;
     const item = this.usersStore.userById(id);
     if (!item) return;
     this.isUsersViewMode.set(false);
@@ -4209,6 +4437,7 @@ export class DictionariesPage implements OnDestroy {
 
   duplicateUser(id: string): void {
     if (!this.permissions.can('crud.duplicate')) return;
+    if (this.shouldNavigateToStandaloneAction('users', 'copy', id)) return;
     const item = this.usersStore.userById(id);
     if (!item) return;
     this.isUsersViewMode.set(false);
@@ -4275,6 +4504,7 @@ export class DictionariesPage implements OnDestroy {
 
   openColorsEdit(id: string): void {
     if (!this.permissions.crud().canEdit) return;
+    if (this.shouldNavigateToStandaloneAction('colors', 'edit', id)) return;
     this.isColorsViewMode.set(false);
     this.colorsEditingId.set(id);
     this.colorsForm.enable({ emitEvent: false });
@@ -4388,6 +4618,7 @@ export class DictionariesPage implements OnDestroy {
 
   duplicateColor(id: string): void {
     if (!this.permissions.can('crud.duplicate')) return;
+    if (this.shouldNavigateToStandaloneAction('colors', 'copy', id)) return;
     const item = this.colorsStore.items().find((x) => x.id === id);
     if (!item) return;
     this.isColorsViewMode.set(false);
@@ -4439,6 +4670,7 @@ export class DictionariesPage implements OnDestroy {
 
   openSurfaceFinishesEdit(id: string): void {
     if (!this.permissions.crud().canEdit) return;
+    if (this.shouldNavigateToStandaloneAction('surfaceFinishes', 'edit', id)) return;
     this.isSurfaceFinishesViewMode.set(false);
     this.surfaceFinishesEditingId.set(id);
     this.surfaceFinishesForm.enable({ emitEvent: false });
@@ -4560,6 +4792,7 @@ export class DictionariesPage implements OnDestroy {
 
   duplicateSurfaceFinish(id: string): void {
     if (!this.permissions.can('crud.duplicate')) return;
+    if (this.shouldNavigateToStandaloneAction('surfaceFinishes', 'copy', id)) return;
     const item = this.surfaceFinishesStore.items().find((x) => x.id === id);
     if (!item) return;
     this.isSurfaceFinishesViewMode.set(false);
@@ -4611,6 +4844,7 @@ export class DictionariesPage implements OnDestroy {
 
   openCoatingsEdit(id: string): void {
     if (!this.permissions.crud().canEdit) return;
+    if (this.shouldNavigateToStandaloneAction('coatings', 'edit', id)) return;
     this.isCoatingsViewMode.set(false);
     this.coatingsEditingId.set(id);
     this.coatingsForm.enable({ emitEvent: false });
@@ -4828,6 +5062,7 @@ export class DictionariesPage implements OnDestroy {
 
   duplicateCoating(id: string): void {
     if (!this.permissions.can('crud.duplicate')) return;
+    if (this.shouldNavigateToStandaloneAction('coatings', 'copy', id)) return;
     const item = this.coatingsStore.items().find((x) => x.id === id);
     if (!item) return;
     this.isCoatingsViewMode.set(false);
@@ -4865,6 +5100,7 @@ export class DictionariesPage implements OnDestroy {
 
   openClientsEdit(id: string): void {
     if (!this.permissions.crud().canEdit) return;
+    if (this.shouldNavigateToStandaloneAction('clients', 'edit', id)) return;
     this.isClientsViewMode.set(false);
     this.clientsForm.enable({ emitEvent: false });
     const item = this.clientsStore.items().find((x) => x.id === id);
@@ -4914,6 +5150,7 @@ export class DictionariesPage implements OnDestroy {
 
   duplicateClient(id: string): void {
     if (!this.permissions.can('crud.duplicate')) return;
+    if (this.shouldNavigateToStandaloneAction('clients', 'copy', id)) return;
     const item = this.clientsStore.items().find((x) => x.id === id);
     if (!item) return;
     this.clientsMarkupOnCreate = item.clientMarkupPercent ?? null;
@@ -5002,6 +5239,7 @@ export class DictionariesPage implements OnDestroy {
 
   openOrganizationsEdit(id: string): void {
     if (!this.permissions.crud().canEdit) return;
+    if (this.shouldNavigateToStandaloneAction('organizations', 'edit', id)) return;
     this.isOrganizationsViewMode.set(false);
     this.organizationsForm.enable({ emitEvent: false });
     const item = this.organizationsStore.items().find((x) => x.id === id);
@@ -5070,6 +5308,7 @@ export class DictionariesPage implements OnDestroy {
 
   duplicateOrganization(id: string): void {
     if (!this.permissions.can('crud.duplicate')) return;
+    if (this.shouldNavigateToStandaloneAction('organizations', 'copy', id)) return;
     const item = this.organizationsStore.items().find((x) => x.id === id);
     if (!item) return;
     this.isOrganizationsViewMode.set(false);

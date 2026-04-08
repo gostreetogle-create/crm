@@ -199,9 +199,37 @@
       (dismiss)="navigateBackFromStandaloneDictionaryCreate()"
     />
   </app-dictionary-standalone-create-shell>
+  } @else if (standaloneCreateKey() === 'tradeGoodCategories') {
+  <app-dictionary-standalone-create-shell
+    [pageTitle]="standaloneDictionaryTitle('tradeGoodCategories')"
+    (backClicked)="navigateBackFromStandaloneDictionaryCreate()"
+  >
+    <ng-container *ngTemplateOutlet="tradeGoodCategoriesContentTpl"></ng-container>
+    <app-ui-modal-form-actions
+      standaloneFormActions
+      [viewMode]="isTradeGoodCategoriesViewMode()"
+      [formId]="'trade-good-categories-form'"
+      [submitLabel]="tradeGoodCategoriesStore.isEditMode() ? 'Сохранить изменения' : 'Создать категорию'"
+      (dismiss)="navigateBackFromStandaloneDictionaryCreate()"
+    />
+  </app-dictionary-standalone-create-shell>
+  } @else if (standaloneCreateKey() === 'tradeGoodSubcategories') {
+  <app-dictionary-standalone-create-shell
+    [pageTitle]="standaloneDictionaryTitle('tradeGoodSubcategories')"
+    (backClicked)="navigateBackFromStandaloneDictionaryCreate()"
+  >
+    <ng-container *ngTemplateOutlet="tradeGoodSubcategoriesContentTpl"></ng-container>
+    <app-ui-modal-form-actions
+      standaloneFormActions
+      [viewMode]="isTradeGoodSubcategoriesViewMode()"
+      [formId]="'trade-good-subcategories-form'"
+      [submitLabel]="tradeGoodSubcategoriesStore.isEditMode() ? 'Сохранить изменения' : 'Создать подкатегорию'"
+      (dismiss)="navigateBackFromStandaloneDictionaryCreate()"
+    />
+  </app-dictionary-standalone-create-shell>
   } @else if (isNewMaterialPageRoute()) {
   <app-new-material-fullscreen-page
-    [pageTitle]="'Новый материал'"
+    [pageTitle]="standaloneMaterialPageTitle()"
     (backClicked)="navigateBackFromNewMaterialPage()"
   >
     <div nmBody>
@@ -218,7 +246,7 @@
   </app-new-material-fullscreen-page>
   } @else if (isNewMaterialCharacteristicPageRoute()) {
   <app-new-material-fullscreen-page
-    [pageTitle]="'Новая характеристика материала'"
+    [pageTitle]="standaloneMaterialCharacteristicPageTitle()"
     (backClicked)="navigateBackFromNewMaterialCharacteristicPage()"
   >
     <div nmBody>

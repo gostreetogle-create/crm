@@ -6,9 +6,7 @@ import type { StandaloneDictionaryCreateKey } from '../standalone-dictionary-cre
 export type HubBoardQuickCreateTarget =
   | { kind: 'newMaterialPage' }
   | { kind: 'newMaterialCharacteristicPage' }
-  | { kind: 'standalone'; key: StandaloneDictionaryCreateKey }
-  | { kind: 'tradeGoodCategoryModal' }
-  | { kind: 'tradeGoodSubcategoryModal' };
+  | { kind: 'standalone'; key: StandaloneDictionaryCreateKey };
 
 export const HUB_BOARD_QUICK_CREATE = {
   materials: { kind: 'newMaterialPage' },
@@ -27,8 +25,8 @@ export const HUB_BOARD_QUICK_CREATE = {
   productionDetails: { kind: 'standalone', key: 'productionDetails' },
   products: { kind: 'standalone', key: 'products' },
   tradeGoods: { kind: 'standalone', key: 'tradeGoods' },
-  tradeGoodCategories: { kind: 'tradeGoodCategoryModal' },
-  tradeGoodSubcategories: { kind: 'tradeGoodSubcategoryModal' },
+  tradeGoodCategories: { kind: 'standalone', key: 'tradeGoodCategories' },
+  tradeGoodSubcategories: { kind: 'standalone', key: 'tradeGoodSubcategories' },
 } as const satisfies Record<string, HubBoardQuickCreateTarget>;
 
 export type HubBoardQuickCreateKey = keyof typeof HUB_BOARD_QUICK_CREATE;
