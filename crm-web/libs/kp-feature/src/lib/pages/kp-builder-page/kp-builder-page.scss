@@ -44,6 +44,32 @@
   width: 100%;
 }
 
+.kp-builder__status-chip {
+  padding: 0.3rem 0.6rem;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--surface) 92%, #ffffff 8%);
+}
+
+.kp-builder__status-chip[data-status='proposal_paid'] {
+  border-color: #22a06b;
+}
+
+.kp-builder__status-error {
+  margin: 0;
+  font-size: 12px;
+  color: #d92d20;
+}
+
+.kp-builder__status-ok {
+  margin: 0;
+  font-size: 12px;
+  color: #027a48;
+}
+
 /** Кнопка печати — в конце строки тулбара (вправо) */
 .kp-builder__print-action {
   margin-left: auto;

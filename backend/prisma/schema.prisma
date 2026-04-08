@@ -103,8 +103,9 @@ model Client {
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
-  organizationLinks OrganizationContact[]
-  commercialOffers  CommercialOffer[]
+  organizationLinks                  OrganizationContact[]
+  commercialOffers                   CommercialOffer[]           @relation("CommercialOfferClient")
+  commercialOffersAsOrganizationContact CommercialOffer[]        @relation("CommercialOfferOrganizationContact")
 }
 
 model Organization {
@@ -175,21 +176,70 @@ model CommercialOffer {
   number         String?
   title          String?
   status         CommercialOfferStatus @default(DRAFT)
+  /// Канонический BL-статус для lifecycle КП: proposal_draft|proposal_waiting|proposal_approved|proposal_paid
+  currentStatusKey String              @default("proposal_draft")
   organizationId String?
   clientId       String?
+  organizationContactId String?
+  recipient      String?
   validUntil     DateTime?
   currency       String                @default("RUB")
+  vatPercent     Float                 @default(22)
+  vatAmount      Float                 @default(0)
+  subtotalAmount Float                 @default(0)
+  totalAmount    Float                 @default(0)
   notes          String?
   createdAt      DateTime              @default(now())
   updatedAt      DateTime              @updatedAt
 
   organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  client       Client?       @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  client       Client?       @relation("CommercialOfferClient", fields: [clientId], references: [id], onDelete: Restrict)
+  organizationContact Client? @relation("CommercialOfferOrganizationContact", fields: [organizationContactId], references: [id], onDelete: Restrict)
+  lines        CommercialOfferLine[]
+  printEvents  CommercialOfferPrintEvent[]
 
   @@index([organizationId])
   @@index([clientId])
   @@index([status])
+  @@index([currentStatusKey])
   @@index([createdAt])
+}
+
+/// Строка КП (snapshot-данные, не пересчитываются из каталога задним числом).
+model CommercialOfferLine {
+  id               String   @id @default(uuid())
+  commercialOfferId String
+  lineNo           Int
+  name             String
+  description      String?
+  qty              Float
+  unit             String
+  unitPrice        Float
+  lineSum          Float
+  imageUrl         String?
+  catalogProductId String?
+  sortOrder        Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  commercialOffer CommercialOffer @relation(fields: [commercialOfferId], references: [id], onDelete: Cascade)
+
+  @@index([commercialOfferId])
+  @@unique([commercialOfferId, lineNo])
+}
+
+/// Событие печати/экспорта КП для аудита.
+model CommercialOfferPrintEvent {
+  id               String   @id @default(uuid())
+  commercialOfferId String
+  printedAt        DateTime @default(now())
+  actorUserId      String?
+
+  commercialOffer CommercialOffer @relation(fields: [commercialOfferId], references: [id], onDelete: Cascade)
+  actorUser       User?           @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([commercialOfferId])
+  @@index([printedAt])
 }
 
 model OrganizationContact {
@@ -239,6 +289,7 @@ model User {
   updatedAt    DateTime @updatedAt
 
   role Role @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  commercialOfferPrintEvents CommercialOfferPrintEvent[]
 }
 
 model MaterialCharacteristic {

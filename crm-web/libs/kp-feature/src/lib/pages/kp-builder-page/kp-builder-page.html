@@ -21,8 +21,38 @@
             />
           </div>
           <div class="kp-builder__positions-actions">
+            <div class="kp-builder__status-chip" [attr.data-status]="offerStatusKey()">
+              Статус: {{ offerStatusKey() }}
+            </div>
+            <app-ui-button type="button" variant="soft" [disabled]="isSavingOffer() || !canEditOffer()" (clicked)="saveOffer()">
+              Сохранить
+            </app-ui-button>
+            <app-ui-button
+              type="button"
+              variant="soft"
+              [disabled]="isSavingOffer() || !canMoveTo('proposal_waiting')"
+              (clicked)="changeStatus('proposal_waiting')"
+            >
+              На согласование
+            </app-ui-button>
+            <app-ui-button
+              type="button"
+              variant="soft"
+              [disabled]="isSavingOffer() || !canMoveTo('proposal_approved')"
+              (clicked)="changeStatus('proposal_approved')"
+            >
+              Согласовано
+            </app-ui-button>
+            <app-ui-button
+              type="button"
+              variant="soft"
+              [disabled]="isSavingOffer() || !canMoveTo('proposal_paid')"
+              (clicked)="changeStatus('proposal_paid')"
+            >
+              Оплачено
+            </app-ui-button>
             <div class="kp-builder__print-action">
-              <app-ui-button type="button" variant="primary" (clicked)="print()">
+              <app-ui-button type="button" variant="primary" [disabled]="isSavingOffer()" (clicked)="print()">
                 <span class="kp-builder__btn-with-icon">
                   <svg lucidePrinter [size]="18" aria-hidden="true"></svg>
                   Печать / PDF
@@ -30,6 +60,12 @@
               </app-ui-button>
             </div>
           </div>
+          @if (saveError()) {
+            <p class="kp-builder__status-error">{{ saveError() }}</p>
+          }
+          @if (lastSavedAt()) {
+            <p class="kp-builder__status-ok">Сохранено: {{ lastSavedAt() }}</p>
+          }
         </div>
 
         <section class="kp-builder__preview-wrap" aria-label="Предпросмотр коммерческого предложения">

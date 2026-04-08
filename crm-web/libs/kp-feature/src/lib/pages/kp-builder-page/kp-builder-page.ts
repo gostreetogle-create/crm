@@ -13,9 +13,10 @@ import {
   signal,
   ViewChild,
 } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormArray, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { TRADE_GOODS_REPOSITORY } from '@srm/trade-goods-data-access';
 import { KP_RECIPIENT_ORG_PREFIX } from '../../kp-document-template/kp-document-template.component';
 import { PageShellComponent, UiButtonComponent } from '@srm/ui-kit';
@@ -41,6 +42,36 @@ import { KpRecipientToolbarComponent } from '../../kp-recipient-toolbar/kp-recip
 import { LucidePrinter } from '@lucide/angular';
 import { resolveKpOrganizationContactId } from '../../kp-utils';
 import { KpBuilderFacade } from '../../kp-builder-state/kp-builder.facade';
+import { API_CONFIG } from '@srm/platform-core';
+
+type ProposalStatusKey =
+  | 'proposal_draft'
+  | 'proposal_waiting'
+  | 'proposal_approved'
+  | 'proposal_paid';
+
+type OfferLinePayload = {
+  lineNo: number;
+  name: string;
+  description: string | null;
+  qty: number;
+  unit: string;
+  unitPrice: number;
+  imageUrl: string | null;
+  catalogProductId: string | null;
+  sortOrder: number;
+};
+
+type CommercialOfferDto = {
+  id: string;
+  currentStatusKey: ProposalStatusKey;
+  organizationId: string | null;
+  organizationContactId: string | null;
+  recipient: string | null;
+  vatPercent: number;
+  vatAmount: number;
+  lines: OfferLinePayload[];
+};
 
 @Component({
   selector: 'app-kp-builder-page',
@@ -59,12 +90,21 @@ import { KpBuilderFacade } from '../../kp-builder-state/kp-builder.facade';
 })
 export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
+  private readonly http = inject(HttpClient);
+  private readonly api = inject(API_CONFIG);
   private readonly ngZone = inject(NgZone);
   private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
   private readonly kpBuilderFacade = inject(KpBuilderFacade);
   private readonly tradeGoodsRepository = inject(TRADE_GOODS_REPOSITORY);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+
+  readonly offerId = signal<string | null>(null);
+  readonly offerStatusKey = signal<ProposalStatusKey>('proposal_draft');
+  readonly isSavingOffer = signal(false);
+  readonly saveError = signal<string | null>(null);
+  readonly lastSavedAt = signal<string | null>(null);
 
   /** Справочник организаций для выпадающего списка в шаблоне КП. */
   readonly organizations = this.kpBuilderFacade.organizations;
@@ -162,6 +202,11 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
     this.form.controls.recipient.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.syncOrganizationContactId());
+
+    const offerIdFromRoute = this.route.snapshot.queryParamMap.get('offerId');
+    if (offerIdFromRoute) {
+      this.loadOffer(offerIdFromRoute);
+    }
   }
 
   /** Сброс/подстановка контакта организации при смене получателя. */
@@ -177,8 +222,18 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
     contactCtrl.setValue(resolved, { emitEvent: false });
   }
 
-  print(): void {
-    window.print();
+  async print(): Promise<void> {
+    const id = await this.saveOffer();
+    if (!id) return;
+    this.http
+      .post<{ ok: boolean; printedAt: string }>(this.offersEndpoint(`/${id}/print`), {})
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => window.print(),
+        error: () => {
+          this.saveError.set('Не удалось зафиксировать печать КП.');
+        },
+      });
   }
 
   ngAfterViewInit(): void {
@@ -258,11 +313,73 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
 
   /** Новая строка с типовыми значениями для быстрого ввода. */
   addLine(): void {
+    if (!this.canEditOffer()) return;
     this.lines().push(this.lineGroup('', '1', 'шт.', '0', '', '', ''));
+  }
+
+  canEditOffer(): boolean {
+    return this.offerStatusKey() !== 'proposal_paid';
+  }
+
+  canMoveTo(status: ProposalStatusKey): boolean {
+    const current = this.offerStatusKey();
+    if (current === 'proposal_draft') return status === 'proposal_waiting';
+    if (current === 'proposal_waiting') return status === 'proposal_approved' || status === 'proposal_draft';
+    if (current === 'proposal_approved') return status === 'proposal_paid' || status === 'proposal_waiting';
+    return false;
+  }
+
+  async saveOffer(): Promise<string | null> {
+    if (this.isSavingOffer() || !this.canEditOffer()) {
+      return this.offerId();
+    }
+    this.isSavingOffer.set(true);
+    this.saveError.set(null);
+    const payload = this.buildOfferPayload();
+    const id = this.offerId();
+    return await new Promise((resolve) => {
+      const req$ = id
+        ? this.http.put<CommercialOfferDto>(this.offersEndpoint(`/${id}`), payload)
+        : this.http.post<CommercialOfferDto>(this.offersEndpoint(), payload);
+      req$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+        next: (saved) => {
+          this.applyOffer(saved);
+          this.lastSavedAt.set(new Date().toISOString());
+          this.isSavingOffer.set(false);
+          resolve(saved.id);
+        },
+        error: () => {
+          this.saveError.set('Не удалось сохранить КП.');
+          this.isSavingOffer.set(false);
+          resolve(null);
+        },
+      });
+    });
+  }
+
+  async changeStatus(statusKey: ProposalStatusKey): Promise<void> {
+    if (!this.canMoveTo(statusKey)) return;
+    const id = await this.saveOffer();
+    if (!id) return;
+    this.isSavingOffer.set(true);
+    this.http
+      .post<CommercialOfferDto>(this.offersEndpoint(`/${id}/status`), { statusKey })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (saved) => {
+          this.applyOffer(saved);
+          this.isSavingOffer.set(false);
+        },
+        error: () => {
+          this.saveError.set('Не удалось сменить статус КП.');
+          this.isSavingOffer.set(false);
+        },
+      });
   }
 
   /** Добавить позицию из витрины в таблицу КП и в PDF. Тот же товар — увеличить кол-во, не дублировать строку. */
   addFromVitrine(p: KpCatalogProduct): void {
+    if (!this.canEditOffer()) return;
     const direct = String(p.imageUrl ?? '').trim();
     const imageUrl =
       direct && (direct.startsWith('/') || direct.startsWith('http://') || direct.startsWith('https://'))
@@ -321,5 +438,99 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
     const total = calcKpTotalFromLines(this.lines().getRawValue() as KpLineItem[]);
     const vat = calcKpVatAmountFromTotalWithoutRounding(total, this.form.controls.vatPercent.value);
     this.form.controls.vatAmount.patchValue(vat.toFixed(2), { emitEvent: false });
+  }
+
+  private offersEndpoint(path = ''): string {
+    const base = this.api.baseUrl.replace(/\/$/, '');
+    return `${base}/api/commercial-offers${path}`;
+  }
+
+  private buildOfferPayload(): Record<string, unknown> {
+    const rawLines = this.lines().getRawValue() as KpLineItem[];
+    const lines = rawLines.map((line, idx) => ({
+      lineNo: idx + 1,
+      name: String(line.name ?? '').trim(),
+      description: String(line.description ?? '').trim() || null,
+      qty: parseKpNumber(line.qty),
+      unit: String(line.unit ?? '').trim() || 'шт.',
+      unitPrice: parseKpNumber(line.price),
+      imageUrl: String(line.imageUrl ?? '').trim() || null,
+      catalogProductId: String(line.catalogProductId ?? '').trim() || null,
+      sortOrder: idx,
+    }));
+    const filtered = lines.filter((line) => line.name.length > 0);
+    return {
+      currentStatusKey: this.offerStatusKey(),
+      organizationId: this.extractRecipientOrgId(),
+      organizationContactId: this.form.controls.organizationContactId.value || null,
+      recipient: this.form.controls.recipient.value || null,
+      vatPercent: parseKpNumber(this.form.controls.vatPercent.value),
+      vatAmount: parseKpNumber(this.form.controls.vatAmount.value),
+      lines: filtered,
+    };
+  }
+
+  private extractRecipientOrgId(): string | null {
+    const v = this.form.controls.recipient.value?.trim() ?? '';
+    if (!v.startsWith(KP_RECIPIENT_ORG_PREFIX)) return null;
+    const id = v.slice(KP_RECIPIENT_ORG_PREFIX.length).trim();
+    return id || null;
+  }
+
+  private loadOffer(id: string): void {
+    this.isSavingOffer.set(true);
+    this.http
+      .get<CommercialOfferDto>(this.offersEndpoint(`/${id}`))
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (offer) => {
+          this.applyOffer(offer);
+          this.isSavingOffer.set(false);
+        },
+        error: () => {
+          this.saveError.set('Не удалось загрузить КП.');
+          this.isSavingOffer.set(false);
+        },
+      });
+  }
+
+  private applyOffer(offer: CommercialOfferDto): void {
+    this.offerId.set(offer.id);
+    this.offerStatusKey.set(offer.currentStatusKey ?? 'proposal_draft');
+    this.form.patchValue(
+      {
+        recipient: offer.recipient ?? '',
+        organizationContactId: offer.organizationContactId ?? '',
+        vatPercent: String(offer.vatPercent ?? 22),
+        vatAmount: String(offer.vatAmount ?? 0),
+      },
+      { emitEvent: false },
+    );
+    const arr = this.lines();
+    arr.clear();
+    const sortedLines = [...(offer.lines ?? [])].sort((a, b) => a.sortOrder - b.sortOrder);
+    if (!sortedLines.length) {
+      arr.push(this.lineGroup('', '1', 'шт.', '0', '', '', ''));
+    } else {
+      for (const line of sortedLines) {
+        arr.push(
+          this.lineGroup(
+            line.name ?? '',
+            String(line.qty ?? 1),
+            line.unit ?? 'шт.',
+            String(line.unitPrice ?? 0),
+            line.imageUrl ?? '',
+            line.description ?? '',
+            line.catalogProductId ?? '',
+          ),
+        );
+      }
+    }
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { offerId: offer.id },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
   }
 }

@@ -12,8 +12,8 @@ This library was generated with [Nx](https://nx.dev).
 
 ## Витрина каталога (`KpCatalogVitrineComponent`)
 
-По умолчанию показываются **демо-товары** из `kp-catalog-demo-products.ts` (без картинок). Товары из справочника приходят с **`imageUrl`** с бэкенда (`/media/trade-goods/…` из каталога `trade-goods-photos`); внешние placeholder-URL не используются.
+Витрина показывает данные из справочника товаров (`GET /api/trade-goods`). Если API недоступен или данных нет — витрина остаётся пустой (без demo-данных). Товары из справочника приходят с **`imageUrl`** с бэкенда (`/media/trade-goods/…` из каталога `trade-goods-photos`); внешние placeholder-URL не используются.
 
-Чтобы подставить данные из API, передайте массив в инпут **`[catalogProducts]`** (`KpCatalogProduct[]`). Пустой массив — пустая витрина; если инпут не задан, остаются демо-данные.
+Чтобы подставить данные в витрину извне, передайте массив в инпут **`[catalogProducts]`** (`KpCatalogProduct[]`). Пустой массив — пустая витрина.
 
 См. также JSDoc на `@Input() catalogProducts` в `kp-catalog-vitrine.component.ts`.
