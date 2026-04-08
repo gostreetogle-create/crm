@@ -1,6 +1,8 @@
 # Запуск из корня репозитория (например /volume1/docker/crm):
-#   docker compose --env-file deploy/.env up -d
-# Секреты и CORS — в deploy/.env (см. deploy/.env.example).
+#   docker compose up -d
+# В корне есть `.env` с CRM_POSTGRES_PASSWORD (иначе Postgres: «superuser password is not specified»).
+# Альтернатива: docker compose --env-file deploy/.env up -d (см. deploy/.env.example).
+# Секреты и CORS для полного стека — в deploy/.env.
 # Cloudflare Tunnel не в этом compose: поднимайте отдельно из ../tunnel (токен в tunnel/.env).
 services:
   postgres:
@@ -42,6 +44,8 @@ services:
       CRM_DEPLOY_DIR: ${CRM_DEPLOY_DIR:-/opt/crm/deploy}
       BACKUP_DIR: /var/lib/crm/backups
     volumes:
+      # Фото товаров и КП, чтобы `/media/*` читались с хоста и не терялись при пересоздании контейнера.
+      - ./backend/uploads:/app/uploads
       - crm_backups:/var/lib/crm/backups
     ports:
       - "${BACKEND_PORT:-3000}:3000"

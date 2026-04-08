@@ -301,9 +301,9 @@ export const THEME_PRESETS: ThemeTokens[] = [
     uiInputPaddingX: '9px',
     uiButtonPaddingY: '5px',
     uiButtonPaddingX: '10px',
-    uiButtonPrimaryBg: '#4f6f82',
-    uiButtonPrimaryText: '#ffffff',
-    uiButtonPrimaryBorderColor: '#3e5a6a',
+    uiButtonPrimaryBg: '#E3CB61',
+    uiButtonPrimaryText: '#1B1B1B',
+    uiButtonPrimaryBorderColor: '#C9B768',
     uiButtonSoftBg: '#ffffff',
     uiButtonSoftText: '#4f6f82',
     uiButtonSoftBorderColor: '#e2ddd4',
@@ -361,5 +361,5 @@ export const THEME_PRESETS: ThemeTokens[] = [
 ];
 
 export const defaultTheme =
-  THEME_PRESETS.find((p) => p.name === 'light') ?? THEME_PRESETS[0];
+  THEME_PRESETS.find((p) => p.name === 'dark') ?? THEME_PRESETS[0];
 
