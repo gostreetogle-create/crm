@@ -4,6 +4,24 @@ import { prisma } from '../lib/prisma.js';
 
 export const clientsRouter = Router();
 
+function optionalIsoDateString() {
+  return z
+    .string()
+    .refine((v) => {
+      const s = String(v ?? '').trim();
+      return s.length === 0 || /^\d{4}-\d{2}-\d{2}$/.test(s);
+    }, 'invalid_date_format');
+}
+
+function optionalNumericString(regex: RegExp) {
+  return z
+    .string()
+    .refine((v) => {
+      const s = String(v ?? '').trim();
+      return s.length === 0 || regex.test(s);
+    }, 'invalid_numeric_format');
+}
+
 const InputSchema = z.object({
   lastName: z.string(),
   firstName: z.string(),
@@ -14,10 +32,10 @@ const InputSchema = z.object({
   notes: z.string(),
   clientMarkupPercent: z.number().nullable(),
   isActive: z.boolean(),
-  passportSeries: z.string(),
-  passportNumber: z.string(),
+  passportSeries: optionalNumericString(/^\d{4}$/),
+  passportNumber: optionalNumericString(/^\d{6}$/),
   passportIssuedBy: z.string(),
-  passportIssuedDate: z.string(),
+  passportIssuedDate: optionalIsoDateString(),
 });
 
 function toJson(row: {

@@ -10,7 +10,7 @@ export const THEME_PRESETS: ThemeTokens[] = [
     fontSizeCardTitle: '18px',
     fontSizePageTitle: '28px',
     textPrimary: '#101828',
-    textMuted: 'rgba(16, 24, 40, 0.72)',
+    textMuted: '#1f3b73',
     bgBase: '#f4f6fa',
     pageShellBgBottom: 'linear-gradient(152deg, #f7f8fb 0%, var(--bg-base) 100%)',
     bgGradientA: 'rgba(31, 111, 235, 0.08)',
@@ -99,7 +99,7 @@ export const THEME_PRESETS: ThemeTokens[] = [
     fontSizePageTitle: '28px',
     // Enterprise-style dark (windows thick-client spirit).
     textPrimary: '#E6E6E6',
-    textMuted: 'rgba(230, 230, 230, 0.72)',
+    textMuted: '#1f3b73',
     bgBase: '#1F1F22',
     pageShellBgBottom: 'linear-gradient(var(--bg-base), var(--bg-base))',
     bgGradientA: 'rgba(87, 147, 180, 0.16)',
@@ -187,7 +187,7 @@ export const THEME_PRESETS: ThemeTokens[] = [
     fontSizeCardTitle: '18px',
     fontSizePageTitle: '28px',
     textPrimary: '#2d1f12',
-    textMuted: 'rgba(45, 31, 18, 0.68)',
+    textMuted: '#1f3b73',
     bgBase: '#fff9ef',
     pageShellBgBottom:
       'linear-gradient(152deg, #fffdfa 0%, #fff4e6 42%, #fff0dc 70%, var(--bg-base) 100%)',
@@ -278,7 +278,7 @@ export const THEME_PRESETS: ThemeTokens[] = [
     fontSizePageTitle: '24px',
     // Calm CRM: dusty blue primary, warm gold in background washes + borders (not neon).
     textPrimary: '#1c1b19',
-    textMuted: '#6a6560',
+    textMuted: '#1f3b73',
     bgBase: '#f0f1f3',
     pageShellBgBottom:
       'linear-gradient(152deg, #fdfbf7 0%, #f8f4eb 28%, #f3ece0 48%, #ebe4d8 62%, #e8ecf1 78%, var(--bg-base) 100%)',

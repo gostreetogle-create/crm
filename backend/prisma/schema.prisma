@@ -129,6 +129,21 @@ model Organization {
   signerName      String?
   signerPosition  String?
   notes           String?
+  country         String   @default("")
+  parentCounterparty String @default("")
+  createdAtSource String   @default("")
+  registrationDate String  @default("")
+  taxIdExtended   String   @default("")
+  kppExtended     String   @default("")
+  isBranch        Boolean  @default(false)
+  isInnValid      Boolean  @default(false)
+  isKppValid      Boolean  @default(false)
+  isGovernmentBody Boolean @default(false)
+  documentRef     String   @default("")
+  certificateSeriesNumber String @default("")
+  certificateIssuedDate String @default("")
+  governmentBodyType String @default("")
+  governmentBodyCode String @default("")
   isActive        Boolean  @default(true)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt

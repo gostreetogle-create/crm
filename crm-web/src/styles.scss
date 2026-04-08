@@ -7,11 +7,16 @@
  * Здесь только то, чего нет в ThemeTokens, и fallback в var() до гидратации JS.
  */
 :root {
-  --font-weight-field-label: 600;
+  /* Единая точка управления описательными/вторичными текстами по всему приложению. */
+  --app-descriptive-text-color: #1f3b73;
+  --app-descriptive-text-weight: 700;
+
+  --font-weight-field-label: 700;
   --line-height-field-label: 1.28;
   --line-height-control: 1.4;
   --font-size-control: var(--font-size-base, 13px);
-  --text-form-label: var(--text-muted, #6a6560);
+  --text-muted: var(--app-descriptive-text-color);
+  --text-form-label: var(--app-descriptive-text-color);
   --ui-field-label-value-gap: var(--ui-space-2, 6px);
   --ui-form-control-bg: color-mix(in srgb, var(--accent, #4f6f82) 6.5%, #ffffff);
   --field-invalid-border: var(--danger, #9f2d20);

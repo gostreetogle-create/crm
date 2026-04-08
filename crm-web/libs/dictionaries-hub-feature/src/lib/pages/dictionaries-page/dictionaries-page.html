@@ -279,41 +279,38 @@
     <app-content-card title="" [hideTitle]="true" density="compact" class="dictionaryHubBoardCard">
       <div
         class="dictionaryHubBoardPicker"
-        [class.dictionaryHubBoardPicker--split]="hubBoardPickerHalves().length > 1"
         role="toolbar"
         aria-label="Выбор справочника по разделам"
       >
-        @for (half of hubBoardPickerHalves(); track $index) {
-          <div class="dictionaryHubBoardHalf">
-            <div class="dictionaryHubBoardHalfInner">
-              @for (col of half; track col.sectionId) {
-                <div class="dictionaryHubBoardColumn">
-                  <div class="dictionaryHubBoardColumnTitle" [attr.id]="col.sectionId">{{ col.section }}</div>
-                  <div class="dictionaryHubBoardColumnButtons" role="group" [attr.aria-labelledby]="col.sectionId">
-                    @for (item of col.items; track item.key) {
-                      <div class="dictionaryHubBoardPickerRow">
-                        <button
-                          type="button"
-                          class="dictionaryHubBoardPickerBtn"
-                          [class.dictionaryHubBoardPickerBtn--active]="isHubBoardRowSelected(item.key)"
-                          (click)="selectHubBoardRow(item.key, $event)"
-                        >
-                          {{ item.title }}
-                        </button>
-                        @if (permissions.crud().canCreate) {
-                          <button
-                            type="button"
-                            class="dictionaryHubBoardPickerAddBtn"
-                            [attr.aria-label]="'Добавить запись: ' + item.title"
-                            [title]="'Добавить: ' + item.title"
-                            (click)="onHubBoardQuickCreate(item.key, $event)"
-                          >
-                            <svg lucidePlus [size]="16"></svg>
-                          </button>
-                        }
-                      </div>
-                    }
-                  </div>
+        @for (col of hubBoardSectionColumns(); track col.sectionId) {
+          <div
+            class="dictionaryHubBoardColumn"
+            [class.dictionaryHubBoardColumn--medium]="col.items.length > 3"
+            [class.dictionaryHubBoardColumn--large]="col.items.length > 6"
+          >
+            <div class="dictionaryHubBoardColumnTitle" [attr.id]="col.sectionId">{{ col.section }}</div>
+            <div class="dictionaryHubBoardColumnButtons" role="group" [attr.aria-labelledby]="col.sectionId">
+              @for (item of col.items; track item.key) {
+                <div class="dictionaryHubBoardPickerRow">
+                  <button
+                    type="button"
+                    class="dictionaryHubBoardPickerBtn"
+                    [class.dictionaryHubBoardPickerBtn--active]="isHubBoardRowSelected(item.key)"
+                    (click)="selectHubBoardRow(item.key, $event)"
+                  >
+                    {{ item.title }}
+                  </button>
+                  @if (permissions.crud().canCreate) {
+                    <button
+                      type="button"
+                      class="dictionaryHubBoardPickerAddBtn"
+                      [attr.aria-label]="'Добавить запись: ' + item.title"
+                      [title]="'Добавить: ' + item.title"
+                      (click)="onHubBoardQuickCreate(item.key, $event)"
+                    >
+                      <svg lucidePlus [size]="16"></svg>
+                    </button>
+                  }
                 </div>
               }
             </div>
@@ -2663,16 +2660,16 @@
       <fieldset class="dictionaryFormSection">
         <legend>Паспорт (необязательно)</legend>
         <ui-form-grid [columns]="3">
-          <app-ui-form-field label="Серия" [invalid]="isClientsInvalid('passportSeries')" [errorText]="''">
+          <app-ui-form-field label="Серия" [invalid]="isClientsInvalid('passportSeries')" [errorText]="clientsErrorText('passportSeries')">
             <input type="text" formControlName="passportSeries" inputmode="numeric" autocomplete="off" />
           </app-ui-form-field>
 
-          <app-ui-form-field label="Номер" [invalid]="isClientsInvalid('passportNumber')" [errorText]="''">
+          <app-ui-form-field label="Номер" [invalid]="isClientsInvalid('passportNumber')" [errorText]="clientsErrorText('passportNumber')">
             <input type="text" formControlName="passportNumber" inputmode="numeric" autocomplete="off" />
           </app-ui-form-field>
 
-          <app-ui-form-field label="Дата выдачи" [invalid]="isClientsInvalid('passportIssuedDate')" [errorText]="''">
-            <input type="text" formControlName="passportIssuedDate" placeholder="ГГГГ-ММ-ДД или произвольно" autocomplete="off" />
+          <app-ui-form-field label="Дата выдачи" [invalid]="isClientsInvalid('passportIssuedDate')" [errorText]="clientsErrorText('passportIssuedDate')">
+            <input type="date" formControlName="passportIssuedDate" autocomplete="bday" />
           </app-ui-form-field>
 
           <app-ui-form-field
@@ -2836,6 +2833,60 @@
           </div>
         </dl>
       </section>
+      <section class="dictionaryPreviewCard__panel">
+        <h3 class="dictionaryPreviewCard__panelTitle">Доп. регистрационные поля</h3>
+        <dl class="dictionaryPreviewCard__dl">
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>Страна</dt>
+            <dd>{{ organizationsForm.controls.country.value.trim() || '—' }}</dd>
+          </div>
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>Родительский контрагент</dt>
+            <dd>{{ organizationsForm.controls.parentCounterparty.value.trim() || '—' }}</dd>
+          </div>
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>Дата регистрации</dt>
+            <dd>{{ organizationsForm.controls.registrationDate.value.trim() || '—' }}</dd>
+          </div>
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>ИНН (расшир.)</dt>
+            <dd>{{ organizationsForm.controls.taxIdExtended.value.trim() || '—' }}</dd>
+          </div>
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>КПП (расшир.)</dt>
+            <dd>{{ organizationsForm.controls.kppExtended.value.trim() || '—' }}</dd>
+          </div>
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>Документ-основание</dt>
+            <dd>{{ organizationsForm.controls.documentRef.value.trim() || '—' }}</dd>
+          </div>
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>Серия/номер свидетельства</dt>
+            <dd>{{ organizationsForm.controls.certificateSeriesNumber.value.trim() || '—' }}</dd>
+          </div>
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>Дата выдачи свидетельства</dt>
+            <dd>{{ organizationsForm.controls.certificateIssuedDate.value.trim() || '—' }}</dd>
+          </div>
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>Тип госоргана</dt>
+            <dd>{{ organizationsForm.controls.governmentBodyType.value.trim() || '—' }}</dd>
+          </div>
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>Код госоргана</dt>
+            <dd>{{ organizationsForm.controls.governmentBodyCode.value.trim() || '—' }}</dd>
+          </div>
+          <div class="dictionaryPreviewCard__dlRow">
+            <dt>Флаги</dt>
+            <dd>
+              {{ organizationsForm.controls.isBranch.value ? 'Филиал' : 'Не филиал' }},
+              {{ organizationsForm.controls.isInnValid.value ? 'ИНН валиден' : 'ИНН не подтвержден' }},
+              {{ organizationsForm.controls.isKppValid.value ? 'КПП валиден' : 'КПП не подтвержден' }},
+              {{ organizationsForm.controls.isGovernmentBody.value ? 'Госорган' : 'Не госорган' }}
+            </dd>
+          </div>
+        </dl>
+      </section>
       @if (organizationsForm.controls.notes.value.trim()) {
         <section class="dictionaryPreviewCard__notes">
           <h3 class="dictionaryPreviewCard__panelTitle">Заметки</h3>
@@ -2845,8 +2896,6 @@
     </app-dictionary-preview-card-no-photo>
   } @else {
     <form id="organizations-form" [formGroup]="organizationsForm" (ngSubmit)="submitOrganizations()" class="formGrid">
-      <app-ui-editor-shell>
-      <div editorMain>
       <fieldset class="dictionaryFormSection">
         <legend>Карточка организации</legend>
         <ui-form-grid [columns]="3">
@@ -2876,20 +2925,63 @@
       <fieldset class="dictionaryFormSection">
         <legend>Реквизиты</legend>
         <ui-form-grid [columns]="3">
-          <app-ui-form-field label="ИНН" [invalid]="false" [errorText]="''">
+          <app-ui-form-field label="ИНН" [invalid]="isOrganizationsInvalid('inn')" [errorText]="organizationsErrorText('inn')">
             <input type="text" formControlName="inn" inputmode="numeric" [attr.placeholder]="organizationInnPlaceholder()" />
           </app-ui-form-field>
           @if (organizationsForm.controls.organizationKind.value !== 'IP') {
-            <app-ui-form-field label="КПП" [invalid]="false" [errorText]="''">
+            <app-ui-form-field label="КПП" [invalid]="isOrganizationsInvalid('kpp')" [errorText]="organizationsErrorText('kpp')">
               <input type="text" formControlName="kpp" inputmode="numeric" />
             </app-ui-form-field>
           }
-          <app-ui-form-field [label]="organizationOgrnLabel()" [invalid]="false" [errorText]="''">
+          <app-ui-form-field [label]="organizationOgrnLabel()" [invalid]="isOrganizationsInvalid('ogrn')" [errorText]="organizationsErrorText('ogrn')">
             <input type="text" formControlName="ogrn" inputmode="numeric" />
           </app-ui-form-field>
-          <app-ui-form-field label="ОКПО" [invalid]="false" [errorText]="''">
+          <app-ui-form-field label="ОКПО" [invalid]="isOrganizationsInvalid('okpo')" [errorText]="organizationsErrorText('okpo')">
             <input type="text" formControlName="okpo" inputmode="numeric" />
           </app-ui-form-field>
+          <app-ui-form-field label="Страна" [invalid]="false" [errorText]="''">
+            <input type="text" formControlName="country" />
+          </app-ui-form-field>
+          <app-ui-form-field label="Родительский контрагент" [invalid]="false" [errorText]="''">
+            <input type="text" formControlName="parentCounterparty" />
+          </app-ui-form-field>
+          <app-ui-form-field label="Дата регистрации" [invalid]="isOrganizationsInvalid('registrationDate')" [errorText]="organizationsErrorText('registrationDate')">
+            <input type="date" formControlName="registrationDate" />
+          </app-ui-form-field>
+          <app-ui-form-field label="Дата из источника" [invalid]="isOrganizationsInvalid('createdAtSource')" [errorText]="organizationsErrorText('createdAtSource')">
+            <input type="date" formControlName="createdAtSource" />
+          </app-ui-form-field>
+          <app-ui-form-field label="ИНН (расшир.)" [invalid]="isOrganizationsInvalid('taxIdExtended')" [errorText]="organizationsErrorText('taxIdExtended')">
+            <input type="text" formControlName="taxIdExtended" inputmode="numeric" />
+          </app-ui-form-field>
+          <app-ui-form-field label="КПП (расшир.)" [invalid]="isOrganizationsInvalid('kppExtended')" [errorText]="organizationsErrorText('kppExtended')">
+            <input type="text" formControlName="kppExtended" inputmode="numeric" />
+          </app-ui-form-field>
+          <app-ui-form-field label="Документ-основание" [invalid]="false" [errorText]="''">
+            <input type="text" formControlName="documentRef" />
+          </app-ui-form-field>
+          <app-ui-form-field label="Серия и номер свидетельства" [invalid]="false" [errorText]="''">
+            <input type="text" formControlName="certificateSeriesNumber" />
+          </app-ui-form-field>
+          <app-ui-form-field label="Дата выдачи свидетельства" [invalid]="isOrganizationsInvalid('certificateIssuedDate')" [errorText]="organizationsErrorText('certificateIssuedDate')">
+            <input type="date" formControlName="certificateIssuedDate" />
+          </app-ui-form-field>
+        </ui-form-grid>
+      </fieldset>
+
+      <fieldset class="dictionaryFormSection">
+        <legend>Проверка и признак госоргана</legend>
+        <ui-form-grid [columns]="3">
+          <app-ui-form-field label="Тип госоргана" [invalid]="false" [errorText]="''">
+            <input type="text" formControlName="governmentBodyType" />
+          </app-ui-form-field>
+          <app-ui-form-field label="Код госоргана" [invalid]="false" [errorText]="''">
+            <input type="text" formControlName="governmentBodyCode" />
+          </app-ui-form-field>
+          <app-ui-checkbox-field class="checkbox" label="Филиал" formControlName="isBranch"></app-ui-checkbox-field>
+          <app-ui-checkbox-field class="checkbox" label="ИНН валиден" formControlName="isInnValid"></app-ui-checkbox-field>
+          <app-ui-checkbox-field class="checkbox" label="КПП валиден" formControlName="isKppValid"></app-ui-checkbox-field>
+          <app-ui-checkbox-field class="checkbox" label="Госорган" formControlName="isGovernmentBody"></app-ui-checkbox-field>
         </ui-form-grid>
       </fieldset>
 
@@ -2964,10 +3056,10 @@
       <fieldset class="dictionaryFormSection">
         <legend>Адреса</legend>
         <ui-form-grid [columns]="3">
-          <app-ui-form-field class="uiFormGrid__full" label="Юридический адрес" [wide]="true" [invalid]="false" [errorText]="''">
+          <app-ui-form-field label="Юридический адрес" [invalid]="false" [errorText]="''">
             <input type="text" formControlName="legalAddress" />
           </app-ui-form-field>
-          <app-ui-form-field class="uiFormGrid__full" label="Почтовый адрес" [wide]="true" [invalid]="false" [errorText]="''">
+          <app-ui-form-field label="Почтовый адрес" [invalid]="false" [errorText]="''">
             <input type="text" formControlName="postalAddress" />
           </app-ui-form-field>
         </ui-form-grid>
@@ -2976,16 +3068,16 @@
       <fieldset class="dictionaryFormSection">
         <legend>Банк и подписант</legend>
         <ui-form-grid [columns]="3">
-          <app-ui-form-field class="uiFormGrid__full" label="Банк" [wide]="true" [invalid]="false" [errorText]="''">
+          <app-ui-form-field label="Банк" [invalid]="false" [errorText]="''">
             <input type="text" formControlName="bankName" />
           </app-ui-form-field>
-          <app-ui-form-field label="БИК" [invalid]="false" [errorText]="''">
+          <app-ui-form-field label="БИК" [invalid]="isOrganizationsInvalid('bankBik')" [errorText]="organizationsErrorText('bankBik')">
             <input type="text" formControlName="bankBik" inputmode="numeric" />
           </app-ui-form-field>
-          <app-ui-form-field label="Расчётный счёт" [invalid]="false" [errorText]="''">
+          <app-ui-form-field label="Расчётный счёт" [invalid]="isOrganizationsInvalid('bankAccount')" [errorText]="organizationsErrorText('bankAccount')">
             <input type="text" formControlName="bankAccount" inputmode="numeric" />
           </app-ui-form-field>
-          <app-ui-form-field label="Корр. счёт" [invalid]="false" [errorText]="''">
+          <app-ui-form-field label="Корр. счёт" [invalid]="isOrganizationsInvalid('bankCorrAccount')" [errorText]="organizationsErrorText('bankCorrAccount')">
             <input type="text" formControlName="bankCorrAccount" inputmode="numeric" />
           </app-ui-form-field>
           <app-ui-form-field label="Подписант" [invalid]="false" [errorText]="''">
@@ -2996,17 +3088,16 @@
           </app-ui-form-field>
         </ui-form-grid>
       </fieldset>
-      </div>
-      <fieldset class="dictionaryFormSection" editorAside>
+
+      <fieldset class="dictionaryFormSection">
         <legend>Дополнительно</legend>
-        <div class="dictionaryFormSectionBody">
-          <app-ui-form-field label="Заметки" [wide]="true">
+        <ui-form-grid [columns]="3">
+          <app-ui-form-field class="uiFormGrid__full" label="Заметки" [wide]="true">
             <textarea rows="2" formControlName="notes"></textarea>
           </app-ui-form-field>
           <app-ui-checkbox-field class="checkbox" label="Активна" formControlName="isActive"></app-ui-checkbox-field>
-        </div>
+        </ui-form-grid>
       </fieldset>
-      </app-ui-editor-shell>
     </form>
   }
 </ng-template>

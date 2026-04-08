@@ -1,6 +1,7 @@
 import type { BulkJsonTargetId } from './bulk-json-import-card.targets';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const FLEX_DATE_RE = /^(?:\d{4}-\d{2}-\d{2}|\d{2}\.\d{2}\.\d{4})$/;
 
 function isUuid(s: unknown): boolean {
   return typeof s === 'string' && UUID_RE.test(s.trim());
@@ -8,6 +9,13 @@ function isUuid(s: unknown): boolean {
 
 function nonEmptyString(v: unknown): v is string {
   return typeof v === 'string' && v.trim().length > 0;
+}
+
+function optionalStringMatches(v: unknown, re: RegExp): boolean {
+  if (v == null) return true;
+  if (typeof v !== 'string') return false;
+  const s = v.trim();
+  return s.length === 0 || re.test(s);
 }
 
 /**
@@ -256,6 +264,15 @@ export function validateBulkDraftForTarget(
         const o = it as Record<string, unknown>;
         if (!nonEmptyString(o['name'])) {
           return `Элемент ${i}: нужно непустое поле name.`;
+        }
+        if (!optionalStringMatches(o['registrationDate'], FLEX_DATE_RE)) {
+          return `Элемент ${i}: registrationDate — формат YYYY-MM-DD или DD.MM.YYYY.`;
+        }
+        if (!optionalStringMatches(o['createdAtSource'], FLEX_DATE_RE)) {
+          return `Элемент ${i}: createdAtSource — формат YYYY-MM-DD или DD.MM.YYYY.`;
+        }
+        if (!optionalStringMatches(o['certificateIssuedDate'], FLEX_DATE_RE)) {
+          return `Элемент ${i}: certificateIssuedDate — формат YYYY-MM-DD или DD.MM.YYYY.`;
         }
         if (o['id'] != null && o['id'] !== '' && !isUuid(o['id'])) {
           return `Элемент ${i}: id — uuid или пусто.`;

@@ -14,6 +14,18 @@ import {
 import { requireEffectiveBulkPermissionKey } from "../middleware/require-effective-permission.js";
 
 const MAX_ITEMS = 5000;
+const FLEX_DATE_RE = /^(?:\d{4}-\d{2}-\d{2}|\d{2}\.\d{2}\.\d{4})$/;
+
+function optionalIsoDateString() {
+  return z
+    .string()
+    .optional()
+    .refine((v) => {
+      if (v == null) return true;
+      const s = String(v).trim();
+      return s.length === 0 || FLEX_DATE_RE.test(s);
+    }, "invalid_date_format");
+}
 
 function strOrNull(v: unknown): string | null {
   if (v == null) return null;
@@ -41,10 +53,18 @@ const BulkClientsSchema = z.object({
         notes: z.string().optional(),
         clientMarkupPercent: z.number().nullable().optional(),
         isActive: z.boolean().optional().default(true),
-        passportSeries: z.string().optional(),
-        passportNumber: z.string().optional(),
+        passportSeries: z.string().optional().refine((v) => {
+          if (v == null) return true;
+          const s = String(v).trim();
+          return s.length === 0 || /^\d{4}$/.test(s);
+        }, "invalid_numeric_format"),
+        passportNumber: z.string().optional().refine((v) => {
+          if (v == null) return true;
+          const s = String(v).trim();
+          return s.length === 0 || /^\d{6}$/.test(s);
+        }, "invalid_numeric_format"),
         passportIssuedBy: z.string().optional(),
-        passportIssuedDate: z.string().optional(),
+        passportIssuedDate: optionalIsoDateString(),
       }),
     )
     .min(1)
@@ -75,6 +95,33 @@ const BulkOrgsSchema = z.object({
         signerName: z.string().nullable().optional(),
         signerPosition: z.string().nullable().optional(),
         notes: z.string().nullable().optional(),
+        country: z.string().nullable().optional(),
+        parentCounterparty: z.string().nullable().optional(),
+        createdAtSource: z.string().nullable().optional().refine((v) => {
+          if (v == null) return true;
+          const s = String(v).trim();
+          return s.length === 0 || FLEX_DATE_RE.test(s);
+        }, "invalid_date_format"),
+        registrationDate: z.string().nullable().optional().refine((v) => {
+          if (v == null) return true;
+          const s = String(v).trim();
+          return s.length === 0 || FLEX_DATE_RE.test(s);
+        }, "invalid_date_format"),
+        taxIdExtended: z.string().nullable().optional(),
+        kppExtended: z.string().nullable().optional(),
+        isBranch: z.boolean().optional(),
+        isInnValid: z.boolean().optional(),
+        isKppValid: z.boolean().optional(),
+        isGovernmentBody: z.boolean().optional(),
+        documentRef: z.string().nullable().optional(),
+        certificateSeriesNumber: z.string().nullable().optional(),
+        certificateIssuedDate: z.string().nullable().optional().refine((v) => {
+          if (v == null) return true;
+          const s = String(v).trim();
+          return s.length === 0 || FLEX_DATE_RE.test(s);
+        }, "invalid_date_format"),
+        governmentBodyType: z.string().nullable().optional(),
+        governmentBodyCode: z.string().nullable().optional(),
         isActive: z.boolean().optional().default(true),
       }),
     )
@@ -292,6 +339,21 @@ export function registerBulkExtendedRoutes(bulkRouter: Router): void {
             signerName: strOrNull(it.signerName),
             signerPosition: strOrNull(it.signerPosition),
             notes: strOrNull(it.notes),
+            country: it.country?.trim() ?? "",
+            parentCounterparty: it.parentCounterparty?.trim() ?? "",
+            createdAtSource: it.createdAtSource?.trim() ?? "",
+            registrationDate: it.registrationDate?.trim() ?? "",
+            taxIdExtended: it.taxIdExtended?.trim() ?? "",
+            kppExtended: it.kppExtended?.trim() ?? "",
+            isBranch: it.isBranch ?? false,
+            isInnValid: it.isInnValid ?? false,
+            isKppValid: it.isKppValid ?? false,
+            isGovernmentBody: it.isGovernmentBody ?? false,
+            documentRef: it.documentRef?.trim() ?? "",
+            certificateSeriesNumber: it.certificateSeriesNumber?.trim() ?? "",
+            certificateIssuedDate: it.certificateIssuedDate?.trim() ?? "",
+            governmentBodyType: it.governmentBodyType?.trim() ?? "",
+            governmentBodyCode: it.governmentBodyCode?.trim() ?? "",
             isActive: it.isActive ?? true,
           };
           if (it.id) {

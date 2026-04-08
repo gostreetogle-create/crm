@@ -309,6 +309,21 @@ export function organizationsPayloadFromFields(input: {
   signerName: string;
   signerPosition: string;
   notes: string;
+  country: string;
+  parentCounterparty: string;
+  createdAtSource: string;
+  registrationDate: string;
+  taxIdExtended: string;
+  kppExtended: string;
+  isBranch: boolean;
+  isInnValid: boolean;
+  isKppValid: boolean;
+  isGovernmentBody: boolean;
+  documentRef: string;
+  certificateSeriesNumber: string;
+  certificateIssuedDate: string;
+  governmentBodyType: string;
+  governmentBodyCode: string;
   isActive: boolean;
 }): OrganizationItemInput {
   const legalForm = organizationKindToLegalForm(input.organizationKind);
@@ -333,6 +348,21 @@ export function organizationsPayloadFromFields(input: {
     signerName: input.signerName.trim() || undefined,
     signerPosition: input.signerPosition.trim() || undefined,
     notes: input.notes.trim() || undefined,
+    country: input.country.trim(),
+    parentCounterparty: input.parentCounterparty.trim(),
+    createdAtSource: input.createdAtSource.trim(),
+    registrationDate: input.registrationDate.trim(),
+    taxIdExtended: input.taxIdExtended.trim(),
+    kppExtended: input.kppExtended.trim(),
+    isBranch: input.isBranch,
+    isInnValid: input.isInnValid,
+    isKppValid: input.isKppValid,
+    isGovernmentBody: input.isGovernmentBody,
+    documentRef: input.documentRef.trim(),
+    certificateSeriesNumber: input.certificateSeriesNumber.trim(),
+    certificateIssuedDate: input.certificateIssuedDate.trim(),
+    governmentBodyType: input.governmentBodyType.trim(),
+    governmentBodyCode: input.governmentBodyCode.trim(),
     isActive: input.isActive,
     contactIds: selectedContactIds,
     contactLabels: selectedContactIds.map((id) => input.contactLabelsById.get(id) ?? id),

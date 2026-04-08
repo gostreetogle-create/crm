@@ -1115,10 +1115,10 @@ export class DictionariesPage implements OnDestroy {
     phone: [''],
     email: [''],
     notes: [''],
-    passportSeries: [''],
-    passportNumber: [''],
+    passportSeries: ['', [Validators.pattern(/^\d{4}$/)]],
+    passportNumber: ['', [Validators.pattern(/^\d{6}$/)]],
     passportIssuedBy: [''],
-    passportIssuedDate: [''],
+    passportIssuedDate: ['', [Validators.pattern(/^\d{4}-\d{2}-\d{2}$/)]],
     isActive: [true],
   });
 
@@ -1126,22 +1126,37 @@ export class DictionariesPage implements OnDestroy {
     organizationKind: this.fb.nonNullable.control<'OOO' | 'IP'>('OOO'),
     name: ['', [Validators.required, Validators.minLength(2)]],
     shortName: [''],
-    inn: [''],
-    kpp: [''],
-    ogrn: [''],
-    okpo: [''],
+    inn: ['', [Validators.pattern(/^\d{10}(\d{2})?$/)]],
+    kpp: ['', [Validators.pattern(/^\d{9}$/)]],
+    ogrn: ['', [Validators.pattern(/^\d{13}(\d{2})?$/)]],
+    okpo: ['', [Validators.pattern(/^\d{8}(\d{2})?$/)]],
     phone: [''],
     email: [''],
     website: [''],
     legalAddress: [''],
     postalAddress: [''],
     bankName: [''],
-    bankBik: [''],
-    bankAccount: [''],
-    bankCorrAccount: [''],
+    bankBik: ['', [Validators.pattern(/^\d{9}$/)]],
+    bankAccount: ['', [Validators.pattern(/^\d{20}$/)]],
+    bankCorrAccount: ['', [Validators.pattern(/^\d{20}$/)]],
     signerName: [''],
     signerPosition: [''],
     notes: [''],
+    country: [''],
+    parentCounterparty: [''],
+    createdAtSource: ['', [Validators.pattern(/^\d{4}-\d{2}-\d{2}$/)]],
+    registrationDate: ['', [Validators.pattern(/^\d{4}-\d{2}-\d{2}$/)]],
+    taxIdExtended: ['', [Validators.pattern(/^\d{10}(\d{2})?$/)]],
+    kppExtended: ['', [Validators.pattern(/^\d{9}$/)]],
+    isBranch: [false],
+    isInnValid: [false],
+    isKppValid: [false],
+    isGovernmentBody: [false],
+    documentRef: [''],
+    certificateSeriesNumber: [''],
+    certificateIssuedDate: ['', [Validators.pattern(/^\d{4}-\d{2}-\d{2}$/)]],
+    governmentBodyType: [''],
+    governmentBodyCode: [''],
     contactIds: this.fb.nonNullable.control<string[]>([]),
     /** Одноразовый выбор из выпадающего списка — добавляет id в `contactIds`, затем сбрасывается. */
     contactPicker: [''],
@@ -3014,6 +3029,21 @@ export class DictionariesPage implements OnDestroy {
       signerName: '',
       signerPosition: '',
       notes: '',
+      country: '',
+      parentCounterparty: '',
+      createdAtSource: '',
+      registrationDate: '',
+      taxIdExtended: '',
+      kppExtended: '',
+      isBranch: false,
+      isInnValid: false,
+      isKppValid: false,
+      isGovernmentBody: false,
+      documentRef: '',
+      certificateSeriesNumber: '',
+      certificateIssuedDate: '',
+      governmentBodyType: '',
+      governmentBodyCode: '',
       contactIds: [],
       contactPicker: '',
       isActive: true,
@@ -5256,6 +5286,21 @@ export class DictionariesPage implements OnDestroy {
       signerName: '',
       signerPosition: '',
       notes: '',
+      country: '',
+      parentCounterparty: '',
+      createdAtSource: '',
+      registrationDate: '',
+      taxIdExtended: '',
+      kppExtended: '',
+      isBranch: false,
+      isInnValid: false,
+      isKppValid: false,
+      isGovernmentBody: false,
+      documentRef: '',
+      certificateSeriesNumber: '',
+      certificateIssuedDate: '',
+      governmentBodyType: '',
+      governmentBodyCode: '',
       contactIds: [],
       contactPicker: '',
       isActive: true,
@@ -5291,6 +5336,21 @@ export class DictionariesPage implements OnDestroy {
       signerName: item.signerName ?? '',
       signerPosition: item.signerPosition ?? '',
       notes: item.notes ?? '',
+      country: item.country ?? '',
+      parentCounterparty: item.parentCounterparty ?? '',
+      createdAtSource: item.createdAtSource ?? '',
+      registrationDate: item.registrationDate ?? '',
+      taxIdExtended: item.taxIdExtended ?? '',
+      kppExtended: item.kppExtended ?? '',
+      isBranch: item.isBranch ?? false,
+      isInnValid: item.isInnValid ?? false,
+      isKppValid: item.isKppValid ?? false,
+      isGovernmentBody: item.isGovernmentBody ?? false,
+      documentRef: item.documentRef ?? '',
+      certificateSeriesNumber: item.certificateSeriesNumber ?? '',
+      certificateIssuedDate: item.certificateIssuedDate ?? '',
+      governmentBodyType: item.governmentBodyType ?? '',
+      governmentBodyCode: item.governmentBodyCode ?? '',
       contactIds: item.contactIds ?? [],
       contactPicker: '',
       isActive: item.isActive,
@@ -5360,6 +5420,21 @@ export class DictionariesPage implements OnDestroy {
       signerName: item.signerName ?? '',
       signerPosition: item.signerPosition ?? '',
       notes: item.notes ?? '',
+      country: item.country ?? '',
+      parentCounterparty: item.parentCounterparty ?? '',
+      createdAtSource: item.createdAtSource ?? '',
+      registrationDate: item.registrationDate ?? '',
+      taxIdExtended: item.taxIdExtended ?? '',
+      kppExtended: item.kppExtended ?? '',
+      isBranch: item.isBranch ?? false,
+      isInnValid: item.isInnValid ?? false,
+      isKppValid: item.isKppValid ?? false,
+      isGovernmentBody: item.isGovernmentBody ?? false,
+      documentRef: item.documentRef ?? '',
+      certificateSeriesNumber: item.certificateSeriesNumber ?? '',
+      certificateIssuedDate: item.certificateIssuedDate ?? '',
+      governmentBodyType: item.governmentBodyType ?? '',
+      governmentBodyCode: item.governmentBodyCode ?? '',
       contactIds: item.contactIds ?? [],
       contactPicker: '',
       isActive: item.isActive,
@@ -5391,6 +5466,21 @@ export class DictionariesPage implements OnDestroy {
       signerName: item.signerName ?? '',
       signerPosition: item.signerPosition ?? '',
       notes: item.notes ?? '',
+      country: item.country ?? '',
+      parentCounterparty: item.parentCounterparty ?? '',
+      createdAtSource: item.createdAtSource ?? '',
+      registrationDate: item.registrationDate ?? '',
+      taxIdExtended: item.taxIdExtended ?? '',
+      kppExtended: item.kppExtended ?? '',
+      isBranch: item.isBranch ?? false,
+      isInnValid: item.isInnValid ?? false,
+      isKppValid: item.isKppValid ?? false,
+      isGovernmentBody: item.isGovernmentBody ?? false,
+      documentRef: item.documentRef ?? '',
+      certificateSeriesNumber: item.certificateSeriesNumber ?? '',
+      certificateIssuedDate: item.certificateIssuedDate ?? '',
+      governmentBodyType: item.governmentBodyType ?? '',
+      governmentBodyCode: item.governmentBodyCode ?? '',
       contactIds: item.contactIds ?? [],
       contactPicker: '',
       isActive: item.isActive,
@@ -5812,12 +5902,57 @@ export class DictionariesPage implements OnDestroy {
     );
   }
 
+  clientsErrorText(controlName: keyof typeof this.clientsForm.controls): string {
+    if (!this.isClientsInvalid(controlName)) return '';
+    const c = this.clientsForm.controls[controlName];
+    if (c.hasError('required')) return 'Обязательное поле';
+    if (c.hasError('minlength')) return 'Минимум 2 символа';
+    if (c.hasError('pattern')) {
+      if (controlName === 'passportSeries') return 'Только цифры: 4';
+      if (controlName === 'passportNumber') return 'Только цифры: 6';
+      if (controlName === 'passportIssuedDate') return 'Формат даты: YYYY-MM-DD';
+    }
+    return 'Некорректное значение';
+  }
+
   isOrganizationsInvalid(controlName: keyof typeof this.organizationsForm.controls): boolean {
     const control = this.organizationsForm.controls[controlName];
     return (
       control.invalid &&
       (control.touched || control.dirty || this.organizationsStore.formSubmitAttempted())
     );
+  }
+
+  organizationsErrorText(controlName: keyof typeof this.organizationsForm.controls): string {
+    if (!this.isOrganizationsInvalid(controlName)) return '';
+    const c = this.organizationsForm.controls[controlName];
+    if (c.hasError('required')) return 'Обязательное поле';
+    if (c.hasError('minlength')) return 'Минимум 2 символа';
+    if (c.hasError('pattern')) {
+      switch (controlName) {
+        case 'inn':
+        case 'taxIdExtended':
+          return 'Только цифры: 10 или 12';
+        case 'kpp':
+        case 'kppExtended':
+        case 'bankBik':
+          return 'Только цифры: 9';
+        case 'ogrn':
+          return 'Только цифры: 13 или 15';
+        case 'okpo':
+          return 'Только цифры: 8 или 10';
+        case 'bankAccount':
+        case 'bankCorrAccount':
+          return 'Только цифры: 20';
+        case 'registrationDate':
+        case 'createdAtSource':
+        case 'certificateIssuedDate':
+          return 'Формат даты: YYYY-MM-DD';
+        default:
+          return 'Некорректный формат';
+      }
+    }
+    return 'Некорректное значение';
   }
 
   /**
@@ -6067,6 +6202,21 @@ export class DictionariesPage implements OnDestroy {
       signerName: c.signerName.value,
       signerPosition: c.signerPosition.value,
       notes: c.notes.value,
+      country: c.country.value,
+      parentCounterparty: c.parentCounterparty.value,
+      createdAtSource: c.createdAtSource.value,
+      registrationDate: c.registrationDate.value,
+      taxIdExtended: c.taxIdExtended.value,
+      kppExtended: c.kppExtended.value,
+      isBranch: c.isBranch.value,
+      isInnValid: c.isInnValid.value,
+      isKppValid: c.isKppValid.value,
+      isGovernmentBody: c.isGovernmentBody.value,
+      documentRef: c.documentRef.value,
+      certificateSeriesNumber: c.certificateSeriesNumber.value,
+      certificateIssuedDate: c.certificateIssuedDate.value,
+      governmentBodyType: c.governmentBodyType.value,
+      governmentBodyCode: c.governmentBodyCode.value,
       isActive: c.isActive.value,
     });
   }

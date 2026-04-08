@@ -59,7 +59,9 @@
         <span class="muted">Загружаю…</span>
       }
     </div>
-    <pre class="resultPre bulkTemplatePreview__pre" aria-label="Шаблон JSON">{{ templatePreviewText() }}</pre>
+    <pre class="resultPre bulkTemplatePreview__pre" aria-label="Шаблон JSON">{{
+      uploadedPreviewText() ?? templatePreviewText()
+    }}</pre>
     @if (templatePreviewHint()) {
       <p class="muted bulkInlineHint" role="status">{{ templatePreviewHint() }}</p>
     }

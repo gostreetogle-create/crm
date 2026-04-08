@@ -3,27 +3,54 @@ import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
 
 export const organizationsRouter = Router();
+const FLEX_DATE_RE = /^(?:\d{4}-\d{2}-\d{2}|\d{2}\.\d{2}\.\d{4})$/;
+
+function optionalFormattedString(regex: RegExp) {
+  return z
+    .union([z.string(), z.null(), z.undefined()])
+    .optional()
+    .refine((v) => {
+      if (v == null) return true;
+      const s = String(v).trim();
+      return s.length === 0 || regex.test(s);
+    }, 'invalid_format');
+}
 
 const InputSchema = z.object({
   name: z.string().trim().min(2),
   shortName: z.union([z.string(), z.null(), z.undefined()]).optional(),
   legalForm: z.union([z.string(), z.null(), z.undefined()]).optional(),
-  inn: z.union([z.string(), z.null(), z.undefined()]).optional(),
-  kpp: z.union([z.string(), z.null(), z.undefined()]).optional(),
-  ogrn: z.union([z.string(), z.null(), z.undefined()]).optional(),
-  okpo: z.union([z.string(), z.null(), z.undefined()]).optional(),
+  inn: optionalFormattedString(/^\d{10}(\d{2})?$/),
+  kpp: optionalFormattedString(/^\d{9}$/),
+  ogrn: optionalFormattedString(/^\d{13}(\d{2})?$/),
+  okpo: optionalFormattedString(/^\d{8}(\d{2})?$/),
   phone: z.union([z.string(), z.null(), z.undefined()]).optional(),
   email: z.union([z.string(), z.null(), z.undefined()]).optional(),
   website: z.union([z.string(), z.null(), z.undefined()]).optional(),
   legalAddress: z.union([z.string(), z.null(), z.undefined()]).optional(),
   postalAddress: z.union([z.string(), z.null(), z.undefined()]).optional(),
   bankName: z.union([z.string(), z.null(), z.undefined()]).optional(),
-  bankBik: z.union([z.string(), z.null(), z.undefined()]).optional(),
-  bankAccount: z.union([z.string(), z.null(), z.undefined()]).optional(),
-  bankCorrAccount: z.union([z.string(), z.null(), z.undefined()]).optional(),
+  bankBik: optionalFormattedString(/^\d{9}$/),
+  bankAccount: optionalFormattedString(/^\d{20}$/),
+  bankCorrAccount: optionalFormattedString(/^\d{20}$/),
   signerName: z.union([z.string(), z.null(), z.undefined()]).optional(),
   signerPosition: z.union([z.string(), z.null(), z.undefined()]).optional(),
   notes: z.union([z.string(), z.null(), z.undefined()]).optional(),
+  country: z.union([z.string(), z.null(), z.undefined()]).optional(),
+  parentCounterparty: z.union([z.string(), z.null(), z.undefined()]).optional(),
+  createdAtSource: optionalFormattedString(FLEX_DATE_RE),
+  registrationDate: optionalFormattedString(FLEX_DATE_RE),
+  taxIdExtended: optionalFormattedString(/^\d{10}(\d{2})?$/),
+  kppExtended: optionalFormattedString(/^\d{9}$/),
+  isBranch: z.boolean().optional(),
+  isInnValid: z.boolean().optional(),
+  isKppValid: z.boolean().optional(),
+  isGovernmentBody: z.boolean().optional(),
+  documentRef: z.union([z.string(), z.null(), z.undefined()]).optional(),
+  certificateSeriesNumber: z.union([z.string(), z.null(), z.undefined()]).optional(),
+  certificateIssuedDate: optionalFormattedString(FLEX_DATE_RE),
+  governmentBodyType: z.union([z.string(), z.null(), z.undefined()]).optional(),
+  governmentBodyCode: z.union([z.string(), z.null(), z.undefined()]).optional(),
   isActive: z.boolean(),
   contactIds: z.array(z.string()).default([]),
 });
@@ -32,6 +59,11 @@ function cleanString(v: string | null | undefined): string | null {
   if (v == null) return null;
   const t = String(v).trim();
   return t ? t : null;
+}
+
+function cleanStringOrEmpty(v: string | null | undefined): string {
+  if (v == null) return '';
+  return String(v).trim();
 }
 
 function uniqIds(ids: readonly string[]): string[] {
@@ -59,6 +91,21 @@ function mapOrganization(row: {
   signerName: string | null;
   signerPosition: string | null;
   notes: string | null;
+  country: string;
+  parentCounterparty: string;
+  createdAtSource: string;
+  registrationDate: string;
+  taxIdExtended: string;
+  kppExtended: string;
+  isBranch: boolean;
+  isInnValid: boolean;
+  isKppValid: boolean;
+  isGovernmentBody: boolean;
+  documentRef: string;
+  certificateSeriesNumber: string;
+  certificateIssuedDate: string;
+  governmentBodyType: string;
+  governmentBodyCode: string;
   isActive: boolean;
   contacts: Array<{
     clientId: string;
@@ -91,6 +138,21 @@ function mapOrganization(row: {
     signerName: row.signerName,
     signerPosition: row.signerPosition,
     notes: row.notes,
+    country: row.country,
+    parentCounterparty: row.parentCounterparty,
+    createdAtSource: row.createdAtSource,
+    registrationDate: row.registrationDate,
+    taxIdExtended: row.taxIdExtended,
+    kppExtended: row.kppExtended,
+    isBranch: row.isBranch,
+    isInnValid: row.isInnValid,
+    isKppValid: row.isKppValid,
+    isGovernmentBody: row.isGovernmentBody,
+    documentRef: row.documentRef,
+    certificateSeriesNumber: row.certificateSeriesNumber,
+    certificateIssuedDate: row.certificateIssuedDate,
+    governmentBodyType: row.governmentBodyType,
+    governmentBodyCode: row.governmentBodyCode,
     isActive: row.isActive,
     contactIds,
     contactLabels,
@@ -144,6 +206,21 @@ organizationsRouter.post('/', async (req, res, next) => {
         signerName: cleanString(d.signerName),
         signerPosition: cleanString(d.signerPosition),
         notes: cleanString(d.notes),
+        country: cleanStringOrEmpty(d.country),
+        parentCounterparty: cleanStringOrEmpty(d.parentCounterparty),
+        createdAtSource: cleanStringOrEmpty(d.createdAtSource),
+        registrationDate: cleanStringOrEmpty(d.registrationDate),
+        taxIdExtended: cleanStringOrEmpty(d.taxIdExtended),
+        kppExtended: cleanStringOrEmpty(d.kppExtended),
+        isBranch: d.isBranch ?? false,
+        isInnValid: d.isInnValid ?? false,
+        isKppValid: d.isKppValid ?? false,
+        isGovernmentBody: d.isGovernmentBody ?? false,
+        documentRef: cleanStringOrEmpty(d.documentRef),
+        certificateSeriesNumber: cleanStringOrEmpty(d.certificateSeriesNumber),
+        certificateIssuedDate: cleanStringOrEmpty(d.certificateIssuedDate),
+        governmentBodyType: cleanStringOrEmpty(d.governmentBodyType),
+        governmentBodyCode: cleanStringOrEmpty(d.governmentBodyCode),
         isActive: d.isActive,
         contacts: {
           create: contactIds.map((clientId, idx) => ({ clientId, isPrimary: idx === 0 })),
@@ -195,6 +272,21 @@ organizationsRouter.put('/:id', async (req, res, next) => {
           signerName: cleanString(d.signerName),
           signerPosition: cleanString(d.signerPosition),
           notes: cleanString(d.notes),
+          country: cleanStringOrEmpty(d.country),
+          parentCounterparty: cleanStringOrEmpty(d.parentCounterparty),
+          createdAtSource: cleanStringOrEmpty(d.createdAtSource),
+          registrationDate: cleanStringOrEmpty(d.registrationDate),
+          taxIdExtended: cleanStringOrEmpty(d.taxIdExtended),
+          kppExtended: cleanStringOrEmpty(d.kppExtended),
+          isBranch: d.isBranch ?? false,
+          isInnValid: d.isInnValid ?? false,
+          isKppValid: d.isKppValid ?? false,
+          isGovernmentBody: d.isGovernmentBody ?? false,
+          documentRef: cleanStringOrEmpty(d.documentRef),
+          certificateSeriesNumber: cleanStringOrEmpty(d.certificateSeriesNumber),
+          certificateIssuedDate: cleanStringOrEmpty(d.certificateIssuedDate),
+          governmentBodyType: cleanStringOrEmpty(d.governmentBodyType),
+          governmentBodyCode: cleanStringOrEmpty(d.governmentBodyCode),
           isActive: d.isActive,
           contacts: {
             deleteMany: {},

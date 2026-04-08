@@ -128,6 +128,8 @@ export class BulkJsonImportCardComponent {
   readonly loadingPurge = signal(false);
   readonly loadingTemplatePreview = signal(false);
   readonly templatePreviewText = signal<string>(`${EMPTY_BULK_JSON}\n`);
+  /** Отдельный превью-текст загруженного локального файла (не должен перетираться серверным шаблоном). */
+  readonly uploadedPreviewText = signal<string | null>(null);
   readonly templatePreviewHint = signal<string>('');
   readonly dbRowsCount = signal<number | null>(null);
   /** Успешная локальная проверка — разрешает «Сохранить в БД». */
@@ -145,6 +147,7 @@ export class BulkJsonImportCardComponent {
     this.selectedId.set(raw);
     this.jsonDraft = EMPTY_BULK_JSON;
     this.loadedFileLabel.set(null);
+    this.uploadedPreviewText.set(null);
     this.statusText.set('');
     this.errorText.set('');
     this.lastResult.set('');
@@ -168,7 +171,9 @@ export class BulkJsonImportCardComponent {
           this.loadingTemplatePreview.set(false);
           const count = Array.isArray(data?.items) ? data.items.length : null;
           this.dbRowsCount.set(count);
-          this.templatePreviewText.set(`${JSON.stringify(data, null, 2)}\n`);
+          if (!this.uploadedPreviewText()) {
+            this.templatePreviewText.set(`${JSON.stringify(data, null, 2)}\n`);
+          }
           this.templatePreviewHint.set(
             'Шаблон загружен с сервера для выбранной таблицы. Можете копировать и заполнять.',
           );
@@ -176,7 +181,9 @@ export class BulkJsonImportCardComponent {
         error: () => {
           this.loadingTemplatePreview.set(false);
           this.dbRowsCount.set(null);
-          this.templatePreviewText.set(`${EMPTY_BULK_JSON}\n`);
+          if (!this.uploadedPreviewText()) {
+            this.templatePreviewText.set(`${EMPTY_BULK_JSON}\n`);
+          }
           this.templatePreviewHint.set(
             'Не удалось загрузить шаблон с сервера — показан базовый шаблон { "items": [] }.',
           );
@@ -184,7 +191,9 @@ export class BulkJsonImportCardComponent {
       });
       return;
     }
-    this.templatePreviewText.set(`${EMPTY_BULK_JSON}\n`);
+    if (!this.uploadedPreviewText()) {
+      this.templatePreviewText.set(`${EMPTY_BULK_JSON}\n`);
+    }
     this.dbRowsCount.set(null);
     this.templatePreviewHint.set(
       t.hasEndpoint
@@ -248,9 +257,27 @@ export class BulkJsonImportCardComponent {
       const text = typeof reader.result === 'string' ? reader.result : '';
       this.jsonDraft = text;
       this.loadedFileLabel.set(file.name);
+      this.uploadedPreviewText.set(text);
       this.validatedOk.set(false);
       this.errorText.set('');
       this.lastResult.set('');
+      if (!text.trim()) {
+        this.errorText.set('Файл пустой.');
+        this.templatePreviewHint.set('Загружен пустой файл. Выберите корректный JSON.');
+        this.dbRowsCount.set(0);
+        this.statusText.set('');
+        return;
+      }
+      try {
+        const parsed = JSON.parse(text) as { items?: unknown[] };
+        const pretty = `${JSON.stringify(parsed, null, 2)}\n`;
+        this.uploadedPreviewText.set(pretty);
+        this.dbRowsCount.set(Array.isArray(parsed.items) ? parsed.items.length : null);
+      } catch {
+        this.uploadedPreviewText.set(text);
+        this.dbRowsCount.set(null);
+      }
+      this.templatePreviewHint.set('Показано содержимое загруженного файла (локально).');
       this.statusText.set(`Загружен файл «${file.name}». Нажмите «Проверить», затем при успехе — «Сохранить в БД».`);
     };
     reader.onerror = () => {
@@ -331,6 +358,7 @@ export class BulkJsonImportCardComponent {
         this.lastResult.set(JSON.stringify(res, null, 2));
         this.validatedOk.set(false);
         this.loadedFileLabel.set(null);
+        this.uploadedPreviewText.set(null);
         this.jsonDraft = EMPTY_BULK_JSON;
         this.refreshTemplatePreview();
       },
@@ -375,6 +403,7 @@ export class BulkJsonImportCardComponent {
         if (res.ok) {
           this.validatedOk.set(false);
           this.loadedFileLabel.set(null);
+          this.uploadedPreviewText.set(null);
           this.jsonDraft = EMPTY_BULK_JSON;
           this.refreshTemplatePreview();
         }
@@ -394,6 +423,22 @@ export class BulkJsonImportCardComponent {
       if (typeof body === 'object' && body !== null) {
         const m = (body as { message?: unknown }).message;
         if (typeof m === 'string' && m.trim()) msg = m;
+        if (!msg) {
+          const e = (body as { error?: unknown }).error;
+          if (e === 'invalid_body') {
+            const details = (body as { details?: unknown }).details as
+              | { fieldErrors?: Record<string, string[]>; formErrors?: string[] }
+              | undefined;
+            const fieldParts = Object.entries(details?.fieldErrors ?? {})
+              .filter(([, arr]) => Array.isArray(arr) && arr.length > 0)
+              .slice(0, 4)
+              .map(([k, arr]) => `${k}: ${arr[0]}`);
+            const formPart = Array.isArray(details?.formErrors) ? details?.formErrors?.[0] : '';
+            msg = ['Ошибка формата JSON для выбранной таблицы.', ...fieldParts, formPart]
+              .filter((x) => typeof x === 'string' && String(x).trim().length > 0)
+              .join(' ');
+          }
+        }
       }
       if (!msg) msg = err.message;
       this.errorText.set(msg || `HTTP ${err.status}`);

@@ -1,0 +1,16 @@
+-- AlterTable
+ALTER TABLE "Organization" ADD COLUMN     "certificateIssuedDate" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "certificateSeriesNumber" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "country" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "createdAtSource" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "documentRef" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "governmentBodyCode" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "governmentBodyType" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "isBranch" BOOLEAN NOT NULL DEFAULT false,
+ADD COLUMN     "isGovernmentBody" BOOLEAN NOT NULL DEFAULT false,
+ADD COLUMN     "isInnValid" BOOLEAN NOT NULL DEFAULT false,
+ADD COLUMN     "isKppValid" BOOLEAN NOT NULL DEFAULT false,
+ADD COLUMN     "kppExtended" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "parentCounterparty" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "registrationDate" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "taxIdExtended" TEXT NOT NULL DEFAULT '';

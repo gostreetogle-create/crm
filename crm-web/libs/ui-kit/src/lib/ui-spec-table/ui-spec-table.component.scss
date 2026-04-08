@@ -69,10 +69,10 @@
   padding-bottom: 0.35rem;
   border-bottom: 1px solid color-mix(in srgb, var(--border-color) 28%, white);
   font-size: var(--font-size-small);
-  font-weight: 500;
+  font-weight: var(--app-descriptive-text-weight, 700);
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: color-mix(in srgb, var(--text-muted) 65%, var(--text-primary));
+  color: var(--text-muted);
 }
 
 .uiSpecTable__empty {
@@ -80,6 +80,7 @@
   padding: var(--ui-space-2);
   font-size: var(--font-size-small);
   color: var(--text-muted);
+  font-weight: var(--app-descriptive-text-weight, 700);
   text-align: center;
   border: 1px dashed color-mix(in srgb, var(--border-color) 38%, white);
   border-radius: var(--radius-card);
@@ -106,7 +107,7 @@
   padding: 0.4rem var(--ui-space-2);
   font-weight: 600;
   font-size: var(--font-size-small);
-  color: color-mix(in srgb, var(--text-form-label) 88%, var(--text-muted));
+  color: var(--text-form-label);
   text-align: start;
   vertical-align: bottom;
   /* Почти белая шапка — лёгкий холодный оттенок */
@@ -124,7 +125,7 @@
   width: 2.75rem;
   text-align: end;
   font-variant-numeric: tabular-nums;
-  color: color-mix(in srgb, var(--text-muted) 75%, var(--text-primary));
+  color: var(--text-muted);
 }
 
 .uiSpecTable__th--align-center {
@@ -161,7 +162,7 @@
   text-align: end;
   font-variant-numeric: tabular-nums;
   font-weight: 500;
-  color: color-mix(in srgb, var(--text-muted) 70%, var(--text-primary));
+  color: var(--text-muted);
   width: 2.75rem;
   white-space: nowrap;
 }
@@ -173,7 +174,7 @@
 
 .uiSpecTable__td--tone-muted {
   font-weight: 400;
-  color: color-mix(in srgb, var(--text-muted) 92%, var(--text-primary));
+  color: var(--text-muted);
 }
 
 .uiSpecTable__td--tone-default {
