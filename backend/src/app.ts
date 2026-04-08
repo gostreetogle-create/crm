@@ -56,7 +56,7 @@ export function createApp() {
     }),
   );
   app.use(helmet());
-  app.use(express.json({ limit: "2mb" }));
+  app.use(express.json({ limit: config.jsonBodyLimit }));
   app.use(requestContextMiddleware);
 
   if (!fs.existsSync(config.kpPhotosDir)) {

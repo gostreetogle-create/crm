@@ -21,6 +21,8 @@ const EnvSchema = z.object({
   PORT: z.coerce.number().optional(),
   CORS_ORIGIN: z.string().optional(),
   JWT_SECRET: z.string().optional(),
+  /** Максимальный размер JSON body (например: 2mb, 10mb, 25mb). */
+  JSON_BODY_LIMIT: z.string().trim().optional(),
   /** Абсолютный или относительный путь к каталогу архивов БД (volume в Docker). */
   BACKUP_DIR: z.string().optional(),
   /**
@@ -77,6 +79,7 @@ export const config = {
   corsOrigin: env.CORS_ORIGIN ?? "*",
   jwtSecret,
   nodeEnv,
+  jsonBodyLimit: env.JSON_BODY_LIMIT && env.JSON_BODY_LIMIT.length > 0 ? env.JSON_BODY_LIMIT : "25mb",
   backupDir: backupDirResolved,
   /** Абсолютный путь к корню файлов КП (подпапки = organizationId). */
   kpPhotosDir: kpPhotosDirResolved,
