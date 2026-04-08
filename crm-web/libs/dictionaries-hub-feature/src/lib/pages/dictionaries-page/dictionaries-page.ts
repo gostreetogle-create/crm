@@ -2688,8 +2688,12 @@ export class DictionariesPage implements OnDestroy {
 
   openMaterialsCreate(): void {
     if (!this.permissions.crud().canCreate) return;
-    this.resetMaterialsCreateForm();
-    this.isMaterialsModalOpen.set(true);
+    if (this.isProductionDetailsModalOpen() && !this.isNewMaterialPageRoute()) {
+      this.resetMaterialsCreateForm();
+      this.isMaterialsModalOpen.set(true);
+      return;
+    }
+    this.navigateToNewMaterialPage();
   }
 
   /** «+» у пресета материала в форме детали: модалка материала поверх детали. */
@@ -2697,7 +2701,8 @@ export class DictionariesPage implements OnDestroy {
     if (!this.isProductionDetailsModalOpen()) return;
     if (!this.permissions.crud().canCreate) return;
     this.materialQuickAddForProductionDetails.set(true);
-    this.openMaterialsCreate();
+    this.resetMaterialsCreateForm();
+    this.isMaterialsModalOpen.set(true);
   }
 
   navigateToStandaloneWorkTypesFromProductionDetails(): void {
@@ -3200,8 +3205,12 @@ export class DictionariesPage implements OnDestroy {
 
   openMaterialCharacteristicsCreate(): void {
     if (!this.permissions.crud().canCreate) return;
-    this.resetMaterialCharacteristicsCreateForm();
-    this.isMaterialCharacteristicsModalOpen.set(true);
+    if (this.isMaterialsModalOpen() && !this.isNewMaterialPageRoute()) {
+      this.resetMaterialCharacteristicsCreateForm();
+      this.isMaterialCharacteristicsModalOpen.set(true);
+      return;
+    }
+    this.navigateToNewMaterialCharacteristicPage();
   }
 
   /** «+» у поля геометрии: открыть создание геометрии поверх модалки материала (не плитку хаба под модалкой). */
