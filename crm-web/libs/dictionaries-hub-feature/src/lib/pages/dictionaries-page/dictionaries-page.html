@@ -191,13 +191,24 @@
     (backClicked)="navigateBackFromStandaloneDictionaryCreate()"
   >
     <ng-container *ngTemplateOutlet="tradeGoodsContentTpl"></ng-container>
-    <app-ui-modal-form-actions
-      standaloneFormActions
-      [viewMode]="isTradeGoodsViewMode()"
-      [formId]="'trade-goods-form'"
-      [submitLabel]="tradeGoodsStore.isEditMode() ? 'Сохранить изменения' : (tradeGoodsForm.controls.kind.value === 'COMPLEX' ? 'Создать комплекс' : 'Создать товар')"
-      (dismiss)="navigateBackFromStandaloneDictionaryCreate()"
-    />
+    <div standaloneFormActions class="tradeGoodsModalActions">
+      @if (permissions.crud().canDelete && tradeGoodsStore.isEditMode() && !isTradeGoodsViewMode()) {
+        <app-ui-button
+          class="tradeGoodsModalActions__delete"
+          type="button"
+          variant="danger"
+          (clicked)="deleteTradeGoodFromModal()"
+        >
+          {{ tradeGoodsForm.controls.kind.value === 'COMPLEX' ? 'Удалить комплекс' : 'Удалить товар' }}
+        </app-ui-button>
+      }
+      <app-ui-modal-form-actions
+        [viewMode]="isTradeGoodsViewMode()"
+        [formId]="'trade-goods-form'"
+        [submitLabel]="tradeGoodsStore.isEditMode() ? 'Сохранить изменения' : (tradeGoodsForm.controls.kind.value === 'COMPLEX' ? 'Создать комплекс' : 'Создать товар')"
+        (dismiss)="navigateBackFromStandaloneDictionaryCreate()"
+      />
+    </div>
   </app-dictionary-standalone-create-shell>
   } @else if (standaloneCreateKey() === 'tradeGoodCategories') {
   <app-dictionary-standalone-create-shell
@@ -957,7 +968,8 @@
     </app-dictionary-preview-card-no-photo>
   } @else {
     <form [attr.id]="rolesFormDomId()" [formGroup]="rolesForm" (ngSubmit)="submitRoles()" class="formGrid">
-      <fieldset class="dictionaryFormSection">
+      <app-ui-editor-shell>
+      <fieldset class="dictionaryFormSection" editorMain>
         <legend>Роль</legend>
         <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
           <app-ui-form-field
@@ -990,10 +1002,15 @@
           <app-ui-form-field class="dictionaryFieldRowFull" label="Заметка" [wide]="true">
             <textarea rows="2" formControlName="notes" placeholder="Необязательно"></textarea>
           </app-ui-form-field>
-
+        </div>
+      </fieldset>
+      <fieldset class="dictionaryFormSection" editorAside>
+        <legend>Статус</legend>
+        <div class="dictionaryFormSectionBody">
           <app-ui-checkbox-field class="checkbox" label="Активна" formControlName="isActive"></app-ui-checkbox-field>
         </div>
       </fieldset>
+      </app-ui-editor-shell>
     </form>
   }
 </ng-template>
@@ -1063,7 +1080,8 @@
     </app-dictionary-preview-card-no-photo>
   } @else {
     <form id="users-form" [formGroup]="usersForm" (ngSubmit)="submitUsers()" class="formGrid">
-      <fieldset class="dictionaryFormSection">
+      <app-ui-editor-shell>
+      <fieldset class="dictionaryFormSection" editorMain>
         <legend>Учётная запись</legend>
         <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
           <app-ui-form-field
@@ -1105,6 +1123,11 @@
             <input type="tel" formControlName="phone" autocomplete="tel" />
           </app-ui-form-field>
 
+        </div>
+      </fieldset>
+      <fieldset class="dictionaryFormSection" editorAside>
+        <legend>Права и статус</legend>
+        <div class="dictionaryFormSectionBody">
           <app-ui-form-field
             label="Роль"
             [required]="true"
@@ -1120,9 +1143,10 @@
               }
             </select>
           </app-ui-form-field>
+          <p class="muted">Пароль в режиме просмотра не показывается.</p>
         </div>
       </fieldset>
-      <p class="muted">В mock пароль хранится открытым текстом; на бэкенде — только хеш и политика сложности.</p>
+      </app-ui-editor-shell>
     </form>
   }
 </ng-template>
@@ -1140,10 +1164,10 @@
   *ngIf="isWorkTypesModalOpen()"
   [title]="
     isWorkTypesViewMode()
-      ? 'Просмотр вида работ — Вид раб.'
+      ? 'Просмотр вида работ'
       : productionWorkTypesStore.isEditMode()
-        ? 'Редактирование вида работ — Вид раб.'
-        : 'Новый вид работ — Вид раб.'
+        ? 'Редактирование вида работ'
+        : 'Новый вид работ'
   "
   [content]="workTypesContentTpl"
   [actions]="workTypesActionsTpl"
@@ -1179,7 +1203,8 @@
     </app-dictionary-preview-card-no-photo>
   } @else {
     <form id="work-types-form" [formGroup]="workTypesForm" (ngSubmit)="submitWorkTypes()" class="formGrid">
-      <fieldset class="dictionaryFormSection">
+      <app-ui-editor-shell>
+      <fieldset class="dictionaryFormSection" editorMain>
         <legend>Вид работ и расценка</legend>
         <div class="dictionaryFormSectionBody">
           <app-ui-form-field
@@ -1211,12 +1236,13 @@
         </div>
       </fieldset>
 
-      <fieldset class="dictionaryFormSection">
+      <fieldset class="dictionaryFormSection" editorAside>
         <legend>Статус</legend>
         <div class="dictionaryFormSectionBody">
           <app-ui-checkbox-field class="checkbox" label="Активна" formControlName="isActive"></app-ui-checkbox-field>
         </div>
       </fieldset>
+      </app-ui-editor-shell>
     </form>
   }
 </ng-template>
@@ -1339,6 +1365,8 @@
       (ngSubmit)="submitProductionDetails()"
       class="formGrid"
     >
+      <app-ui-editor-shell>
+      <div editorMain>
       <fieldset class="dictionaryFormSection">
         <legend>Позиция</legend>
         <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
@@ -1492,8 +1520,8 @@
           </app-ui-form-field>
         </div>
       </fieldset>
-
-      <fieldset class="dictionaryFormSection">
+      </div>
+      <fieldset class="dictionaryFormSection" editorAside>
         <legend>Итоги (предпросмотр)</legend>
         <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2 dictionaryReadonlyGrid">
           <div class="dictionaryReadonlyPair">
@@ -1510,6 +1538,7 @@
           </div>
         </div>
       </fieldset>
+      </app-ui-editor-shell>
     </form>
   }
 </ng-template>
@@ -1618,7 +1647,8 @@
     }
   } @else {
     <form id="products-form" [formGroup]="productsForm" (ngSubmit)="submitProducts()" class="formGrid">
-      <fieldset class="dictionaryFormSection">
+      <app-ui-editor-shell class="tradeGoodsForm">
+      <fieldset class="dictionaryFormSection" editorMain>
         <legend>Изделие</legend>
         <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
           <app-ui-form-field label="Артикул">
@@ -1666,7 +1696,7 @@
         </div>
       </fieldset>
 
-      <fieldset class="dictionaryFormSection">
+      <fieldset class="dictionaryFormSection tradeGoodsCompositionSection" editorAside>
         <legend>Состав: одна или несколько деталей</legend>
         <p class="muted dictionaryFieldRowFull">
           В каждой строке выберите деталь. Вид работ и цвет задаются один раз в блоке «Изделие»; при пустых полях они
@@ -1711,6 +1741,7 @@
           <app-ui-button type="button" variant="soft" (clicked)="addProductLine()">+ Добавить деталь в состав</app-ui-button>
         </div>
       </fieldset>
+      </app-ui-editor-shell>
     </form>
   }
 </ng-template>
@@ -1764,7 +1795,7 @@
                   class="kpPhotoPreview tradeGoodViewPhotos__item"
                   [class.tradeGoodViewPhotos__item--primary]="($index + 1) === tg.photoPrimaryIndex"
                 >
-                  <img [src]="u" alt="" />
+                  <img [src]="u" alt="" loading="lazy" decoding="async" />
                   @if (($index + 1) === tg.photoPrimaryIndex) {
                     <figcaption class="tradeGoodViewPhotos__badge">Главное</figcaption>
                   }
@@ -1773,7 +1804,7 @@
             </div>
           } @else if (tg.photoUrl.trim()) {
             <div class="kpPhotoPreview kpPhotoPreview--tradeGoodHero">
-              <img [src]="tg.photoUrl" alt="" />
+              <img [src]="tg.photoUrl" alt="" loading="lazy" decoding="async" />
             </div>
           }
           <div class="productSpecView__heroNums">
@@ -1845,125 +1876,122 @@
       <p class="productSpecView__empty" role="status">Нет данных для просмотра.</p>
     }
   } @else {
-    <form id="trade-goods-form" [formGroup]="tradeGoodsForm" (ngSubmit)="submitTradeGoods()" class="formGrid">
+    <form id="trade-goods-form" [formGroup]="tradeGoodsForm" (ngSubmit)="submitTradeGoods()" class="formGrid tradeGoodsForm">
       @if (tradeGoodsSaveError()) {
         <p class="dictionaryHubLoadError" role="alert">{{ tradeGoodsSaveError() }}</p>
       }
-      <fieldset class="dictionaryFormSection">
-        <legend>Карточка торговой позиции</legend>
-        <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
-          <app-ui-form-field class="dictionaryFieldRowFull" label="Артикул">
-            <input type="text" formControlName="code" placeholder="Нужен для имён файлов фото" />
-          </app-ui-form-field>
-          <p class="dictionaryMuted dictionaryFieldRowFull">
-            Фото карточки и КП. Можно добавлять файлы в несколько подходов — новые фото не заменяют старые. Главное фото
-            выбирается радиокнопкой под превью. Имена на сервере формируются по артикулу:
-            <code>{{ tradeGoodCodeHint() }}_1.jpg</code>, <code>_2</code>, <code>_3</code> …
-          </p>
-          <div class="dictionaryFieldRowFull tradeGoodPhotoPicker">
-            <input
-              #tradeGoodPhotosInput
-              class="tradeGoodPhotoPicker__nativeInput"
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/gif"
-              multiple
-              (change)="onTradeGoodPhotosPick($event)"
-            />
-            <div class="tradeGoodPhotoPicker__controls">
-              <app-ui-button type="button" variant="soft" (clicked)="tradeGoodPhotosInput.click()">
-                Добавить фото
-              </app-ui-button>
-              <span class="tradeGoodPhotoPicker__summary muted">
-                @if (tradeGoodPendingFiles().length > 0) {
-                  Выбрано новых файлов: {{ tradeGoodPendingFiles().length }}
-                } @else {
-                  Новые файлы пока не выбраны
+      <app-ui-editor-shell>
+      <fieldset class="dictionaryFormSection" editorMain>
+        <legend>{{ tradeGoodsForm.controls.kind.value === 'COMPLEX' ? 'Комплекс' : 'Товар' }}</legend>
+        <div class="tradeGoodsEditorLayout">
+          <div class="tradeGoodsEditorLayout__main dictionaryFormSectionBody dictionaryFormSectionBody--2">
+            <app-ui-form-field class="dictionaryFieldRowFull" label="Наименование" [required]="true">
+              <input type="text" formControlName="name" placeholder="Напр. Комплект А-1" />
+            </app-ui-form-field>
+            <div class="dictionaryFieldRowFull tradeGoodsTaxonomyRow">
+              <app-ui-form-field label="Тип" [required]="true">
+                <select formControlName="kind" (change)="recalcTradeGoodPriceDefaults()">
+                  <option value="ITEM">Товар</option>
+                  <option value="COMPLEX">Комплекс</option>
+                </select>
+              </app-ui-form-field>
+              <app-ui-form-field label="Категория">
+                <select formControlName="categoryId">
+                  <option value="">— не выбрано —</option>
+                  @for (o of tradeGoodCategoriesStore.options(); track o.id) {
+                    <option [value]="o.id">{{ o.label }}</option>
+                  }
+                </select>
+              </app-ui-form-field>
+              <app-ui-form-field label="Подкатегория">
+                <select formControlName="subcategoryId">
+                  <option value="">— не выбрано —</option>
+                  @for (o of tradeGoodSubcategorySelectOptions(); track o.id) {
+                    <option [value]="o.id">{{ o.label }}</option>
+                  }
+                </select>
+              </app-ui-form-field>
+            </div>
+            <app-ui-form-field label="Цена, ₽">
+              <input type="number" formControlName="priceRub" step="any" />
+            </app-ui-form-field>
+            <app-ui-form-field class="dictionaryFieldRowFull" label="Ед. изм.">
+              <select formControlName="unitCode" aria-label="Единица измерения из справочника">
+                <option value="">— не выбрано —</option>
+                @for (o of tradeGoodUnitSelectOptions(); track o.value) {
+                  <option [value]="o.value">{{ o.label }}</option>
                 }
-              </span>
-            </div>
+              </select>
+            </app-ui-form-field>
+            <app-ui-form-field class="dictionaryFieldRowFull" label="Описание" [wide]="true">
+              <textarea
+                rows="2"
+                formControlName="description"
+                placeholder="Текст для клиента; внутренние пометки — в «Заметки»"
+              ></textarea>
+            </app-ui-form-field>
+            <app-ui-form-field class="dictionaryFieldRowFull" label="Заметки (внутренние)" [wide]="true">
+              <textarea rows="2" formControlName="notes"></textarea>
+            </app-ui-form-field>
+            <app-ui-checkbox-field class="checkbox dictionaryFieldRowFull" label="Активен" formControlName="isActive"></app-ui-checkbox-field>
           </div>
-          @if (tradeGoodPhotoPreviewRows().length > 0) {
-            <div class="tradeGoodPhotoPicker__grid dictionaryFieldRowFull" role="radiogroup" aria-label="Главное фото">
-              @for (src of tradeGoodPhotoPreviewRows(); track $index) {
-                <label
-                  class="tradeGoodPhotoPicker__tile"
-                  [class.tradeGoodPhotoPicker__tile--selected]="tradeGoodPhotoPrimarySlot() === $index"
-                >
-                  <input
-                    type="radio"
-                    name="tradeGoodPrimaryPhoto"
-                    [value]="$index"
-                    [checked]="tradeGoodPhotoPrimarySlot() === $index"
-                    (change)="setTradeGoodPhotoPrimarySlot($index)"
-                  />
-                  <span class="tradeGoodPhotoPicker__thumb kpPhotoPreview">
-                    <img [src]="src" alt="" />
-                  </span>
-                </label>
-              }
+
+          <aside class="tradeGoodsEditorLayout__media">
+            <app-ui-form-field class="dictionaryFieldRowFull" label="Артикул">
+              <input type="text" formControlName="code" placeholder="Нужен для имён файлов фото" />
+            </app-ui-form-field>
+            <div class="dictionaryFieldRowFull tradeGoodPhotoPicker">
+              <input
+                #tradeGoodPhotosInput
+                class="tradeGoodPhotoPicker__nativeInput"
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                multiple
+                (change)="onTradeGoodPhotosPick($event)"
+              />
+              <div class="tradeGoodPhotoPicker__controls">
+                <app-ui-button type="button" variant="soft" (clicked)="tradeGoodPhotosInput.click()">
+                  Добавить фото
+                </app-ui-button>
+                <span class="tradeGoodPhotoPicker__summary muted">
+                  @if (tradeGoodPendingFiles().length > 0) {
+                    Выбрано новых файлов: {{ tradeGoodPendingFiles().length }}
+                  } @else {
+                    Новые файлы пока не выбраны
+                  }
+                </span>
+              </div>
             </div>
-          } @else if (tradeGoodEditPhotoUrl()) {
-            <div class="dictionaryFieldRowFull kpPhotoPreview tradeGoodPhotoPicker__singleFallback">
-              <img [src]="tradeGoodEditPhotoUrl()" alt="" />
-            </div>
-          }
-          <app-ui-form-field class="dictionaryFieldRowFull" label="Наименование" [required]="true">
-            <input type="text" formControlName="name" placeholder="Напр. Комплект А-1" />
-          </app-ui-form-field>
-          <app-ui-form-field label="Категория">
-            <select formControlName="categoryId">
-              <option value="">— не выбрано —</option>
-              @for (o of tradeGoodCategoriesStore.options(); track o.id) {
-                <option [value]="o.id">{{ o.label }}</option>
-              }
-            </select>
-          </app-ui-form-field>
-          <app-ui-form-field class="dictionaryFieldRowFull" label="Тип" [required]="true">
-            <select formControlName="kind" (change)="recalcTradeGoodPriceDefaults()">
-              <option value="ITEM">Товар</option>
-              <option value="COMPLEX">Комплекс</option>
-            </select>
-            <p class="dictionaryMuted tradeGoodKindHint">
-              Товар — в составе изделия (производство). Комплекс — в составе другие товары этой же карточки.
-            </p>
-          </app-ui-form-field>
-          <app-ui-form-field label="Подкатегория">
-            <select formControlName="subcategoryId">
-              <option value="">— не выбрано —</option>
-              @for (o of tradeGoodSubcategorySelectOptions(); track o.id) {
-                <option [value]="o.id">{{ o.label }}</option>
-              }
-            </select>
-          </app-ui-form-field>
-          <app-ui-form-field class="dictionaryFieldRowFull" label="Ед. изм.">
-            <select formControlName="unitCode" aria-label="Единица измерения из справочника">
-              <option value="">— не выбрано —</option>
-              @for (o of tradeGoodUnitSelectOptions(); track o.value) {
-                <option [value]="o.value">{{ o.label }}</option>
-              }
-            </select>
-          </app-ui-form-field>
-          <app-ui-form-field label="Цена, ₽">
-            <input type="number" formControlName="priceRub" step="any" />
-          </app-ui-form-field>
-          <app-ui-form-field label="Себестоимость, ₽">
-            <input type="number" formControlName="costRub" step="any" />
-          </app-ui-form-field>
-          <app-ui-form-field class="dictionaryFieldRowFull" label="Описание" [wide]="true">
-            <textarea
-              rows="2"
-              formControlName="description"
-              placeholder="Текст для клиента; внутренние пометки — в «Заметки»"
-            ></textarea>
-          </app-ui-form-field>
-          <app-ui-form-field class="dictionaryFieldRowFull" label="Заметки (внутренние)" [wide]="true">
-            <textarea rows="2" formControlName="notes"></textarea>
-          </app-ui-form-field>
-          <app-ui-checkbox-field class="checkbox dictionaryFieldRowFull" label="Активен" formControlName="isActive"></app-ui-checkbox-field>
+            @if (tradeGoodPhotoPreviewRows().length > 0) {
+              <div class="tradeGoodPhotoPicker__grid dictionaryFieldRowFull" role="radiogroup" aria-label="Главное фото">
+                @for (src of tradeGoodPhotoPreviewRows(); track $index) {
+                  <label
+                    class="tradeGoodPhotoPicker__tile"
+                    [class.tradeGoodPhotoPicker__tile--selected]="tradeGoodPhotoPrimarySlot() === $index"
+                  >
+                    <input
+                      type="radio"
+                      name="tradeGoodPrimaryPhoto"
+                      [value]="$index"
+                      [checked]="tradeGoodPhotoPrimarySlot() === $index"
+                      (change)="setTradeGoodPhotoPrimarySlot($index)"
+                    />
+                    <span class="tradeGoodPhotoPicker__thumb kpPhotoPreview">
+                      <img [src]="src" alt="" loading="lazy" decoding="async" />
+                    </span>
+                  </label>
+                }
+              </div>
+            } @else if (tradeGoodEditPhotoUrl()) {
+              <div class="dictionaryFieldRowFull kpPhotoPreview tradeGoodPhotoPicker__singleFallback">
+                <img [src]="tradeGoodEditPhotoUrl()" alt="" loading="lazy" decoding="async" />
+              </div>
+            }
+          </aside>
         </div>
       </fieldset>
 
-      <fieldset class="dictionaryFormSection">
+      <fieldset class="dictionaryFormSection tradeGoodsCompositionSection" editorAside>
         <legend>
           @if (tradeGoodsForm.controls.kind.value === 'COMPLEX') {
             Состав: один или несколько товаров
@@ -1971,13 +1999,9 @@
             Состав: одно или несколько изделий
           }
         </legend>
-        <p class="muted dictionaryFieldRowFull">
-          @if (tradeGoodsForm.controls.kind.value === 'COMPLEX') {
-            В каждой строке выберите товар и количество. Цена и себестоимость можно пересчитать по сумме позиций.
-          } @else {
-            В каждой строке выберите изделие и количество. Цена и себестоимость можно пересчитать по сумме позиций.
-          }
-        </p>
+        <app-ui-form-field class="dictionaryFieldRowFull" label="Себестоимость, ₽">
+          <input type="number" formControlName="costRub" step="any" />
+        </app-ui-form-field>
         <div formArrayName="lines">
           @for (line of tradeGoodLinesFormArray.controls; track $index; let i = $index) {
             <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2 productLineRow" [formGroupName]="i">
@@ -2030,7 +2054,7 @@
             </div>
           }
         </div>
-        <div class="dictionaryFieldRowFull">
+        <div class="dictionaryFieldRowFull tradeGoodsCompositionSection__addRow">
           <app-ui-button type="button" variant="soft" (clicked)="addTradeGoodLine()">
             @if (tradeGoodsForm.controls.kind.value === 'COMPLEX') {
               + Добавить товар в состав
@@ -2039,19 +2063,8 @@
             }
           </app-ui-button>
         </div>
-        <div class="dictionaryFieldRowFull tradeGoodRecalcRow">
-          <app-ui-button type="button" variant="soft" (clicked)="recalcTradeGoodPriceDefaults()">
-            @if (tradeGoodsForm.controls.kind.value === 'COMPLEX') {
-              Подставить сумму по товарам (цена и себестоимость)
-            } @else {
-              Подставить сумму по изделиям (цена и себестоимость)
-            }
-          </app-ui-button>
-          <p class="muted tradeGoodRecalcRow__hint">
-            Учитывает строки состава выше и подставляет суммы в поля «Цена» и «Себестоимость».
-          </p>
-        </div>
       </fieldset>
+      </app-ui-editor-shell>
     </form>
   }
 </ng-template>
@@ -2196,6 +2209,8 @@
     </app-dictionary-preview-card>
   } @else {
   <form id="materials-form" [formGroup]="materialsForm" (ngSubmit)="submitMaterials()" class="formGrid">
+    <app-ui-editor-shell>
+    <div editorMain>
     <fieldset class="dictionaryFormSection">
       <legend>Учётная позиция</legend>
       <p class="muted dictionaryFieldRowFull">
@@ -2379,8 +2394,9 @@
         </div>
       </fieldset>
     }
+    </div>
 
-    <fieldset class="dictionaryFormSection">
+    <fieldset class="dictionaryFormSection" editorAside>
       <legend>Дополнительно</legend>
       <div class="dictionaryFormSectionBody">
         <app-ui-form-field label="Заметки" [wide]="true">
@@ -2390,6 +2406,7 @@
         <app-ui-checkbox-field class="checkbox" label="Активен" formControlName="isActive"></app-ui-checkbox-field>
       </div>
     </fieldset>
+    </app-ui-editor-shell>
   </form>
   }
 </ng-template>
@@ -2398,7 +2415,7 @@
   *ngIf="isCoatingsModalOpen()"
   [title]="
     isCoatingsViewMode()
-      ? 'Просмотр покрытия — Покр.'
+      ? 'Просмотр покрытия'
       : coatingsStore.isEditMode()
         ? 'Редактирование покрытия'
         : 'Новое покрытие'
@@ -2441,7 +2458,8 @@
     </app-dictionary-preview-card-no-photo>
   } @else {
     <form id="coatings-form" [formGroup]="coatingsForm" (ngSubmit)="submitCoatings()" class="formGrid">
-      <fieldset class="dictionaryFormSection">
+      <app-ui-editor-shell>
+      <fieldset class="dictionaryFormSection" editorMain>
         <legend>Параметры покрытия</legend>
         <div class="dictionaryFormSectionBody">
           <app-ui-form-field
@@ -2462,6 +2480,11 @@
             <input type="text" formControlName="coatingSpec" placeholder="Clear anodized / Zn hot-dip..." />
           </app-ui-form-field>
 
+        </div>
+      </fieldset>
+      <fieldset class="dictionaryFormSection" editorAside>
+        <legend>Толщина покрытия</legend>
+        <div class="dictionaryFormSectionBody">
           <app-ui-form-field
             label="Толщина, мкм"
             [invalid]="isCoatingsInvalid('thicknessMicron')"
@@ -2471,6 +2494,7 @@
           </app-ui-form-field>
         </div>
       </fieldset>
+      </app-ui-editor-shell>
     </form>
   }
 </ng-template>
@@ -2508,7 +2532,7 @@
   *ngIf="isClientsModalOpen()"
   [title]="
     isClientsViewMode()
-      ? 'Просмотр контакта — ФЛ'
+      ? 'Просмотр контакта'
       : clientsStore.isEditMode()
         ? 'Редактирование контакта'
         : 'Новый контакт'
@@ -2577,6 +2601,8 @@
     </app-dictionary-preview-card-no-photo>
   } @else {
     <form id="clients-form" [formGroup]="clientsForm" (ngSubmit)="submitClients()" class="formGrid">
+      <app-ui-editor-shell>
+      <div editorMain>
       <fieldset class="dictionaryFormSection">
         <legend>ФИО</legend>
         <ui-form-grid [columns]="3">
@@ -2662,13 +2688,14 @@
           </app-ui-form-field>
         </ui-form-grid>
       </fieldset>
-
-      <fieldset class="dictionaryFormSection">
+      </div>
+      <fieldset class="dictionaryFormSection" editorAside>
         <legend>Статус</legend>
         <div class="dictionaryFormSectionBody">
           <app-ui-checkbox-field class="checkbox" label="Активен" formControlName="isActive"></app-ui-checkbox-field>
         </div>
       </fieldset>
+      </app-ui-editor-shell>
     </form>
   }
 </ng-template>
@@ -2686,9 +2713,7 @@
   *ngIf="isOrganizationsModalOpen()"
   [title]="
     isOrganizationsViewMode()
-      ? (organizationsForm.controls.organizationKind.value === 'IP'
-          ? 'Просмотр организации — ИП'
-          : 'Просмотр организации — ООО')
+      ? 'Просмотр организации'
       : organizationsStore.isEditMode()
         ? 'Редактирование организации'
         : 'Новая организация'
@@ -2822,6 +2847,8 @@
     </app-dictionary-preview-card-no-photo>
   } @else {
     <form id="organizations-form" [formGroup]="organizationsForm" (ngSubmit)="submitOrganizations()" class="formGrid">
+      <app-ui-editor-shell>
+      <div editorMain>
       <fieldset class="dictionaryFormSection">
         <legend>Карточка организации</legend>
         <ui-form-grid [columns]="3">
@@ -2971,8 +2998,8 @@
           </app-ui-form-field>
         </ui-form-grid>
       </fieldset>
-
-      <fieldset class="dictionaryFormSection">
+      </div>
+      <fieldset class="dictionaryFormSection" editorAside>
         <legend>Дополнительно</legend>
         <div class="dictionaryFormSectionBody">
           <app-ui-form-field label="Заметки" [wide]="true">
@@ -2981,6 +3008,7 @@
           <app-ui-checkbox-field class="checkbox" label="Активна" formControlName="isActive"></app-ui-checkbox-field>
         </div>
       </fieldset>
+      </app-ui-editor-shell>
     </form>
   }
 </ng-template>
@@ -2998,7 +3026,7 @@
   *ngIf="isSurfaceFinishesModalOpen()"
   [title]="
     isSurfaceFinishesViewMode()
-      ? 'Просмотр типа отделки / шероховатости — Тип отд. / шерох.'
+      ? 'Просмотр типа отделки / шероховатости'
       : surfaceFinishesStore.isEditMode()
         ? 'Редактирование финиша'
         : 'Новый финиш'
@@ -3041,7 +3069,8 @@
     </app-dictionary-preview-card-no-photo>
   } @else {
     <form id="surface-finishes-form" [formGroup]="surfaceFinishesForm" (ngSubmit)="submitSurfaceFinishes()" class="formGrid">
-      <fieldset class="dictionaryFormSection">
+      <app-ui-editor-shell>
+      <fieldset class="dictionaryFormSection" editorMain>
         <legend>Отделка и шероховатость</legend>
         <div class="dictionaryFormSectionBody">
           <app-ui-form-field
@@ -3062,6 +3091,11 @@
             <input type="text" formControlName="roughnessClass" placeholder="Ra 0.8 / N7 / Полированная..." />
           </app-ui-form-field>
 
+        </div>
+      </fieldset>
+      <fieldset class="dictionaryFormSection" editorAside>
+        <legend>Параметр Ra</legend>
+        <div class="dictionaryFormSectionBody">
           <app-ui-form-field
             label="Ra, мкм"
             [invalid]="isSurfaceFinishesInvalid('raMicron')"
@@ -3071,6 +3105,7 @@
           </app-ui-form-field>
         </div>
       </fieldset>
+      </app-ui-editor-shell>
     </form>
   }
 </ng-template>
@@ -3108,10 +3143,10 @@
   *ngIf="isColorsModalOpen()"
   [title]="
     isColorsViewMode()
-      ? 'Просмотр цвета RAL — Цвет'
+      ? 'Просмотр цвета RAL'
       : colorsStore.isEditMode()
-        ? 'Редактирование цвета RAL — Цвет'
-        : 'Новый цвет RAL — Цвет'
+        ? 'Редактирование цвета RAL'
+        : 'Новый цвет RAL'
   "
   [content]="colorsContentTpl"
   [actions]="colorsActionsTpl"
@@ -3153,6 +3188,8 @@
     </app-dictionary-preview-card-no-photo>
   } @else {
     <form id="colors-form" [formGroup]="colorsForm" (ngSubmit)="submitColors()" class="formGrid">
+      <app-ui-editor-shell>
+      <div editorMain>
       <fieldset class="dictionaryFormSection">
         <legend>Код и название</legend>
         <div class="dictionaryFormSectionBody">
@@ -3192,8 +3229,9 @@
           ></app-hex-rgb-field>
         </div>
       </fieldset>
-
+      </div>
       <fieldset
+        editorAside
         class="dictionaryFormSection dictionaryFormSection--autoFields"
         aria-label="Сводка цвета, только просмотр"
       >
@@ -3212,6 +3250,7 @@
           </div>
         </div>
       </fieldset>
+      </app-ui-editor-shell>
     </form>
   }
 </ng-template>
@@ -3377,6 +3416,8 @@
       (ngSubmit)="submitMaterialCharacteristics()"
       class="formGrid"
     >
+      <app-ui-editor-shell>
+      <div editorMain>
       <fieldset class="dictionaryFormSection">
         <legend>Профиль</legend>
         <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
@@ -3544,8 +3585,9 @@
           </div>
         </fieldset>
       }
+      </div>
 
-      <fieldset class="dictionaryFormSection">
+      <fieldset class="dictionaryFormSection" editorAside>
         <legend>Дополнительно</legend>
         <div class="dictionaryFormSectionBody">
           <app-ui-form-field label="Заметки" [wide]="true">
@@ -3555,6 +3597,7 @@
           <app-ui-checkbox-field class="checkbox" label="Активен" formControlName="isActive"></app-ui-checkbox-field>
         </div>
       </fieldset>
+      </app-ui-editor-shell>
     </form>
   }
 </ng-template>
@@ -4045,13 +4088,15 @@
       }
       @if (kpPhotoPreviewUrl()) {
         <div class="kpPhotoPreview">
-          <img [src]="kpPhotoPreviewUrl()" alt="" />
+          <img [src]="kpPhotoPreviewUrl()" alt="" loading="lazy" decoding="async" />
         </div>
       }
       <p>Активна: {{ kpPhotosForm.controls.isActive.value ? 'Да' : 'Нет' }}</p>
     </div>
   } @else {
     <form id="kp-photos-form" [formGroup]="kpPhotosForm" (ngSubmit)="submitKpPhotos()" class="formGrid">
+      <app-ui-editor-shell>
+      <div editorMain>
       <fieldset class="dictionaryFormSection">
         <legend>Запись</legend>
         <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
@@ -4120,17 +4165,19 @@
 
         @if (kpPhotoPreviewUrl()) {
           <div class="kpPhotoPreview">
-            <img [src]="kpPhotoPreviewUrl()" alt="" />
+            <img [src]="kpPhotoPreviewUrl()" alt="" loading="lazy" decoding="async" />
           </div>
         }
       </fieldset>
+      </div>
 
-      <fieldset class="dictionaryFormSection">
+      <fieldset class="dictionaryFormSection" editorAside>
         <legend>Дополнительно</legend>
         <div class="dictionaryFormSectionBody">
           <app-ui-checkbox-field class="checkbox" label="Активна" formControlName="isActive"></app-ui-checkbox-field>
         </div>
       </fieldset>
+      </app-ui-editor-shell>
     </form>
   }
 </ng-template>

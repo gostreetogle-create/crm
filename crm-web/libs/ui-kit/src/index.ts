@@ -13,6 +13,7 @@ export { UiModalFormActionsComponent } from './lib/modal-form-actions/ui-modal-f
 export { PageShellComponent } from './lib/page-shell/page-shell.component';
 export { UiPaginationComponent } from './lib/ui-pagination/ui-pagination.component';
 export { UiCheckboxFieldComponent } from './lib/ui-checkbox-field/ui-checkbox-field.component';
+export { UiEditorShellComponent } from './lib/editor-shell/ui-editor-shell.component';
 export { HexRgbFieldComponent } from './lib/hex-rgb-field/hex-rgb-field.component';
 export { AppHeaderComponent } from './lib/app-header/app-header.component';
 export {

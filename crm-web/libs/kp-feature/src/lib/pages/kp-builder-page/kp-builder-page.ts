@@ -290,9 +290,8 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
   /** Справочники: модалка редактирования товара; `returnTo` — возврат после закрытия. */
   navigateToEditTradeGood(p: KpCatalogProduct): void {
     if (p.source !== 'trade_good') return;
-    const returnTo = this.router.url.split('?')[0] || '/коммерческое';
-    void this.router.navigate(['/справочники'], {
-      queryParams: { editTradeGood: p.id, returnTo },
+    void this.router.navigate(['/справочники', 'новый-товар'], {
+      queryParams: { mode: 'edit', id: p.id },
     });
   }
 

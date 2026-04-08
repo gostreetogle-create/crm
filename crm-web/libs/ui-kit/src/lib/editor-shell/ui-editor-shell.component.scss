@@ -1,0 +1,45 @@
+:host {
+  display: block;
+}
+
+.uiEditorShell {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(20rem, 1fr);
+  gap: var(--ui-space-4);
+  align-items: start;
+}
+
+.uiEditorShell__main,
+.uiEditorShell__aside {
+  min-width: 0;
+}
+
+.uiEditorShell__aside {
+  position: sticky;
+  top: var(--ui-space-2);
+}
+
+.uiEditorShell__main > *,
+.uiEditorShell__aside > * {
+  border-color: color-mix(in srgb, var(--border-color) 62%, transparent);
+  background: color-mix(in srgb, var(--surface-soft) 46%, var(--surface));
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--shadow-color) 9%, transparent);
+}
+
+.uiEditorShell__main > * legend,
+.uiEditorShell__aside > * legend {
+  color: color-mix(in srgb, var(--text-muted) 80%, var(--text-primary) 20%);
+  letter-spacing: 0.01em;
+}
+
+@media (max-width: 1100px) {
+  .uiEditorShell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .uiEditorShell__aside {
+    position: static;
+    top: auto;
+  }
+}
+

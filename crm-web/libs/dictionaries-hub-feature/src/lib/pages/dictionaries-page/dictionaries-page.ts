@@ -196,6 +196,7 @@ import {
   UI_MODAL_Z_INDEX_ABOVE_CASCADE_HUB,
   UiButtonComponent,
   UiCheckboxFieldComponent,
+  UiEditorShellComponent,
   UiFormFieldComponent,
   UiFormGridComponent,
   UiModal as UiModalComponent,
@@ -221,6 +222,7 @@ import {
     UiFormGridComponent,
     UiButtonComponent,
     UiCheckboxFieldComponent,
+    UiEditorShellComponent,
     UiFormFieldComponent,
     HexRgbFieldComponent,
     LucidePlus,
@@ -581,6 +583,12 @@ export class DictionariesPage implements OnDestroy {
   );
 
   standaloneDictionaryTitle(key: StandaloneDictionaryCreateKey): string {
+    if (key === 'tradeGoods') {
+      const mode = this.standaloneActionModeFromQuery();
+      if (mode === 'edit') return 'Редактирование товара / комплекса';
+      if (mode === 'copy') return 'Копия товара / комплекса';
+      return 'Новый товар или комплекс';
+    }
     const base = STANDALONE_DICTIONARY_CREATE.find((x) => x.key === key)?.title ?? '';
     const mode = this.standaloneActionModeFromQuery();
     if (mode === 'edit') return base.replace(/^Новый|^Новая|^Новое/, 'Редактирование');
@@ -1282,6 +1290,11 @@ export class DictionariesPage implements OnDestroy {
     this.sub.add(
       this.tradeGoodsForm.controls.categoryId.valueChanges.subscribe(() => {
         this.tradeGoodsForm.controls.subcategoryId.setValue('', { emitEvent: false });
+      }),
+    );
+    this.sub.add(
+      this.tradeGoodLinesFormArray.valueChanges.subscribe(() => {
+        this.recalcTradeGoodPriceDefaults();
       }),
     );
 

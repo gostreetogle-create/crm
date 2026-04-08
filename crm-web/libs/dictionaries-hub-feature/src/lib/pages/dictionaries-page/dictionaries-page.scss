@@ -403,6 +403,158 @@
   margin: 0.25rem 0 0;
 }
 
+/* Standalone-редактирование товара/комплекса: полная ширина без визуального перегруза */
+.tradeGoodsForm {
+  max-inline-size: none;
+}
+
+.tradeGoodsForm > .dictionaryHubLoadError {
+  margin: 0;
+}
+
+.tradeGoodsCompositionSection {
+  max-height: calc(100vh - 11.5rem);
+  overflow: auto;
+  padding-right: 6px;
+}
+
+.tradeGoodsCompositionSection > .dictionaryFieldRowFull:first-of-type {
+  margin-bottom: 2px;
+}
+
+.tradeGoodsCompositionSection .dictionaryFormSectionBody--2 {
+  grid-template-columns: minmax(0, 1fr) 7.5rem;
+  align-items: end;
+  gap: 10px;
+}
+
+.tradeGoodsCompositionSection .productLineRow {
+  margin: 0 0 10px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--border-color) 68%, transparent);
+  border-radius: var(--radius-card);
+  background: color-mix(in srgb, var(--surface) 82%, var(--surface-soft) 18%);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 35%, transparent);
+  overflow: hidden;
+}
+
+.tradeGoodsCompositionSection .productLineRow .dictionaryFieldRowFull {
+  grid-column: 1 / -1;
+}
+
+.tradeGoodsCompositionSection .productLineRow app-ui-form-field {
+  min-width: 0;
+}
+
+.tradeGoodsCompositionSection .productLineRow select,
+.tradeGoodsCompositionSection .productLineRow input[type='number'] {
+  width: 100%;
+  min-width: 0;
+}
+
+.tradeGoodsCompositionSection .productLineRow select {
+  text-overflow: ellipsis;
+}
+
+.tradeGoodsCompositionSection .productLineRowActions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.tradeGoodsCompositionSection .productLineRowActions .uiButton {
+  min-height: 32px;
+  padding-inline: 12px;
+}
+
+.tradeGoodsCompositionSection .colorRefRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.tradeGoodsCompositionSection__addRow .uiButton {
+  width: 100%;
+  justify-content: flex-start;
+  font-weight: 600;
+  min-height: 36px;
+  padding-inline: 14px;
+}
+
+.tradeGoodsCompositionSection::-webkit-scrollbar {
+  width: 10px;
+}
+
+.tradeGoodsCompositionSection::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--border-color) 72%, transparent);
+}
+
+.tradeGoodsForm .dictionaryFormSectionBody--2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.tradeGoodsForm .dictionaryFieldRowFull,
+.tradeGoodsForm .dictionaryMuted,
+.tradeGoodsForm .tradeGoodKindHint {
+  max-inline-size: none;
+}
+
+.tradeGoodsForm .dictionaryMuted,
+.tradeGoodsForm .tradeGoodKindHint {
+  line-height: 1.45;
+  color: color-mix(in srgb, var(--text-muted) 82%, var(--text-primary) 18%);
+}
+
+.tradeGoodsEditorLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(20rem, 0.95fr);
+  gap: var(--ui-space-4);
+  align-items: start;
+}
+
+.tradeGoodsEditorLayout__main,
+.tradeGoodsEditorLayout__media {
+  min-width: 0;
+}
+
+.tradeGoodsEditorLayout__media {
+  display: grid;
+  gap: 12px;
+  padding: var(--ui-space-3);
+  border: 1px solid color-mix(in srgb, var(--border-color) 65%, transparent);
+  border-radius: var(--radius-card);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--surface-soft) 76%, var(--surface)) 0%,
+    color-mix(in srgb, var(--surface) 92%, var(--surface-soft)) 100%
+  );
+}
+
+.tradeGoodsTaxonomyRow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 1100px) {
+  .tradeGoodsCompositionSection {
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+  }
+
+  .tradeGoodsEditorLayout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tradeGoodsTaxonomyRow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .kpPhotoUploadRow {
   margin-bottom: 0.5rem;
 }
@@ -445,21 +597,6 @@
     object-fit: cover;
     object-position: center;
   }
-}
-
-.tradeGoodRecalcRow {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
-  margin-top: 6px;
-}
-
-.tradeGoodRecalcRow__hint {
-  margin: 0;
-  font-size: var(--font-size-small, 13px);
-  line-height: 1.4;
-  max-width: 42rem;
 }
 
 /* Просмотр изделия: спецификация, золотистая шапка, плотные блоки */
