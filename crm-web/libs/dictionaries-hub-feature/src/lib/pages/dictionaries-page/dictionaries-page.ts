@@ -9,6 +9,7 @@ import {
   inject,
   isDevMode,
   signal,
+  untracked,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, NavigationEnd, NavigationStart, Router } from '@angular/router';
@@ -1168,7 +1169,10 @@ export class DictionariesPage implements OnDestroy {
      */
     effect(() => {
       if (!this.standaloneCreateKey()) return;
-      this.initStandaloneDictionaryCreateFromRoute();
+      // Важно: инициализатор читает/пишет много сигналов форм.
+      // Делаем untracked, чтобы эффект зависел только от standaloneCreateKey,
+      // иначе возможен самоподдерживающийся цикл (freeze вкладки).
+      untracked(() => this.initStandaloneDictionaryCreateFromRoute());
     });
 
     // Если открыта модалка редактирования «Материал характеристик», а пользователь
