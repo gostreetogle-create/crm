@@ -329,9 +329,44 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
     return false;
   }
 
+  /**
+   * Строки с заполненным наименованием и без привязки к карточке «Товары» —
+   * при сохранении КП на сервере для них создаётся/ищется позиция в каталоге.
+   */
+  private namesNeedingCatalogSave(): string[] {
+    const raw = this.lines().getRawValue() as KpLineItem[];
+    const seen = new Set<string>();
+    const out: string[] = [];
+    for (const line of raw) {
+      const name = String(line.name ?? '').trim();
+      if (!name) continue;
+      if (String(line.catalogProductId ?? '').trim()) continue;
+      if (seen.has(name)) continue;
+      seen.add(name);
+      out.push(name);
+    }
+    return out;
+  }
+
+  private confirmCatalogSave(names: string[]): boolean {
+    if (names.length === 0) return true;
+    if (typeof globalThis.confirm !== 'function') return true;
+    if (names.length === 1) {
+      return globalThis.confirm(
+        `Сохранить в справочник «Товары» наименование «${names[0]}»?`,
+      );
+    }
+    const list = names.map((n) => `«${n}»`).join(', ');
+    return globalThis.confirm(`Сохранить в справочник «Товары» наименования: ${list}?`);
+  }
+
   async saveOffer(): Promise<string | null> {
     if (this.isSavingOffer() || !this.canEditOffer()) {
       return this.offerId();
+    }
+    const catalogNames = this.namesNeedingCatalogSave();
+    if (!this.confirmCatalogSave(catalogNames)) {
+      return null;
     }
     this.isSavingOffer.set(true);
     this.saveError.set(null);
