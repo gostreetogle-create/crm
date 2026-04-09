@@ -76,6 +76,7 @@
 | 45 | 2026-04-07 | Push в `origin/main`: units API чеклист — обязательный/уникальный `code`, ошибки `field/message`, фильтрация и пагинация GET, аудит CRUD операций единиц | backend | `2ec0a6c` |
 | 46 | 2026-04-07 | Push в `origin/main`: минимальный Playwright smoke для srm-front (login→dictionaries, 404/403), non-blocking CI job `smoke-e2e`, обновлён runbook smoke | crm-web, .github, docs | `db2b1c2` |
 | 47 | 2026-04-09 | Push в `origin/main`: стабилизация BL КП/заказов (statuses/orders/контракты/тесты) и единый release-gate/deploy контур (report, self-check, cross-platform runbook) | backend, crm-web, deploy, docs | `3eea6de` |
+| 48 | 2026-04-09 | Push в `origin/main`: миграция frontend на store (KpBuilder, хаб справочников, админ-карточки, AppHealthStore), DI фасадов на маршруте `/справочники`, Playwright smoke, бюджеты `srm-front`, чеклист `store-migration-checklist.md` | crm-web, docs | `2002c9a` |
 
 ---
 
