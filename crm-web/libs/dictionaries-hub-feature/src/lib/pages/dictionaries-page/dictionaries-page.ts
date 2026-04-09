@@ -1,4 +1,4 @@
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse } from '@angular/common/http';
 import { DOCUMENT, Location, NgFor, NgIf, NgTemplateOutlet } from '@angular/common';
 import {
   Component,
@@ -24,15 +24,11 @@ import {
   Validators,
 } from '@angular/forms';
 import {
-  Observable,
   Subscription,
   distinctUntilChanged,
   filter,
   finalize,
-  firstValueFrom,
-  forkJoin,
   map,
-  of,
   startWith,
 } from 'rxjs';
 import { PermissionsService } from '@srm/authz-runtime';
@@ -105,7 +101,6 @@ import {
   mapLegalFormToOrganizationKind,
   normalizeRalCode,
   normalizeWorkTypeName,
-  organizationKindToLegalForm,
 } from './dictionaries-page-form-utils';
 import {
   formatContactsSubtitle,
@@ -126,6 +121,8 @@ import {
   unitsPayloadFromValues,
   workTypesPayloadFromValues,
 } from './dictionaries-page-payload-builders';
+import { DictionariesPageOrchestrationFacade } from './dictionaries-page-orchestration.facade';
+import { DictionariesPagePermissionsFacade } from './dictionaries-page-permissions.facade';
 import {
   canCommercialOfferTransition,
   ClientsStore,
@@ -141,9 +138,12 @@ import {
   ProductionDetailsStore,
   ProductsStore,
   TradeGoodsStore,
+  TradeGoodsMediaService,
   TradeGoodCategoriesStore,
   TradeGoodSubcategoriesStore,
   ComplexesStore,
+  DictionariesHubCatalogService,
+  DictionariesLinkedPropagationService,
   normalizeCommercialOfferStatusKey,
   type ProposalStatusKey,
   ProductionWorkTypesStore,
@@ -165,30 +165,18 @@ import {
   computeProductionDetailTotals,
 } from '@srm/dictionaries-utils';
 import type { MaterialItem, MaterialItemInput } from '@srm/materials-data-access';
+import { type ProductItem, type ProductLineDto } from '@srm/products-data-access';
 import {
-  PRODUCTS_REPOSITORY,
-  type ProductItem,
-  type ProductLineDto,
-  type ProductsRepository,
-} from '@srm/products-data-access';
-import {
-  TRADE_GOODS_REPOSITORY,
   type TradeGoodCategoryInput,
   type TradeGoodItem,
   type TradeGoodSubcategoryInput,
-  type TradeGoodsRepository,
 } from '@srm/trade-goods-data-access';
 import { type ClientItemInput, formatClientFio } from '@srm/clients-data-access';
-import { OrganizationItem, OrganizationItemInput } from '@srm/organizations-data-access';
+import { type OrganizationItemInput } from '@srm/organizations-data-access';
 import {
-  MATERIAL_CHARACTERISTICS_REPOSITORY,
   type MaterialCharacteristicItem,
   type MaterialCharacteristicItemInput,
-  type MaterialCharacteristicsRepository,
 } from '@srm/material-characteristics-data-access';
-import { COLORS_REPOSITORY } from '@srm/colors-data-access';
-import { COATINGS_REPOSITORY } from '@srm/coatings-data-access';
-import { SURFACE_FINISHES_REPOSITORY } from '@srm/surface-finishes-data-access';
 import { RoleItemInput } from '@srm/roles-data-access';
 import { ROLE_ID_SYSTEM_ADMIN } from '@srm/roles-data-access';
 import { UserItemInput } from '@srm/users-data-access';
@@ -250,17 +238,17 @@ export class DictionariesPage implements OnDestroy {
   private readonly sub = new Subscription();
 
   /**
-   * Гейт для автосинхронизации read-only snapshot-полей в модалке
-   * "Характеристика материала" из справочников.
+   * Р“РµР№С‚ РґР»СЏ Р°РІС‚РѕСЃРёРЅС…СЂРѕРЅРёР·Р°С†РёРё read-only snapshot-РїРѕР»РµР№ РІ РјРѕРґР°Р»РєРµ
+   * "РҐР°СЂР°РєС‚РµСЂРёСЃС‚РёРєР° РјР°С‚РµСЂРёР°Р»Р°" РёР· СЃРїСЂР°РІРѕС‡РЅРёРєРѕРІ.
    *
-   * Смысл:
-   * - при выборе "Изменить локально" мы НЕ хотим перезаписывать исторические snapshot-поля,
-   *   - при выборе "Изменить во всех связанных" хотим обновить snapshot-поля.
+   * РЎРјС‹СЃР»:
+   * - РїСЂРё РІС‹Р±РѕСЂРµ "РР·РјРµРЅРёС‚СЊ Р»РѕРєР°Р»СЊРЅРѕ" РјС‹ РќР• С…РѕС‚РёРј РїРµСЂРµР·Р°РїРёСЃС‹РІР°С‚СЊ РёСЃС‚РѕСЂРёС‡РµСЃРєРёРµ snapshot-РїРѕР»СЏ,
+   *   - РїСЂРё РІС‹Р±РѕСЂРµ "РР·РјРµРЅРёС‚СЊ РІРѕ РІСЃРµС… СЃРІСЏР·Р°РЅРЅС‹С…" С…РѕС‚РёРј РѕР±РЅРѕРІРёС‚СЊ snapshot-РїРѕР»СЏ.
    *
-   * Важно: это обычные поля, не сигналы. Поэтому смена гейта не перезапускает effect,
-   * а эффект срабатывает только на изменениях стор/опций.
+   * Р’Р°Р¶РЅРѕ: СЌС‚Рѕ РѕР±С‹С‡РЅС‹Рµ РїРѕР»СЏ, РЅРµ СЃРёРіРЅР°Р»С‹. РџРѕСЌС‚РѕРјСѓ СЃРјРµРЅР° РіРµР№С‚Р° РЅРµ РїРµСЂРµР·Р°РїСѓСЃРєР°РµС‚ effect,
+   * Р° СЌС„С„РµРєС‚ СЃСЂР°Р±Р°С‚С‹РІР°РµС‚ С‚РѕР»СЊРєРѕ РЅР° РёР·РјРµРЅРµРЅРёСЏС… СЃС‚РѕСЂ/РѕРїС†РёР№.
    */
-  /** При дублировании контакта переносим наценку в создаваемую запись (поле убрано из формы). */
+  /** РџСЂРё РґСѓР±Р»РёСЂРѕРІР°РЅРёРё РєРѕРЅС‚Р°РєС‚Р° РїРµСЂРµРЅРѕСЃРёРј РЅР°С†РµРЅРєСѓ РІ СЃРѕР·РґР°РІР°РµРјСѓСЋ Р·Р°РїРёСЃСЊ (РїРѕР»Рµ СѓР±СЂР°РЅРѕ РёР· С„РѕСЂРјС‹). */
   private clientsMarkupOnCreate: number | null = null;
 
   private readonly materialsSnapshotSyncGate: {
@@ -270,30 +258,31 @@ export class DictionariesPage implements OnDestroy {
   } = { color: null, surfaceFinish: null, coating: null };
 
   readonly permissions = inject(PermissionsService);
+  private readonly permissionsFacade = inject(DictionariesPagePermissionsFacade);
   readonly hubTilePerm = permissionKeyForDictionaryHubTile;
 
   readonly hubExpand = inject(HubCrudExpandStateService);
 
-  /** Выбранный справочник в мастер-таблице хаба (доска + деталь ниже). */
+  /** Р’С‹Р±СЂР°РЅРЅС‹Р№ СЃРїСЂР°РІРѕС‡РЅРёРє РІ РјР°СЃС‚РµСЂ-С‚Р°Р±Р»РёС†Рµ С…Р°Р±Р° (РґРѕСЃРєР° + РґРµС‚Р°Р»СЊ РЅРёР¶Рµ). */
   readonly hubBoardSelectedKey = signal<string | null>(null);
 
-  /** Строки мастер-таблицы: раздел и справочник (с учётом прав). */
+  /** РЎС‚СЂРѕРєРё РјР°СЃС‚РµСЂ-С‚Р°Р±Р»РёС†С‹: СЂР°Р·РґРµР» Рё СЃРїСЂР°РІРѕС‡РЅРёРє (СЃ СѓС‡С‘С‚РѕРј РїСЂР°РІ). */
   readonly hubBoardRows = computed(() =>
     filterHubBoardRowsByPermission(HUB_BOARD_DICTIONARY_ROW_DEFS, (tileKey) =>
-      this.permissions.can(this.hubTilePerm(tileKey)),
+      this.permissionsFacade.canHubTile(tileKey),
     ),
   );
 
-  /** Колонки быстрого выбора: секция сверху, ниже — компактные кнопки справочников. */
+  /** РљРѕР»РѕРЅРєРё Р±С‹СЃС‚СЂРѕРіРѕ РІС‹Р±РѕСЂР°: СЃРµРєС†РёСЏ СЃРІРµСЂС…Сѓ, РЅРёР¶Рµ вЂ” РєРѕРјРїР°РєС‚РЅС‹Рµ РєРЅРѕРїРєРё СЃРїСЂР°РІРѕС‡РЅРёРєРѕРІ. */
   readonly hubBoardSectionColumns = computed(() => buildHubBoardSectionColumns(this.hubBoardRows()));
 
   /**
-   * Две половины верхнего блока (пополам по ширине); в каждой — до двух колонок секций.
-   * Итог на широком экране: 2×2 относительно четырёх секций.
+   * Р”РІРµ РїРѕР»РѕРІРёРЅС‹ РІРµСЂС…РЅРµРіРѕ Р±Р»РѕРєР° (РїРѕРїРѕР»Р°Рј РїРѕ С€РёСЂРёРЅРµ); РІ РєР°Р¶РґРѕР№ вЂ” РґРѕ РґРІСѓС… РєРѕР»РѕРЅРѕРє СЃРµРєС†РёР№.
+   * РС‚РѕРі РЅР° С€РёСЂРѕРєРѕРј СЌРєСЂР°РЅРµ: 2Г—2 РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ С‡РµС‚С‹СЂС‘С… СЃРµРєС†РёР№.
    */
   readonly hubBoardPickerHalves = computed(() => splitHubBoardPickerHalves(this.hubBoardSectionColumns()));
 
-  /** Высота тела таблицы в панели деталей (как у развёрнутой плитки). */
+  /** Р’С‹СЃРѕС‚Р° С‚РµР»Р° С‚Р°Р±Р»РёС†С‹ РІ РїР°РЅРµР»Рё РґРµС‚Р°Р»РµР№ (РєР°Рє Сѓ СЂР°Р·РІС‘СЂРЅСѓС‚РѕР№ РїР»РёС‚РєРё). */
   readonly hubBoardDetailTableMaxHeight = this.hubExpand.expandedTableBodyMaxHeight;
 
   private readonly syncHubBoardSelection = effect(() => {
@@ -324,11 +313,11 @@ export class DictionariesPage implements OnDestroy {
     return this.hubBoardSelectedKey() === key;
   }
 
-  /** «+» у строки быстрого выбора: переключает плитку и открывает создание для этого справочника. */
+  /** В«+В» Сѓ СЃС‚СЂРѕРєРё Р±С‹СЃС‚СЂРѕРіРѕ РІС‹Р±РѕСЂР°: РїРµСЂРµРєР»СЋС‡Р°РµС‚ РїР»РёС‚РєСѓ Рё РѕС‚РєСЂС‹РІР°РµС‚ СЃРѕР·РґР°РЅРёРµ РґР»СЏ СЌС‚РѕРіРѕ СЃРїСЂР°РІРѕС‡РЅРёРєР°. */
   onHubBoardQuickCreate(key: string, event: Event): void {
     event.preventDefault();
     event.stopPropagation();
-    if (!this.permissions.crud().canCreate) return;
+    if (!this.permissionsFacade.canCreate()) return;
     this.hubBoardSelectedKey.set(key);
     const target = resolveHubBoardQuickCreate(key);
     if (!target) {
@@ -366,53 +355,49 @@ export class DictionariesPage implements OnDestroy {
   readonly productionWorkTypesStore = inject(ProductionWorkTypesStore);
   readonly productionDetailsStore = inject(ProductionDetailsStore);
   readonly productsStore = inject(ProductsStore);
-  private readonly productsRepository = inject<ProductsRepository>(PRODUCTS_REPOSITORY);
   readonly tradeGoodsStore = inject(TradeGoodsStore);
   readonly tradeGoodCategoriesStore = inject(TradeGoodCategoriesStore);
   readonly tradeGoodSubcategoriesStore = inject(TradeGoodSubcategoriesStore);
-  private readonly tradeGoodsRepository = inject<TradeGoodsRepository>(TRADE_GOODS_REPOSITORY);
+  private readonly hubCatalogService = inject(DictionariesHubCatalogService);
   readonly complexesStore = inject(ComplexesStore);
 
-  /** Полные данные для режима просмотра изделия (все поля и строки состава из API). */
+  /** РџРѕР»РЅС‹Рµ РґР°РЅРЅС‹Рµ РґР»СЏ СЂРµР¶РёРјР° РїСЂРѕСЃРјРѕС‚СЂР° РёР·РґРµР»РёСЏ (РІСЃРµ РїРѕР»СЏ Рё СЃС‚СЂРѕРєРё СЃРѕСЃС‚Р°РІР° РёР· API). */
   readonly productViewItem = signal<ProductItem | null>(null);
-  /** Полные данные для режима просмотра товара (набор изделий). */
+  /** РџРѕР»РЅС‹Рµ РґР°РЅРЅС‹Рµ РґР»СЏ СЂРµР¶РёРјР° РїСЂРѕСЃРјРѕС‚СЂР° С‚РѕРІР°СЂР° (РЅР°Р±РѕСЂ РёР·РґРµР»РёР№). */
   readonly tradeGoodViewItem = signal<TradeGoodItem | null>(null);
 
-  /** Колонки таблицы состава в модалке «Просмотр изделия». */
+  /** РљРѕР»РѕРЅРєРё С‚Р°Р±Р»РёС†С‹ СЃРѕСЃС‚Р°РІР° РІ РјРѕРґР°Р»РєРµ В«РџСЂРѕСЃРјРѕС‚СЂ РёР·РґРµР»РёСЏВ». */
   readonly productViewCompositionColumns: UiSpecTableColumn[] = [
-    { key: 'detailName', label: 'Деталь', tone: 'emphasis' },
-    { key: 'lineTotalRub', label: 'Итого ₽', tone: 'muted', align: 'end' },
-    { key: 'workLabel', label: 'Вид работ', tone: 'muted' },
-    { key: 'colorLabel', label: 'Цвет', tone: 'muted' },
-    { key: 'sortOrder', label: 'Пор.', tone: 'muted', align: 'end' },
-    { key: 'lineId', label: 'ID строки', tone: 'muted' },
-    { key: 'detailId', label: 'ID детали', tone: 'muted' },
+    { key: 'detailName', label: 'Р”РµС‚Р°Р»СЊ', tone: 'emphasis' },
+    { key: 'lineTotalRub', label: 'РС‚РѕРіРѕ в‚Ѕ', tone: 'muted', align: 'end' },
+    { key: 'workLabel', label: 'Р’РёРґ СЂР°Р±РѕС‚', tone: 'muted' },
+    { key: 'colorLabel', label: 'Р¦РІРµС‚', tone: 'muted' },
+    { key: 'sortOrder', label: 'РџРѕСЂ.', tone: 'muted', align: 'end' },
+    { key: 'lineId', label: 'ID СЃС‚СЂРѕРєРё', tone: 'muted' },
+    { key: 'detailId', label: 'ID РґРµС‚Р°Р»Рё', tone: 'muted' },
     { key: 'workTypeIdRaw', label: 'workTypeId', tone: 'muted' },
     { key: 'colorIdRaw', label: 'colorId', tone: 'muted' },
-    { key: 'srcWt', label: 'Ист. ВР', tone: 'muted' },
-    { key: 'srcMat', label: 'Ист. мат.', tone: 'muted' },
-    { key: 'ovWt', label: 'Пер. ВР', tone: 'muted' },
-    { key: 'ovCol', label: 'Пер. цвет', tone: 'muted' },
+    { key: 'srcWt', label: 'РСЃС‚. Р’Р ', tone: 'muted' },
+    { key: 'srcMat', label: 'РСЃС‚. РјР°С‚.', tone: 'muted' },
+    { key: 'ovWt', label: 'РџРµСЂ. Р’Р ', tone: 'muted' },
+    { key: 'ovCol', label: 'РџРµСЂ. С†РІРµС‚', tone: 'muted' },
   ];
 
-  /** Колонки таблицы «Изделия в составе товара» в модалке просмотра. */
+  /** РљРѕР»РѕРЅРєРё С‚Р°Р±Р»РёС†С‹ В«РР·РґРµР»РёСЏ РІ СЃРѕСЃС‚Р°РІРµ С‚РѕРІР°СЂР°В» РІ РјРѕРґР°Р»РєРµ РїСЂРѕСЃРјРѕС‚СЂР°. */
   readonly tradeGoodViewCompositionColumns: UiSpecTableColumn[] = [
-    { key: 'productLabel', label: 'Изделие', tone: 'emphasis' },
-    { key: 'qtyLabel', label: 'Кол-во', tone: 'muted', align: 'end' },
-    { key: 'priceLabel', label: 'Цена ₽', tone: 'muted', align: 'end' },
-    { key: 'costLabel', label: 'Себест. ₽', tone: 'muted', align: 'end' },
-    { key: 'lineId', label: 'ID строки', tone: 'muted' },
-    { key: 'productId', label: 'ID изделия', tone: 'muted' },
+    { key: 'productLabel', label: 'РР·РґРµР»РёРµ', tone: 'emphasis' },
+    { key: 'qtyLabel', label: 'РљРѕР»-РІРѕ', tone: 'muted', align: 'end' },
+    { key: 'priceLabel', label: 'Р¦РµРЅР° в‚Ѕ', tone: 'muted', align: 'end' },
+    { key: 'costLabel', label: 'РЎРµР±РµСЃС‚. в‚Ѕ', tone: 'muted', align: 'end' },
+    { key: 'lineId', label: 'ID СЃС‚СЂРѕРєРё', tone: 'muted' },
+    { key: 'productId', label: 'ID РёР·РґРµР»РёСЏ', tone: 'muted' },
   ];
   readonly clientsStore = inject(ClientsStore);
   readonly organizationsStore = inject(OrganizationsStore);
   readonly materialCharacteristicsStore = inject(MaterialCharacteristicsStore);
-  private readonly colorsRepository = inject(COLORS_REPOSITORY);
-  private readonly surfaceFinishesRepository = inject(SURFACE_FINISHES_REPOSITORY);
-  private readonly coatingsRepository = inject(COATINGS_REPOSITORY);
-  private readonly materialCharacteristicsRepository = inject<MaterialCharacteristicsRepository>(
-    MATERIAL_CHARACTERISTICS_REPOSITORY
-  );
+  private readonly dictionariesOrchestrator = inject(DictionariesPageOrchestrationFacade);
+  private readonly linkedPropagationService = inject(DictionariesLinkedPropagationService);
+  private readonly tradeGoodsMediaService = inject(TradeGoodsMediaService);
 
   readonly isWorkTypesModalOpen = signal(false);
   readonly isProductionDetailsModalOpen = signal(false);
@@ -425,25 +410,25 @@ export class DictionariesPage implements OnDestroy {
   readonly isTradeGoodCategoriesViewMode = signal(false);
   readonly isTradeGoodSubcategoriesModalOpen = signal(false);
   readonly isTradeGoodSubcategoriesViewMode = signal(false);
-  /** Куда вернуться после закрытия модалки товара (deep-link с КП: `?returnTo=`). */
+  /** РљСѓРґР° РІРµСЂРЅСѓС‚СЊСЃСЏ РїРѕСЃР»Рµ Р·Р°РєСЂС‹С‚РёСЏ РјРѕРґР°Р»РєРё С‚РѕРІР°СЂР° (deep-link СЃ РљРџ: `?returnTo=`). */
   private readonly tradeGoodsReturnUrl = signal<string | null>(null);
-  /** Ошибка последнего сохранения товара (API). */
+  /** РћС€РёР±РєР° РїРѕСЃР»РµРґРЅРµРіРѕ СЃРѕС…СЂР°РЅРµРЅРёСЏ С‚РѕРІР°СЂР° (API). */
   readonly tradeGoodsSaveError = signal<string | null>(null);
-  /** Подтверждение удаления товара (поверх модалки редактирования, z-index выше 1500). */
+  /** РџРѕРґС‚РІРµСЂР¶РґРµРЅРёРµ СѓРґР°Р»РµРЅРёСЏ С‚РѕРІР°СЂР° (РїРѕРІРµСЂС… РјРѕРґР°Р»РєРё СЂРµРґР°РєС‚РёСЂРѕРІР°РЅРёСЏ, z-index РІС‹С€Рµ 1500). */
   readonly isTradeGoodDeleteConfirmOpen = signal(false);
   readonly tradeGoodDeleteConfirmBackdropZIndex = 1600;
-  /** Превью с сервера при редактировании (пока не выбраны новые файлы). */
+  /** РџСЂРµРІСЊСЋ СЃ СЃРµСЂРІРµСЂР° РїСЂРё СЂРµРґР°РєС‚РёСЂРѕРІР°РЅРёРё (РїРѕРєР° РЅРµ РІС‹Р±СЂР°РЅС‹ РЅРѕРІС‹Рµ С„Р°Р№Р»С‹). */
   readonly tradeGoodPhotoUrlsServer = signal<string[]>([]);
   readonly tradeGoodPendingPreviewUrls = signal<string[]>([]);
   readonly tradeGoodPendingFiles = signal<File[]>([]);
-  /** Какое фото главное для карточки и КП: индекс в `tradeGoodPhotoPreviewRows` (0-based). */
+  /** РљР°РєРѕРµ С„РѕС‚Рѕ РіР»Р°РІРЅРѕРµ РґР»СЏ РєР°СЂС‚РѕС‡РєРё Рё РљРџ: РёРЅРґРµРєСЃ РІ `tradeGoodPhotoPreviewRows` (0-based). */
   readonly tradeGoodPhotoPrimarySlot = signal(0);
-  /** Сначала уже сохранённые на сервере, затем новые выбранные файлы (blob URL). */
+  /** РЎРЅР°С‡Р°Р»Р° СѓР¶Рµ СЃРѕС…СЂР°РЅС‘РЅРЅС‹Рµ РЅР° СЃРµСЂРІРµСЂРµ, Р·Р°С‚РµРј РЅРѕРІС‹Рµ РІС‹Р±СЂР°РЅРЅС‹Рµ С„Р°Р№Р»С‹ (blob URL). */
   readonly tradeGoodPhotoPreviewRows = computed(() => {
     return [...this.tradeGoodPhotoUrlsServer(), ...this.tradeGoodPendingPreviewUrls()];
   });
 
-  /** Главное превью (для обратной совместимости с блоком под артикулом). */
+  /** Р“Р»Р°РІРЅРѕРµ РїСЂРµРІСЊСЋ (РґР»СЏ РѕР±СЂР°С‚РЅРѕР№ СЃРѕРІРјРµСЃС‚РёРјРѕСЃС‚Рё СЃ Р±Р»РѕРєРѕРј РїРѕРґ Р°СЂС‚РёРєСѓР»РѕРј). */
   readonly tradeGoodEditPhotoUrl = computed(() => {
     const rows = this.tradeGoodPhotoPreviewRows();
     if (rows.length > 0) {
@@ -529,8 +514,8 @@ export class DictionariesPage implements OnDestroy {
   readonly rolesEditingId = signal<string | null>(null);
   readonly rolesSubmitAttempted = signal(false);
   /**
-   * Уникальный id формы ролей: одна и та же разметка (#rolesContentTpl) в модалке и на standalone-маршруте.
-   * Дублирующий id="roles-form" в DOM давал лишние сабмиты и несколько POST на одно действие.
+   * РЈРЅРёРєР°Р»СЊРЅС‹Р№ id С„РѕСЂРјС‹ СЂРѕР»РµР№: РѕРґРЅР° Рё С‚Р° Р¶Рµ СЂР°Р·РјРµС‚РєР° (#rolesContentTpl) РІ РјРѕРґР°Р»РєРµ Рё РЅР° standalone-РјР°СЂС€СЂСѓС‚Рµ.
+   * Р”СѓР±Р»РёСЂСѓСЋС‰РёР№ id="roles-form" РІ DOM РґР°РІР°Р» Р»РёС€РЅРёРµ СЃР°Р±РјРёС‚С‹ Рё РЅРµСЃРєРѕР»СЊРєРѕ POST РЅР° РѕРґРЅРѕ РґРµР№СЃС‚РІРёРµ.
    */
   readonly rolesFormDomId = signal('roles-form--modal');
   private rolesSubmitInFlight = false;
@@ -540,13 +525,13 @@ export class DictionariesPage implements OnDestroy {
   readonly usersSubmitAttempted = signal(false);
   readonly colorQuickAddForMaterialCharacteristics = signal(false);
   readonly unitQuickAddForMaterials = signal(false);
-  /** После «+» у поставщика в форме материала — подставить созданную организацию в `supplierOrganizationId`. */
+  /** РџРѕСЃР»Рµ В«+В» Сѓ РїРѕСЃС‚Р°РІС‰РёРєР° РІ С„РѕСЂРјРµ РјР°С‚РµСЂРёР°Р»Р° вЂ” РїРѕРґСЃС‚Р°РІРёС‚СЊ СЃРѕР·РґР°РЅРЅСѓСЋ РѕСЂРіР°РЅРёР·Р°С†РёСЋ РІ `supplierOrganizationId`. */
   readonly organizationQuickAddForMaterials = signal(false);
-  /** Материал создан из формы детали (модалка поверх) — подставить в пресет «по материалу». */
+  /** РњР°С‚РµСЂРёР°Р» СЃРѕР·РґР°РЅ РёР· С„РѕСЂРјС‹ РґРµС‚Р°Р»Рё (РјРѕРґР°Р»РєР° РїРѕРІРµСЂС…) вЂ” РїРѕРґСЃС‚Р°РІРёС‚СЊ РІ РїСЂРµСЃРµС‚ В«РїРѕ РјР°С‚РµСЂРёР°Р»СѓВ». */
   readonly materialQuickAddForProductionDetails = signal(false);
-  /** Каскад: модалка «Материал» открыта, плитка справочника — поверх (z-index). */
+  /** РљР°СЃРєР°Рґ: РјРѕРґР°Р»РєР° В«РњР°С‚РµСЂРёР°Р»В» РѕС‚РєСЂС‹С‚Р°, РїР»РёС‚РєР° СЃРїСЂР°РІРѕС‡РЅРёРєР° вЂ” РїРѕРІРµСЂС… (z-index). */
   readonly materialCharacteristicsHubStackAboveModal = signal(false);
-  /** Модалка «Новая геометрия» открыта из формы материала — поднять слой выше модалки материала. */
+  /** РњРѕРґР°Р»РєР° В«РќРѕРІР°СЏ РіРµРѕРјРµС‚СЂРёСЏВ» РѕС‚РєСЂС‹С‚Р° РёР· С„РѕСЂРјС‹ РјР°С‚РµСЂРёР°Р»Р° вЂ” РїРѕРґРЅСЏС‚СЊ СЃР»РѕР№ РІС‹С€Рµ РјРѕРґР°Р»РєРё РјР°С‚РµСЂРёР°Р»Р°. */
   readonly geometriesModalStackAboveMaterials = signal(false);
   readonly coatingQuickAddForMaterialCharacteristics = signal(false);
   readonly surfaceQuickAddForMaterialCharacteristics = signal(false);
@@ -554,8 +539,7 @@ export class DictionariesPage implements OnDestroy {
   private readonly router = inject(Router);
   private readonly location = inject(Location);
   private readonly route = inject(ActivatedRoute);
-  private readonly http = inject(HttpClient);
-  /** Цепочка «Новый материал» → характеристика: состояние вне экземпляра страницы (см. сервис). */
+  /** Р¦РµРїРѕС‡РєР° В«РќРѕРІС‹Р№ РјР°С‚РµСЂРёР°Р»В» в†’ С…Р°СЂР°РєС‚РµСЂРёСЃС‚РёРєР°: СЃРѕСЃС‚РѕСЏРЅРёРµ РІРЅРµ СЌРєР·РµРјРїР»СЏСЂР° СЃС‚СЂР°РЅРёС†С‹ (СЃРј. СЃРµСЂРІРёСЃ). */
   private readonly materialStandaloneFlow = inject(DictionariesMaterialStandaloneFlowService);
   private standaloneCreateKeyFromUrl(): StandaloneDictionaryCreateKey | null {
     const pathnameRaw = this.doc?.defaultView?.location?.pathname ?? '';
@@ -569,7 +553,7 @@ export class DictionariesPage implements OnDestroy {
     );
     return byPath?.key ?? null;
   }
-  /** Полноэкранный маршрут `/справочники/новый-материал` (форма материала без модалки). */
+  /** РџРѕР»РЅРѕСЌРєСЂР°РЅРЅС‹Р№ РјР°СЂС€СЂСѓС‚ `/СЃРїСЂР°РІРѕС‡РЅРёРєРё/РЅРѕРІС‹Р№-РјР°С‚РµСЂРёР°Р»` (С„РѕСЂРјР° РјР°С‚РµСЂРёР°Р»Р° Р±РµР· РјРѕРґР°Р»РєРё). */
   readonly isNewMaterialPageRoute = toSignal(
     this.router.events.pipe(
       filter((e): e is NavigationEnd => e instanceof NavigationEnd),
@@ -579,7 +563,7 @@ export class DictionariesPage implements OnDestroy {
     { initialValue: this.route.snapshot.data['newMaterialPage'] === true },
   );
 
-  /** Полноэкранный маршрут `/справочники/новая-характеристика-материала`. */
+  /** РџРѕР»РЅРѕСЌРєСЂР°РЅРЅС‹Р№ РјР°СЂС€СЂСѓС‚ `/СЃРїСЂР°РІРѕС‡РЅРёРєРё/РЅРѕРІР°СЏ-С…Р°СЂР°РєС‚РµСЂРёСЃС‚РёРєР°-РјР°С‚РµСЂРёР°Р»Р°`. */
   readonly isNewMaterialCharacteristicPageRoute = toSignal(
     this.router.events.pipe(
       filter((e): e is NavigationEnd => e instanceof NavigationEnd),
@@ -589,7 +573,7 @@ export class DictionariesPage implements OnDestroy {
     { initialValue: this.route.snapshot.data['newMaterialCharacteristicPage'] === true },
   );
 
-  /** Полноэкранное создание (`data.standaloneCreate`) — см. `STANDALONE_DICTIONARY_CREATE`. */
+  /** РџРѕР»РЅРѕСЌРєСЂР°РЅРЅРѕРµ СЃРѕР·РґР°РЅРёРµ (`data.standaloneCreate`) вЂ” СЃРј. `STANDALONE_DICTIONARY_CREATE`. */
   readonly standaloneCreateKey = toSignal(
     this.router.events.pipe(
       filter((e): e is NavigationEnd => e instanceof NavigationEnd),
@@ -604,32 +588,32 @@ export class DictionariesPage implements OnDestroy {
   standaloneDictionaryTitle(key: StandaloneDictionaryCreateKey): string {
     if (key === 'tradeGoods') {
       const mode = this.standaloneActionModeFromQuery();
-      if (mode === 'edit') return 'Редактирование товара / комплекса';
-      if (mode === 'copy') return 'Копия товара / комплекса';
-      return 'Новый товар или комплекс';
+      if (mode === 'edit') return 'Р РµРґР°РєС‚РёСЂРѕРІР°РЅРёРµ С‚РѕРІР°СЂР° / РєРѕРјРїР»РµРєСЃР°';
+      if (mode === 'copy') return 'РљРѕРїРёСЏ С‚РѕРІР°СЂР° / РєРѕРјРїР»РµРєСЃР°';
+      return 'РќРѕРІС‹Р№ С‚РѕРІР°СЂ РёР»Рё РєРѕРјРїР»РµРєСЃ';
     }
     const base = STANDALONE_DICTIONARY_CREATE.find((x) => x.key === key)?.title ?? '';
     const mode = this.standaloneActionModeFromQuery();
-    if (mode === 'edit') return base.replace(/^Новый|^Новая|^Новое/, 'Редактирование');
-    if (mode === 'copy') return base.replace(/^Новый|^Новая|^Новое/, 'Копия');
+    if (mode === 'edit') return base.replace(/^РќРѕРІС‹Р№|^РќРѕРІР°СЏ|^РќРѕРІРѕРµ/, 'Р РµРґР°РєС‚РёСЂРѕРІР°РЅРёРµ');
+    if (mode === 'copy') return base.replace(/^РќРѕРІС‹Р№|^РќРѕРІР°СЏ|^РќРѕРІРѕРµ/, 'РљРѕРїРёСЏ');
     return base;
   }
 
   standaloneMaterialPageTitle(): string {
     const mode = this.standaloneActionModeFromQuery();
-    if (mode === 'edit') return 'Редактирование материала';
-    if (mode === 'copy') return 'Копия материала';
-    return 'Новый материал';
+    if (mode === 'edit') return 'Р РµРґР°РєС‚РёСЂРѕРІР°РЅРёРµ РјР°С‚РµСЂРёР°Р»Р°';
+    if (mode === 'copy') return 'РљРѕРїРёСЏ РјР°С‚РµСЂРёР°Р»Р°';
+    return 'РќРѕРІС‹Р№ РјР°С‚РµСЂРёР°Р»';
   }
 
   standaloneMaterialCharacteristicPageTitle(): string {
     const mode = this.standaloneActionModeFromQuery();
-    if (mode === 'edit') return 'Редактирование характеристики материала';
-    if (mode === 'copy') return 'Копия характеристики материала';
-    return 'Новая характеристика материала';
+    if (mode === 'edit') return 'Р РµРґР°РєС‚РёСЂРѕРІР°РЅРёРµ С…Р°СЂР°РєС‚РµСЂРёСЃС‚РёРєРё РјР°С‚РµСЂРёР°Р»Р°';
+    if (mode === 'copy') return 'РљРѕРїРёСЏ С…Р°СЂР°РєС‚РµСЂРёСЃС‚РёРєРё РјР°С‚РµСЂРёР°Р»Р°';
+    return 'РќРѕРІР°СЏ С…Р°СЂР°РєС‚РµСЂРёСЃС‚РёРєР° РјР°С‚РµСЂРёР°Р»Р°';
   }
 
-  /** После успешного submit на полноэкранном create — шаг назад по истории (канон playbook). */
+  /** РџРѕСЃР»Рµ СѓСЃРїРµС€РЅРѕРіРѕ submit РЅР° РїРѕР»РЅРѕСЌРєСЂР°РЅРЅРѕРј create вЂ” С€Р°Рі РЅР°Р·Р°Рґ РїРѕ РёСЃС‚РѕСЂРёРё (РєР°РЅРѕРЅ playbook). */
   private finishStandaloneDictionaryCreateIfMatch(key: StandaloneDictionaryCreateKey): void {
     if (this.standaloneCreateKey() !== key) return;
     this.location.back();
@@ -647,7 +631,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   /**
-   * Роли / пользователи: на standalone открыт только create; submit редактирования идёт из модалки на хабе.
+   * Р РѕР»Рё / РїРѕР»СЊР·РѕРІР°С‚РµР»Рё: РЅР° standalone РѕС‚РєСЂС‹С‚ С‚РѕР»СЊРєРѕ create; submit СЂРµРґР°РєС‚РёСЂРѕРІР°РЅРёСЏ РёРґС‘С‚ РёР· РјРѕРґР°Р»РєРё РЅР° С…Р°Р±Рµ.
    */
   private finishStandaloneDictionaryCreateIfMatchCreateOnly(
     key: 'roles' | 'users',
@@ -658,7 +642,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   /**
-   * Модалка формы характеристик выше каскадной плитки на body (z-index 1700), иначе «+» открывает форму сзади.
+   * РњРѕРґР°Р»РєР° С„РѕСЂРјС‹ С…Р°СЂР°РєС‚РµСЂРёСЃС‚РёРє РІС‹С€Рµ РєР°СЃРєР°РґРЅРѕР№ РїР»РёС‚РєРё РЅР° body (z-index 1700), РёРЅР°С‡Рµ В«+В» РѕС‚РєСЂС‹РІР°РµС‚ С„РѕСЂРјСѓ СЃР·Р°РґРё.
    */
   readonly materialCharacteristicsFormModalBackdropZIndex = computed((): number | null => {
     const hubOpen = this.hubBoardSelectedKey() === 'materialCharacteristics';
@@ -668,39 +652,39 @@ export class DictionariesPage implements OnDestroy {
     return UI_MODAL_Z_INDEX_ABOVE_CASCADE_HUB;
   });
 
-  /** Заголовок модалки просмотра: имя позиции из записи, без «Мат.» в шапке. */
+  /** Р—Р°РіРѕР»РѕРІРѕРє РјРѕРґР°Р»РєРё РїСЂРѕСЃРјРѕС‚СЂР°: РёРјСЏ РїРѕР·РёС†РёРё РёР· Р·Р°РїРёСЃРё, Р±РµР· В«РњР°С‚.В» РІ С€Р°РїРєРµ. */
   readonly materialsViewHeadline = signal('');
 
   readonly materialsModalTitle = computed(() => {
     if (!this.isMaterialsModalOpen()) return '';
     if (this.isMaterialsViewMode()) {
       const h = this.materialsViewHeadline().trim();
-      return h ? `Просмотр · ${h}` : 'Просмотр материала';
+      return h ? `РџСЂРѕСЃРјРѕС‚СЂ В· ${h}` : 'РџСЂРѕСЃРјРѕС‚СЂ РјР°С‚РµСЂРёР°Р»Р°';
     }
-    if (this.materialsStore.isEditMode()) return 'Редактирование материала';
-    return 'Новый материал';
+    if (this.materialsStore.isEditMode()) return 'Р РµРґР°РєС‚РёСЂРѕРІР°РЅРёРµ РјР°С‚РµСЂРёР°Р»Р°';
+    return 'РќРѕРІС‹Р№ РјР°С‚РµСЂРёР°Р»';
   });
 
   readonly materialCharacteristicsModalTitle = computed(() => {
     if (!this.isMaterialCharacteristicsModalOpen()) return '';
-    if (this.isMaterialCharacteristicsViewMode()) return 'Просмотр характеристики материала';
-    if (this.materialCharacteristicsStore.isEditMode()) return 'Редактирование характеристики материала';
-    return 'Новая характеристика материала';
+    if (this.isMaterialCharacteristicsViewMode()) return 'РџСЂРѕСЃРјРѕС‚СЂ С…Р°СЂР°РєС‚РµСЂРёСЃС‚РёРєРё РјР°С‚РµСЂРёР°Р»Р°';
+    if (this.materialCharacteristicsStore.isEditMode()) return 'Р РµРґР°РєС‚РёСЂРѕРІР°РЅРёРµ С…Р°СЂР°РєС‚РµСЂРёСЃС‚РёРєРё РјР°С‚РµСЂРёР°Р»Р°';
+    return 'РќРѕРІР°СЏ С…Р°СЂР°РєС‚РµСЂРёСЃС‚РёРєР° РјР°С‚РµСЂРёР°Р»Р°';
   });
 
-  /** Модалка геометрии поверх модалки материала (оба на body). */
+  /** РњРѕРґР°Р»РєР° РіРµРѕРјРµС‚СЂРёРё РїРѕРІРµСЂС… РјРѕРґР°Р»РєРё РјР°С‚РµСЂРёР°Р»Р° (РѕР±Р° РЅР° body). */
   readonly geometriesFormModalBackdropZIndex = computed((): number | null => {
     if (!this.geometriesModalStackAboveMaterials()) return null;
     return UI_MODAL_Z_INDEX_ABOVE_CASCADE_HUB;
   });
 
-  /** Модалка материала поверх модалки «Деталь» (создание материала из пресета). */
+  /** РњРѕРґР°Р»РєР° РјР°С‚РµСЂРёР°Р»Р° РїРѕРІРµСЂС… РјРѕРґР°Р»РєРё В«Р”РµС‚Р°Р»СЊВ» (СЃРѕР·РґР°РЅРёРµ РјР°С‚РµСЂРёР°Р»Р° РёР· РїСЂРµСЃРµС‚Р°). */
   readonly materialsFormModalBackdropZIndex = computed((): number | null => {
     if (!this.materialQuickAddForProductionDetails() || !this.isProductionDetailsModalOpen()) return null;
     return UI_MODAL_Z_INDEX_ABOVE_CASCADE_HUB;
   });
 
-  /** Организация из «+» у поставщика — выше модалки материала (уже 1800). */
+  /** РћСЂРіР°РЅРёР·Р°С†РёСЏ РёР· В«+В» Сѓ РїРѕСЃС‚Р°РІС‰РёРєР° вЂ” РІС‹С€Рµ РјРѕРґР°Р»РєРё РјР°С‚РµСЂРёР°Р»Р° (СѓР¶Рµ 1800). */
   readonly organizationsFormModalBackdropZIndex = computed((): number | null => {
     if (!this.organizationQuickAddForMaterials() || !this.isMaterialsModalOpen()) return null;
     return UI_MODAL_Z_INDEX_ABOVE_CASCADE_HUB + 100;
@@ -744,8 +728,8 @@ export class DictionariesPage implements OnDestroy {
   readonly usersColumnsFull = USERS_COLUMNS_FULL;
 
   /**
-   * Колонки таблицы: на хабе-доске выбранный справочник — полный набор; иначе короткий превью-набор.
-   * Для демо/ui-demo с раскрытием плитки — по `hubExpand.isOpen(tileKey)`.
+   * РљРѕР»РѕРЅРєРё С‚Р°Р±Р»РёС†С‹: РЅР° С…Р°Р±Рµ-РґРѕСЃРєРµ РІС‹Р±СЂР°РЅРЅС‹Р№ СЃРїСЂР°РІРѕС‡РЅРёРє вЂ” РїРѕР»РЅС‹Р№ РЅР°Р±РѕСЂ; РёРЅР°С‡Рµ РєРѕСЂРѕС‚РєРёР№ РїСЂРµРІСЊСЋ-РЅР°Р±РѕСЂ.
+   * Р”Р»СЏ РґРµРјРѕ/ui-demo СЃ СЂР°СЃРєСЂС‹С‚РёРµРј РїР»РёС‚РєРё вЂ” РїРѕ `hubExpand.isOpen(tileKey)`.
    */
   private readonly columnsForTile = <T extends TableColumn>(
     tileKey: string,
@@ -759,8 +743,8 @@ export class DictionariesPage implements OnDestroy {
     });
 
   /**
-   * В свернутой карточке скрываем строки таблицы (0),
-   * в раскрытой — штатный лимит из HubCrudExpandStateService.
+   * Р’ СЃРІРµСЂРЅСѓС‚РѕР№ РєР°СЂС‚РѕС‡РєРµ СЃРєСЂС‹РІР°РµРј СЃС‚СЂРѕРєРё С‚Р°Р±Р»РёС†С‹ (0),
+   * РІ СЂР°СЃРєСЂС‹С‚РѕР№ вЂ” С€С‚Р°С‚РЅС‹Р№ Р»РёРјРёС‚ РёР· HubCrudExpandStateService.
    */
   previewRows(tileKey: string): number | null {
     return this.hubExpand.isOpen(tileKey) ? this.hubExpand.previewMaxTableBodyRows(tileKey) : 0;
@@ -796,14 +780,14 @@ export class DictionariesPage implements OnDestroy {
     this.catalogComplexesColumnsFull,
   );
 
-  /** Колонки мини-таблицы состава в раскрытии строки «Изделия» (`app-ui-spec-table`). */
+  /** РљРѕР»РѕРЅРєРё РјРёРЅРё-С‚Р°Р±Р»РёС†С‹ СЃРѕСЃС‚Р°РІР° РІ СЂР°СЃРєСЂС‹С‚РёРё СЃС‚СЂРѕРєРё В«РР·РґРµР»РёСЏВ» (`app-ui-spec-table`). */
   readonly productCompositionSpecColumns: UiSpecTableColumn[] = [
-    { key: 'detailName', label: 'Наименование', tone: 'emphasis' },
-    { key: 'workTypeLabel', label: 'Вид работ', tone: 'muted' },
-    { key: 'colorLabel', label: 'Цвет', tone: 'muted' },
+    { key: 'detailName', label: 'РќР°РёРјРµРЅРѕРІР°РЅРёРµ', tone: 'emphasis' },
+    { key: 'workTypeLabel', label: 'Р’РёРґ СЂР°Р±РѕС‚', tone: 'muted' },
+    { key: 'colorLabel', label: 'Р¦РІРµС‚', tone: 'muted' },
   ];
 
-  /** Строки для спецификации состава из поля `compositionLines` строки CRUD. */
+  /** РЎС‚СЂРѕРєРё РґР»СЏ СЃРїРµС†РёС„РёРєР°С†РёРё СЃРѕСЃС‚Р°РІР° РёР· РїРѕР»СЏ `compositionLines` СЃС‚СЂРѕРєРё CRUD. */
   productCompositionSpecRows(lines: unknown): Array<Record<string, unknown>> {
     if (!Array.isArray(lines)) return [];
     return lines.map((raw) => {
@@ -821,8 +805,8 @@ export class DictionariesPage implements OnDestroy {
   }
 
   readonly tradeGoodCompositionSpecColumns: UiSpecTableColumn[] = [
-    { key: 'productLabel', label: 'Компонент', tone: 'emphasis' },
-    { key: 'qtyLabel', label: 'Кол-во', tone: 'muted', align: 'end' },
+    { key: 'productLabel', label: 'РљРѕРјРїРѕРЅРµРЅС‚', tone: 'emphasis' },
+    { key: 'qtyLabel', label: 'РљРѕР»-РІРѕ', tone: 'muted', align: 'end' },
   ];
 
   tradeGoodCompositionSpecRows(lines: unknown): Array<Record<string, unknown>> {
@@ -877,7 +861,7 @@ export class DictionariesPage implements OnDestroy {
     this.materialCharacteristicsColumnsFull,
   );
 
-  /** Активные роли для поля «Роль» в карточке пользователя. */
+  /** РђРєС‚РёРІРЅС‹Рµ СЂРѕР»Рё РґР»СЏ РїРѕР»СЏ В«Р РѕР»СЊВ» РІ РєР°СЂС‚РѕС‡РєРµ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ. */
   readonly roleSelectOptions = computed(() =>
     this.rolesStore.matrixRoleColumns().map((r) => ({
       id: r.id,
@@ -903,7 +887,7 @@ export class DictionariesPage implements OnDestroy {
       .sort((a, b) => a.name.localeCompare(b.name))
       .map((g) => ({
         id: g.id,
-        label: `${g.name} — ${formatGeometryParamsDisplay(g)}`,
+        label: `${g.name} вЂ” ${formatGeometryParamsDisplay(g)}`,
       })),
   );
 
@@ -998,8 +982,8 @@ export class DictionariesPage implements OnDestroy {
   });
 
   /**
-   * Ед. изм. в товаре хранится как `unitCode` (строка); в справочнике единиц — `code`, иначе подставляем `name`.
-   * См. справочник «Единицы измерения» на хабе.
+   * Р•Рґ. РёР·Рј. РІ С‚РѕРІР°СЂРµ С…СЂР°РЅРёС‚СЃСЏ РєР°Рє `unitCode` (СЃС‚СЂРѕРєР°); РІ СЃРїСЂР°РІРѕС‡РЅРёРєРµ РµРґРёРЅРёС† вЂ” `code`, РёРЅР°С‡Рµ РїРѕРґСЃС‚Р°РІР»СЏРµРј `name`.
+   * РЎРј. СЃРїСЂР°РІРѕС‡РЅРёРє В«Р•РґРёРЅРёС†С‹ РёР·РјРµСЂРµРЅРёСЏВ» РЅР° С…Р°Р±Рµ.
    */
   readonly tradeGoodUnitCatalogOptions = computed(() =>
     this.unitsStore
@@ -1007,18 +991,18 @@ export class DictionariesPage implements OnDestroy {
       .filter((x) => x.isActive)
       .map((item) => {
         const value = (item.code?.trim() || item.name.trim() || '').trim();
-        return { value, label: `${item.name} (${item.code?.trim() || '—'})` };
+        return { value, label: `${item.name} (${item.code?.trim() || 'вЂ”'})` };
       })
       .filter((o) => o.value.length > 0)
       .sort((a, b) => a.label.localeCompare(b.label, 'ru')),
   );
 
-  /** Опции селекта «Ед. изм.»; если в записи устаревший код — одна строка «не из справочника». */
+  /** РћРїС†РёРё СЃРµР»РµРєС‚Р° В«Р•Рґ. РёР·Рј.В»; РµСЃР»Рё РІ Р·Р°РїРёСЃРё СѓСЃС‚Р°СЂРµРІС€РёР№ РєРѕРґ вЂ” РѕРґРЅР° СЃС‚СЂРѕРєР° В«РЅРµ РёР· СЃРїСЂР°РІРѕС‡РЅРёРєР°В». */
   tradeGoodUnitSelectOptions(): { value: string; label: string }[] {
     const base = this.tradeGoodUnitCatalogOptions();
     const cur = this.tradeGoodsForm.controls.unitCode.value?.trim() ?? '';
     if (cur && !base.some((o) => o.value === cur)) {
-      return [{ value: cur, label: `${cur} (не из справочника)` }, ...base];
+      return [{ value: cur, label: `${cur} (РЅРµ РёР· СЃРїСЂР°РІРѕС‡РЅРёРєР°)` }, ...base];
     }
     return base;
   }
@@ -1056,11 +1040,11 @@ export class DictionariesPage implements OnDestroy {
   });
 
   readonly shapeOptions: ReadonlyArray<{ value: string; label: string }> = [
-    { value: 'rectangular', label: 'Прямоугольная' },
-    { value: 'cylindrical', label: 'Цилиндрическая' },
-    { value: 'tube', label: 'Труба' },
-    { value: 'plate', label: 'Лист' },
-    { value: 'custom', label: 'Произвольная' },
+    { value: 'rectangular', label: 'РџСЂСЏРјРѕСѓРіРѕР»СЊРЅР°СЏ' },
+    { value: 'cylindrical', label: 'Р¦РёР»РёРЅРґСЂРёС‡РµСЃРєР°СЏ' },
+    { value: 'tube', label: 'РўСЂСѓР±Р°' },
+    { value: 'plate', label: 'Р›РёСЃС‚' },
+    { value: 'custom', label: 'РџСЂРѕРёР·РІРѕР»СЊРЅР°СЏ' },
   ];
 
   readonly geometryDiameterFieldLabel = GEOMETRY_DIAMETER_LABEL;
@@ -1104,9 +1088,9 @@ export class DictionariesPage implements OnDestroy {
     name: ['', [Validators.required, Validators.minLength(1)]],
     organizationId: ['', Validators.required],
     photoTitle: ['', [Validators.required, Validators.minLength(1)]],
-    /** Имя файла в uploads/kp-photos/{organizationId}/ на сервере. */
+    /** РРјСЏ С„Р°Р№Р»Р° РІ uploads/kp-photos/{organizationId}/ РЅР° СЃРµСЂРІРµСЂРµ. */
     photoFileName: [''],
-    /** Внешний или data URL (если картинка не из папки на сервере). */
+    /** Р’РЅРµС€РЅРёР№ РёР»Рё data URL (РµСЃР»Рё РєР°СЂС‚РёРЅРєР° РЅРµ РёР· РїР°РїРєРё РЅР° СЃРµСЂРІРµСЂРµ). */
     photoExternalUrl: [''],
     isActive: [true],
   });
@@ -1196,18 +1180,18 @@ export class DictionariesPage implements OnDestroy {
     governmentBodyType: [''],
     governmentBodyCode: [''],
     contactIds: this.fb.nonNullable.control<string[]>([]),
-    /** Одноразовый выбор из выпадающего списка — добавляет id в `contactIds`, затем сбрасывается. */
+    /** РћРґРЅРѕСЂР°Р·РѕРІС‹Р№ РІС‹Р±РѕСЂ РёР· РІС‹РїР°РґР°СЋС‰РµРіРѕ СЃРїРёСЃРєР° вЂ” РґРѕР±Р°РІР»СЏРµС‚ id РІ `contactIds`, Р·Р°С‚РµРј СЃР±СЂР°СЃС‹РІР°РµС‚СЃСЏ. */
     contactPicker: [''],
     isActive: [true],
   });
 
   constructor() {
-    // Русское название в заголовке вкладки браузера.
-    this.doc.title = 'Справочники — CRM';
+    // Р СѓСЃСЃРєРѕРµ РЅР°Р·РІР°РЅРёРµ РІ Р·Р°РіРѕР»РѕРІРєРµ РІРєР»Р°РґРєРё Р±СЂР°СѓР·РµСЂР°.
+    this.doc.title = 'РЎРїСЂР°РІРѕС‡РЅРёРєРё вЂ” CRM';
 
     /**
-     * Для специальных полноэкранных сценариев (материал/характеристика) достаточно
-     * одноразовой инициализации после первого рендера экземпляра страницы.
+     * Р”Р»СЏ СЃРїРµС†РёР°Р»СЊРЅС‹С… РїРѕР»РЅРѕСЌРєСЂР°РЅРЅС‹С… СЃС†РµРЅР°СЂРёРµРІ (РјР°С‚РµСЂРёР°Р»/С…Р°СЂР°РєС‚РµСЂРёСЃС‚РёРєР°) РґРѕСЃС‚Р°С‚РѕС‡РЅРѕ
+     * РѕРґРЅРѕСЂР°Р·РѕРІРѕР№ РёРЅРёС†РёР°Р»РёР·Р°С†РёРё РїРѕСЃР»Рµ РїРµСЂРІРѕРіРѕ СЂРµРЅРґРµСЂР° СЌРєР·РµРјРїР»СЏСЂР° СЃС‚СЂР°РЅРёС†С‹.
      */
     afterNextRender(() => {
       if (this.route.snapshot.data['newMaterialPage'] === true) {
@@ -1225,33 +1209,33 @@ export class DictionariesPage implements OnDestroy {
     });
 
     /**
-     * Standalone-create может открываться/закрываться в рамках одного экземпляра страницы:
-     * при каждом заходе переинициализируем форму, чтобы не переносить touched/dirty между заходами.
+     * Standalone-create РјРѕР¶РµС‚ РѕС‚РєСЂС‹РІР°С‚СЊСЃСЏ/Р·Р°РєСЂС‹РІР°С‚СЊСЃСЏ РІ СЂР°РјРєР°С… РѕРґРЅРѕРіРѕ СЌРєР·РµРјРїР»СЏСЂР° СЃС‚СЂР°РЅРёС†С‹:
+     * РїСЂРё РєР°Р¶РґРѕРј Р·Р°С…РѕРґРµ РїРµСЂРµРёРЅРёС†РёР°Р»РёР·РёСЂСѓРµРј С„РѕСЂРјСѓ, С‡С‚РѕР±С‹ РЅРµ РїРµСЂРµРЅРѕСЃРёС‚СЊ touched/dirty РјРµР¶РґСѓ Р·Р°С…РѕРґР°РјРё.
      */
     effect(() => {
       if (!this.standaloneCreateKey()) return;
-      // Важно: инициализатор читает/пишет много сигналов форм.
-      // Делаем untracked, чтобы эффект зависел только от standaloneCreateKey,
-      // иначе возможен самоподдерживающийся цикл (freeze вкладки).
+      // Р’Р°Р¶РЅРѕ: РёРЅРёС†РёР°Р»РёР·Р°С‚РѕСЂ С‡РёС‚Р°РµС‚/РїРёС€РµС‚ РјРЅРѕРіРѕ СЃРёРіРЅР°Р»РѕРІ С„РѕСЂРј.
+      // Р”РµР»Р°РµРј untracked, С‡С‚РѕР±С‹ СЌС„С„РµРєС‚ Р·Р°РІРёСЃРµР» С‚РѕР»СЊРєРѕ РѕС‚ standaloneCreateKey,
+      // РёРЅР°С‡Рµ РІРѕР·РјРѕР¶РµРЅ СЃР°РјРѕРїРѕРґРґРµСЂР¶РёРІР°СЋС‰РёР№СЃСЏ С†РёРєР» (freeze РІРєР»Р°РґРєРё).
       untracked(() => this.initStandaloneDictionaryCreateFromRoute());
     });
 
-    // Если открыта модалка редактирования «Материал характеристик», а пользователь
-    // в другой вкладке/модалке поменял справочник (Color/SurfaceFinish/Coating),
-    // то readonly-«Из справочников» поля должны обновляться автоматически.
+    // Р•СЃР»Рё РѕС‚РєСЂС‹С‚Р° РјРѕРґР°Р»РєР° СЂРµРґР°РєС‚РёСЂРѕРІР°РЅРёСЏ В«РњР°С‚РµСЂРёР°Р» С…Р°СЂР°РєС‚РµСЂРёСЃС‚РёРєВ», Р° РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ
+    // РІ РґСЂСѓРіРѕР№ РІРєР»Р°РґРєРµ/РјРѕРґР°Р»РєРµ РїРѕРјРµРЅСЏР» СЃРїСЂР°РІРѕС‡РЅРёРє (Color/SurfaceFinish/Coating),
+    // С‚Рѕ readonly-В«РР· СЃРїСЂР°РІРѕС‡РЅРёРєРѕРІВ» РїРѕР»СЏ РґРѕР»Р¶РЅС‹ РѕР±РЅРѕРІР»СЏС‚СЊСЃСЏ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё.
     effect(() => {
       if (!this.isMaterialCharacteristicsModalOpen()) return;
-      // Триггерим подписку на изменения справочника.
+      // РўСЂРёРіРіРµСЂРёРј РїРѕРґРїРёСЃРєСѓ РЅР° РёР·РјРµРЅРµРЅРёСЏ СЃРїСЂР°РІРѕС‡РЅРёРєР°.
       this.colorsStore.options();
       const colorId = this.materialCharacteristicsForm.controls.colorId.value;
       const gate = this.materialsSnapshotSyncGate.color;
       if (gate !== 'global') {
-        // По умолчанию (gate === null) snapshot-поля считаем историей и не трогаем.
+        // РџРѕ СѓРјРѕР»С‡Р°РЅРёСЋ (gate === null) snapshot-РїРѕР»СЏ СЃС‡РёС‚Р°РµРј РёСЃС‚РѕСЂРёРµР№ Рё РЅРµ С‚СЂРѕРіР°РµРј.
         if (gate === 'local') this.materialsSnapshotSyncGate.color = null;
         return;
       }
 
-      // Только "во всех связанных" приводит к обновлению snapshot-полей.
+      // РўРѕР»СЊРєРѕ "РІРѕ РІСЃРµС… СЃРІСЏР·Р°РЅРЅС‹С…" РїСЂРёРІРѕРґРёС‚ Рє РѕР±РЅРѕРІР»РµРЅРёСЋ snapshot-РїРѕР»РµР№.
       this.materialsSnapshotSyncGate.color = null;
       this.syncMaterialCharacteristicColorFromReference(colorId ? String(colorId) : '');
     });
@@ -1282,24 +1266,7 @@ export class DictionariesPage implements OnDestroy {
       this.syncMaterialCharacteristicCoatingFromReference(coatingId ? String(coatingId) : '');
     });
 
-    this.materialsStore.loadItems();
-    this.materialCharacteristicsStore.loadItems();
-    this.geometriesStore.loadItems();
-    this.unitsStore.loadItems();
-    this.commercialOffersStore.loadItems();
-    this.ordersStore.loadItems();
-    this.kpPhotosStore.loadItems();
-    this.colorsStore.loadItems();
-    this.coatingsStore.loadItems();
-    this.surfaceFinishesStore.loadItems();
-    this.productionWorkTypesStore.loadItems();
-    this.productionDetailsStore.loadItems();
-    this.productsStore.loadItems();
-    this.tradeGoodsStore.loadItems();
-    this.tradeGoodCategoriesStore.loadItems();
-    this.tradeGoodSubcategoriesStore.loadItems();
-    this.clientsStore.loadItems();
-    this.organizationsStore.loadItems();
+    this.dictionariesOrchestrator.loadInitial();
 
     this.sub.add(
       this.workTypesForm.controls.name.valueChanges.subscribe(() => {
@@ -1353,7 +1320,7 @@ export class DictionariesPage implements OnDestroy {
       }),
     );
 
-    /** Deep-link с конструктора КП: `/справочники?editTradeGood=<uuid>`. */
+    /** Deep-link СЃ РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂР° РљРџ: `/СЃРїСЂР°РІРѕС‡РЅРёРєРё?editTradeGood=<uuid>`. */
     this.sub.add(
       this.route.queryParamMap
         .pipe(
@@ -1365,17 +1332,32 @@ export class DictionariesPage implements OnDestroy {
           void this.applyEditTradeGoodFromQuery(id.trim());
         }),
     );
+    this.sub.add(
+      this.route.queryParamMap
+        .pipe(
+          map((q) => (q.get('hub') ?? '').trim()),
+          distinctUntilChanged(),
+          filter((key) => key.length > 0),
+        )
+        .subscribe((key) => {
+          const rows = this.hubBoardRows();
+          if (!rows.some((row) => row.key === key)) {
+            return;
+          }
+          this.hubBoardSelectedKey.set(key);
+        }),
+    );
 
     /**
-     * ui-modal переносит хост в `document.body`; при переходе на другой маршрут (например «КП») без
-     * явного закрытия модалки иногда остаётся «хвост» в DOM. Снимаем все модалки до смены маршрута.
+     * ui-modal РїРµСЂРµРЅРѕСЃРёС‚ С…РѕСЃС‚ РІ `document.body`; РїСЂРё РїРµСЂРµС…РѕРґРµ РЅР° РґСЂСѓРіРѕР№ РјР°СЂС€СЂСѓС‚ (РЅР°РїСЂРёРјРµСЂ В«РљРџВ») Р±РµР·
+     * СЏРІРЅРѕРіРѕ Р·Р°РєСЂС‹С‚РёСЏ РјРѕРґР°Р»РєРё РёРЅРѕРіРґР° РѕСЃС‚Р°С‘С‚СЃСЏ В«С…РІРѕСЃС‚В» РІ DOM. РЎРЅРёРјР°РµРј РІСЃРµ РјРѕРґР°Р»РєРё РґРѕ СЃРјРµРЅС‹ РјР°СЂС€СЂСѓС‚Р°.
      */
     this.sub.add(
       this.router.events.pipe(filter((e): e is NavigationStart => e instanceof NavigationStart)).subscribe((e) => {
         const currentPath = (this.router.url ?? '').split('?')[0] ?? '';
-        if (!currentPath.startsWith('/справочники')) return;
+        if (!currentPath.startsWith('/СЃРїСЂР°РІРѕС‡РЅРёРєРё')) return;
         const targetPath = (e.url ?? '').split('?')[0] ?? '';
-        if (targetPath.startsWith('/справочники')) return;
+        if (targetPath.startsWith('/СЃРїСЂР°РІРѕС‡РЅРёРєРё')) return;
         this.drainDictionaryModalsOnLeaveHub();
       }),
     );
@@ -1393,12 +1375,12 @@ export class DictionariesPage implements OnDestroy {
   }
 
   openWorkTypesCreate(): void {
-    if (!this.permissions.crud().canCreate) return;
+    if (!this.permissionsFacade.canCreate()) return;
     this.navigateToStandaloneDictionaryCreate('workTypes');
   }
 
   openWorkTypesEdit(id: string): void {
-    if (!this.permissions.crud().canEdit) return;
+    if (!this.permissionsFacade.canEdit()) return;
     if (this.shouldNavigateToStandaloneAction('workTypes', 'edit', id)) return;
     this.isWorkTypesViewMode.set(false);
     this.workTypesForm.enable({ emitEvent: false });
@@ -1454,19 +1436,19 @@ export class DictionariesPage implements OnDestroy {
     ) {
       return '';
     }
-    if (c.hasError('duplicate')) return 'Такое наименование уже есть';
-    if (c.hasError('required')) return 'Укажите наименование';
-    if (c.hasError('minlength')) return 'Минимум 2 символа';
-    return 'Проверьте наименование';
+    if (c.hasError('duplicate')) return 'РўР°РєРѕРµ РЅР°РёРјРµРЅРѕРІР°РЅРёРµ СѓР¶Рµ РµСЃС‚СЊ';
+    if (c.hasError('required')) return 'РЈРєР°Р¶РёС‚Рµ РЅР°РёРјРµРЅРѕРІР°РЅРёРµ';
+    if (c.hasError('minlength')) return 'РњРёРЅРёРјСѓРј 2 СЃРёРјРІРѕР»Р°';
+    return 'РџСЂРѕРІРµСЂСЊС‚Рµ РЅР°РёРјРµРЅРѕРІР°РЅРёРµ';
   }
 
   deleteWorkType(id: string): void {
-    if (!this.permissions.crud().canDelete) return;
+    if (!this.permissionsFacade.canDelete()) return;
     this.productionWorkTypesStore.delete(id);
   }
 
   duplicateWorkType(id: string): void {
-    if (!this.permissions.can('crud.duplicate')) return;
+    if (!this.permissionsFacade.canDuplicate()) return;
     if (this.shouldNavigateToStandaloneAction('workTypes', 'copy', id)) return;
     const item = this.productionWorkTypesStore.items().find((x) => x.id === id);
     if (!item) return;
@@ -1474,7 +1456,7 @@ export class DictionariesPage implements OnDestroy {
     this.workTypesForm.enable({ emitEvent: false });
     this.productionWorkTypesStore.startCreate();
     this.workTypesForm.reset({
-      name: `${item.name} (копия)`,
+      name: `${item.name} (РєРѕРїРёСЏ)`,
       shortLabel: item.shortLabel,
       hourlyRateRub: item.hourlyRateRub,
       isActive: item.isActive,
@@ -1521,9 +1503,9 @@ export class DictionariesPage implements OnDestroy {
     ) {
       return '';
     }
-    if (c.hasError('required')) return 'Укажите наименование';
-    if (c.hasError('minlength')) return 'Минимум 2 символа';
-    return 'Проверьте наименование';
+    if (c.hasError('required')) return 'РЈРєР°Р¶РёС‚Рµ РЅР°РёРјРµРЅРѕРІР°РЅРёРµ';
+    if (c.hasError('minlength')) return 'РњРёРЅРёРјСѓРј 2 СЃРёРјРІРѕР»Р°';
+    return 'РџСЂРѕРІРµСЂСЊС‚Рµ РЅР°РёРјРµРЅРѕРІР°РЅРёРµ';
   }
 
   private buildWorkTypesPayload() {
@@ -1544,13 +1526,13 @@ export class DictionariesPage implements OnDestroy {
     ) {
       return '';
     }
-    if (c.hasError('required')) return 'Укажите ставку';
-    if (c.hasError('min')) return 'Минимум 1 ₽/ч';
-    return 'Проверьте ставку';
+    if (c.hasError('required')) return 'РЈРєР°Р¶РёС‚Рµ СЃС‚Р°РІРєСѓ';
+    if (c.hasError('min')) return 'РњРёРЅРёРјСѓРј 1 в‚Ѕ/С‡';
+    return 'РџСЂРѕРІРµСЂСЊС‚Рµ СЃС‚Р°РІРєСѓ';
   }
 
   openProductionDetailsCreate(): void {
-    if (!this.permissions.crud().canCreate) return;
+    if (!this.permissionsFacade.canCreate()) return;
     this.navigateToStandaloneDictionaryCreate('productionDetails');
   }
 
@@ -1624,7 +1606,7 @@ export class DictionariesPage implements OnDestroy {
     this.recalcProductPriceDefaults();
   }
 
-  /** Сумма lineTotalRub выбранных деталей — подставляется в цену/себестоимость по кнопке и при смене детали. */
+  /** РЎСѓРјРјР° lineTotalRub РІС‹Р±СЂР°РЅРЅС‹С… РґРµС‚Р°Р»РµР№ вЂ” РїРѕРґСЃС‚Р°РІР»СЏРµС‚СЃСЏ РІ С†РµРЅСѓ/СЃРµР±РµСЃС‚РѕРёРјРѕСЃС‚СЊ РїРѕ РєРЅРѕРїРєРµ Рё РїСЂРё СЃРјРµРЅРµ РґРµС‚Р°Р»Рё. */
   recalcProductPriceDefaults(): void {
     let sum = 0;
     for (const ctrl of this.productLinesFormArray.controls) {
@@ -1660,19 +1642,19 @@ export class DictionariesPage implements OnDestroy {
   }
 
   openProductsCreate(): void {
-    if (!this.permissions.crud().canCreate) return;
+    if (!this.permissionsFacade.canCreate()) return;
     this.navigateToStandaloneDictionaryCreate('products');
   }
 
 
   async openProductsEdit(id: string): Promise<void> {
-    if (!this.permissions.crud().canEdit) return;
+    if (!this.permissionsFacade.canEdit()) return;
     if (this.shouldNavigateToStandaloneAction('products', 'edit', id)) return;
     this.isProductsViewMode.set(false);
     this.productsForm.enable({ emitEvent: false });
     let item: ProductItem;
     try {
-      item = await firstValueFrom(this.productsRepository.getById(id));
+      item = await this.hubCatalogService.loadProductById(id);
     } catch {
       return;
     }
@@ -1709,14 +1691,14 @@ export class DictionariesPage implements OnDestroy {
   }
 
   deleteProduct(id: string): void {
-    if (!this.permissions.crud().canDelete) return;
+    if (!this.permissionsFacade.canDelete()) return;
     this.productsStore.delete(id);
   }
 
   productLineDetailLabel(index: number): string {
     const id = this.productLinesFormArray.at(index)?.get('productionDetailId')?.value as string | undefined;
     if (!id) {
-      return '—';
+      return 'вЂ”';
     }
     return this.productionDetailsStore.items().find((d) => d.id === id)?.name ?? id;
   }
@@ -1738,13 +1720,13 @@ export class DictionariesPage implements OnDestroy {
   productViewCompositionRows(): Array<Record<string, unknown>> {
     const pv = this.productViewItem();
     if (!pv) return [];
-    const idOrDash = (v: string | null | undefined) => (v && String(v).trim() ? String(v).trim() : '—');
+    const idOrDash = (v: string | null | undefined) => (v && String(v).trim() ? String(v).trim() : 'вЂ”');
     return [...pv.lines]
       .sort((a, b) => a.sortOrder - b.sortOrder)
       .map((line) => ({
         detailName: line.productionDetail.name,
         lineTotalRub:
-          line.productionDetail.lineTotalRub != null ? `${line.productionDetail.lineTotalRub} ₽` : '—',
+          line.productionDetail.lineTotalRub != null ? `${line.productionDetail.lineTotalRub} в‚Ѕ` : 'вЂ”',
         workLabel: this.productViewLineWorkLabel(line),
         colorLabel: this.productViewLineColorLabel(line),
         sortOrder: line.sortOrder,
@@ -1756,12 +1738,12 @@ export class DictionariesPage implements OnDestroy {
         srcMat: idOrDash(line.productionDetail.sourceMaterialId),
         ovWt: line.overrideWorkType
           ? line.overrideWorkType.shortLabel?.trim() || line.overrideWorkType.name
-          : '—',
+          : 'вЂ”',
         ovCol: line.overrideColor
           ? line.overrideColor.ralCode
             ? `${line.overrideColor.name} (${line.overrideColor.ralCode})`
             : line.overrideColor.name
-          : '—',
+          : 'вЂ”',
       }));
   }
 
@@ -1780,20 +1762,20 @@ export class DictionariesPage implements OnDestroy {
       const w = this.productionWorkTypesStore.items().find((x) => x.id === d.sourceWorkTypeId);
       if (w) return w.shortLabel?.trim() || w.name;
     }
-    return '—';
+    return 'вЂ”';
   }
 
-  /** Подписи полей «Вид работ» / «Цвет» уровня формы (дублируются на все строки при сохранении). */
+  /** РџРѕРґРїРёСЃРё РїРѕР»РµР№ В«Р’РёРґ СЂР°Р±РѕС‚В» / В«Р¦РІРµС‚В» СѓСЂРѕРІРЅСЏ С„РѕСЂРјС‹ (РґСѓР±Р»РёСЂСѓСЋС‚СЃСЏ РЅР° РІСЃРµ СЃС‚СЂРѕРєРё РїСЂРё СЃРѕС…СЂР°РЅРµРЅРёРё). */
   productViewFormWorkLabel(): string {
     const id = String(this.productsForm.controls.workTypeId.value ?? '').trim();
-    if (!id) return '—';
+    if (!id) return 'вЂ”';
     const w = this.productionWorkTypesStore.items().find((x) => x.id === id);
     return w ? `${w.name} (${w.shortLabel})` : id;
   }
 
   productViewFormColorLabel(): string {
     const id = String(this.productsForm.controls.colorId.value ?? '').trim();
-    if (!id) return '—';
+    if (!id) return 'вЂ”';
     const c = this.colorsStore.items().find((x) => x.id === id);
     return c ? (c.ralCode ? `${c.name} (${c.ralCode})` : c.name) : id;
   }
@@ -1818,21 +1800,21 @@ export class DictionariesPage implements OnDestroy {
         if (col) return col.ralCode ? `${col.name} (${col.ralCode})` : col.name;
       }
     }
-    return '—';
+    return 'вЂ”';
   }
 
   tradeGoodViewCompositionRows(): Array<Record<string, unknown>> {
     const tg = this.tradeGoodViewItem();
     if (!tg) return [];
     const labelFor = (p: { code: string | null; name: string }) =>
-      p.code?.trim() ? `${p.code.trim()} — ${p.name}` : p.name;
+      p.code?.trim() ? `${p.code.trim()} вЂ” ${p.name}` : p.name;
     return [...tg.lines]
       .sort((a, b) => a.sortOrder - b.sortOrder)
       .map((line) => ({
-        productLabel: line.product ? labelFor(line.product) : line.tradeGood ? labelFor(line.tradeGood) : '—',
+        productLabel: line.product ? labelFor(line.product) : line.tradeGood ? labelFor(line.tradeGood) : 'вЂ”',
         qtyLabel: line.qty,
-        priceLabel: (line.product?.priceRub ?? line.tradeGood?.priceRub) != null ? `${line.product?.priceRub ?? line.tradeGood?.priceRub} ₽` : '—',
-        costLabel: (line.product?.costRub ?? line.tradeGood?.costRub) != null ? `${line.product?.costRub ?? line.tradeGood?.costRub} ₽` : '—',
+        priceLabel: (line.product?.priceRub ?? line.tradeGood?.priceRub) != null ? `${line.product?.priceRub ?? line.tradeGood?.priceRub} в‚Ѕ` : 'вЂ”',
+        costLabel: (line.product?.costRub ?? line.tradeGood?.costRub) != null ? `${line.product?.costRub ?? line.tradeGood?.costRub} в‚Ѕ` : 'вЂ”',
         lineId: line.id,
         productId: line.productId,
       }));
@@ -1880,12 +1862,8 @@ export class DictionariesPage implements OnDestroy {
     }
     try {
       const editId = this.productsStore.editId();
-      if (editId) {
-        await firstValueFrom(this.productsRepository.update(editId, payload));
-      } else {
-        await firstValueFrom(this.productsRepository.create(payload));
-      }
-      const items = await firstValueFrom(this.productsRepository.getItems());
+      await this.hubCatalogService.saveProduct(editId, payload);
+      const items = await this.hubCatalogService.loadProductListItems();
       this.productsStore.applyLoadedItems(items);
     } catch {
       return;
@@ -1895,7 +1873,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   private initProductsStandaloneCreate(): void {
-    if (!this.permissions.crud().canCreate) return;
+    if (!this.permissionsFacade.canCreate()) return;
     this.resetProductsCreateForm();
   }
 
@@ -1912,7 +1890,7 @@ export class DictionariesPage implements OnDestroy {
     }
   }
 
-  /** Состояние формы товара без навигации (см. drain при уходе с /справочники). */
+  /** РЎРѕСЃС‚РѕСЏРЅРёРµ С„РѕСЂРјС‹ С‚РѕРІР°СЂР° Р±РµР· РЅР°РІРёРіР°С†РёРё (СЃРј. drain РїСЂРё СѓС…РѕРґРµ СЃ /СЃРїСЂР°РІРѕС‡РЅРёРєРё). */
   private resetTradeGoodsModalState(): void {
     this.tradeGoodsSaveError.set(null);
     this.isTradeGoodDeleteConfirmOpen.set(false);
@@ -1929,7 +1907,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   /**
-   * Закрыть все модалки хаба без переходов — только сигналы, чтобы *ngIf снял ui-modal с body до размонтирования страницы.
+   * Р—Р°РєСЂС‹С‚СЊ РІСЃРµ РјРѕРґР°Р»РєРё С…Р°Р±Р° Р±РµР· РїРµСЂРµС…РѕРґРѕРІ вЂ” С‚РѕР»СЊРєРѕ СЃРёРіРЅР°Р»С‹, С‡С‚РѕР±С‹ *ngIf СЃРЅСЏР» ui-modal СЃ body РґРѕ СЂР°Р·РјРѕРЅС‚РёСЂРѕРІР°РЅРёСЏ СЃС‚СЂР°РЅРёС†С‹.
    */
   private drainDictionaryModalsOnLeaveHub(): void {
     this.tradeGoodsReturnUrl.set(null);
@@ -1983,29 +1961,15 @@ export class DictionariesPage implements OnDestroy {
     }
   }
 
-  /** Для POST /photos: бэкенд перезаписывает все файлы — в теле должны быть и старые (с сервера), и новые. */
+  /** Р”Р»СЏ POST /photos: Р±СЌРєРµРЅРґ РїРµСЂРµР·Р°РїРёСЃС‹РІР°РµС‚ РІСЃРµ С„Р°Р№Р»С‹ вЂ” РІ С‚РµР»Рµ РґРѕР»Р¶РЅС‹ Р±С‹С‚СЊ Рё СЃС‚Р°СЂС‹Рµ (СЃ СЃРµСЂРІРµСЂР°), Рё РЅРѕРІС‹Рµ. */
   private async buildTradeGoodPhotoFilesForUpload(): Promise<File[]> {
-    const serverUrls = this.tradeGoodPhotoUrlsServer();
-    const pending = this.tradeGoodPendingFiles();
-    if (serverUrls.length === 0) {
-      return [...pending];
-    }
-    const blobs = await firstValueFrom(
-      forkJoin(serverUrls.map((url) => this.http.get(url, { responseType: 'blob' }))),
-    );
-    const fromServer: File[] = blobs.map((blob, i) => {
-      const url = serverUrls[i]!;
-      const tail = url.split('/').pop() ?? `photo-${i + 1}.jpg`;
-      const name = decodeURIComponent(tail);
-      return new File([blob], name, { type: blob.type || 'image/jpeg' });
-    });
-    return [...fromServer, ...pending];
+    return this.tradeGoodsMediaService.buildFilesForUpload(this.tradeGoodPhotoUrlsServer(), this.tradeGoodPendingFiles());
   }
 
   onTradeGoodPhotosPick(ev: Event): void {
     const input = ev.target as HTMLInputElement;
     const files = input.files ? Array.from(input.files) : [];
-    /* Пустой change иногда приходит после programmatic input.value='' — не затирать уже выбранные превью. */
+    /* РџСѓСЃС‚РѕР№ change РёРЅРѕРіРґР° РїСЂРёС…РѕРґРёС‚ РїРѕСЃР»Рµ programmatic input.value='' вЂ” РЅРµ Р·Р°С‚РёСЂР°С‚СЊ СѓР¶Рµ РІС‹Р±СЂР°РЅРЅС‹Рµ РїСЂРµРІСЊСЋ. */
     if (files.length === 0) {
       return;
     }
@@ -2014,8 +1978,8 @@ export class DictionariesPage implements OnDestroy {
     const newBlobs = files.map((f) => URL.createObjectURL(f));
     this.tradeGoodPendingFiles.set([...prevFiles, ...files]);
     this.tradeGoodPendingPreviewUrls.set([...prevBlobs, ...newBlobs]);
-    /* Главное не сбрасываем — остаётся на текущем слоте, пока пользователь сам не выберет другое. */
-    /* Сброс value — в следующей микрозадаче, чтобы не словить лишний change с пустым списком в том же тике. */
+    /* Р“Р»Р°РІРЅРѕРµ РЅРµ СЃР±СЂР°СЃС‹РІР°РµРј вЂ” РѕСЃС‚Р°С‘С‚СЃСЏ РЅР° С‚РµРєСѓС‰РµРј СЃР»РѕС‚Рµ, РїРѕРєР° РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ СЃР°Рј РЅРµ РІС‹Р±РµСЂРµС‚ РґСЂСѓРіРѕРµ. */
+    /* РЎР±СЂРѕСЃ value вЂ” РІ СЃР»РµРґСѓСЋС‰РµР№ РјРёРєСЂРѕР·Р°РґР°С‡Рµ, С‡С‚РѕР±С‹ РЅРµ СЃР»РѕРІРёС‚СЊ Р»РёС€РЅРёР№ change СЃ РїСѓСЃС‚С‹Рј СЃРїРёСЃРєРѕРј РІ С‚РѕРј Р¶Рµ С‚РёРєРµ. */
     queueMicrotask(() => {
       input.value = '';
     });
@@ -2027,7 +1991,7 @@ export class DictionariesPage implements OnDestroy {
 
   tradeGoodCodeHint(): string {
     const c = this.tradeGoodsForm.controls.code.value?.trim();
-    return c && c.length > 0 ? c : 'АРТИКУЛ';
+    return c && c.length > 0 ? c : 'РђР РўРРљРЈР›';
   }
 
   private tradeGoodPrimaryIndexForPayload(): number {
@@ -2067,7 +2031,7 @@ export class DictionariesPage implements OnDestroy {
         }
       }
     }
-    // Не затираем вручную введённую цену при смене типа или пока строки не подходят под текущий kind.
+    // РќРµ Р·Р°С‚РёСЂР°РµРј РІСЂСѓС‡РЅСѓСЋ РІРІРµРґС‘РЅРЅСѓСЋ С†РµРЅСѓ РїСЂРё СЃРјРµРЅРµ С‚РёРїР° РёР»Рё РїРѕРєР° СЃС‚СЂРѕРєРё РЅРµ РїРѕРґС…РѕРґСЏС‚ РїРѕРґ С‚РµРєСѓС‰РёР№ kind.
     if (matchedLines === 0) return;
     this.tradeGoodsForm.patchValue({ priceRub: price, costRub: cost });
   }
@@ -2119,7 +2083,7 @@ export class DictionariesPage implements OnDestroy {
     }
   }
 
-  /** Только внутренние пути приложения (без open-redirect). */
+  /** РўРѕР»СЊРєРѕ РІРЅСѓС‚СЂРµРЅРЅРёРµ РїСѓС‚Рё РїСЂРёР»РѕР¶РµРЅРёСЏ (Р±РµР· open-redirect). */
   private sanitizeInternalReturnUrl(raw: string | null | undefined): string | null {
     if (raw == null || typeof raw !== 'string') return null;
     let t = raw.trim();
@@ -2135,19 +2099,19 @@ export class DictionariesPage implements OnDestroy {
   }
 
   openTradeGoodsCreate(): void {
-    if (!this.permissions.crud().canCreate) return;
+    if (!this.permissionsFacade.canCreate()) return;
     this.navigateToStandaloneDictionaryCreate('tradeGoods');
   }
 
   async openTradeGoodsEdit(id: string): Promise<void> {
-    if (!this.permissions.crud().canEdit) return;
+    if (!this.permissionsFacade.canEdit()) return;
     if (this.shouldNavigateToStandaloneAction('tradeGoods', 'edit', id)) return;
     this.tradeGoodsSaveError.set(null);
     this.isTradeGoodsViewMode.set(false);
     this.tradeGoodsForm.enable({ emitEvent: false });
     let item: TradeGoodItem;
     try {
-      item = await firstValueFrom(this.tradeGoodsRepository.getById(id));
+      item = await this.hubCatalogService.loadTradeGoodById(id);
     } catch {
       return;
     }
@@ -2200,12 +2164,12 @@ export class DictionariesPage implements OnDestroy {
   }
 
   deleteTradeGood(id: string): void {
-    if (!this.permissions.crud().canDelete) return;
+    if (!this.permissionsFacade.canDelete()) return;
     this.tradeGoodsStore.delete(id);
   }
 
   deleteTradeGoodFromModal(): void {
-    if (!this.permissions.crud().canDelete) return;
+    if (!this.permissionsFacade.canDelete()) return;
     const id = this.tradeGoodsStore.editId();
     if (!id) return;
     this.tradeGoodsSaveError.set(null);
@@ -2217,7 +2181,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   async confirmTradeGoodDeleteFromModal(deleteRelated?: boolean): Promise<void> {
-    if (!this.permissions.crud().canDelete) return;
+    if (!this.permissionsFacade.canDelete()) return;
     const id = this.tradeGoodsStore.editId();
     if (!id) {
       this.cancelTradeGoodDeleteConfirm();
@@ -2226,10 +2190,11 @@ export class DictionariesPage implements OnDestroy {
     this.cancelTradeGoodDeleteConfirm();
     this.tradeGoodsSaveError.set(null);
     try {
-      await firstValueFrom(
-        this.tradeGoodsRepository.remove(id, deleteRelated ? { deleteRelated: true } : undefined),
+      await this.hubCatalogService.removeTradeGood(
+        id,
+        deleteRelated ? { deleteRelated: true } : undefined,
       );
-      const items = await firstValueFrom(this.tradeGoodsRepository.getItems());
+      const items = await this.hubCatalogService.loadTradeGoodListItems();
       this.tradeGoodsStore.applyLoadedItems(items);
       this.closeTradeGoodsModal();
     } catch (e: unknown) {
@@ -2241,9 +2206,9 @@ export class DictionariesPage implements OnDestroy {
               String((e.error as { message?: unknown }).message).trim()
               ? String((e.error as { message: string }).message)
               : e.status === 0
-                ? 'Нет сети или сервер недоступен'
-                : `Ошибка удаления (${e.status})`)
-          : 'Не удалось удалить товар';
+                ? 'РќРµС‚ СЃРµС‚Рё РёР»Рё СЃРµСЂРІРµСЂ РЅРµРґРѕСЃС‚СѓРїРµРЅ'
+                : `РћС€РёР±РєР° СѓРґР°Р»РµРЅРёСЏ (${e.status})`)
+          : 'РќРµ СѓРґР°Р»РѕСЃСЊ СѓРґР°Р»РёС‚СЊ С‚РѕРІР°СЂ';
       this.tradeGoodsSaveError.set(msg);
     }
   }
@@ -2258,10 +2223,10 @@ export class DictionariesPage implements OnDestroy {
         qty: Number(l.qty),
       }))
       .filter((l) => (kind === 'COMPLEX' ? l.tradeGoodId : l.productId));
-    // Пустой состав допустим: после смены kind старые строки (напр. только productId) отфильтровываются —
-    // раньше здесь был ранний return без API и сохранение «молчало».
+    // РџСѓСЃС‚РѕР№ СЃРѕСЃС‚Р°РІ РґРѕРїСѓСЃС‚РёРј: РїРѕСЃР»Рµ СЃРјРµРЅС‹ kind СЃС‚Р°СЂС‹Рµ СЃС‚СЂРѕРєРё (РЅР°РїСЂ. С‚РѕР»СЊРєРѕ productId) РѕС‚С„РёР»СЊС‚СЂРѕРІС‹РІР°СЋС‚СЃСЏ вЂ”
+    // СЂР°РЅСЊС€Рµ Р·РґРµСЃСЊ Р±С‹Р» СЂР°РЅРЅРёР№ return Р±РµР· API Рё СЃРѕС…СЂР°РЅРµРЅРёРµ В«РјРѕР»С‡Р°Р»РѕВ».
     if (this.tradeGoodPendingFiles().length > 0 && !String(raw.code ?? '').trim()) {
-      this.tradeGoodsSaveError.set('Укажите артикул товара — по нему сохраняются имена файлов фото.');
+      this.tradeGoodsSaveError.set('РЈРєР°Р¶РёС‚Рµ Р°СЂС‚РёРєСѓР» С‚РѕРІР°СЂР° вЂ” РїРѕ РЅРµРјСѓ СЃРѕС…СЂР°РЅСЏСЋС‚СЃСЏ РёРјРµРЅР° С„Р°Р№Р»РѕРІ С„РѕС‚Рѕ.');
       return;
     }
     const payload = tradeGoodPayloadFromValues({
@@ -2292,13 +2257,8 @@ export class DictionariesPage implements OnDestroy {
     this.tradeGoodsSaveError.set(null);
     try {
       const editId = this.tradeGoodsStore.editId();
-      let savedId: string | null = editId;
-      if (editId) {
-        await firstValueFrom(this.tradeGoodsRepository.update(editId, payload));
-      } else {
-        const created = await firstValueFrom(this.tradeGoodsRepository.create(payload));
-        savedId = created.id;
-      }
+      const saved = await this.hubCatalogService.saveTradeGood(editId, payload);
+      const savedId = saved.id;
       const pendingNew = this.tradeGoodPendingFiles();
       if (pendingNew.length > 0 && savedId) {
         const primary = this.tradeGoodPrimaryIndexForPayload();
@@ -2307,16 +2267,16 @@ export class DictionariesPage implements OnDestroy {
           files = await this.buildTradeGoodPhotoFilesForUpload();
         } catch {
           this.tradeGoodsSaveError.set(
-            'Не удалось подготовить фото: проверьте доступ к уже загруженным снимкам и повторите сохранение.',
+            'РќРµ СѓРґР°Р»РѕСЃСЊ РїРѕРґРіРѕС‚РѕРІРёС‚СЊ С„РѕС‚Рѕ: РїСЂРѕРІРµСЂСЊС‚Рµ РґРѕСЃС‚СѓРї Рє СѓР¶Рµ Р·Р°РіСЂСѓР¶РµРЅРЅС‹Рј СЃРЅРёРјРєР°Рј Рё РїРѕРІС‚РѕСЂРёС‚Рµ СЃРѕС…СЂР°РЅРµРЅРёРµ.',
           );
           return;
         }
-        await firstValueFrom(this.tradeGoodsRepository.uploadPhotos(savedId, files, primary));
+        await this.hubCatalogService.uploadTradeGoodPhotos(savedId, files, primary);
       }
       this.revokeTradeGoodBlobUrls();
       this.tradeGoodPendingPreviewUrls.set([]);
       this.tradeGoodPendingFiles.set([]);
-      const items = await firstValueFrom(this.tradeGoodsRepository.getItems());
+      const items = await this.hubCatalogService.loadTradeGoodListItems();
       this.tradeGoodsStore.applyLoadedItems(items);
     } catch (e: unknown) {
       const msg =
@@ -2327,9 +2287,9 @@ export class DictionariesPage implements OnDestroy {
               String((e.error as { message?: unknown }).message).trim()
               ? String((e.error as { message: string }).message)
               : e.status === 0
-                ? 'Нет сети или сервер недоступен'
-                : `Ошибка сохранения (${e.status})`)
-          : 'Не удалось сохранить товар';
+                ? 'РќРµС‚ СЃРµС‚Рё РёР»Рё СЃРµСЂРІРµСЂ РЅРµРґРѕСЃС‚СѓРїРµРЅ'
+                : `РћС€РёР±РєР° СЃРѕС…СЂР°РЅРµРЅРёСЏ (${e.status})`)
+          : 'РќРµ СѓРґР°Р»РѕСЃСЊ СЃРѕС…СЂР°РЅРёС‚СЊ С‚РѕРІР°СЂ';
       this.tradeGoodsSaveError.set(msg);
       return;
     }
@@ -2338,7 +2298,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   private initTradeGoodsStandaloneCreate(): void {
-    if (!this.permissions.crud().canCreate) return;
+    if (!this.permissionsFacade.canCreate()) return;
     this.resetTradeGoodsCreateForm();
   }
 
@@ -2374,7 +2334,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   openProductionDetailsEdit(id: string): void {
-    if (!this.permissions.crud().canEdit) return;
+    if (!this.permissionsFacade.canEdit()) return;
     if (this.shouldNavigateToStandaloneAction('productionDetails', 'edit', id)) return;
     this.isProductionDetailsViewMode.set(false);
     this.productionDetailsForm.enable({ emitEvent: false });
@@ -2444,7 +2404,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   duplicateProductionDetail(id: string): void {
-    if (!this.permissions.can('crud.duplicate')) return;
+    if (!this.permissionsFacade.canDuplicate()) return;
     if (this.shouldNavigateToStandaloneAction('productionDetails', 'copy', id)) return;
     const item = this.productionDetailsStore.items().find((x) => x.id === id);
     if (!item) return;
@@ -2452,7 +2412,7 @@ export class DictionariesPage implements OnDestroy {
     this.productionDetailsForm.enable({ emitEvent: false });
     this.productionDetailsStore.startCreate();
     this.productionDetailsForm.reset({
-      name: item.name ? `${item.name} (копия)` : '',
+      name: item.name ? `${item.name} (РєРѕРїРёСЏ)` : '',
       code: item.code ?? '',
       qty: item.qty ?? 1,
       notes: item.notes ?? '',
@@ -2480,7 +2440,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   deleteProductionDetail(id: string): void {
-    if (!this.permissions.crud().canDelete) return;
+    if (!this.permissionsFacade.canDelete()) return;
     this.productionDetailsStore.delete(id);
   }
 
@@ -2603,7 +2563,7 @@ export class DictionariesPage implements OnDestroy {
     });
   }
 
-  /** Инициализация формы на полноэкранном маршруте (без модалки). */
+  /** РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ С„РѕСЂРјС‹ РЅР° РїРѕР»РЅРѕСЌРєСЂР°РЅРЅРѕРј РјР°СЂС€СЂСѓС‚Рµ (Р±РµР· РјРѕРґР°Р»РєРё). */
   private initNewMaterialStandaloneForm(): void {
     const mode = (this.route.snapshot.queryParamMap.get('mode') ?? 'create').toLowerCase();
     const id = (this.route.snapshot.queryParamMap.get('id') ?? '').trim();
@@ -2617,7 +2577,7 @@ export class DictionariesPage implements OnDestroy {
       this.isMaterialsModalOpen.set(false);
       return;
     }
-    if (!this.permissions.crud().canCreate) return;
+    if (!this.permissionsFacade.canCreate()) return;
     const pendingMcId = this.materialStandaloneFlow.consumePendingMaterialCharacteristicId();
     this.resetMaterialsCreateForm();
     if (pendingMcId) {
@@ -2626,27 +2586,23 @@ export class DictionariesPage implements OnDestroy {
   }
 
   navigateToNewMaterialPage(mode: 'create' | 'edit' | 'copy' = 'create', id?: string): void {
-    if (mode === 'create' && !this.permissions.crud().canCreate) return;
-    if (mode === 'edit' && !this.permissions.crud().canEdit) return;
-    if (mode === 'copy' && !this.permissions.can('crud.duplicate')) return;
+    if (!this.permissionsFacade.canStandaloneMode(mode)) return;
     const queryParams = mode === 'create' ? {} : { mode, id: (id ?? '').trim() || null };
-    void this.router.navigate(['/справочники', 'новый-материал'], { queryParams });
+    void this.router.navigate(['/СЃРїСЂР°РІРѕС‡РЅРёРєРё', 'РЅРѕРІС‹Р№-РјР°С‚РµСЂРёР°Р»'], { queryParams });
   }
 
   navigateToNewMaterialCharacteristicPage(mode: 'create' | 'edit' | 'copy' = 'create', id?: string): void {
-    if (mode === 'create' && !this.permissions.crud().canCreate) return;
-    if (mode === 'edit' && !this.permissions.crud().canEdit) return;
-    if (mode === 'copy' && !this.permissions.can('crud.duplicate')) return;
+    if (!this.permissionsFacade.canStandaloneMode(mode)) return;
     if (this.isNewMaterialPageRoute()) {
       this.materialStandaloneFlow.markChainFromMaterialStandalone();
     }
     const queryParams = mode === 'create' ? {} : { mode, id: (id ?? '').trim() || null };
-    void this.router.navigate(['/справочники', 'новая-характеристика-материала'], { queryParams });
+    void this.router.navigate(['/СЃРїСЂР°РІРѕС‡РЅРёРєРё', 'РЅРѕРІР°СЏ-С…Р°СЂР°РєС‚РµСЂРёСЃС‚РёРєР°-РјР°С‚РµСЂРёР°Р»Р°'], { queryParams });
   }
 
   /**
-   * Флаги «quick-add» из модалок материала/характеристики — сбрасываем при выходе с полноэкранных маршрутов,
-   * чтобы не залипали после «Назад» без сохранения (бэклог #11).
+   * Р¤Р»Р°РіРё В«quick-addВ» РёР· РјРѕРґР°Р»РѕРє РјР°С‚РµСЂРёР°Р»Р°/С…Р°СЂР°РєС‚РµСЂРёСЃС‚РёРєРё вЂ” СЃР±СЂР°СЃС‹РІР°РµРј РїСЂРё РІС‹С…РѕРґРµ СЃ РїРѕР»РЅРѕСЌРєСЂР°РЅРЅС‹С… РјР°СЂС€СЂСѓС‚РѕРІ,
+   * С‡С‚РѕР±С‹ РЅРµ Р·Р°Р»РёРїР°Р»Рё РїРѕСЃР»Рµ В«РќР°Р·Р°РґВ» Р±РµР· СЃРѕС…СЂР°РЅРµРЅРёСЏ (Р±СЌРєР»РѕРі #11).
    */
   private resetAllDictionaryHubQuickAddFlags(): void {
     this.unitQuickAddForMaterials.set(false);
@@ -2659,8 +2615,8 @@ export class DictionariesPage implements OnDestroy {
   }
 
   /**
-   * С формы материала/характеристики (в т.ч. полноэкранной) могли открыться модалки справочников поверх —
-   * перед закрытием основной формы закрываем их, иначе остаётся «открытый» слой и quick-add.
+   * РЎ С„РѕСЂРјС‹ РјР°С‚РµСЂРёР°Р»Р°/С…Р°СЂР°РєС‚РµСЂРёСЃС‚РёРєРё (РІ С‚.С‡. РїРѕР»РЅРѕСЌРєСЂР°РЅРЅРѕР№) РјРѕРіР»Рё РѕС‚РєСЂС‹С‚СЊСЃСЏ РјРѕРґР°Р»РєРё СЃРїСЂР°РІРѕС‡РЅРёРєРѕРІ РїРѕРІРµСЂС… вЂ”
+   * РїРµСЂРµРґ Р·Р°РєСЂС‹С‚РёРµРј РѕСЃРЅРѕРІРЅРѕР№ С„РѕСЂРјС‹ Р·Р°РєСЂС‹РІР°РµРј РёС…, РёРЅР°С‡Рµ РѕСЃС‚Р°С‘С‚СЃСЏ В«РѕС‚РєСЂС‹С‚С‹Р№В» СЃР»РѕР№ Рё quick-add.
    */
   private closeDictionaryModalsStackedOverMaterialForm(): void {
     if (this.isWorkTypesModalOpen()) this.closeWorkTypesModal();
@@ -2672,7 +2628,7 @@ export class DictionariesPage implements OnDestroy {
     if (this.isMaterialCharacteristicsModalOpen()) this.closeMaterialCharacteristicsModal();
   }
 
-  /** Назад: один шаг по истории браузера (после standalone-формы). */
+  /** РќР°Р·Р°Рґ: РѕРґРёРЅ С€Р°Рі РїРѕ РёСЃС‚РѕСЂРёРё Р±СЂР°СѓР·РµСЂР° (РїРѕСЃР»Рµ standalone-С„РѕСЂРјС‹). */
   navigateBackFromNewMaterialPage(): void {
     this.closeDictionaryModalsStackedOverMaterialForm();
     this.closeMaterialBundleModal();
@@ -2689,7 +2645,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   navigateToStandaloneDictionaryCreate(key: StandaloneDictionaryCreateKey): void {
-    if (!this.permissions.crud().canCreate) return;
+    if (!this.permissionsFacade.canCreate()) return;
     this.navigateToStandaloneDictionaryAction(key, 'create');
   }
 
@@ -2702,7 +2658,7 @@ export class DictionariesPage implements OnDestroy {
     if (!row) return;
     const queryParams =
       mode === 'create' ? {} : { mode, id: (id ?? '').trim() || null };
-    void this.router.navigate(['/справочники', row.path], { queryParams });
+    void this.router.navigate(['/СЃРїСЂР°РІРѕС‡РЅРёРєРё', row.path], { queryParams });
   }
 
   private shouldNavigateToStandaloneAction(
@@ -2759,7 +2715,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   openMaterialsCreate(): void {
-    if (!this.permissions.crud().canCreate) return;
+    if (!this.permissionsFacade.canCreate()) return;
     if (this.isProductionDetailsModalOpen() && !this.isNewMaterialPageRoute()) {
       this.resetMaterialsCreateForm();
       this.isMaterialsModalOpen.set(true);
@@ -2768,22 +2724,22 @@ export class DictionariesPage implements OnDestroy {
     this.navigateToNewMaterialPage();
   }
 
-  /** «+» у пресета материала в форме детали: модалка материала поверх детали. */
+  /** В«+В» Сѓ РїСЂРµСЃРµС‚Р° РјР°С‚РµСЂРёР°Р»Р° РІ С„РѕСЂРјРµ РґРµС‚Р°Р»Рё: РјРѕРґР°Р»РєР° РјР°С‚РµСЂРёР°Р»Р° РїРѕРІРµСЂС… РґРµС‚Р°Р»Рё. */
   openMaterialsCreateFromProductionDetails(): void {
     if (!this.isProductionDetailsModalOpen()) return;
-    if (!this.permissions.crud().canCreate) return;
+    if (!this.permissionsFacade.canCreate()) return;
     this.materialQuickAddForProductionDetails.set(true);
     this.resetMaterialsCreateForm();
     this.isMaterialsModalOpen.set(true);
   }
 
   navigateToStandaloneWorkTypesFromProductionDetails(): void {
-    if (!this.permissions.crud().canCreate) return;
+    if (!this.permissionsFacade.canCreate()) return;
     this.navigateToStandaloneDictionaryCreate('workTypes');
   }
 
   openMaterialsEdit(id: string): void {
-    if (!this.permissions.crud().canEdit) return;
+    if (!this.permissionsFacade.canEdit()) return;
     if (!this.isNewMaterialPageRoute() && !this.isNewMaterialCharacteristicPageRoute()) {
       this.navigateToNewMaterialPage('edit', id);
       return;
@@ -2862,12 +2818,12 @@ export class DictionariesPage implements OnDestroy {
   }
 
   deleteMaterial(id: string): void {
-    if (!this.permissions.crud().canDelete) return;
+    if (!this.permissionsFacade.canDelete()) return;
     this.materialsStore.delete(id);
   }
 
   duplicateMaterial(id: string): void {
-    if (!this.permissions.can('crud.duplicate')) return;
+    if (!this.permissionsFacade.canDuplicate()) return;
     if (!this.isNewMaterialPageRoute() && !this.isNewMaterialCharacteristicPageRoute()) {
       this.navigateToNewMaterialPage('copy', id);
       return;
@@ -2878,7 +2834,7 @@ export class DictionariesPage implements OnDestroy {
     this.materialsForm.enable({ emitEvent: false });
     this.materialsStore.startCreate();
     this.materialsForm.reset({
-      name: item.name ? `${item.name} (копия)` : '',
+      name: item.name ? `${item.name} (РєРѕРїРёСЏ)` : '',
       code: item.code ?? '',
       materialCharacteristicId: item.materialCharacteristicId ?? '',
       geometryId: item.geometryId ?? '',
@@ -2952,12 +2908,12 @@ export class DictionariesPage implements OnDestroy {
       this.isMaterialCharacteristicsModalOpen.set(false);
       return;
     }
-    if (!this.permissions.crud().canCreate) return;
+    if (!this.permissionsFacade.canCreate()) return;
     this.resetMaterialCharacteristicsCreateForm();
   }
 
   private initWorkTypesStandaloneCreate(): void {
-    if (!this.permissions.crud().canCreate) return;
+    if (!this.permissionsFacade.canCreate()) return;
     this.isWorkTypesViewMode.set(false);
     this.workTypesForm.enable({ emitEvent: false });
     this.productionWorkTypesStore.startCreate();
@@ -2970,7 +2926,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   private initUnitsStandaloneCreate(): void {
-    if (!this.permissions.crud().canCreate) return;
+    if (!this.permissionsFacade.canCreate()) return;
     this.isUnitsViewMode.set(false);
     this.unitsForm.enable({ emitEvent: false });
     this.unitsStore.startCreate();
@@ -2984,7 +2940,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   private initGeometriesStandaloneCreate(): void {
-    if (!this.permissions.crud().canCreate) return;
+    if (!this.permissionsFacade.canCreate()) return;
     this.isGeometriesViewMode.set(false);
     this.geometriesForm.enable({ emitEvent: false });
     this.geometriesStore.startCreate();
@@ -3003,7 +2959,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   private initColorsStandaloneCreate(): void {
-    if (!this.permissions.crud().canCreate) return;
+    if (!this.permissionsFacade.canCreate()) return;
     this.isColorsViewMode.set(false);
     this.colorsEditingId.set(null);
     this.colorsForm.enable({ emitEvent: false });
@@ -3017,7 +2973,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   private initSurfaceFinishesStandaloneCreate(): void {
-    if (!this.permissions.crud().canCreate) return;
+    if (!this.permissionsFacade.canCreate()) return;
     this.isSurfaceFinishesViewMode.set(false);
     this.surfaceFinishesEditingId.set(null);
     this.surfaceFinishesForm.enable({ emitEvent: false });
@@ -3031,7 +2987,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   private initCoatingsStandaloneCreate(): void {
-    if (!this.permissions.crud().canCreate) return;
+    if (!this.permissionsFacade.canCreate()) return;
     this.isCoatingsViewMode.set(false);
     this.coatingsEditingId.set(null);
     this.coatingsForm.enable({ emitEvent: false });
@@ -3045,7 +3001,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   private initOrganizationsStandaloneCreate(): void {
-    if (!this.permissions.crud().canCreate) return;
+    if (!this.permissionsFacade.canCreate()) return;
     this.isOrganizationsViewMode.set(false);
     this.organizationsForm.enable({ emitEvent: false });
     this.organizationsStore.startCreate();
@@ -3091,7 +3047,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   private initClientsStandaloneCreate(): void {
-    if (!this.permissions.crud().canCreate) return;
+    if (!this.permissionsFacade.canCreate()) return;
     this.clientsMarkupOnCreate = null;
     this.isClientsViewMode.set(false);
     this.clientsForm.enable({ emitEvent: false });
@@ -3113,7 +3069,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   private initRolesStandaloneCreate(): void {
-    if (!this.permissions.crud().canCreate) return;
+    if (!this.permissionsFacade.canCreate()) return;
     this.closeRolesModal();
     this.rolesFormDomId.set('roles-form--standalone');
     this.isRolesViewMode.set(false);
@@ -3130,7 +3086,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   private initUsersStandaloneCreate(): void {
-    if (!this.permissions.crud().canCreate) return;
+    if (!this.permissionsFacade.canCreate()) return;
     this.isUsersViewMode.set(false);
     this.usersEditingId.set(null);
     this.usersSubmitAttempted.set(false);
@@ -3152,7 +3108,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   private initKpPhotosStandaloneCreate(): void {
-    if (!this.permissions.crud().canCreate) return;
+    if (!this.permissionsFacade.canCreate()) return;
     this.isKpPhotosViewMode.set(false);
     this.kpPhotosForm.enable({ emitEvent: false });
     this.kpPhotosStore.startCreate();
@@ -3167,7 +3123,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   private initProductionDetailsStandaloneCreate(): void {
-    if (!this.permissions.crud().canCreate) return;
+    if (!this.permissionsFacade.canCreate()) return;
     this.resetProductionDetailsCreateForm();
   }
 
@@ -3291,7 +3247,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   openMaterialCharacteristicsCreate(): void {
-    if (!this.permissions.crud().canCreate) return;
+    if (!this.permissionsFacade.canCreate()) return;
     if (this.isMaterialsModalOpen() && !this.isNewMaterialPageRoute()) {
       this.resetMaterialCharacteristicsCreateForm();
       this.isMaterialCharacteristicsModalOpen.set(true);
@@ -3300,16 +3256,16 @@ export class DictionariesPage implements OnDestroy {
     this.navigateToNewMaterialCharacteristicPage();
   }
 
-  /** «+» у поля геометрии: открыть создание геометрии поверх модалки материала (не плитку хаба под модалкой). */
+  /** В«+В» Сѓ РїРѕР»СЏ РіРµРѕРјРµС‚СЂРёРё: РѕС‚РєСЂС‹С‚СЊ СЃРѕР·РґР°РЅРёРµ РіРµРѕРјРµС‚СЂРёРё РїРѕРІРµСЂС… РјРѕРґР°Р»РєРё РјР°С‚РµСЂРёР°Р»Р° (РЅРµ РїР»РёС‚РєСѓ С…Р°Р±Р° РїРѕРґ РјРѕРґР°Р»РєРѕР№). */
   openGeometriesCreateFromMaterials(): void {
     if (!this.isMaterialsModalOpen() && !this.isNewMaterialPageRoute()) return;
-    if (!this.permissions.crud().canCreate) return;
+    if (!this.permissionsFacade.canCreate()) return;
     this.geometriesModalStackAboveMaterials.set(true);
     this.openGeometriesCreate();
   }
 
   openMaterialCharacteristicsEdit(id: string): void {
-    if (!this.permissions.crud().canEdit) return;
+    if (!this.permissionsFacade.canEdit()) return;
     if (!this.isNewMaterialCharacteristicPageRoute()) {
       this.navigateToNewMaterialCharacteristicPage('edit', id);
       return;
@@ -3367,7 +3323,7 @@ export class DictionariesPage implements OnDestroy {
     this.closeMaterialCharacteristicsModal();
   }
 
-  /** Ключ совпадения только что созданной записи в списке (после `getItems` в store). */
+  /** РљР»СЋС‡ СЃРѕРІРїР°РґРµРЅРёСЏ С‚РѕР»СЊРєРѕ С‡С‚Рѕ СЃРѕР·РґР°РЅРЅРѕР№ Р·Р°РїРёСЃРё РІ СЃРїРёСЃРєРµ (РїРѕСЃР»Рµ `getItems` РІ store). */
   private materialCharacteristicQuickAddMatchKey(
     x: MaterialCharacteristicItem | MaterialCharacteristicItemInput,
   ): string {
@@ -3405,7 +3361,7 @@ export class DictionariesPage implements OnDestroy {
     );
   }
 
-  /** После create материала store обновляется асинхронно — ждём строку, затем шаг назад. */
+  /** РџРѕСЃР»Рµ create РјР°С‚РµСЂРёР°Р»Р° store РѕР±РЅРѕРІР»СЏРµС‚СЃСЏ Р°СЃРёРЅС…СЂРѕРЅРЅРѕ вЂ” Р¶РґС‘Рј СЃС‚СЂРѕРєСѓ, Р·Р°С‚РµРј С€Р°Рі РЅР°Р·Р°Рґ. */
   private scheduleAfterStandaloneMaterialCreate(payload: MaterialItemInput): void {
     const snapshotKey = this.materialItemSnapshotKeyFromPayload(payload);
     let attempts = 0;
@@ -3427,7 +3383,7 @@ export class DictionariesPage implements OnDestroy {
     queueMicrotask(tick);
   }
 
-  /** После создания материала из формы «Деталь» — подставить пресет по новому id. */
+  /** РџРѕСЃР»Рµ СЃРѕР·РґР°РЅРёСЏ РјР°С‚РµСЂРёР°Р»Р° РёР· С„РѕСЂРјС‹ В«Р”РµС‚Р°Р»СЊВ» вЂ” РїРѕРґСЃС‚Р°РІРёС‚СЊ РїСЂРµСЃРµС‚ РїРѕ РЅРѕРІРѕРјСѓ id. */
   private scheduleMaterialQuickAddForProductionAfterSubmit(payload: MaterialItemInput): void {
     const snapshotKey = this.materialItemSnapshotKeyFromPayload(payload);
     let attempts = 0;
@@ -3445,7 +3401,7 @@ export class DictionariesPage implements OnDestroy {
     queueMicrotask(tick);
   }
 
-  /** После создания организации из «+» у поставщика в материале — подставить id поставщика. */
+  /** РџРѕСЃР»Рµ СЃРѕР·РґР°РЅРёСЏ РѕСЂРіР°РЅРёР·Р°С†РёРё РёР· В«+В» Сѓ РїРѕСЃС‚Р°РІС‰РёРєР° РІ РјР°С‚РµСЂРёР°Р»Рµ вЂ” РїРѕРґСЃС‚Р°РІРёС‚СЊ id РїРѕСЃС‚Р°РІС‰РёРєР°. */
   private scheduleOrganizationQuickAddForMaterialsAfterSubmit(orgMatchKey: string): void {
     let attempts = 0;
     const maxAttempts = 40;
@@ -3466,8 +3422,8 @@ export class DictionariesPage implements OnDestroy {
   }
 
   /**
-   * После create характеристики: опционально подставить id в форму материала (если пришли с «Новый материал»),
-   * затем шаг назад по истории.
+   * РџРѕСЃР»Рµ create С…Р°СЂР°РєС‚РµСЂРёСЃС‚РёРєРё: РѕРїС†РёРѕРЅР°Р»СЊРЅРѕ РїРѕРґСЃС‚Р°РІРёС‚СЊ id РІ С„РѕСЂРјСѓ РјР°С‚РµСЂРёР°Р»Р° (РµСЃР»Рё РїСЂРёС€Р»Рё СЃ В«РќРѕРІС‹Р№ РјР°С‚РµСЂРёР°Р»В»),
+   * Р·Р°С‚РµРј С€Р°Рі РЅР°Р·Р°Рґ РїРѕ РёСЃС‚РѕСЂРёРё.
    */
   private scheduleAfterStandaloneCharacteristicCreate(payload: MaterialCharacteristicItemInput): void {
     const snapshotKey = this.materialCharacteristicQuickAddMatchKey(payload);
@@ -3497,12 +3453,12 @@ export class DictionariesPage implements OnDestroy {
   }
 
   deleteMaterialCharacteristic(id: string): void {
-    if (!this.permissions.crud().canDelete) return;
+    if (!this.permissionsFacade.canDelete()) return;
     this.materialCharacteristicsStore.delete(id);
   }
 
   duplicateMaterialCharacteristic(id: string): void {
-    if (!this.permissions.can('crud.duplicate')) return;
+    if (!this.permissionsFacade.canDuplicate()) return;
     if (!this.isNewMaterialCharacteristicPageRoute()) {
       this.navigateToNewMaterialCharacteristicPage('copy', id);
       return;
@@ -3514,7 +3470,7 @@ export class DictionariesPage implements OnDestroy {
     this.materialCharacteristicsStore.startCreate();
     this.materialCharacteristicsForm.reset(
       {
-      name: item.name ? `${item.name} (копия)` : '',
+      name: item.name ? `${item.name} (РєРѕРїРёСЏ)` : '',
       code: item.code ?? '',
       densityKgM3: item.densityKgM3 ?? null,
       colorId: item.colorId ?? '',
@@ -3567,7 +3523,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   openGeometriesCreate(): void {
-    if (!this.permissions.crud().canCreate) return;
+    if (!this.permissionsFacade.canCreate()) return;
     if (this.geometriesModalStackAboveMaterials()) {
       this.isGeometriesViewMode.set(false);
       this.geometriesForm.enable({ emitEvent: false });
@@ -3590,7 +3546,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   openGeometriesEdit(id: string): void {
-    if (!this.permissions.crud().canEdit) return;
+    if (!this.permissionsFacade.canEdit()) return;
     if (this.shouldNavigateToStandaloneAction('geometries', 'edit', id)) return;
     this.isGeometriesViewMode.set(false);
     this.geometriesForm.enable({ emitEvent: false });
@@ -3636,7 +3592,7 @@ export class DictionariesPage implements OnDestroy {
     this.finishStandaloneDictionaryCreateIfMatch('geometries');
   }
 
-  /** Как у единиц измерения: после создания геометрии из формы материала — подставить id в поле. */
+  /** РљР°Рє Сѓ РµРґРёРЅРёС† РёР·РјРµСЂРµРЅРёСЏ: РїРѕСЃР»Рµ СЃРѕР·РґР°РЅРёСЏ РіРµРѕРјРµС‚СЂРёРё РёР· С„РѕСЂРјС‹ РјР°С‚РµСЂРёР°Р»Р° вЂ” РїРѕРґСЃС‚Р°РІРёС‚СЊ id РІ РїРѕР»Рµ. */
   private geometryQuickAddMatchKey(x: {
     name: string;
     shapeKey: string;
@@ -3657,7 +3613,7 @@ export class DictionariesPage implements OnDestroy {
     ].join('|');
   }
 
-  /** Store обновляет список асинхронно после create — повторяем поиск, как для unitQuickAdd. */
+  /** Store РѕР±РЅРѕРІР»СЏРµС‚ СЃРїРёСЃРѕРє Р°СЃРёРЅС…СЂРѕРЅРЅРѕ РїРѕСЃР»Рµ create вЂ” РїРѕРІС‚РѕСЂСЏРµРј РїРѕРёСЃРє, РєР°Рє РґР»СЏ unitQuickAdd. */
   private scheduleGeometryQuickAddToMaterials(snapshotKey: string): void {
     let attempts = 0;
     const maxAttempts = 24;
@@ -3677,7 +3633,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   deleteGeometry(id: string): void {
-    if (!this.permissions.crud().canDelete) return;
+    if (!this.permissionsFacade.canDelete()) return;
     this.geometriesStore.delete(id);
     if (this.materialsForm.controls.geometryId.value === id) {
       this.materialsForm.controls.geometryId.setValue('');
@@ -3685,7 +3641,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   duplicateGeometry(id: string): void {
-    if (!this.permissions.can('crud.duplicate')) return;
+    if (!this.permissionsFacade.canDuplicate()) return;
     if (this.shouldNavigateToStandaloneAction('geometries', 'copy', id)) return;
     const item = this.geometriesStore.items().find((x) => x.id === id);
     if (!item) return;
@@ -3693,7 +3649,7 @@ export class DictionariesPage implements OnDestroy {
     this.geometriesForm.enable({ emitEvent: false });
     this.geometriesStore.startCreate();
     this.geometriesForm.reset({
-      name: item.name ? `${item.name} (копия)` : '',
+      name: item.name ? `${item.name} (РєРѕРїРёСЏ)` : '',
       shapeKey: item.shapeKey ?? 'rectangular',
       heightMm: item.heightMm ?? null,
       lengthMm: item.lengthMm ?? null,
@@ -3727,7 +3683,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   openUnitsCreate(fromMaterials = false): void {
-    if (!this.permissions.crud().canCreate) return;
+    if (!this.permissionsFacade.canCreate()) return;
     if (fromMaterials) {
       this.isUnitsViewMode.set(false);
       this.unitsForm.enable({ emitEvent: false });
@@ -3746,7 +3702,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   openUnitsEdit(id: string): void {
-    if (!this.permissions.crud().canEdit) return;
+    if (!this.permissionsFacade.canEdit()) return;
     if (this.shouldNavigateToStandaloneAction('units', 'edit', id)) return;
     this.isUnitsViewMode.set(false);
     this.unitsForm.enable({ emitEvent: false });
@@ -3770,7 +3726,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   private initTradeGoodCategoriesStandaloneCreate(): void {
-    if (!this.permissions.crud().canCreate) return;
+    if (!this.permissionsFacade.canCreate()) return;
     this.isTradeGoodCategoriesViewMode.set(false);
     this.tradeGoodCategoriesForm.enable({ emitEvent: false });
     this.tradeGoodCategoriesStore.startCreate();
@@ -3782,7 +3738,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   private initTradeGoodSubcategoriesStandaloneCreate(): void {
-    if (!this.permissions.crud().canCreate) return;
+    if (!this.permissionsFacade.canCreate()) return;
     this.isTradeGoodSubcategoriesViewMode.set(false);
     this.tradeGoodSubcategoriesForm.enable({ emitEvent: false });
     this.tradeGoodSubcategoriesStore.startCreate();
@@ -3795,7 +3751,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   openTradeGoodCategoriesCreate(): void {
-    if (!this.permissions.crud().canCreate) return;
+    if (!this.permissionsFacade.canCreate()) return;
     if (this.standaloneCreateKey() !== 'tradeGoodCategories') {
       this.navigateToStandaloneDictionaryCreate('tradeGoodCategories');
       return;
@@ -3812,7 +3768,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   openTradeGoodCategoriesEdit(id: string): void {
-    if (!this.permissions.crud().canEdit) return;
+    if (!this.permissionsFacade.canEdit()) return;
     if (this.shouldNavigateToStandaloneAction('tradeGoodCategories', 'edit', id)) return;
     this.isTradeGoodCategoriesViewMode.set(false);
     this.tradeGoodCategoriesForm.enable({ emitEvent: false });
@@ -3847,24 +3803,22 @@ export class DictionariesPage implements OnDestroy {
       return;
     }
     this.tradeGoodCategoriesStore.submit({ value: payload, isValid: true });
-    this.tradeGoodsStore.loadItems();
-    this.tradeGoodSubcategoriesStore.loadItems();
+    this.dictionariesOrchestrator.refreshTradeGoodsCascade();
     this.closeTradeGoodCategoriesModal();
     this.finishStandaloneDictionaryCreateIfMatch('tradeGoodCategories');
   }
 
   deleteTradeGoodCategory(id: string): void {
-    if (!this.permissions.crud().canDelete) return;
+    if (!this.permissionsFacade.canDelete()) return;
     this.tradeGoodCategoriesStore.delete(id);
     if (this.tradeGoodsForm.controls.categoryId.value === id) {
       this.tradeGoodsForm.patchValue({ categoryId: '', subcategoryId: '' });
     }
-    this.tradeGoodsStore.loadItems();
-    this.tradeGoodSubcategoriesStore.loadItems();
+    this.dictionariesOrchestrator.refreshTradeGoodsCascade();
   }
 
   duplicateTradeGoodCategory(id: string): void {
-    if (!this.permissions.can('crud.duplicate')) return;
+    if (!this.permissionsFacade.canDuplicate()) return;
     if (this.shouldNavigateToStandaloneAction('tradeGoodCategories', 'copy', id)) return;
     const item = this.tradeGoodCategoriesStore.items().find((x) => x.id === id);
     if (!item) return;
@@ -3872,7 +3826,7 @@ export class DictionariesPage implements OnDestroy {
     this.tradeGoodCategoriesForm.enable({ emitEvent: false });
     this.tradeGoodCategoriesStore.startCreate();
     this.tradeGoodCategoriesForm.reset({
-      name: item.name ? `${item.name} (копия)` : '',
+      name: item.name ? `${item.name} (РєРѕРїРёСЏ)` : '',
       sortOrder: item.sortOrder ?? 0,
       isActive: item.isActive,
     });
@@ -3894,7 +3848,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   openTradeGoodSubcategoriesCreate(): void {
-    if (!this.permissions.crud().canCreate) return;
+    if (!this.permissionsFacade.canCreate()) return;
     if (this.standaloneCreateKey() !== 'tradeGoodSubcategories') {
       this.navigateToStandaloneDictionaryCreate('tradeGoodSubcategories');
       return;
@@ -3912,7 +3866,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   openTradeGoodSubcategoriesEdit(id: string): void {
-    if (!this.permissions.crud().canEdit) return;
+    if (!this.permissionsFacade.canEdit()) return;
     if (this.shouldNavigateToStandaloneAction('tradeGoodSubcategories', 'edit', id)) return;
     this.isTradeGoodSubcategoriesViewMode.set(false);
     this.tradeGoodSubcategoriesForm.enable({ emitEvent: false });
@@ -3949,22 +3903,22 @@ export class DictionariesPage implements OnDestroy {
       return;
     }
     this.tradeGoodSubcategoriesStore.submit({ value: payload, isValid: true });
-    this.tradeGoodsStore.loadItems();
+    this.dictionariesOrchestrator.refreshTradeGoodsCascade();
     this.closeTradeGoodSubcategoriesModal();
     this.finishStandaloneDictionaryCreateIfMatch('tradeGoodSubcategories');
   }
 
   deleteTradeGoodSubcategory(id: string): void {
-    if (!this.permissions.crud().canDelete) return;
+    if (!this.permissionsFacade.canDelete()) return;
     this.tradeGoodSubcategoriesStore.delete(id);
     if (this.tradeGoodsForm.controls.subcategoryId.value === id) {
       this.tradeGoodsForm.patchValue({ subcategoryId: '' });
     }
-    this.tradeGoodsStore.loadItems();
+    this.dictionariesOrchestrator.refreshTradeGoodsCascade();
   }
 
   duplicateTradeGoodSubcategory(id: string): void {
-    if (!this.permissions.can('crud.duplicate')) return;
+    if (!this.permissionsFacade.canDuplicate()) return;
     if (this.shouldNavigateToStandaloneAction('tradeGoodSubcategories', 'copy', id)) return;
     const item = this.tradeGoodSubcategoriesStore.items().find((x) => x.id === id);
     if (!item) return;
@@ -3973,7 +3927,7 @@ export class DictionariesPage implements OnDestroy {
     this.tradeGoodSubcategoriesStore.startCreate();
     this.tradeGoodSubcategoriesForm.reset({
       categoryId: item.categoryId ?? '',
-      name: item.name ? `${item.name} (копия)` : '',
+      name: item.name ? `${item.name} (РєРѕРїРёСЏ)` : '',
       sortOrder: item.sortOrder ?? 0,
       isActive: item.isActive,
     });
@@ -4006,7 +3960,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   getTradeGoodCategoryNameForId(id: string): string {
-    return this.tradeGoodCategoriesStore.items().find((x) => x.id === id)?.name ?? '—';
+    return this.tradeGoodCategoriesStore.items().find((x) => x.id === id)?.name ?? 'вЂ”';
   }
 
   submitUnits(): void {
@@ -4036,7 +3990,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   deleteUnit(id: string): void {
-    if (!this.permissions.crud().canDelete) return;
+    if (!this.permissionsFacade.canDelete()) return;
     this.unitsStore.delete(id);
     if (this.materialsForm.controls.unitId.value === id) {
       this.materialsForm.controls.unitId.setValue('');
@@ -4044,7 +3998,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   duplicateUnit(id: string): void {
-    if (!this.permissions.can('crud.duplicate')) return;
+    if (!this.permissionsFacade.canDuplicate()) return;
     if (this.shouldNavigateToStandaloneAction('units', 'copy', id)) return;
     const item = this.unitsStore.items().find((x) => x.id === id);
     if (!item) return;
@@ -4052,7 +4006,7 @@ export class DictionariesPage implements OnDestroy {
     this.unitsForm.enable({ emitEvent: false });
     this.unitsStore.startCreate();
     this.unitsForm.reset({
-      name: item.name ? `${item.name} (копия)` : '',
+      name: item.name ? `${item.name} (РєРѕРїРёСЏ)` : '',
       code: item.code ?? '',
       notes: item.notes ?? '',
       isActive: item.isActive,
@@ -4076,7 +4030,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   openCatalogComplexCreate(): void {
-    if (!this.permissions.crud().canCreate) return;
+    if (!this.permissionsFacade.canCreate()) return;
     this.isCatalogComplexViewMode.set(false);
     this.catalogComplexForm.enable({ emitEvent: false });
     this.complexesStore.startCreate();
@@ -4090,7 +4044,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   openCatalogComplexEdit(id: string): void {
-    if (!this.permissions.crud().canEdit) return;
+    if (!this.permissionsFacade.canEdit()) return;
     this.isCatalogComplexViewMode.set(false);
     this.catalogComplexForm.enable({ emitEvent: false });
     const item = this.complexesStore.items().find((x) => x.id === id);
@@ -4125,19 +4079,19 @@ export class DictionariesPage implements OnDestroy {
   }
 
   deleteCatalogComplex(id: string): void {
-    if (!this.permissions.crud().canDelete) return;
+    if (!this.permissionsFacade.canDelete()) return;
     this.complexesStore.delete(id);
   }
 
   duplicateCatalogComplex(id: string): void {
-    if (!this.permissions.can('crud.duplicate')) return;
+    if (!this.permissionsFacade.canDuplicate()) return;
     const item = this.complexesStore.items().find((x) => x.id === id);
     if (!item) return;
     this.isCatalogComplexViewMode.set(false);
     this.catalogComplexForm.enable({ emitEvent: false });
     this.complexesStore.startCreate();
     this.catalogComplexForm.reset({
-      name: item.name ? `${item.name} (копия)` : '',
+      name: item.name ? `${item.name} (РєРѕРїРёСЏ)` : '',
       code: item.code ?? '',
       description: item.description ?? '',
       isActive: item.isActive,
@@ -4164,22 +4118,22 @@ export class DictionariesPage implements OnDestroy {
     key: ProposalStatusKey;
     label: string;
   }> = [
-    { key: 'proposal_draft', label: 'Черновик' },
-    { key: 'proposal_waiting', label: 'На согласовании' },
-    { key: 'proposal_paid', label: 'Оплачено' },
+    { key: 'proposal_draft', label: 'Р§РµСЂРЅРѕРІРёРє' },
+    { key: 'proposal_waiting', label: 'РќР° СЃРѕРіР»Р°СЃРѕРІР°РЅРёРё' },
+    { key: 'proposal_paid', label: 'РћРїР»Р°С‡РµРЅРѕ' },
   ];
 
   openCommercialOfferCreate(): void {
-    if (!this.permissions.can('page.commercialProposal')) return;
-    void this.router.navigate(['/коммерческое'], {
+    if (!this.permissionsFacade.canPage('page.commercialProposal')) return;
+    void this.router.navigate(['/РєРѕРјРјРµСЂС‡РµСЃРєРѕРµ'], {
       queryParams: { offerId: null },
       queryParamsHandling: 'merge',
     });
   }
 
   openCommercialOfferEdit(id: string): void {
-    if (!this.permissions.can('page.commercialProposal')) return;
-    void this.router.navigate(['/коммерческое'], {
+    if (!this.permissionsFacade.canPage('page.commercialProposal')) return;
+    void this.router.navigate(['/РєРѕРјРјРµСЂС‡РµСЃРєРѕРµ'], {
       queryParams: { offerId: id },
       queryParamsHandling: 'merge',
     });
@@ -4190,17 +4144,17 @@ export class DictionariesPage implements OnDestroy {
   }
 
   duplicateCommercialOffer(id: string): void {
-    if (!this.permissions.can('page.commercialProposal')) return;
+    if (!this.permissionsFacade.canPage('page.commercialProposal')) return;
     this.commercialOffersStore.duplicate(id, (newId) => this.openCommercialOfferEdit(newId));
   }
 
   deleteCommercialOffer(id: string): void {
-    if (!this.permissions.crud().canDelete) return;
+    if (!this.permissionsFacade.canDelete()) return;
     this.commercialOffersStore.remove(id);
   }
 
   openOrdersEdit(id: string): void {
-    if (!this.permissions.crud().canEdit) return;
+    if (!this.permissionsFacade.canEdit()) return;
     const item = this.ordersStore.items().find((x) => x.id === id);
     if (!item) return;
     this.ordersStore.startEdit(id);
@@ -4260,7 +4214,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   deleteOrder(id: string): void {
-    if (!this.permissions.crud().canDelete) return;
+    if (!this.permissionsFacade.canDelete()) return;
     this.ordersStore.remove(id);
   }
 
@@ -4338,17 +4292,17 @@ export class DictionariesPage implements OnDestroy {
   }
 
   private orderLinesSummary(lines: Array<{ name: string; qty: number; unit: string }>): string {
-    if (!Array.isArray(lines) || lines.length === 0) return '—';
-    return lines.map((line) => `${line.name} × ${line.qty} ${line.unit}`.trim()).join('\n');
+    if (!Array.isArray(lines) || lines.length === 0) return 'вЂ”';
+    return lines.map((line) => `${line.name} Г— ${line.qty} ${line.unit}`.trim()).join('\n');
   }
 
   openKpPhotosCreate(): void {
-    if (!this.permissions.crud().canCreate) return;
+    if (!this.permissionsFacade.canCreate()) return;
     this.navigateToStandaloneDictionaryCreate('kpPhotos');
   }
 
   openKpPhotosEdit(id: string): void {
-    if (!this.permissions.crud().canEdit) return;
+    if (!this.permissionsFacade.canEdit()) return;
     if (this.shouldNavigateToStandaloneAction('kpPhotos', 'edit', id)) return;
     this.isKpPhotosViewMode.set(false);
     this.kpPhotosForm.enable({ emitEvent: false });
@@ -4386,12 +4340,12 @@ export class DictionariesPage implements OnDestroy {
   }
 
   deleteKpPhoto(id: string): void {
-    if (!this.permissions.crud().canDelete) return;
+    if (!this.permissionsFacade.canDelete()) return;
     this.kpPhotosStore.delete(id);
   }
 
   duplicateKpPhoto(id: string): void {
-    if (!this.permissions.can('crud.duplicate')) return;
+    if (!this.permissionsFacade.canDuplicate()) return;
     if (this.shouldNavigateToStandaloneAction('kpPhotos', 'copy', id)) return;
     const item = this.kpPhotosStore.items().find((x) => x.id === id);
     if (!item) return;
@@ -4399,7 +4353,7 @@ export class DictionariesPage implements OnDestroy {
     this.kpPhotosForm.enable({ emitEvent: false });
     this.kpPhotosStore.startCreate();
     this.kpPhotosForm.reset({
-      name: item.name ? `${item.name} (копия)` : '',
+      name: item.name ? `${item.name} (РєРѕРїРёСЏ)` : '',
       organizationId: item.organizationId ?? '',
       photoTitle: item.photoTitle ?? '',
       photoFileName: item.photoFileName ?? '',
@@ -4426,16 +4380,16 @@ export class DictionariesPage implements OnDestroy {
     this.isKpPhotosModalOpen.set(true);
   }
 
-  /** Подпись организации в просмотре записи «Фото для КП». */
+  /** РџРѕРґРїРёСЃСЊ РѕСЂРіР°РЅРёР·Р°С†РёРё РІ РїСЂРѕСЃРјРѕС‚СЂРµ Р·Р°РїРёСЃРё В«Р¤РѕС‚Рѕ РґР»СЏ РљРџВ». */
   kpPhotoOrganizationLabel(): string {
     const id = this.kpPhotosForm.controls.organizationId.value?.trim() ?? '';
-    if (!id) return '—';
-    return this.organizationsStore.options().find((o) => o.id === id)?.label ?? '—';
+    if (!id) return 'вЂ”';
+    return this.organizationsStore.options().find((o) => o.id === id)?.label ?? 'вЂ”';
   }
 
   /**
-   * Превью в форме: приоритет файла в `/media/kp-photos/{org}/{file}`,
-   * иначе внешний или data URL из поля «Доп. URL».
+   * РџСЂРµРІСЊСЋ РІ С„РѕСЂРјРµ: РїСЂРёРѕСЂРёС‚РµС‚ С„Р°Р№Р»Р° РІ `/media/kp-photos/{org}/{file}`,
+   * РёРЅР°С‡Рµ РІРЅРµС€РЅРёР№ РёР»Рё data URL РёР· РїРѕР»СЏ В«Р”РѕРї. URLВ».
    */
   kpPhotoPreviewUrl(): string {
     const org = this.kpPhotosForm.controls.organizationId.value?.trim() ?? '';
@@ -4451,12 +4405,12 @@ export class DictionariesPage implements OnDestroy {
   }
 
   openRolesCreate(): void {
-    if (!this.permissions.crud().canCreate) return;
+    if (!this.permissionsFacade.canCreate()) return;
     this.navigateToStandaloneDictionaryCreate('roles');
   }
 
   openRolesEdit(id: string): void {
-    if (!this.permissions.crud().canEdit) return;
+    if (!this.permissionsFacade.canEdit()) return;
     if (this.shouldNavigateToStandaloneAction('roles', 'edit', id)) return;
     const item = this.rolesStore.roleById(id);
     if (!item) return;
@@ -4573,7 +4527,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   deleteRole(id: string): void {
-    if (!this.permissions.crud().canDelete) return;
+    if (!this.permissionsFacade.canDelete()) return;
     const item = this.rolesStore.roleById(id);
     if (!item || item.isSystem) return;
     this.sub.add(
@@ -4588,7 +4542,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   duplicateRole(id: string): void {
-    if (!this.permissions.can('crud.duplicate')) return;
+    if (!this.permissionsFacade.canDuplicate()) return;
     if (this.shouldNavigateToStandaloneAction('roles', 'copy', id)) return;
     const item = this.rolesStore.roleById(id);
     if (!item || item.isSystem) return;
@@ -4598,7 +4552,7 @@ export class DictionariesPage implements OnDestroy {
     this.rolesSubmitAttempted.set(false);
     this.rolesForm.enable({ emitEvent: false });
     this.rolesForm.reset({
-      name: item.name ? `${item.name} (копия)` : '',
+      name: item.name ? `${item.name} (РєРѕРїРёСЏ)` : '',
       sortOrder: nextRoleSortOrder(this.rolesStore.items()),
       notes: item.notes ?? '',
       isActive: item.isActive,
@@ -4608,12 +4562,12 @@ export class DictionariesPage implements OnDestroy {
   }
 
   openUsersCreate(): void {
-    if (!this.permissions.crud().canCreate) return;
+    if (!this.permissionsFacade.canCreate()) return;
     this.navigateToStandaloneDictionaryCreate('users');
   }
 
   openUsersEdit(id: string): void {
-    if (!this.permissions.crud().canEdit) return;
+    if (!this.permissionsFacade.canEdit()) return;
     if (this.shouldNavigateToStandaloneAction('users', 'edit', id)) return;
     const item = this.usersStore.userById(id);
     if (!item) return;
@@ -4709,12 +4663,12 @@ export class DictionariesPage implements OnDestroy {
   }
 
   deleteUser(id: string): void {
-    if (!this.permissions.crud().canDelete) return;
+    if (!this.permissionsFacade.canDelete()) return;
     this.usersStore.remove(id);
   }
 
   duplicateUser(id: string): void {
-    if (!this.permissions.can('crud.duplicate')) return;
+    if (!this.permissionsFacade.canDuplicate()) return;
     if (this.shouldNavigateToStandaloneAction('users', 'copy', id)) return;
     const item = this.usersStore.userById(id);
     if (!item) return;
@@ -4735,7 +4689,7 @@ export class DictionariesPage implements OnDestroy {
     this.usersForm.reset({
       login,
       password: '',
-      fullName: item.fullName ? `${item.fullName} (копия)` : '',
+      fullName: item.fullName ? `${item.fullName} (РєРѕРїРёСЏ)` : '',
       email: item.email,
       phone: item.phone,
       roleId: item.roleId,
@@ -4762,7 +4716,7 @@ export class DictionariesPage implements OnDestroy {
   };
 
   openColorsCreate(fromMaterialCharacteristics = false): void {
-    if (!this.permissions.crud().canCreate) return;
+    if (!this.permissionsFacade.canCreate()) return;
     if (fromMaterialCharacteristics) {
       this.isColorsViewMode.set(false);
       this.colorsEditingId.set(null);
@@ -4781,7 +4735,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   openColorsEdit(id: string): void {
-    if (!this.permissions.crud().canEdit) return;
+    if (!this.permissionsFacade.canEdit()) return;
     if (this.shouldNavigateToStandaloneAction('colors', 'edit', id)) return;
     this.isColorsViewMode.set(false);
     this.colorsEditingId.set(id);
@@ -4852,7 +4806,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   deleteColor(id: string): void {
-    if (!this.permissions.crud().canDelete) return;
+    if (!this.permissionsFacade.canDelete()) return;
     const relatedCount = this.materialCharacteristicsStore.items().filter((x) => x.colorId === id).length;
     if (relatedCount > 0) {
       this.colorDeletePropagationPlan.set({ colorId: id, relatedCount });
@@ -4870,9 +4824,8 @@ export class DictionariesPage implements OnDestroy {
     if (!plan) return;
 
     this.materialsSnapshotSyncGate.color = 'local';
-    await firstValueFrom(this.colorsRepository.remove(plan.colorId, { propagation: 'local' }));
-    this.colorsStore.loadItems();
-    this.materialCharacteristicsStore.loadItems();
+    await this.linkedPropagationService.deleteColorLocal(plan.colorId);
+    this.dictionariesOrchestrator.refreshColorCharacteristicsCascade();
     this.closeColorDeletePropagationConfirm();
   }
 
@@ -4880,9 +4833,8 @@ export class DictionariesPage implements OnDestroy {
     const plan = this.colorDeletePropagationPlan();
     if (!plan) return;
 
-    await firstValueFrom(this.colorsRepository.remove(plan.colorId, { propagation: 'global' }));
-    this.colorsStore.loadItems();
-    this.materialCharacteristicsStore.loadItems();
+    await this.linkedPropagationService.deleteColorGlobal(plan.colorId);
+    this.dictionariesOrchestrator.refreshColorCharacteristicsCascade();
     if (this.materialCharacteristicsForm.controls.colorId.value === plan.colorId) {
       this.materialCharacteristicsForm.controls.colorId.setValue('');
     }
@@ -4895,7 +4847,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   duplicateColor(id: string): void {
-    if (!this.permissions.can('crud.duplicate')) return;
+    if (!this.permissionsFacade.canDuplicate()) return;
     if (this.shouldNavigateToStandaloneAction('colors', 'copy', id)) return;
     const item = this.colorsStore.items().find((x) => x.id === id);
     if (!item) return;
@@ -4907,7 +4859,7 @@ export class DictionariesPage implements OnDestroy {
     this.colorsStore.startCreate();
     this.colorsForm.reset({
       ralCode: item.ralCode ?? 'RAL ',
-      name: `${item.name} (копия)`,
+      name: `${item.name} (РєРѕРїРёСЏ)`,
       hex: item.hex,
     });
     this.isColorsModalOpen.set(true);
@@ -4928,7 +4880,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   openSurfaceFinishesCreate(fromMaterialCharacteristics = false): void {
-    if (!this.permissions.crud().canCreate) return;
+    if (!this.permissionsFacade.canCreate()) return;
     if (fromMaterialCharacteristics) {
       this.isSurfaceFinishesViewMode.set(false);
       this.surfaceFinishesEditingId.set(null);
@@ -4947,7 +4899,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   openSurfaceFinishesEdit(id: string): void {
-    if (!this.permissions.crud().canEdit) return;
+    if (!this.permissionsFacade.canEdit()) return;
     if (this.shouldNavigateToStandaloneAction('surfaceFinishes', 'edit', id)) return;
     this.isSurfaceFinishesViewMode.set(false);
     this.surfaceFinishesEditingId.set(id);
@@ -5021,7 +4973,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   deleteSurfaceFinish(id: string): void {
-    if (!this.permissions.crud().canDelete) return;
+    if (!this.permissionsFacade.canDelete()) return;
     const relatedCount = this.materialCharacteristicsStore.items().filter((x) => x.surfaceFinishId === id)
       .length;
     if (relatedCount > 0) {
@@ -5040,11 +4992,8 @@ export class DictionariesPage implements OnDestroy {
     if (!plan) return;
 
     this.materialsSnapshotSyncGate.surfaceFinish = 'local';
-    await firstValueFrom(
-      this.surfaceFinishesRepository.remove(plan.surfaceFinishId, { propagation: 'local' }),
-    );
-    this.surfaceFinishesStore.loadItems();
-    this.materialCharacteristicsStore.loadItems();
+    await this.linkedPropagationService.deleteSurfaceFinishLocal(plan.surfaceFinishId);
+    this.dictionariesOrchestrator.refreshSurfaceFinishCharacteristicsCascade();
     this.closeSurfaceFinishDeletePropagationConfirm();
   }
 
@@ -5052,11 +5001,8 @@ export class DictionariesPage implements OnDestroy {
     const plan = this.surfaceFinishDeletePropagationPlan();
     if (!plan) return;
 
-    await firstValueFrom(
-      this.surfaceFinishesRepository.remove(plan.surfaceFinishId, { propagation: 'global' }),
-    );
-    this.surfaceFinishesStore.loadItems();
-    this.materialCharacteristicsStore.loadItems();
+    await this.linkedPropagationService.deleteSurfaceFinishGlobal(plan.surfaceFinishId);
+    this.dictionariesOrchestrator.refreshSurfaceFinishCharacteristicsCascade();
     if (this.materialCharacteristicsForm.controls.surfaceFinishId.value === plan.surfaceFinishId) {
       this.materialCharacteristicsForm.controls.surfaceFinishId.setValue('');
     }
@@ -5069,7 +5015,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   duplicateSurfaceFinish(id: string): void {
-    if (!this.permissions.can('crud.duplicate')) return;
+    if (!this.permissionsFacade.canDuplicate()) return;
     if (this.shouldNavigateToStandaloneAction('surfaceFinishes', 'copy', id)) return;
     const item = this.surfaceFinishesStore.items().find((x) => x.id === id);
     if (!item) return;
@@ -5080,7 +5026,7 @@ export class DictionariesPage implements OnDestroy {
     this.surfaceFinishesForm.enable({ emitEvent: false });
     this.surfaceFinishesStore.startCreate();
     this.surfaceFinishesForm.reset({
-      finishType: `${item.finishType} (копия)`,
+      finishType: `${item.finishType} (РєРѕРїРёСЏ)`,
       roughnessClass: item.roughnessClass,
       raMicron: item.raMicron ?? null,
     });
@@ -5102,7 +5048,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   openCoatingsCreate(fromMaterialCharacteristics = false): void {
-    if (!this.permissions.crud().canCreate) return;
+    if (!this.permissionsFacade.canCreate()) return;
     if (fromMaterialCharacteristics) {
       this.isCoatingsViewMode.set(false);
       this.coatingsEditingId.set(null);
@@ -5121,7 +5067,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   openCoatingsEdit(id: string): void {
-    if (!this.permissions.crud().canEdit) return;
+    if (!this.permissionsFacade.canEdit()) return;
     if (this.shouldNavigateToStandaloneAction('coatings', 'edit', id)) return;
     this.isCoatingsViewMode.set(false);
     this.coatingsEditingId.set(id);
@@ -5169,15 +5115,14 @@ export class DictionariesPage implements OnDestroy {
           payload,
           relatedCount,
         });
-        // Варианты именно для “редактирование покрытия, которое уже используется”.
+        // Р’Р°СЂРёР°РЅС‚С‹ РёРјРµРЅРЅРѕ РґР»СЏ вЂњСЂРµРґР°РєС‚РёСЂРѕРІР°РЅРёРµ РїРѕРєСЂС‹С‚РёСЏ, РєРѕС‚РѕСЂРѕРµ СѓР¶Рµ РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏвЂќ.
         this.isCoatingPropagationConfirmOpen.set(true);
         this.isCoatingsModalOpen.set(false);
         return;
       }
 
-      await firstValueFrom(this.coatingsRepository.update(editingCoatingId, payload));
-      this.coatingsStore.loadItems();
-      this.materialCharacteristicsStore.loadItems();
+      await this.linkedPropagationService.updateCoatingLocal(editingCoatingId, payload);
+      this.dictionariesOrchestrator.refreshCoatingCharacteristicsCascade();
       this.closeCoatingsModal();
       this.finishStandaloneDictionaryCreateIfMatch('coatings');
       return;
@@ -5204,8 +5149,8 @@ export class DictionariesPage implements OnDestroy {
     if (!plan) return;
 
     this.materialsSnapshotSyncGate.coating = 'local';
-    await firstValueFrom(this.coatingsRepository.update(plan.coatingId, plan.payload));
-    this.coatingsStore.loadItems();
+    await this.linkedPropagationService.updateCoatingLocal(plan.coatingId, plan.payload);
+    this.dictionariesOrchestrator.refreshCoatingsOnly();
     this.closeCoatingsModal();
   }
 
@@ -5214,20 +5159,17 @@ export class DictionariesPage implements OnDestroy {
     if (!plan) return;
 
     this.materialsSnapshotSyncGate.coating = 'global';
-    await firstValueFrom(
-      this.coatingsRepository.update(plan.coatingId, plan.payload, { propagation: 'global' }),
-    );
+    await this.linkedPropagationService.updateCoatingGlobal(plan.coatingId, plan.payload);
 
-    this.coatingsStore.loadItems();
-    this.materialCharacteristicsStore.loadItems();
+    this.dictionariesOrchestrator.refreshCoatingCharacteristicsCascade();
     this.closeCoatingsModal();
   }
 
   closeCoatingPropagationConfirm(): void {
     this.coatingPropagationPlan.set(null);
     this.isCoatingPropagationConfirmOpen.set(false);
-    // Возвращаемся в режим редактирования покрытия (формы уже заполнены,
-    // т.к. closeCoatingsModal() мы не вызывали).
+    // Р’РѕР·РІСЂР°С‰Р°РµРјСЃСЏ РІ СЂРµР¶РёРј СЂРµРґР°РєС‚РёСЂРѕРІР°РЅРёСЏ РїРѕРєСЂС‹С‚РёСЏ (С„РѕСЂРјС‹ СѓР¶Рµ Р·Р°РїРѕР»РЅРµРЅС‹,
+    // С‚.Рє. closeCoatingsModal() РјС‹ РЅРµ РІС‹Р·С‹РІР°Р»Рё).
     if (this.coatingsEditingId()) {
       this.isCoatingsModalOpen.set(true);
     }
@@ -5238,8 +5180,8 @@ export class DictionariesPage implements OnDestroy {
     if (!plan) return;
 
     this.materialsSnapshotSyncGate.color = 'local';
-    await firstValueFrom(this.colorsRepository.update(plan.colorId, plan.payload));
-    this.colorsStore.loadItems();
+    await this.linkedPropagationService.updateColorLocal(plan.colorId, plan.payload);
+    this.dictionariesOrchestrator.refreshColorsOnly();
     this.closeColorsModal();
   }
 
@@ -5248,10 +5190,9 @@ export class DictionariesPage implements OnDestroy {
     if (!plan) return;
 
     this.materialsSnapshotSyncGate.color = 'global';
-    await firstValueFrom(this.colorsRepository.update(plan.colorId, plan.payload, { propagation: 'global' }));
+    await this.linkedPropagationService.updateColorGlobal(plan.colorId, plan.payload);
 
-    this.colorsStore.loadItems();
-    this.materialCharacteristicsStore.loadItems();
+    this.dictionariesOrchestrator.refreshColorCharacteristicsCascade();
     this.closeColorsModal();
   }
 
@@ -5268,8 +5209,8 @@ export class DictionariesPage implements OnDestroy {
     if (!plan) return;
 
     this.materialsSnapshotSyncGate.surfaceFinish = 'local';
-    await firstValueFrom(this.surfaceFinishesRepository.update(plan.surfaceFinishId, plan.payload));
-    this.surfaceFinishesStore.loadItems();
+    await this.linkedPropagationService.updateSurfaceFinishLocal(plan.surfaceFinishId, plan.payload);
+    this.dictionariesOrchestrator.refreshSurfaceFinishesOnly();
     this.closeSurfaceFinishesModal();
   }
 
@@ -5278,12 +5219,9 @@ export class DictionariesPage implements OnDestroy {
     if (!plan) return;
 
     this.materialsSnapshotSyncGate.surfaceFinish = 'global';
-    await firstValueFrom(
-      this.surfaceFinishesRepository.update(plan.surfaceFinishId, plan.payload, { propagation: 'global' }),
-    );
+    await this.linkedPropagationService.updateSurfaceFinishGlobal(plan.surfaceFinishId, plan.payload);
 
-    this.surfaceFinishesStore.loadItems();
-    this.materialCharacteristicsStore.loadItems();
+    this.dictionariesOrchestrator.refreshSurfaceFinishCharacteristicsCascade();
     this.closeSurfaceFinishesModal();
   }
 
@@ -5296,7 +5234,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   deleteCoating(id: string): void {
-    if (!this.permissions.crud().canDelete) return;
+    if (!this.permissionsFacade.canDelete()) return;
     const relatedCount = this.materialCharacteristicsStore.items().filter((x) => x.coatingId === id).length;
     if (relatedCount > 0) {
       this.coatingDeletePropagationPlan.set({ coatingId: id, relatedCount });
@@ -5314,9 +5252,8 @@ export class DictionariesPage implements OnDestroy {
     if (!plan) return;
 
     this.materialsSnapshotSyncGate.coating = 'local';
-    await firstValueFrom(this.coatingsRepository.remove(plan.coatingId, { propagation: 'local' }));
-    this.coatingsStore.loadItems();
-    this.materialCharacteristicsStore.loadItems();
+    await this.linkedPropagationService.deleteCoatingLocal(plan.coatingId);
+    this.dictionariesOrchestrator.refreshCoatingCharacteristicsCascade();
     this.closeCoatingDeletePropagationConfirm();
   }
 
@@ -5324,9 +5261,8 @@ export class DictionariesPage implements OnDestroy {
     const plan = this.coatingDeletePropagationPlan();
     if (!plan) return;
 
-    await firstValueFrom(this.coatingsRepository.remove(plan.coatingId, { propagation: 'global' }));
-    this.coatingsStore.loadItems();
-    this.materialCharacteristicsStore.loadItems();
+    await this.linkedPropagationService.deleteCoatingGlobal(plan.coatingId);
+    this.dictionariesOrchestrator.refreshCoatingCharacteristicsCascade();
     if (this.materialCharacteristicsForm.controls.coatingId.value === plan.coatingId) {
       this.materialCharacteristicsForm.controls.coatingId.setValue('');
     }
@@ -5339,7 +5275,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   duplicateCoating(id: string): void {
-    if (!this.permissions.can('crud.duplicate')) return;
+    if (!this.permissionsFacade.canDuplicate()) return;
     if (this.shouldNavigateToStandaloneAction('coatings', 'copy', id)) return;
     const item = this.coatingsStore.items().find((x) => x.id === id);
     if (!item) return;
@@ -5350,7 +5286,7 @@ export class DictionariesPage implements OnDestroy {
     this.coatingsForm.enable({ emitEvent: false });
     this.coatingsStore.startCreate();
     this.coatingsForm.reset({
-      coatingType: `${item.coatingType} (копия)`,
+      coatingType: `${item.coatingType} (РєРѕРїРёСЏ)`,
       coatingSpec: item.coatingSpec,
       thicknessMicron: item.thicknessMicron ?? null,
     });
@@ -5372,12 +5308,12 @@ export class DictionariesPage implements OnDestroy {
   }
 
   openClientsCreate(): void {
-    if (!this.permissions.crud().canCreate) return;
+    if (!this.permissionsFacade.canCreate()) return;
     this.navigateToStandaloneDictionaryCreate('clients');
   }
 
   openClientsEdit(id: string): void {
-    if (!this.permissions.crud().canEdit) return;
+    if (!this.permissionsFacade.canEdit()) return;
     if (this.shouldNavigateToStandaloneAction('clients', 'edit', id)) return;
     this.isClientsViewMode.set(false);
     this.clientsForm.enable({ emitEvent: false });
@@ -5422,12 +5358,12 @@ export class DictionariesPage implements OnDestroy {
   }
 
   deleteClient(id: string): void {
-    if (!this.permissions.crud().canDelete) return;
+    if (!this.permissionsFacade.canDelete()) return;
     this.clientsStore.delete(id);
   }
 
   duplicateClient(id: string): void {
-    if (!this.permissions.can('crud.duplicate')) return;
+    if (!this.permissionsFacade.canDuplicate()) return;
     if (this.shouldNavigateToStandaloneAction('clients', 'copy', id)) return;
     const item = this.clientsStore.items().find((x) => x.id === id);
     if (!item) return;
@@ -5436,7 +5372,7 @@ export class DictionariesPage implements OnDestroy {
     this.clientsForm.enable({ emitEvent: false });
     this.clientsStore.startCreate();
     this.clientsForm.reset({
-      lastName: `${item.lastName} (копия)`,
+      lastName: `${item.lastName} (РєРѕРїРёСЏ)`,
       firstName: item.firstName ?? '',
       patronymic: item.patronymic ?? '',
       address: item.address ?? '',
@@ -5476,14 +5412,14 @@ export class DictionariesPage implements OnDestroy {
   }
 
   openOrganizationsCreate(): void {
-    if (!this.permissions.crud().canCreate) return;
+    if (!this.permissionsFacade.canCreate()) return;
     this.navigateToStandaloneDictionaryCreate('organizations');
   }
 
-  /** «+» у поставщика в форме материала: модалка организации поверх материала. */
+  /** В«+В» Сѓ РїРѕСЃС‚Р°РІС‰РёРєР° РІ С„РѕСЂРјРµ РјР°С‚РµСЂРёР°Р»Р°: РјРѕРґР°Р»РєР° РѕСЂРіР°РЅРёР·Р°С†РёРё РїРѕРІРµСЂС… РјР°С‚РµСЂРёР°Р»Р°. */
   openOrganizationsCreateFromMaterials(): void {
     if (!this.isMaterialsModalOpen() && !this.isNewMaterialPageRoute()) return;
-    if (!this.permissions.crud().canCreate) return;
+    if (!this.permissionsFacade.canCreate()) return;
     this.organizationQuickAddForMaterials.set(true);
     this.isOrganizationsViewMode.set(false);
     this.organizationsForm.enable({ emitEvent: false });
@@ -5531,7 +5467,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   openOrganizationsEdit(id: string): void {
-    if (!this.permissions.crud().canEdit) return;
+    if (!this.permissionsFacade.canEdit()) return;
     if (this.shouldNavigateToStandaloneAction('organizations', 'edit', id)) return;
     this.isOrganizationsViewMode.set(false);
     this.organizationsForm.enable({ emitEvent: false });
@@ -5610,12 +5546,12 @@ export class DictionariesPage implements OnDestroy {
   }
 
   deleteOrganization(id: string): void {
-    if (!this.permissions.crud().canDelete) return;
+    if (!this.permissionsFacade.canDelete()) return;
     this.organizationsStore.delete(id);
   }
 
   duplicateOrganization(id: string): void {
-    if (!this.permissions.can('crud.duplicate')) return;
+    if (!this.permissionsFacade.canDuplicate()) return;
     if (this.shouldNavigateToStandaloneAction('organizations', 'copy', id)) return;
     const item = this.organizationsStore.items().find((x) => x.id === id);
     if (!item) return;
@@ -5624,7 +5560,7 @@ export class DictionariesPage implements OnDestroy {
     this.organizationsStore.startCreate();
     this.organizationsForm.reset({
       organizationKind: mapLegalFormToOrganizationKind(item.legalForm),
-      name: `${item.name} (копия)`,
+      name: `${item.name} (РєРѕРїРёСЏ)`,
       shortName: item.shortName ?? '',
       inn: item.inn ?? '',
       kpp: item.kpp ?? '',
@@ -5712,7 +5648,7 @@ export class DictionariesPage implements OnDestroy {
     this.isOrganizationsModalOpen.set(true);
   }
 
-  /** Контакты, ещё не добавленные в организацию — для выпадающего списка. */
+  /** РљРѕРЅС‚Р°РєС‚С‹, РµС‰С‘ РЅРµ РґРѕР±Р°РІР»РµРЅРЅС‹Рµ РІ РѕСЂРіР°РЅРёР·Р°С†РёСЋ вЂ” РґР»СЏ РІС‹РїР°РґР°СЋС‰РµРіРѕ СЃРїРёСЃРєР°. */
   organizationContactPickerOptions(): { id: string; label: string }[] {
     const selected = new Set(this.organizationsForm.controls.contactIds.value ?? []);
     return this.organizationContactSelectOptions().filter((o) => !selected.has(o.id));
@@ -5723,20 +5659,20 @@ export class DictionariesPage implements OnDestroy {
     return o?.label ?? contactId;
   }
 
-  /** Строка в списке выбранных контактов организации: ФИО, телефон, email из справочника. */
+  /** РЎС‚СЂРѕРєР° РІ СЃРїРёСЃРєРµ РІС‹Р±СЂР°РЅРЅС‹С… РєРѕРЅС‚Р°РєС‚РѕРІ РѕСЂРіР°РЅРёР·Р°С†РёРё: Р¤РРћ, С‚РµР»РµС„РѕРЅ, email РёР· СЃРїСЂР°РІРѕС‡РЅРёРєР°. */
   organizationContactRow(contactId: string): { fio: string; phone: string; email: string } {
     const item = this.clientsStore.items().find((x) => x.id === contactId);
     if (!item) {
       return {
         fio: this.organizationContactLabel(contactId),
-        phone: '—',
-        email: '—',
+        phone: 'вЂ”',
+        email: 'вЂ”',
       };
     }
     return {
       fio: formatClientFio(item),
-      phone: item.phone?.trim() || '—',
-      email: item.email?.trim() || '—',
+      phone: item.phone?.trim() || 'вЂ”',
+      email: item.email?.trim() || 'вЂ”',
     };
   }
 
@@ -5770,44 +5706,44 @@ export class DictionariesPage implements OnDestroy {
   materialCharacteristicCoatingSummaryForMaterials(): string {
     const ch = this.materialCharacteristicPreviewForMaterials();
     if (!ch) {
-      return '—';
+      return 'вЂ”';
     }
-    const line = [ch.coatingType, ch.coatingSpec].filter(Boolean).join(' · ');
-    return line || '—';
+    const line = [ch.coatingType, ch.coatingSpec].filter(Boolean).join(' В· ');
+    return line || 'вЂ”';
   }
 
   materialCharacteristicDensityLabelForMaterials(): string {
     const v = this.materialCharacteristicPreviewForMaterials()?.densityKgM3;
-    return v != null ? String(v) : '—';
+    return v != null ? String(v) : 'вЂ”';
   }
 
   materialCharacteristicColorTextForMaterials(): string {
     const ch = this.materialCharacteristicPreviewForMaterials();
     if (!ch) {
-      return '—';
+      return 'вЂ”';
     }
-    return ch.colorName?.trim() || ch.colorHex?.trim() || '—';
+    return ch.colorName?.trim() || ch.colorHex?.trim() || 'вЂ”';
   }
 
   materialViewCharacteristicLabel(): string {
     const id = this.materialsForm.controls.materialCharacteristicId.value;
-    return this.materialCharacteristicSelectOptions().find((o) => o.id === id)?.label ?? '—';
+    return this.materialCharacteristicSelectOptions().find((o) => o.id === id)?.label ?? 'вЂ”';
   }
 
   materialViewGeometryLabel(): string {
     const id = this.materialsForm.controls.geometryId.value;
-    return this.geometrySelectOptions().find((o) => o.id === id)?.label ?? '—';
+    return this.geometrySelectOptions().find((o) => o.id === id)?.label ?? 'вЂ”';
   }
 
   materialViewUnitLabel(): string {
     const id = this.materialsForm.controls.unitId.value;
-    return this.unitsStore.options().find((o) => o.id === id)?.label ?? '—';
+    return this.unitsStore.options().find((o) => o.id === id)?.label ?? 'вЂ”';
   }
 
   materialViewSupplierLabel(): string {
     const id = this.materialsForm.controls.supplierOrganizationId.value?.trim() ?? '';
-    if (!id) return '—';
-    return this.organizationsStore.options().find((o) => o.id === id)?.label ?? '—';
+    if (!id) return 'вЂ”';
+    return this.organizationsStore.options().find((o) => o.id === id)?.label ?? 'вЂ”';
   }
 
   materialViewUnitShort(): string {
@@ -5818,14 +5754,14 @@ export class DictionariesPage implements OnDestroy {
       return c;
     }
     const n = u?.name?.trim();
-    return n ? n.slice(0, 12) : 'ед.';
+    return n ? n.slice(0, 12) : 'РµРґ.';
   }
 
   materialViewPriceFormatted(): string {
     return formatMaterialPriceRub(this.materialsForm.controls.purchasePriceRub.value);
   }
 
-  /** ФИО контакта для презентационной карточки просмотра. */
+  /** Р¤РРћ РєРѕРЅС‚Р°РєС‚Р° РґР»СЏ РїСЂРµР·РµРЅС‚Р°С†РёРѕРЅРЅРѕР№ РєР°СЂС‚РѕС‡РєРё РїСЂРѕСЃРјРѕС‚СЂР°. */
   clientsPreviewFio(): string {
     return formatClientFio(this.clientsForm.getRawValue());
   }
@@ -5842,43 +5778,43 @@ export class DictionariesPage implements OnDestroy {
 
   geometryShapeLabelForView(): string {
     const key = this.geometriesForm.controls.shapeKey.value;
-    return this.shapeOptions.find((s) => s.value === key)?.label ?? '—';
+    return this.shapeOptions.find((s) => s.value === key)?.label ?? 'вЂ”';
   }
 
   formatGeometryMmValue(v: number | null): string {
-    if (v == null || Number.isNaN(v)) return '—';
+    if (v == null || Number.isNaN(v)) return 'вЂ”';
     return String(v);
   }
 
   materialCharacteristicsPreviewSubtitle(): string {
     const d = this.materialCharacteristicsForm.controls.densityKgM3.value;
     if (d != null && !Number.isNaN(d)) {
-      return `${d} кг/м³`;
+      return `${d} РєРі/РјВі`;
     }
     return '';
   }
 
   materialCharacteristicsColorOptionLabel(): string {
     const id = this.materialCharacteristicsForm.controls.colorId.value;
-    if (!id?.trim()) return '—';
-    return this.colorsStore.options().find((o) => o.id === id)?.label ?? '—';
+    if (!id?.trim()) return 'вЂ”';
+    return this.colorsStore.options().find((o) => o.id === id)?.label ?? 'вЂ”';
   }
 
   materialCharacteristicsSurfaceOptionLabel(): string {
     const id = this.materialCharacteristicsForm.controls.surfaceFinishId.value;
-    if (!id?.trim()) return '—';
-    return this.surfaceFinishesStore.options().find((o) => o.id === id)?.label ?? '—';
+    if (!id?.trim()) return 'вЂ”';
+    return this.surfaceFinishesStore.options().find((o) => o.id === id)?.label ?? 'вЂ”';
   }
 
   materialCharacteristicsCoatingOptionLabel(): string {
     const id = this.materialCharacteristicsForm.controls.coatingId.value;
-    if (!id?.trim()) return '—';
-    return this.coatingsStore.options().find((o) => o.id === id)?.label ?? '—';
+    if (!id?.trim()) return 'вЂ”';
+    return this.coatingsStore.options().find((o) => o.id === id)?.label ?? 'вЂ”';
   }
 
   usersViewRoleLabel(): string {
     const id = this.usersForm.controls.roleId.value;
-    return this.roleSelectOptions().find((o) => o.id === id)?.label ?? '—';
+    return this.roleSelectOptions().find((o) => o.id === id)?.label ?? 'вЂ”';
   }
 
   workTypesPreviewSubtitle(): string {
@@ -5888,12 +5824,12 @@ export class DictionariesPage implements OnDestroy {
       parts.push(v.shortLabel.trim());
     }
     if (v.hourlyRateRub != null && v.hourlyRateRub > 0) {
-      parts.push(`${v.hourlyRateRub} ₽/ч`);
+      parts.push(`${v.hourlyRateRub} в‚Ѕ/С‡`);
     }
-    return parts.join(' · ');
+    return parts.join(' В· ');
   }
 
-  /** Образец цвета из выбранной характеристики материала (для превью в карточке позиции). */
+  /** РћР±СЂР°Р·РµС† С†РІРµС‚Р° РёР· РІС‹Р±СЂР°РЅРЅРѕР№ С…Р°СЂР°РєС‚РµСЂРёСЃС‚РёРєРё РјР°С‚РµСЂРёР°Р»Р° (РґР»СЏ РїСЂРµРІСЊСЋ РІ РєР°СЂС‚РѕС‡РєРµ РїРѕР·РёС†РёРё). */
   selectedMaterialProfileColorHex(): string {
     const id = this.materialsForm.controls.materialCharacteristicId.value;
     const ch = this.materialCharacteristicsStore.items().find((x) => x.id === id);
@@ -5922,7 +5858,7 @@ export class DictionariesPage implements OnDestroy {
     const name = this.colorsForm.controls.name.value.trim();
     const ralCode = normalizeRalCode(this.colorsForm.controls.ralCode.value) ?? '';
     if (ralCode && name) {
-      return `${ralCode} · ${name}`;
+      return `${ralCode} В· ${name}`;
     }
     if (ralCode) {
       return ralCode;
@@ -5930,7 +5866,7 @@ export class DictionariesPage implements OnDestroy {
     return name;
   }
 
-  /** HEX для образца в форме цвета (только валидный #RGB / #RRGGBB). */
+  /** HEX РґР»СЏ РѕР±СЂР°Р·С†Р° РІ С„РѕСЂРјРµ С†РІРµС‚Р° (С‚РѕР»СЊРєРѕ РІР°Р»РёРґРЅС‹Р№ #RGB / #RRGGBB). */
   colorPreviewHexForColorsForm(): string | null {
     const v = this.colorsForm.controls.hex.value?.trim() ?? '';
     return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(v) ? v : null;
@@ -6132,14 +6068,14 @@ export class DictionariesPage implements OnDestroy {
   clientsErrorText(controlName: keyof typeof this.clientsForm.controls): string {
     if (!this.isClientsInvalid(controlName)) return '';
     const c = this.clientsForm.controls[controlName];
-    if (c.hasError('required')) return 'Обязательное поле';
-    if (c.hasError('minlength')) return 'Минимум 2 символа';
+    if (c.hasError('required')) return 'РћР±СЏР·Р°С‚РµР»СЊРЅРѕРµ РїРѕР»Рµ';
+    if (c.hasError('minlength')) return 'РњРёРЅРёРјСѓРј 2 СЃРёРјРІРѕР»Р°';
     if (c.hasError('pattern')) {
-      if (controlName === 'passportSeries') return 'Только цифры: 4';
-      if (controlName === 'passportNumber') return 'Только цифры: 6';
-      if (controlName === 'passportIssuedDate') return 'Формат даты: YYYY-MM-DD';
+      if (controlName === 'passportSeries') return 'РўРѕР»СЊРєРѕ С†РёС„СЂС‹: 4';
+      if (controlName === 'passportNumber') return 'РўРѕР»СЊРєРѕ С†РёС„СЂС‹: 6';
+      if (controlName === 'passportIssuedDate') return 'Р¤РѕСЂРјР°С‚ РґР°С‚С‹: YYYY-MM-DD';
     }
-    return 'Некорректное значение';
+    return 'РќРµРєРѕСЂСЂРµРєС‚РЅРѕРµ Р·РЅР°С‡РµРЅРёРµ';
   }
 
   isOrganizationsInvalid(controlName: keyof typeof this.organizationsForm.controls): boolean {
@@ -6153,38 +6089,38 @@ export class DictionariesPage implements OnDestroy {
   organizationsErrorText(controlName: keyof typeof this.organizationsForm.controls): string {
     if (!this.isOrganizationsInvalid(controlName)) return '';
     const c = this.organizationsForm.controls[controlName];
-    if (c.hasError('required')) return 'Обязательное поле';
-    if (c.hasError('minlength')) return 'Минимум 2 символа';
+    if (c.hasError('required')) return 'РћР±СЏР·Р°С‚РµР»СЊРЅРѕРµ РїРѕР»Рµ';
+    if (c.hasError('minlength')) return 'РњРёРЅРёРјСѓРј 2 СЃРёРјРІРѕР»Р°';
     if (c.hasError('pattern')) {
       switch (controlName) {
         case 'inn':
         case 'taxIdExtended':
-          return 'Только цифры: 10 или 12';
+          return 'РўРѕР»СЊРєРѕ С†РёС„СЂС‹: 10 РёР»Рё 12';
         case 'kpp':
         case 'kppExtended':
         case 'bankBik':
-          return 'Только цифры: 9';
+          return 'РўРѕР»СЊРєРѕ С†РёС„СЂС‹: 9';
         case 'ogrn':
-          return 'Только цифры: 13 или 15';
+          return 'РўРѕР»СЊРєРѕ С†РёС„СЂС‹: 13 РёР»Рё 15';
         case 'okpo':
-          return 'Только цифры: 8 или 10';
+          return 'РўРѕР»СЊРєРѕ С†РёС„СЂС‹: 8 РёР»Рё 10';
         case 'bankAccount':
         case 'bankCorrAccount':
-          return 'Только цифры: 20';
+          return 'РўРѕР»СЊРєРѕ С†РёС„СЂС‹: 20';
         case 'registrationDate':
         case 'createdAtSource':
         case 'certificateIssuedDate':
-          return 'Формат даты: YYYY-MM-DD';
+          return 'Р¤РѕСЂРјР°С‚ РґР°С‚С‹: YYYY-MM-DD';
         default:
-          return 'Некорректный формат';
+          return 'РќРµРєРѕСЂСЂРµРєС‚РЅС‹Р№ С„РѕСЂРјР°С‚';
       }
     }
-    return 'Некорректное значение';
+    return 'РќРµРєРѕСЂСЂРµРєС‚РЅРѕРµ Р·РЅР°С‡РµРЅРёРµ';
   }
 
   /**
-   * Пользователи/роли без `formSubmitAttempted` в store: как у контактов по смыслу —
-   * подпись ошибки только после blur/ввода либо после `markAllAsTouched()` на неуспешном сабмите.
+   * РџРѕР»СЊР·РѕРІР°С‚РµР»Рё/СЂРѕР»Рё Р±РµР· `formSubmitAttempted` РІ store: РєР°Рє Сѓ РєРѕРЅС‚Р°РєС‚РѕРІ РїРѕ СЃРјС‹СЃР»Сѓ вЂ”
+   * РїРѕРґРїРёСЃСЊ РѕС€РёР±РєРё С‚РѕР»СЊРєРѕ РїРѕСЃР»Рµ blur/РІРІРѕРґР° Р»РёР±Рѕ РїРѕСЃР»Рµ `markAllAsTouched()` РЅР° РЅРµСѓСЃРїРµС€РЅРѕРј СЃР°Р±РјРёС‚Рµ.
    */
   isUsersInvalid(controlName: keyof typeof this.usersForm.controls): boolean {
     const control = this.usersForm.controls[controlName];
@@ -6199,62 +6135,62 @@ export class DictionariesPage implements OnDestroy {
   usersLoginErrorText(): string {
     const c = this.usersForm.controls.login;
     if (!this.isUsersInvalid('login')) return '';
-    if (c.hasError('required')) return 'Обязательное поле';
-    if (c.hasError('minlength')) return 'Минимум 2 символа';
-    if (c.hasError('duplicate')) return 'Такой логин уже есть';
+    if (c.hasError('required')) return 'РћР±СЏР·Р°С‚РµР»СЊРЅРѕРµ РїРѕР»Рµ';
+    if (c.hasError('minlength')) return 'РњРёРЅРёРјСѓРј 2 СЃРёРјРІРѕР»Р°';
+    if (c.hasError('duplicate')) return 'РўР°РєРѕР№ Р»РѕРіРёРЅ СѓР¶Рµ РµСЃС‚СЊ';
     return '';
   }
 
   usersPasswordErrorText(): string {
     const c = this.usersForm.controls.password;
     if (!this.isUsersInvalid('password')) return '';
-    if (c.hasError('required')) return 'Задайте пароль';
-    if (c.hasError('minlength')) return 'Минимум 4 символа';
+    if (c.hasError('required')) return 'Р—Р°РґР°Р№С‚Рµ РїР°СЂРѕР»СЊ';
+    if (c.hasError('minlength')) return 'РњРёРЅРёРјСѓРј 4 СЃРёРјРІРѕР»Р°';
     return '';
   }
 
   usersFullNameErrorText(): string {
     if (!this.isUsersInvalid('fullName')) return '';
-    // Как у контакта: одна формулировка для пустого и короткого значения.
-    return 'Минимум 2 символа';
+    // РљР°Рє Сѓ РєРѕРЅС‚Р°РєС‚Р°: РѕРґРЅР° С„РѕСЂРјСѓР»РёСЂРѕРІРєР° РґР»СЏ РїСѓСЃС‚РѕРіРѕ Рё РєРѕСЂРѕС‚РєРѕРіРѕ Р·РЅР°С‡РµРЅРёСЏ.
+    return 'РњРёРЅРёРјСѓРј 2 СЃРёРјРІРѕР»Р°';
   }
 
   usersEmailErrorText(): string {
     const c = this.usersForm.controls.email;
     if (!this.isUsersInvalid('email')) return '';
-    if (c.hasError('email')) return 'Некорректный email';
+    if (c.hasError('email')) return 'РќРµРєРѕСЂСЂРµРєС‚РЅС‹Р№ email';
     return '';
   }
 
   usersRoleErrorText(): string {
     const c = this.usersForm.controls.roleId;
     if (!this.isUsersInvalid('roleId')) return '';
-    if (c.hasError('required')) return 'Выберите роль';
+    if (c.hasError('required')) return 'Р’С‹Р±РµСЂРёС‚Рµ СЂРѕР»СЊ';
     return '';
   }
 
   rolesNameErrorText(): string {
     const c = this.rolesForm.controls.name;
     if (!this.isRolesInvalid('name')) return '';
-    if (c.hasError('required')) return 'Обязательное поле';
-    if (c.hasError('minlength')) return 'Минимум 2 символа';
+    if (c.hasError('required')) return 'РћР±СЏР·Р°С‚РµР»СЊРЅРѕРµ РїРѕР»Рµ';
+    if (c.hasError('minlength')) return 'РњРёРЅРёРјСѓРј 2 СЃРёРјРІРѕР»Р°';
     return '';
   }
 
   rolesSortOrderErrorText(): string {
     const c = this.rolesForm.controls.sortOrder;
     if (!this.isRolesInvalid('sortOrder')) return '';
-    if (c.hasError('required')) return 'Укажите число';
-    if (c.hasError('min') || c.hasError('max')) return 'Целое от 1 до 999999';
+    if (c.hasError('required')) return 'РЈРєР°Р¶РёС‚Рµ С‡РёСЃР»Рѕ';
+    if (c.hasError('min') || c.hasError('max')) return 'Р¦РµР»РѕРµ РѕС‚ 1 РґРѕ 999999';
     return '';
   }
 
   organizationInnPlaceholder(): string {
-    return this.organizationsForm.controls.organizationKind.value === 'IP' ? '12 цифр' : '10 цифр';
+    return this.organizationsForm.controls.organizationKind.value === 'IP' ? '12 С†РёС„СЂ' : '10 С†РёС„СЂ';
   }
 
   organizationOgrnLabel(): string {
-    return this.organizationsForm.controls.organizationKind.value === 'IP' ? 'ОГРНИП' : 'ОГРН';
+    return this.organizationsForm.controls.organizationKind.value === 'IP' ? 'РћР“Р РќРРџ' : 'РћР“Р Рќ';
   }
 
   materialsPurchasePriceErrorText(): string {
@@ -6265,9 +6201,9 @@ export class DictionariesPage implements OnDestroy {
     ) {
       return '';
     }
-    if (c.hasError('required')) return 'Укажите цену';
-    if (c.hasError('min')) return 'Минимум 1 ₽ за единицу';
-    return 'Проверьте цену';
+    if (c.hasError('required')) return 'РЈРєР°Р¶РёС‚Рµ С†РµРЅСѓ';
+    if (c.hasError('min')) return 'РњРёРЅРёРјСѓРј 1 в‚Ѕ Р·Р° РµРґРёРЅРёС†Сѓ';
+    return 'РџСЂРѕРІРµСЂСЊС‚Рµ С†РµРЅСѓ';
   }
 
   private buildMaterialsPayload(): MaterialItemInput {
@@ -6283,7 +6219,7 @@ export class DictionariesPage implements OnDestroy {
       geometryId: gid,
       geometryName: g?.name,
       unitId: uid || undefined,
-      unitName: u ? `${u.name} (${u.code ?? '—'})` : undefined,
+      unitName: u ? `${u.name} (${u.code ?? 'вЂ”'})` : undefined,
       supplierOrganizationId: c.supplierOrganizationId.value || undefined,
       purchasePriceRub: c.purchasePriceRub.value,
       notes: c.notes.value,
@@ -6482,6 +6418,8 @@ export class DictionariesPage implements OnDestroy {
     }
   }
 }
+
+
 
 
 

@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { API_CONFIG } from '@srm/platform-core';
 import { mapOrderDeleteError, mapOrderUpdateError } from './orders-error-mapping';
+import { formatRuDateOrDash, formatRuDateTimeOrDash } from './presentation-formatters';
 
 export type OrderLineSnapshot = {
   lineNo: number;
@@ -43,10 +44,10 @@ export class OrdersStore {
         hubLine: `${item.orderNumber} · ${item.customerLabel}`,
         orderNumber: item.orderNumber,
         customerLabel: item.customerLabel || '—',
-        deadlineLabel: this.date(item.deadline),
+        deadlineLabel: formatRuDateOrDash(item.deadline),
         offerNumberLabel: item.offerNumber || '—',
         linesLabel: this.linesSummary(item.linesSnapshot),
-        updatedAtLabel: this.dateTime(item.updatedAt),
+        updatedAtLabel: formatRuDateTimeOrDash(item.updatedAt),
       })),
   );
 
@@ -112,26 +113,6 @@ export class OrdersStore {
       .sort((a, b) => (a.sortOrder ?? a.lineNo) - (b.sortOrder ?? b.lineNo))
       .map((line) => `${line.name} × ${line.qty} ${line.unit}`.trim())
       .join('; ');
-  }
-
-  private date(raw: string | null): string {
-    if (!raw) return '—';
-    const d = new Date(raw);
-    if (Number.isNaN(d.getTime())) return '—';
-    return d.toLocaleDateString('ru-RU');
-  }
-
-  private dateTime(raw: string): string {
-    if (!raw) return '—';
-    const d = new Date(raw);
-    if (Number.isNaN(d.getTime())) return '—';
-    return d.toLocaleString('ru-RU', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
   }
 
 }

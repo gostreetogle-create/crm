@@ -2,11 +2,14 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { finalize } from 'rxjs/operators';
 import { API_CONFIG } from '@srm/platform-core';
-import { normalizeCommercialOfferStatusKey, type ProposalStatusKey } from './commercial-offer-status.rules';
+import { labelByStatusKey, normalizeCommercialOfferStatusKey, type ProposalStatusKey } from './commercial-offer-status.rules';
+import { mapOfferDtoToPayload, type CommercialOfferDto } from './commercial-offers.mapper';
+import { addProcessingId, removeProcessingId } from './processing-by-id.util';
 import {
   mapCommercialOfferDeleteError,
   mapCommercialOfferStatusError,
 } from './commercial-offers-error-mapping';
+import { formatRuDateTimeOrDash, formatRuMoney2 } from './presentation-formatters';
 
 type CommercialOfferListItem = {
   id: string;
@@ -18,35 +21,6 @@ type CommercialOfferListItem = {
   recipient: string | null;
   totalAmount: number;
   updatedAt: string;
-};
-
-type CommercialOfferLineDto = {
-  lineNo: number;
-  name: string;
-  description: string | null;
-  qty: number;
-  unit: string;
-  unitPrice: number;
-  imageUrl: string | null;
-  catalogProductId: string | null;
-  sortOrder: number;
-};
-
-type CommercialOfferDto = {
-  id: string;
-  number: string | null;
-  title: string | null;
-  currentStatusKey: string;
-  organizationId: string | null;
-  clientId: string | null;
-  organizationContactId: string | null;
-  recipient: string | null;
-  validUntil: string | null;
-  currency: string;
-  vatPercent: number;
-  vatAmount: number;
-  notes: string | null;
-  lines: CommercialOfferLineDto[];
 };
 
 @Injectable({ providedIn: 'root' })
@@ -65,7 +39,7 @@ export class CommercialOffersStore {
       .map((item) => {
         const normalizedStatus = normalizeCommercialOfferStatusKey(item.currentStatusKey);
         const header = item.number?.trim() || item.title?.trim() || `КП ${item.id.slice(0, 8)}`;
-        const statusLabel = this.statusLabel(normalizedStatus);
+        const statusLabel = labelByStatusKey(normalizedStatus);
         const recipientLabel =
           item.organizationLabel?.trim() || item.clientLabel?.trim() || item.recipient?.trim() || '—';
         return {
@@ -75,8 +49,8 @@ export class CommercialOffersStore {
           statusLabel,
           statusKey: normalizedStatus,
           recipientLabel,
-          totalAmountLabel: `${this.money(item.totalAmount)} ₽`,
-          updatedAtLabel: this.dateTime(item.updatedAt),
+          totalAmountLabel: `${formatRuMoney2(item.totalAmount)} ₽`,
+          updatedAtLabel: formatRuDateTimeOrDash(item.updatedAt),
         };
       }),
   );
@@ -112,18 +86,14 @@ export class CommercialOffersStore {
     this.error.set(null);
     if (!id.trim()) return;
     this.processingStatusIds.update((prev) => {
-      const next = new Set(prev);
-      next.add(id);
-      return next;
+      return addProcessingId(prev, id);
     });
     this.http
       .post(this.endpoint(`/${id}/status`), { statusKey })
       .pipe(
         finalize(() => {
           this.processingStatusIds.update((prev) => {
-            const next = new Set(prev);
-            next.delete(id);
-            return next;
+            return removeProcessingId(prev, id);
           });
         }),
       )
@@ -140,32 +110,7 @@ export class CommercialOffersStore {
     this.error.set(null);
     this.http.get<CommercialOfferDto>(this.endpoint(`/${id}`)).subscribe({
       next: (source) => {
-        const payload = {
-          number: null,
-          title: source.title?.trim() ? `${source.title.trim()} (копия)` : null,
-          currentStatusKey: 'proposal_draft' as const,
-          organizationId: source.organizationId,
-          clientId: source.clientId,
-          organizationContactId: source.organizationContactId,
-          recipient: source.recipient,
-          validUntil: source.validUntil,
-          currency: source.currency,
-          vatPercent: source.vatPercent,
-          vatAmount: source.vatAmount,
-          notes: source.notes,
-          lines: (source.lines ?? []).map((line, idx) => ({
-            lineNo: idx + 1,
-            name: line.name,
-            description: line.description,
-            qty: line.qty,
-            unit: line.unit,
-            unitPrice: line.unitPrice,
-            imageUrl: line.imageUrl,
-            catalogProductId: line.catalogProductId,
-            sortOrder: idx,
-          })),
-          skipCatalogSync: false,
-        };
+        const payload = mapOfferDtoToPayload(source, { copyTitle: true, skipCatalogSync: false });
         this.http.post<CommercialOfferDto>(this.endpoint(), payload).subscribe({
           next: (created) => {
             onCreated?.(created.id);
@@ -187,35 +132,6 @@ export class CommercialOffersStore {
   private endpoint(path = ''): string {
     const base = this.api.baseUrl.replace(/\/$/, '');
     return `${base}/api/commercial-offers${path}`;
-  }
-
-  private statusLabel(key: string): string {
-    if (key === 'proposal_draft') return 'Черновик';
-    if (key === 'proposal_waiting') return 'На согласовании';
-    if (key === 'proposal_approved') return 'На согласовании';
-    if (key === 'proposal_paid') return 'Оплачено';
-    return key || '—';
-  }
-
-  private money(v: number): string {
-    if (!Number.isFinite(v)) return '0';
-    return new Intl.NumberFormat('ru-RU', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(v);
-  }
-
-  private dateTime(raw: string): string {
-    if (!raw) return '—';
-    const d = new Date(raw);
-    if (Number.isNaN(d.getTime())) return '—';
-    return d.toLocaleString('ru-RU', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
   }
 }
 

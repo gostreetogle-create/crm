@@ -31,3 +31,35 @@ export function canCommercialOfferTransition(
   }
   return COMMERCIAL_OFFER_ALLOWED_TRANSITIONS[current].includes(next);
 }
+
+export function normalizeStatusKey(raw: unknown): ProposalStatusKey {
+  return normalizeCommercialOfferStatusKey(raw);
+}
+
+export function canTransition(currentRaw: unknown, nextRaw: unknown): boolean {
+  return canCommercialOfferTransition(currentRaw, nextRaw);
+}
+
+export function isDraft(statusLike: unknown): boolean {
+  if (statusLike && typeof statusLike === 'object') {
+    const row = statusLike as Record<string, unknown>;
+    const candidates = [row['currentStatusKey'], row['statusKey'], row['status']];
+    const knownCandidates = candidates.filter((value) => {
+      if (value == null) return false;
+      return String(value).trim() !== '';
+    });
+    if (knownCandidates.length === 0) {
+      return false;
+    }
+    return knownCandidates.some((value) => normalizeCommercialOfferStatusKey(value) === 'proposal_draft');
+  }
+  return normalizeCommercialOfferStatusKey(statusLike) === 'proposal_draft';
+}
+
+export function labelByStatusKey(raw: unknown): string {
+  const key = normalizeCommercialOfferStatusKey(raw);
+  if (key === 'proposal_draft') return 'Черновик';
+  if (key === 'proposal_waiting') return 'На согласовании';
+  if (key === 'proposal_paid') return 'Оплачено';
+  return '—';
+}

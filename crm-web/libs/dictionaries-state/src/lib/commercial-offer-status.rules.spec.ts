@@ -1,5 +1,9 @@
 import {
+  canTransition,
   canCommercialOfferTransition,
+  isDraft,
+  labelByStatusKey,
+  normalizeStatusKey,
   normalizeCommercialOfferStatusKey,
 } from './commercial-offer-status.rules';
 
@@ -39,6 +43,40 @@ describe('commercial-offer-status.rules', () => {
       ['proposal_waiting', 'unexpected'],
     ] as const)('rejects transition %s -> %s', (from, to) => {
       expect(canCommercialOfferTransition(from, to)).toBe(false);
+    });
+  });
+
+  describe('compat wrappers', () => {
+    it('delegates normalizeStatusKey to normalizeCommercialOfferStatusKey', () => {
+      expect(normalizeStatusKey('proposal_approved')).toBe('proposal_waiting');
+    });
+
+    it('delegates canTransition to canCommercialOfferTransition', () => {
+      expect(canTransition('proposal_waiting', 'proposal_paid')).toBe(true);
+      expect(canTransition('proposal_paid', 'proposal_draft')).toBe(false);
+    });
+  });
+
+  describe('isDraft', () => {
+    it('detects draft from scalar keys', () => {
+      expect(isDraft('proposal_draft')).toBe(true);
+      expect(isDraft('proposal_approved')).toBe(false);
+    });
+
+    it('detects draft from status-like object fields', () => {
+      expect(isDraft({ currentStatusKey: 'proposal_draft' })).toBe(true);
+      expect(isDraft({ statusKey: 'proposal_draft' })).toBe(true);
+      expect(isDraft({ status: 'proposal_draft' })).toBe(true);
+      expect(isDraft({ status: 'proposal_paid' })).toBe(false);
+    });
+  });
+
+  describe('labelByStatusKey', () => {
+    it('returns russian labels for canonical and legacy keys', () => {
+      expect(labelByStatusKey('proposal_draft')).toBe('Черновик');
+      expect(labelByStatusKey('proposal_waiting')).toBe('На согласовании');
+      expect(labelByStatusKey('proposal_approved')).toBe('На согласовании');
+      expect(labelByStatusKey('proposal_paid')).toBe('Оплачено');
     });
   });
 });

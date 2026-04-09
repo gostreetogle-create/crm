@@ -36,7 +36,7 @@ import {
   styleUrl: './kp-catalog-vitrine.component.scss',
 })
 export class KpCatalogVitrineComponent {
-  readonly catalogViewMode = signal<'cards' | 'table'>('cards');
+  readonly catalogViewMode = signal<'cards' | 'table'>('table');
 
   /**
    * Список из каталога.

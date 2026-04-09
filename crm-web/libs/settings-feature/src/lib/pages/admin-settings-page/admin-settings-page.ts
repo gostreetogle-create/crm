@@ -1,8 +1,5 @@
-import { HttpClient } from '@angular/common/http';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
-import { API_CONFIG } from '@srm/platform-core';
 import {
   AUTHZ_MATRIX_UI_SECTIONS,
   PERMISSION_CATALOG,
@@ -18,6 +15,7 @@ import { DbBackupsAdminCardComponent } from '../../components/db-backups-admin-c
 import { BulkJsonImportCardComponent } from '../../components/bulk-json-import-card/bulk-json-import-card.component';
 import { FIELD_RULES_CATALOG } from '@srm/settings-core';
 import { FieldRuleRow } from '@srm/settings-core';
+import { AuthzDiagnosticsStore } from '../../state/authz-diagnostics.store';
 
 @Component({
   selector: 'app-admin-settings-page',
@@ -37,12 +35,11 @@ import { FieldRuleRow } from '@srm/settings-core';
 export class AdminSettingsPage {
   readonly permissions = inject(PermissionsService);
   readonly rolesStore = inject(RolesStore);
-  private readonly http = inject(HttpClient);
-  private readonly apiConfig = inject(API_CONFIG);
+  private readonly authzDiagnosticsStore = inject(AuthzDiagnosticsStore);
 
-  readonly diagnosticsJson = signal<string | null>(null);
-  readonly diagnosticsLoading = signal(false);
-  readonly diagnosticsError = signal<string | null>(null);
+  readonly diagnosticsJson = this.authzDiagnosticsStore.diagnosticsJson;
+  readonly diagnosticsLoading = this.authzDiagnosticsStore.diagnosticsLoading;
+  readonly diagnosticsError = this.authzDiagnosticsStore.diagnosticsError;
   readonly rules: readonly FieldRuleRow[] = FIELD_RULES_CATALOG;
   /** Суперадмин в матрице не показываем — у него всегда полный доступ. */
   readonly matrixRoles = computed(() =>
@@ -96,17 +93,7 @@ export class AdminSettingsPage {
   }
 
   async runDiagnostics(): Promise<void> {
-    this.diagnosticsLoading.set(true);
-    this.diagnosticsError.set(null);
-    try {
-      const base = this.apiConfig.baseUrl.replace(/\/$/, '');
-      const res = await firstValueFrom(this.http.get<unknown>(`${base}/api/authz-matrix/diagnostics`));
-      this.diagnosticsJson.set(JSON.stringify(res, null, 2));
-    } catch (e: unknown) {
-      this.diagnosticsError.set(e instanceof Error ? e.message : String(e));
-    } finally {
-      this.diagnosticsLoading.set(false);
-    }
+    await this.authzDiagnosticsStore.runDiagnostics();
   }
 }
 

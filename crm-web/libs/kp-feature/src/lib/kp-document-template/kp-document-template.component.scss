@@ -113,9 +113,10 @@
 }
 
 .kp-sheet__metaLine {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
-  justify-content: flex-start;
+  justify-content: stretch;
   gap: 4px;
   margin: 0 0 4px;
 }
@@ -131,14 +132,22 @@
 
 .kp-sheet__metaValue {
   font-variant-numeric: tabular-nums;
-  text-align: left;
+  text-align: right;
+  justify-self: end;
 }
 
 .kp-sheet__metaInline {
   display: inline-flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 4px;
   white-space: nowrap;
+  justify-self: end;
+  width: 100%;
+}
+
+.kp-sheet__metaLine > .kp-sheet__metaInput {
+  justify-self: end;
 }
 
 .kp-sheet__metaInput {

@@ -21,14 +21,14 @@
   </a>
 
   <nav class="mainNav" aria-label="Main navigation">
+    @if (canPage('page.commercialProposal')) {
+      <a routerLink="/коммерческое" routerLinkActive="isActive">КП</a>
+    }
     @if (canPage('page.dictionaries')) {
       <a routerLink="/справочники" routerLinkActive="isActive">Справочники</a>
     }
     @if (canPage('page.demo')) {
       <a routerLink="/demo" routerLinkActive="isActive">Demo</a>
-    }
-    @if (canPage('page.commercialProposal')) {
-      <a routerLink="/коммерческое" routerLinkActive="isActive">КП</a>
     }
     @if (canPage('page.admin.settings')) {
       <a routerLink="/settings" routerLinkActive="isActive">Админ-настройки</a>

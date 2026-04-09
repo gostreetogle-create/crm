@@ -11,6 +11,7 @@
 - `docs/frontend/ui-contract-v1.md` — формальный UI-контракт проекта.
 - `docs/frontend/ui-audit-wave1.md` — аудит дубликатов/расхождений UI (волна 1).
 - `docs/frontend/commercial-offers-bl-roadmap.md` — roadmap по устойчивой бизнес-логике КП (статусы, слой сервисов, тесты).
+- `docs/frontend/store-migration-checklist.md` — полный чеклист миграции frontend-операций на store/facade слой (P0/P1/P2, smoke, DoD).
 - `docs/release-gates.md` — единый минимальный gate перед релизом (critical tests backend + frontend-state).
   - быстрый preflight: `bash deploy/deploy.sh --self-check` (non-blocking, с диагностикой окружения).
 - `deploy/README.md` — краткая инструкция по выкладке.

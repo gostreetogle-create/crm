@@ -16,6 +16,7 @@ export { UiCheckboxFieldComponent } from './lib/ui-checkbox-field/ui-checkbox-fi
 export { UiEditorShellComponent } from './lib/editor-shell/ui-editor-shell.component';
 export { HexRgbFieldComponent } from './lib/hex-rgb-field/hex-rgb-field.component';
 export { AppHeaderComponent } from './lib/app-header/app-header.component';
+export { AppHealthStore } from './lib/app-header/app-health.store';
 export {
   ContentCardComponent,
   ProductCardComponent,

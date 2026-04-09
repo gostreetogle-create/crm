@@ -21,9 +21,6 @@
             />
           </div>
           <div class="kp-builder__positions-actions">
-            <div class="kp-builder__status-chip" [attr.data-status]="offerStatusKey()">
-              Статус: {{ offerStatusKey() }}
-            </div>
             <app-ui-button type="button" variant="soft" [disabled]="isSavingOffer() || !canEditOffer()" (clicked)="saveOffer()">
               Сохранить
             </app-ui-button>
@@ -88,6 +85,82 @@
               />
             </div>
           </div>
+        </section>
+
+        <section class="kp-builder__drafts kp-no-print" aria-label="Черновики коммерческих предложений">
+          <div class="kp-builder__drafts-head">
+            <h3 class="kp-builder__drafts-title">Черновики КП</h3>
+            <app-ui-button type="button" variant="soft" (clicked)="openAllCommercialOffers()">Все КП</app-ui-button>
+          </div>
+          @if (draftOffers().length === 0) {
+            <p class="kp-builder__drafts-empty">Черновики не найдены.</p>
+          } @else {
+            <div class="kp-builder__drafts-table-wrap">
+              <table class="kp-builder__drafts-table">
+                <thead>
+                  <tr>
+                    <th>№</th>
+                    <th>Дата создания</th>
+                    <th>Получатель</th>
+                    <th class="kp-builder__drafts-col-action">Действия</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (draft of draftOffers(); track draft.id) {
+                    <tr>
+                      <td>{{ draft.number || '—' }}</td>
+                      <td>{{ formatRuDateOrDash(draft.createdAt) }}</td>
+                      <td>{{ draft.recipient || '—' }}</td>
+                      <td class="kp-builder__drafts-col-action">
+                        <div class="kp-builder__drafts-actions">
+                          <button
+                            type="button"
+                            class="kp-builder__rowActionBtn kp-builder__rowActionBtnWarning"
+                            title="Открыть"
+                            aria-label="Открыть"
+                            [disabled]="isSavingOffer() || isDraftActionProcessing(draft.id) || offerId() === draft.id"
+                            (click)="openDraftOffer(draft.id)"
+                          >
+                            <svg lucideEye [size]="16"></svg>
+                          </button>
+                          <button
+                            type="button"
+                            class="kp-builder__rowActionBtn"
+                            title="Печать"
+                            aria-label="Печать"
+                            [disabled]="isSavingOffer() || isDraftActionProcessing(draft.id)"
+                            (click)="printDraftOffer(draft.id)"
+                          >
+                            <svg lucidePrinter [size]="16"></svg>
+                          </button>
+                          <button
+                            type="button"
+                            class="kp-builder__rowActionBtn kp-builder__rowActionBtnAffirm"
+                            title="Копировать"
+                            aria-label="Копировать"
+                            [disabled]="isSavingOffer() || isDraftActionProcessing(draft.id)"
+                            (click)="copyDraftOffer(draft.id)"
+                          >
+                            <svg lucideCopy [size]="16"></svg>
+                          </button>
+                          <button
+                            type="button"
+                            class="kp-builder__rowActionBtn kp-builder__rowActionBtnDanger"
+                            title="Удалить"
+                            aria-label="Удалить"
+                            [disabled]="isSavingOffer() || isDraftActionProcessing(draft.id)"
+                            (click)="deleteDraftOffer(draft.id)"
+                          >
+                            <svg lucideTrash2 [size]="16"></svg>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
         </section>
       </div>
     </div>

@@ -13,7 +13,6 @@ import {
   signal,
   ViewChild,
 } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormArray, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -39,43 +38,24 @@ import {
   parseKpNumber,
 } from '../../kp-utils';
 import { KpRecipientToolbarComponent } from '../../kp-recipient-toolbar/kp-recipient-toolbar.component';
-import { LucidePrinter } from '@lucide/angular';
+import { LucideCopy, LucideEye, LucidePrinter, LucideTrash2 } from '@lucide/angular';
 import { resolveKpOrganizationContactId } from '../../kp-utils';
 import { KpBuilderFacade } from '../../kp-builder-state/kp-builder.facade';
-import { API_CONFIG } from '@srm/platform-core';
+import { KpBuilderOffersStore } from '../../kp-builder-state/kp-builder-offers.store';
+import {
+  canTransition,
+  formatRuDateOrDash,
+  mapOfferDtoToPayload,
+  normalizeStatusKey,
+  type CommercialOfferDto,
+  type CommercialOfferPayload,
+  type ProposalStatusKey,
+} from '@srm/dictionaries-state';
 
-type ProposalStatusKey =
-  | 'proposal_draft'
-  | 'proposal_waiting'
-  | 'proposal_paid';
 type CatalogSyncDecision = 'sync' | 'skip' | 'abort';
 
-type OfferLinePayload = {
-  lineNo: number;
-  name: string;
-  description: string | null;
-  qty: number;
-  unit: string;
-  unitPrice: number;
-  imageUrl: string | null;
-  catalogProductId: string | null;
-  sortOrder: number;
-};
-
-type CommercialOfferDto = {
-  id: string;
-  number?: string | null;
-  createdAt?: string | null;
-  prepaymentPercent?: number | null;
-  productionLeadDays?: number | null;
-  currentStatusKey: ProposalStatusKey;
-  organizationId: string | null;
-  organizationContactId: string | null;
-  recipient: string | null;
-  vatPercent: number;
-  vatAmount: number;
-  lines: OfferLinePayload[];
-};
+const OFFER_NUMBER_PREFIX = 'КП-';
+const OFFER_NUMBER_PAD = 6;
 
 @Component({
   selector: 'app-kp-builder-page',
@@ -89,18 +69,20 @@ type CommercialOfferDto = {
     KpDocumentTemplateComponent,
     KpRecipientToolbarComponent,
     LucidePrinter,
+    LucideEye,
+    LucideCopy,
+    LucideTrash2,
   ],
   templateUrl: './kp-builder-page.html',
   styleUrl: './kp-builder-page.scss',
 })
 export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
-  private readonly http = inject(HttpClient);
-  private readonly api = inject(API_CONFIG);
   private readonly ngZone = inject(NgZone);
   private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
   private readonly kpBuilderFacade = inject(KpBuilderFacade);
+  private readonly kpBuilderOffersStore = inject(KpBuilderOffersStore);
   private readonly tradeGoodsRepository = inject(TRADE_GOODS_REPOSITORY);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
@@ -130,6 +112,8 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
    * При ошибке/пустом ответе показываем пустую витрину без demo-данных.
    */
   readonly kpCatalogProducts = signal<KpCatalogProduct[]>([]);
+  readonly draftOffers = this.kpBuilderOffersStore.draftOffers;
+  readonly formatRuDateOrDash = formatRuDateOrDash;
 
   @ViewChild('previewHost', { read: ElementRef }) previewHost?: ElementRef<HTMLElement>;
 
@@ -222,8 +206,153 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
 
     const offerIdFromRoute = this.route.snapshot.queryParamMap.get('offerId');
     if (offerIdFromRoute) {
-      this.loadOffer(offerIdFromRoute);
+      void this.loadOffer(offerIdFromRoute);
+    } else {
+      void this.prefillNextOfferNumber();
     }
+    void this.refreshDraftOffers();
+  }
+
+  private async prefillNextOfferNumber(force = false): Promise<void> {
+    if (this.offerId()) return;
+    const currentNumber = this.form.controls.number.value.trim();
+    if (!force && currentNumber.length > 0) return;
+    const lastNumber = await this.kpBuilderOffersStore.loadLastOfferNumber();
+    this.form.controls.number.patchValue(this.nextOfferNumberFrom(lastNumber), { emitEvent: false });
+  }
+
+  private nextOfferNumberFrom(lastRaw: string | null | undefined): string {
+    const last = String(lastRaw ?? '').trim();
+    if (!last) {
+      return `${OFFER_NUMBER_PREFIX}${String(1).padStart(OFFER_NUMBER_PAD, '0')}`;
+    }
+    const canonical = last.match(/^КП-(\d+)$/i);
+    if (canonical) {
+      const nextN = Number(canonical[1]) + 1;
+      return `${OFFER_NUMBER_PREFIX}${String(nextN).padStart(OFFER_NUMBER_PAD, '0')}`;
+    }
+    const m = last.match(/(\d+)(?!.*\d)/);
+    if (!m) {
+      return `${OFFER_NUMBER_PREFIX}${String(1).padStart(OFFER_NUMBER_PAD, '0')}`;
+    }
+    const digits = m[1];
+    const next = Number(digits) + 1;
+    const width = Math.max(OFFER_NUMBER_PAD, digits.length);
+    return `${OFFER_NUMBER_PREFIX}${String(next).padStart(width, '0')}`;
+  }
+
+  private async refreshDraftOffers(): Promise<void> {
+    await this.kpBuilderOffersStore.loadDrafts();
+    if (this.kpBuilderOffersStore.error()) {
+      this.saveError.set(this.kpBuilderOffersStore.error());
+    }
+  }
+
+  openDraftOffer(id: string): void {
+    if (!id || this.isSavingOffer()) {
+      return;
+    }
+    if (this.offerId() === id) {
+      return;
+    }
+    void this.loadOffer(id);
+  }
+
+  isDraftActionProcessing(id: string): boolean {
+    return this.kpBuilderOffersStore.processingById().has(id);
+  }
+
+  printDraftOffer(id: string): void {
+    if (!id || this.isSavingOffer() || this.isDraftActionProcessing(id)) {
+      return;
+    }
+    if (this.offerId() === id) {
+      void this.print();
+      return;
+    }
+    void this.loadOffer(id, {
+      onLoaded: () => {
+        void this.print();
+      },
+    });
+  }
+
+  copyDraftOffer(id: string): void {
+    if (!id || this.isSavingOffer() || this.isDraftActionProcessing(id)) {
+      return;
+    }
+    void this.copyDraftOfferInternal(id);
+  }
+
+  deleteDraftOffer(id: string): void {
+    if (!id || this.isSavingOffer() || this.isDraftActionProcessing(id)) {
+      return;
+    }
+    void this.deleteDraftOfferInternal(id);
+  }
+
+  private async copyDraftOfferInternal(id: string): Promise<void> {
+    const created = await this.kpBuilderOffersStore.copyDraft(id);
+    if (!created) {
+      this.saveError.set(this.kpBuilderOffersStore.error());
+      return;
+    }
+    this.applyOffer(created);
+    await this.refreshDraftOffers();
+    this.lastSavedAt.set(new Date().toISOString());
+  }
+
+  private async deleteDraftOfferInternal(id: string): Promise<void> {
+    const deleted = await this.kpBuilderOffersStore.deleteDraft(id);
+    if (!deleted) {
+      this.saveError.set(this.kpBuilderOffersStore.error());
+      return;
+    }
+    const deletingCurrent = this.offerId() === id;
+    await this.refreshDraftOffers();
+    if (deletingCurrent) {
+      this.resetOfferForm();
+      await this.prefillNextOfferNumber();
+      void this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { offerId: null },
+        queryParamsHandling: 'merge',
+        replaceUrl: true,
+      });
+      return;
+    }
+    if (!this.offerId()) {
+      await this.prefillNextOfferNumber(true);
+    }
+  }
+
+  private resetOfferForm(): void {
+    this.offerId.set(null);
+    this.offerStatusKey.set('proposal_draft');
+    this.form.patchValue(
+      {
+        recipient: '',
+        organizationSearch: '',
+        organizationContactId: '',
+        number: '',
+        createdAt: new Date().toISOString(),
+        prepaymentPercent: '80',
+        productionLeadDays: '30',
+        vatPercent: '22',
+        vatAmount: '0',
+      },
+      { emitEvent: false },
+    );
+    const arr = this.lines();
+    arr.clear();
+    arr.push(this.lineGroup('', '1', 'шт.', '0', '', '', ''));
+  }
+
+  openAllCommercialOffers(): void {
+    void this.router.navigate(['/справочники'], {
+      queryParams: { hub: 'commercialOffers' },
+      queryParamsHandling: 'merge',
+    });
   }
 
   /** Сброс/подстановка контакта организации при смене получателя. */
@@ -242,15 +371,12 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
   async print(): Promise<void> {
     const id = await this.saveOffer();
     if (!id) return;
-    this.http
-      .post<{ ok: boolean; printedAt: string }>(this.offersEndpoint(`/${id}/print`), {})
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => window.print(),
-        error: () => {
-          this.saveError.set('Не удалось зафиксировать печать КП.');
-        },
-      });
+    const ok = await this.kpBuilderOffersStore.printOffer(id);
+    if (!ok) {
+      this.saveError.set(this.kpBuilderOffersStore.error());
+      return;
+    }
+    window.print();
   }
 
   ngAfterViewInit(): void {
@@ -340,9 +466,7 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
 
   canMoveTo(status: ProposalStatusKey): boolean {
     const current = this.offerStatusKey();
-    if (current === 'proposal_draft') return status === 'proposal_waiting';
-    if (current === 'proposal_waiting') return status === 'proposal_paid' || status === 'proposal_draft';
-    return false;
+    return current !== status && canTransition(current, status);
   }
 
   /**
@@ -423,24 +547,17 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
     this.saveError.set(null);
     const payload = this.buildOfferPayload(catalogDecision === 'skip');
     const id = this.offerId();
-    return await new Promise((resolve) => {
-      const req$ = id
-        ? this.http.put<CommercialOfferDto>(this.offersEndpoint(`/${id}`), payload)
-        : this.http.post<CommercialOfferDto>(this.offersEndpoint(), payload);
-      req$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-        next: (saved) => {
-          this.applyOffer(saved);
-          this.lastSavedAt.set(new Date().toISOString());
-          this.isSavingOffer.set(false);
-          resolve(saved.id);
-        },
-        error: () => {
-          this.saveError.set('Не удалось сохранить КП.');
-          this.isSavingOffer.set(false);
-          resolve(null);
-        },
-      });
-    });
+    const saved = await this.kpBuilderOffersStore.saveOffer(payload, id);
+    if (!saved) {
+      this.saveError.set(this.kpBuilderOffersStore.error());
+      this.isSavingOffer.set(false);
+      return null;
+    }
+    this.applyOffer(saved);
+    await this.refreshDraftOffers();
+    this.lastSavedAt.set(new Date().toISOString());
+    this.isSavingOffer.set(false);
+    return saved.id;
   }
 
   async changeStatus(statusKey: ProposalStatusKey): Promise<void> {
@@ -455,22 +572,15 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
       }
     }
     this.isSavingOffer.set(true);
-    this.http
-      .post<CommercialOfferDto>(this.offersEndpoint(`/${id}/status`), {
-        statusKey,
-        ...(statusKey === 'proposal_paid' ? { orderNumber } : {}),
-      })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (saved) => {
-          this.applyOffer(saved);
-          this.isSavingOffer.set(false);
-        },
-        error: () => {
-          this.saveError.set('Не удалось сменить статус КП.');
-          this.isSavingOffer.set(false);
-        },
-      });
+    const saved = await this.kpBuilderOffersStore.changeStatus(id, statusKey, orderNumber ?? undefined);
+    if (!saved) {
+      this.saveError.set(this.kpBuilderOffersStore.error());
+      this.isSavingOffer.set(false);
+      return;
+    }
+    this.applyOffer(saved);
+    await this.refreshDraftOffers();
+    this.isSavingOffer.set(false);
   }
 
   private async askOrderNumberForPaid(): Promise<string | null> {
@@ -601,26 +711,9 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
     this.form.controls.vatAmount.patchValue(vat.toFixed(2), { emitEvent: false });
   }
 
-  private offersEndpoint(path = ''): string {
-    const base = this.api.baseUrl.replace(/\/$/, '');
-    return `${base}/api/commercial-offers${path}`;
-  }
-
-  private buildOfferPayload(skipCatalogSync: boolean): Record<string, unknown> {
-    const rawLines = this.lines().getRawValue() as KpLineItem[];
-    const lines = rawLines.map((line, idx) => ({
-      lineNo: idx + 1,
-      name: String(line.name ?? '').trim(),
-      description: String(line.description ?? '').trim() || null,
-      qty: parseKpNumber(line.qty),
-      unit: String(line.unit ?? '').trim() || 'шт.',
-      unitPrice: parseKpNumber(line.price),
-      imageUrl: String(line.imageUrl ?? '').trim() || null,
-      catalogProductId: String(line.catalogProductId ?? '').trim() || null,
-      sortOrder: idx,
-    }));
-    const filtered = lines.filter((line) => line.name.length > 0);
-    return {
+  private buildOfferPayload(skipCatalogSync: boolean): CommercialOfferPayload {
+    const source: CommercialOfferDto = {
+      id: this.offerId() ?? '',
       number: this.form.controls.number.value || null,
       currentStatusKey: this.offerStatusKey(),
       organizationId: this.extractRecipientOrgId(),
@@ -630,9 +723,22 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
       vatAmount: parseKpNumber(this.form.controls.vatAmount.value),
       prepaymentPercent: parseKpNumber(this.form.controls.prepaymentPercent.value),
       productionLeadDays: parseKpNumber(this.form.controls.productionLeadDays.value),
-      skipCatalogSync,
-      lines: filtered,
+      lines: (this.lines().getRawValue() as KpLineItem[])
+        .map((line, idx) => ({
+          lineNo: idx + 1,
+          name: String(line.name ?? '').trim(),
+          description: String(line.description ?? '').trim() || null,
+          qty: parseKpNumber(line.qty),
+          unit: String(line.unit ?? '').trim() || 'шт.',
+          unitPrice: parseKpNumber(line.price),
+          imageUrl: String(line.imageUrl ?? '').trim() || null,
+          catalogProductId: String(line.catalogProductId ?? '').trim() || null,
+          sortOrder: idx,
+        }))
+        .filter((line) => line.name.length > 0),
     };
+    const mapped = mapOfferDtoToPayload(source, { skipCatalogSync, copyTitle: false });
+    return { ...mapped, currentStatusKey: this.offerStatusKey(), number: source.number ?? null };
   }
 
   private extractRecipientOrgId(): string | null {
@@ -642,26 +748,22 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
     return id || null;
   }
 
-  private loadOffer(id: string): void {
+  private async loadOffer(id: string, options?: { onLoaded?: () => void }): Promise<void> {
     this.isSavingOffer.set(true);
-    this.http
-      .get<CommercialOfferDto>(this.offersEndpoint(`/${id}`))
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (offer) => {
-          this.applyOffer(offer);
-          this.isSavingOffer.set(false);
-        },
-        error: () => {
-          this.saveError.set('Не удалось загрузить КП.');
-          this.isSavingOffer.set(false);
-        },
-      });
+    const offer = await this.kpBuilderOffersStore.loadOffer(id);
+    if (!offer) {
+      this.saveError.set(this.kpBuilderOffersStore.error());
+      this.isSavingOffer.set(false);
+      return;
+    }
+    this.applyOffer(offer);
+    options?.onLoaded?.();
+    this.isSavingOffer.set(false);
   }
 
   private applyOffer(offer: CommercialOfferDto): void {
     this.offerId.set(offer.id);
-    this.offerStatusKey.set(offer.currentStatusKey ?? 'proposal_draft');
+    this.offerStatusKey.set(normalizeStatusKey(offer.currentStatusKey));
     this.form.patchValue(
       {
         number: offer.number ?? '',
@@ -677,7 +779,7 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
     );
     const arr = this.lines();
     arr.clear();
-    const sortedLines = [...(offer.lines ?? [])].sort((a, b) => a.sortOrder - b.sortOrder);
+    const sortedLines = [...(offer.lines ?? [])].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
     if (!sortedLines.length) {
       arr.push(this.lineGroup('', '1', 'шт.', '0', '', '', ''));
     } else {

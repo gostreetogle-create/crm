@@ -26,19 +26,19 @@
       <div class="kp-vitrine__viewSwitch" role="group" aria-label="Вид витрины">
         <app-ui-button
           type="button"
-          [variant]="catalogViewMode() === 'cards' ? 'primary' : 'soft'"
-          (clicked)="setCatalogViewMode('cards')"
-          aria-label="Показать витрину карточками"
-        >
-          Карточки
-        </app-ui-button>
-        <app-ui-button
-          type="button"
           [variant]="catalogViewMode() === 'table' ? 'primary' : 'soft'"
           (clicked)="setCatalogViewMode('table')"
           aria-label="Показать витрину таблицей"
         >
           Таблица
+        </app-ui-button>
+        <app-ui-button
+          type="button"
+          [variant]="catalogViewMode() === 'cards' ? 'primary' : 'soft'"
+          (clicked)="setCatalogViewMode('cards')"
+          aria-label="Показать витрину карточками"
+        >
+          Карточки
         </app-ui-button>
       </div>
       <label class="kp-vitrine__pageSize">

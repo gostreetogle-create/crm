@@ -1,13 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { HttpErrorResponse } from '@angular/common/http';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { finalize, forkJoin } from 'rxjs';
 import { ContentCardComponent, UiModal, UiButtonComponent } from '@srm/ui-kit';
-import {
-  DbBackupListItemDto,
-  DbBackupsAdminService,
-} from '@srm/settings-core';
+import { DbBackupsAdminStore } from '../../state/db-backups-admin.store';
+import { DbBackupListItemDto } from '@srm/settings-core';
 
 @Component({
   selector: 'app-db-backups-admin-card',
@@ -17,199 +13,69 @@ import {
   styleUrl: './db-backups-admin-card.component.scss',
 })
 export class DbBackupsAdminCardComponent implements OnInit {
-  private readonly api = inject(DbBackupsAdminService);
+  private readonly store = inject(DbBackupsAdminStore);
 
-  readonly loading = signal(true);
-  readonly saving = signal(false);
-  readonly jobBusy = signal(false);
-  readonly errorText = signal<string | null>(null);
-  /** Сообщение после restore: зелёный баннер при авто‑переподключении Prisma, предупреждение — если нужен ручной перезапуск. */
-  readonly restoreFeedbackText = signal<string | null>(null);
-  readonly restoreFeedbackIsWarning = signal(false);
-
-  readonly scheduleEnabled = signal(false);
-  readonly scheduleTime = signal('03:00');
-  readonly lastRunDate = signal('');
-  readonly retentionDays = signal(30);
-
-  readonly backupDir = signal('');
-  readonly items = signal<DbBackupListItemDto[]>([]);
-
-  readonly deleteTarget = signal<DbBackupListItemDto | null>(null);
-  readonly restoreTarget = signal<DbBackupListItemDto | null>(null);
+  readonly loading = this.store.loading;
+  readonly saving = this.store.saving;
+  readonly jobBusy = this.store.jobBusy;
+  readonly errorText = this.store.errorText;
+  readonly restoreFeedbackText = this.store.restoreFeedbackText;
+  readonly restoreFeedbackIsWarning = this.store.restoreFeedbackIsWarning;
+  readonly scheduleEnabled = this.store.scheduleEnabled;
+  readonly scheduleTime = this.store.scheduleTime;
+  readonly lastRunDate = this.store.lastRunDate;
+  readonly retentionDays = this.store.retentionDays;
+  readonly backupDir = this.store.backupDir;
+  readonly items = this.store.items;
+  readonly deleteTarget = this.store.deleteTarget;
+  readonly restoreTarget = this.store.restoreTarget;
 
   ngOnInit(): void {
-    this.reload();
-  }
-
-  /** Текст из ответа API (503 backup_failed) или запасная фраза. */
-  private backupCommandErrorMessage(err: unknown, fallback: string): string {
-    if (!(err instanceof HttpErrorResponse)) return fallback;
-    const body = err.error;
-    if (!body || typeof body !== 'object' || !('message' in body)) return fallback;
-    const m = (body as { message: unknown }).message;
-    const raw = typeof m === 'string' ? m.trim() : '';
-    if (!raw) return fallback;
-    return raw.length > 800 ? `${raw.slice(0, 800)}…` : raw;
+    this.store.reload();
   }
 
   reload(): void {
-    this.loading.set(true);
-    this.errorText.set(null);
-    forkJoin({ schedule: this.api.getSchedule(), list: this.api.list() })
-      .pipe(finalize(() => this.loading.set(false)))
-      .subscribe({
-        next: ({ schedule: s, list: r }) => {
-          this.scheduleEnabled.set(s.enabled);
-          this.scheduleTime.set(s.timeHHmm);
-          this.lastRunDate.set(s.lastRunDate);
-          this.retentionDays.set(s.retentionDays);
-          this.items.set(r.items);
-          this.backupDir.set(r.backupDir);
-        },
-        error: () =>
-          this.errorText.set('Не удалось загрузить данные бэкапов (расписание или список архивов).'),
-      });
+    this.store.reload();
   }
 
   saveSchedule(): void {
-    this.saving.set(true);
-    this.errorText.set(null);
-    this.restoreFeedbackText.set(null);
-    this.restoreFeedbackIsWarning.set(false);
-    this.api
-      .putSchedule({
-        enabled: this.scheduleEnabled(),
-        timeHHmm: this.scheduleTime(),
-        retentionDays: this.retentionDays(),
-      })
-      .pipe(finalize(() => this.saving.set(false)))
-      .subscribe({
-        next: (s) => {
-          this.scheduleEnabled.set(s.enabled);
-          this.scheduleTime.set(s.timeHHmm);
-          this.lastRunDate.set(s.lastRunDate);
-          this.retentionDays.set(s.retentionDays);
-        },
-        error: (err) => {
-          if (err?.status === 400) {
-            this.errorText.set('Некорректное время (ожидается формат ЧЧ:ММ).');
-          } else {
-            this.errorText.set('Не удалось сохранить расписание.');
-          }
-        },
-      });
+    this.store.saveSchedule();
   }
 
   createNow(): void {
-    this.jobBusy.set(true);
-    this.errorText.set(null);
-    this.restoreFeedbackText.set(null);
-    this.restoreFeedbackIsWarning.set(false);
-    this.api
-      .createNow()
-      .pipe(finalize(() => this.jobBusy.set(false)))
-      .subscribe({
-        next: () => this.reload(),
-        error: (err) => {
-          if (err instanceof HttpErrorResponse && err.status === 409) {
-            this.errorText.set('Операция уже выполняется (бэкап или восстановление).');
-          } else {
-            this.errorText.set(
-              this.backupCommandErrorMessage(
-                err,
-                'Не удалось создать архив. В Docker пересоберите образ backend (в нём должен быть postgresql-client); без Docker — установите postgresql-client на хост.',
-              ),
-            );
-          }
-        },
-      });
+    this.store.createNow();
   }
 
   askDelete(row: DbBackupListItemDto): void {
-    this.deleteTarget.set(row);
+    this.store.askDelete(row);
   }
 
   closeDeleteModal(): void {
-    this.deleteTarget.set(null);
+    this.store.closeDeleteModal();
   }
 
   confirmDelete(): void {
-    const row = this.deleteTarget();
-    if (!row) return;
-    this.jobBusy.set(true);
-    this.errorText.set(null);
-    this.api
-      .remove(row.fileName)
-      .pipe(finalize(() => this.jobBusy.set(false)))
-      .subscribe({
-        next: () => {
-          this.closeDeleteModal();
-          this.restoreFeedbackText.set(null);
-          this.restoreFeedbackIsWarning.set(false);
-          this.reload();
-        },
-        error: () => this.errorText.set('Не удалось удалить архив.'),
-      });
+    this.store.confirmDelete();
   }
 
   askRestore(row: DbBackupListItemDto): void {
-    this.restoreTarget.set(row);
+    this.store.askRestore(row);
   }
 
   closeRestoreModal(): void {
-    this.restoreTarget.set(null);
+    this.store.closeRestoreModal();
   }
 
   confirmRestore(): void {
-    const row = this.restoreTarget();
-    if (!row) return;
-    this.jobBusy.set(true);
-    this.errorText.set(null);
-    this.restoreFeedbackText.set(null);
-    this.restoreFeedbackIsWarning.set(false);
-    this.api
-      .restore(row.fileName)
-      .pipe(finalize(() => this.jobBusy.set(false)))
-      .subscribe({
-        next: (r) => {
-          this.closeRestoreModal();
-          this.restoreFeedbackText.set(r.userMessage);
-          this.restoreFeedbackIsWarning.set(!r.prismaPoolRefreshed);
-        },
-        error: (err) => {
-          if (err instanceof HttpErrorResponse && err.status === 409) {
-            this.errorText.set('Операция уже выполняется.');
-          } else {
-            this.errorText.set(
-              this.backupCommandErrorMessage(err, 'Не удалось восстановить БД из архива.'),
-            );
-          }
-        },
-      });
+    this.store.confirmRestore();
   }
 
   download(row: DbBackupListItemDto): void {
-    this.errorText.set(null);
-    this.api.downloadBlob(row.fileName).subscribe({
-      next: (blob) => {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = row.fileName;
-        a.click();
-        URL.revokeObjectURL(url);
-      },
-      error: () => this.errorText.set('Не удалось скачать архив.'),
-    });
+    this.store.download(row);
   }
 
   formatBytes(n: number): string {
-    if (n < 1024) return `${n} Б`;
-    const kb = n / 1024;
-    if (kb < 1024) return `${kb.toFixed(1)} КБ`;
-    const mb = kb / 1024;
-    return `${mb.toFixed(1)} МБ`;
+    return this.store.formatBytes(n);
   }
 }
 
