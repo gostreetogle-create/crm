@@ -115,7 +115,8 @@
 
 .loginTitle {
   margin: 0;
-  font-family: 'Outfit', var(--font-family-base);
+  /* Outfit без кириллицы: сначала стек темы (Montserrat/Noto Sans и т.д.) */
+  font-family: var(--font-family-base), 'Outfit', sans-serif;
   font-size: clamp(1.75rem, 4vw, 2.15rem);
   font-weight: 700;
   letter-spacing: 0.06em;

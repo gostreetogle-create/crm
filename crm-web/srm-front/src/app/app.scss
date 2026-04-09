@@ -7,7 +7,7 @@
 }
 
 .appMain--guest {
-  padding-top: max(12px, env(safe-area-inset-top));
+  padding-top: max(12px, var(--app-safe-area-top));
   min-height: 100vh;
   max-height: 100vh;
   max-height: 100dvh;

@@ -96,4 +96,9 @@ export function applyThemeTokensToDocument(
   root.setProperty('--ui-modal-shadow-blur', theme.uiModalShadowBlur);
   root.setProperty('--radius-card', theme.radiusCard);
   root.setProperty('--radius-pill', theme.radiusPill);
+
+  /* Кириллица и локаль документа (браузерный выбор шрифтов / переносы). */
+  if (typeof document !== 'undefined') {
+    document.documentElement.lang = 'ru';
+  }
 }

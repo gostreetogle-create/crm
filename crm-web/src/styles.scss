@@ -23,11 +23,19 @@
   --field-invalid-focus: var(--danger, #9f2d20);
 
   /*
+   * Безопасная зона сверху: одна величина для fixed-шапки и отступа main (viewport-fit=cover в index.html).
+   * constant() — старые iOS; env() — актуальные браузеры / вырезы.
+   */
+  --app-safe-area-top: 0px;
+  --app-safe-area-top: constant(safe-area-inset-top);
+  --app-safe-area-top: env(safe-area-inset-top, 0px);
+
+  /*
    * Высота под фиксированную шапку: --header-height выставляет AppHeader (ResizeObserver на .appHeaderShell).
    * Fallback — до первого кадра и без JS: safe-area + строка шапки (логотип 40px ≥ высоты контролов) + запас.
    */
   --app-main-padding-top-fallback: calc(
-    env(safe-area-inset-top, 0px) + (var(--ui-app-header-padding-y, 10px) * 2) +
+    var(--app-safe-area-top) + (var(--ui-app-header-padding-y, 10px) * 2) +
       max(40px, var(--ui-control-min-height, 30px)) + 4px
   );
   --app-main-padding-top: var(--header-height, var(--app-main-padding-top-fallback));
@@ -49,7 +57,15 @@
 html,
 body {
   margin: 0;
-  font-family: var(--font-family-base, Montserrat, system-ui, -apple-system, 'Segoe UI', sans-serif);
+  font-family: var(
+    --font-family-base,
+    Montserrat,
+    'Noto Sans',
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    sans-serif
+  );
   font-size: var(--font-size-base, 13px);
   line-height: 1.4;
   color: var(--text-primary, #1c1b19);

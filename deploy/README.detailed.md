@@ -331,13 +331,17 @@ bash deploy/scripts/reset-local-dev-database.sh
 
 ## Synology NAS (DSM)
 
-- **Путь к проекту** часто вида **`/volume1/docker/crm`**. Compose и команды выполняйте из **корня репозитория**:  
+- **Путь к проекту** часто вида **`/volume1/docker/crm`**. Деплой: **`cd /volume1/docker/crm/deploy`** и **`sudo ./deploy.sh`** (на DSM Docker CLI часто удобнее именно с `sudo`). Compose вручную — из **корня репозитория**:  
   `docker compose -f docker-compose.yml --env-file deploy/.env …`
-- **Git** в SSH может отсутствовать — обновление кода с ПК через общую папку / Drive / `rsync` нормальная схема; **`deploy/.env`** на NAS не перезаписывайте.
+- **Обновление фронта:** залить **`deploy/prebuilt-web.zip`** в **`…/crm/deploy/`**, затем **`sudo ./deploy.sh`**. После успешного прогона скрипт может **удалить zip** — это ожидаемо; статика остаётся в **`deploy/prebuilt-web/`**.
+- **`unzip` на хосте:** на DSM **нет `apt`**; **`unzip`** может отсутствовать. В **`deploy.sh`** предусмотрен fallback: если **`unzip`** не найден, но **Docker доступен**, распаковка идёт через **`docker run … alpine`** (см. лог `[deploy] unzip на хосте не найден — распаковка через docker`). Вручную тот же приём: см. **`deploy/README.md`**, раздел Synology.
+- **Git** в SSH может отсутствовать — обновление кода с ПК через общую папку / Drive / `rsync` — нормальная схема; **`deploy/.env`** на NAS не перезаписывайте. Если **`git`** есть, **`deploy.sh`** сам делает **`git pull`** из корня репо.
+- **Группа `docker`:** после **`synogroup --member docker …`** нужен **новый вход в SSH** (или **`newgrp docker`**). Если всё равно **`permission denied`** к сокету — используйте **`sudo ./deploy.sh`** как основной вариант.
 - **`docker compose build`**: при ошибках **`mkdir /var/services/homes`** задайте **`export HOME=/volume1/docker/crm`** (или другой каталог на томе данных); при странном поведении BuildKit: **`export DOCKER_BUILDKIT=0`** и **`export COMPOSE_DOCKER_CLI_BUILD=0`**.
 - **`permission denied`** на **`/var/run/docker.sock`** при членстве в группе **`docker`**: проверьте **`ls -l /var/run/docker.sock`**. Если группа **`root`**, а не **`docker`**:  
   `sudo chown root:docker /var/run/docker.sock` и **`sudo chmod 660 /var/run/docker.sock`**. После перезагрузки NAS права иногда сбрасываются — повторите или оформите задачу при загрузке.
 - Предупреждение SSH **`Could not chdir to home directory …/homes/ПОЛЬЗОВАТЕЛЬ`**: включите **службу user home** в DSM или не обращайте внимание; на деплой не влияет.
+- Ложное **«backend не отвечает»** в конце **`deploy.sh`**: проверьте **`curl http://127.0.0.1:ПОРТ/health`** и **`docker compose … ps`** — контейнеры могут быть **healthy**, см. **`deploy/README.md`**.
 
 ---
 

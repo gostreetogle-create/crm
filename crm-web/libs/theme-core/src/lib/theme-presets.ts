@@ -3,7 +3,8 @@ import { ThemeTokens } from './theme-schema';
 export const THEME_PRESETS: ThemeTokens[] = [
   {
     name: 'blueprint',
-    fontFamilyBase: "Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif",
+    fontFamilyBase:
+      "Inter, 'Noto Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif",
     fontSizeBase: '16px',
     fontSizeLabel: '14px',
     fontSizeSmall: '12px',
@@ -91,7 +92,8 @@ export const THEME_PRESETS: ThemeTokens[] = [
   },
   {
     name: 'dark',
-    fontFamilyBase: "'Segoe UI', Inter, ui-sans-serif, system-ui, Arial, sans-serif",
+    fontFamilyBase:
+      "'Segoe UI', Inter, 'Noto Sans', ui-sans-serif, system-ui, Arial, sans-serif",
     fontSizeBase: '16px',
     fontSizeLabel: '14px',
     fontSizeSmall: '12px',
@@ -180,7 +182,8 @@ export const THEME_PRESETS: ThemeTokens[] = [
   },
   {
     name: 'sand',
-    fontFamilyBase: "'Trebuchet MS', Inter, ui-sans-serif, system-ui, Arial, sans-serif",
+    fontFamilyBase:
+      "'Trebuchet MS', Inter, 'Noto Sans', ui-sans-serif, system-ui, Arial, sans-serif",
     fontSizeBase: '16px',
     fontSizeLabel: '14px',
     fontSizeSmall: '12px',
@@ -270,7 +273,7 @@ export const THEME_PRESETS: ThemeTokens[] = [
   {
     name: 'light',
     fontFamilyBase:
-      "Montserrat, system-ui, -apple-system, 'Segoe UI', ui-sans-serif, sans-serif",
+      "Montserrat, 'Noto Sans', system-ui, -apple-system, 'Segoe UI', ui-sans-serif, sans-serif",
     fontSizeBase: '13px',
     fontSizeLabel: '12px',
     fontSizeSmall: '12px',

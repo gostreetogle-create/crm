@@ -181,13 +181,43 @@ docker compose -f docker-compose.yml --env-file deploy/.env up -d --force-recrea
 
 ---
 
-## 3. Synology (коротко)
+## 3. Synology DSM — запуск и обновление (на будущее)
 
-- **Git** на NAS не обязателен: обновляйте код с ПК (сеть / Drive) и пересобирайте контейнеры.
-- Перед **`docker compose build`** при ошибках вроде `mkdir /var/services/homes`:  
-  `export HOME=/volume1/docker/crm` и при необходимости `export DOCKER_BUILDKIT=0`.
-- Если **`permission denied`** к **`/var/run/docker.sock`** при том, что пользователь в группе **`docker`**:  
-  `sudo chown root:docker /var/run/docker.sock` и `sudo chmod 660 /var/run/docker.sock` (после перезагрузки может сброситься).
-- **`CORS_ORIGIN`** в **`deploy/.env`** должен совпадать с URL в браузере (не только `localhost`, если заходите по IP или через туннель).
+Типичный путь к клону: **`/volume1/docker/crm`**. Деплойный скрипт лежит в **`…/deploy/deploy.sh`**.
 
-Подробнее: **`deploy/README.detailed.md`**.
+### Обновление сайта (чеклист)
+
+1. **На ПК:** пройти gate и собрать фронт (разделы `0` и `1` выше) → получите **`deploy/prebuilt-web.zip`**.
+2. **На NAS:** положите архив в **`/volume1/docker/crm/deploy/prebuilt-web.zip`** (рядом с `deploy.sh`).
+3. **На NAS по SSH:**
+   ```bash
+   cd /volume1/docker/crm/deploy
+   sudo ./deploy.sh
+   ```
+   Скрипт сам сделает `git pull` (если каталог — git-клон), при необходимости распакует zip, соберёт образы и поднимет контейнеры.
+
+### Docker и права
+
+- На DSM **`docker compose`** / сокет часто доступны только с **`sudo`**. Даже если пользователь в группе **`docker`** (`synogroup --member docker …`), при **`permission denied`** на **`/var/run/docker.sock`** считайте нормой запуск **`sudo ./deploy.sh`**.
+- После добавления в группу **`docker`** нужен **новый вход в SSH** (или `newgrp docker`), иначе сессия не увидит группу.
+
+### Распаковка `prebuilt-web.zip` без `unzip` на хосте
+
+- На Synology **нет `apt`**; пакет **`unzip`** в системе может отсутствовать.
+- Актуальный **`deploy.sh`**: если **`unzip`** не найден, но **Docker работает**, архив распаковывается **одноразовым контейнером** `alpine` (в скрипте это явно написано в логе).
+- Запасной вариант вручную:
+  ```bash
+  cd /volume1/docker/crm/deploy
+  sudo docker run --rm -v "$PWD:/d" -w /d alpine:3.20 sh -c "apk add --no-cache unzip >/dev/null && unzip -o -q prebuilt-web.zip -d prebuilt-web"
+  sudo ./deploy.sh
+  ```
+- Либо распаковать zip на ПК и залить содержимое в **`deploy/prebuilt-web/`**; тогда **`prebuilt-web.zip`** на NAS можно убрать, чтобы скрипт не вызывал распаковку.
+
+### Прочее (частые сообщения)
+
+- SSH: **`Could not chdir to home directory …/homes/…`** — включите **личную папку** пользователя в DSM или игнорируйте; на деплой обычно не влияет. При сбоях **`mkdir /var/services/homes`** при сборке образов задайте, например: **`export HOME=/volume1/docker/crm`** и повторите.
+- В конце **`deploy.sh`** иногда бывает ложное **«backend не отвечает»**, хотя контейнер уже поднялся. Проверка: **`curl -fsS http://127.0.0.1:3000/health`** (порт из **`BACKEND_PORT`** в **`deploy/.env`**) и **`docker compose -f …/docker-compose.yml --env-file deploy/.env ps`**.
+- **`CORS_ORIGIN`** в **`deploy/.env`** должен совпадать с **реальным URL** в браузере (не только `localhost`, если заходите по IP, домену или туннелю).
+- **`./deploy.sh`** не принимает лишних аргументов (не пишите **`./deploy.sh cd /opt/crm`** — сначала **`cd`**, потом скрипт). Справка: **`bash ./deploy.sh --help`**.
+
+Подробности и тонкости сокета Docker: **`deploy/README.detailed.md`** (раздел Synology).

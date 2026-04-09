@@ -10,8 +10,8 @@
   z-index: 1100;
   display: flex;
   flex-direction: column;
-  /* Выступ под «чёлку» / статус-бар; высота блока входит в измерение для --header-height */
-  padding-top: env(safe-area-inset-top, 0px);
+  /* Та же величина, что и --app-safe-area-top в styles.scss (ResizeObserver включает это в --header-height) */
+  padding-top: var(--app-safe-area-top);
   box-sizing: border-box;
 }
 

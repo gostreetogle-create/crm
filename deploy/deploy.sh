@@ -263,19 +263,33 @@ dc pull || true
 
 # Один архив вместо сотен файлов: положите deploy/prebuilt-web.zip на сервер — распакуем в prebuilt-web/ и удалим zip.
 if [[ -f "${PREBUILT_ZIP}" ]]; then
-  if ! command -v unzip >/dev/null 2>&1; then
-    echo "[deploy] Ошибка: найден ${PREBUILT_ZIP}, но нет команды unzip. Установите: apt install unzip"
-    exit 1
-  fi
   echo "[deploy] Распаковываю ${PREBUILT_ZIP} → ${PREBUILT_DIR}/"
   mkdir -p "${PREBUILT_DIR}"
-  # Info-ZIP: код 1 = предупреждения при успешной распаковке (часто zip с Windows/Compress-Archive).
-  set +e
-  unzip -o -q "${PREBUILT_ZIP}" -d "${PREBUILT_DIR}"
-  unzip_rc=$?
-  set -e
+  unzip_rc=99
+  if command -v unzip >/dev/null 2>&1; then
+    # Info-ZIP: код 1 = предупреждения при успешной распаковке (часто zip с Windows/Compress-Archive).
+    set +e
+    unzip -o -q "${PREBUILT_ZIP}" -d "${PREBUILT_DIR}"
+    unzip_rc=$?
+    set -e
+  elif command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+    # Synology DSM и часть NAS без пакета unzip: распаковка одноразовым контейнером (нужен доступ к Docker).
+    echo "[deploy] unzip на хосте не найден — распаковка через docker (alpine + unzip)…"
+    set +e
+    docker run --rm \
+      -v "${REPO_ROOT}/deploy:/d" \
+      -w /d \
+      alpine:3.20 \
+      sh -c "apk add --no-cache unzip >/dev/null && unzip -o -q prebuilt-web.zip -d prebuilt-web"
+    unzip_rc=$?
+    set -e
+  else
+    echo "[deploy] Ошибка: найден ${PREBUILT_ZIP}, но нет unzip и нет рабочего Docker для распаковки."
+    echo "[deploy] Варианты: apt install unzip (Debian/Ubuntu) / Entware opkg install unzip (некоторые NAS) / либо залейте содержимое browser/ в ${PREBUILT_DIR}/ без zip."
+    exit 1
+  fi
   if [[ "${unzip_rc}" -gt 1 ]]; then
-    echo "[deploy] Ошибка: unzip завершился с кодом ${unzip_rc}"
+    echo "[deploy] Ошибка: распаковка zip завершилась с кодом ${unzip_rc}"
     exit 1
   fi
 fi
