@@ -1,126 +1,151 @@
-<app-content-card title="Система и обслуживание">
-  <div class="sysBody" id="admin-nav-system">
-    @if (badgeCount() > 0) {
-      <p class="sysAlertLine" role="status">
-        <span class="sysBadge" aria-hidden="true">{{ badgeCount() }}</span>
-        Есть предупреждения — нажмите «Предупреждения и команды».
-      </p>
-    }
+<app-content-card title="Состояние системы">
+  <div class="dash" id="admin-nav-system">
     @if (loading()) {
-      <p class="sysMuted">Проверка состояния…</p>
+      <p class="dashMuted">Проверяем…</p>
     } @else if (loadError(); as err) {
-      <p class="sysErr" role="alert">{{ err }}</p>
-      <app-ui-button variant="soft" type="button" (clicked)="refresh()">Повторить</app-ui-button>
+      <div class="dashBanner dashBanner--down" role="alert">
+        <p class="dashBannerHead">Не удалось загрузить статус</p>
+        <p class="dashBannerSub">{{ err }}</p>
+        <app-ui-button variant="soft" type="button" (clicked)="refresh()">Повторить запрос</app-ui-button>
+      </div>
     } @else if (status(); as s) {
-      <div class="sysMetrics">
-        <div class="sysMetric" [class.sysMetricBad]="!s.db.ok">
-          <span class="sysMetricLabel">База данных</span>
-          <span class="sysMetricValue">
+      @let h = healthOverview(s);
+
+      <div
+        class="dashBanner"
+        [class.dashBanner--ok]="h.variant === 'ok'"
+        [class.dashBanner--attention]="h.variant === 'attention'"
+        [class.dashBanner--down]="h.variant === 'down'"
+        role="status"
+      >
+        <div class="dashBannerTop">
+          <p class="dashBannerHead">{{ h.headline }}</p>
+          @if (badgeCount() > 0) {
+            <span class="dashBadge" aria-hidden="true">{{ badgeCount() }}</span>
+          }
+        </div>
+        <p class="dashBannerSub">{{ h.sub }}</p>
+      </div>
+
+      <div class="dashTiles" aria-label="Краткая сводка">
+        <div class="dashTile" [class.dashTile--bad]="!s.db.ok">
+          <span class="dashTileLabel">База данных</span>
+          <span class="dashTileValue">
             @if (s.db.ok) {
-              OK@if (s.db.latencyMs != null) { · {{ s.db.latencyMs }}&nbsp;мс }
+              Работает@if (s.db.latencyMs != null) { · {{ s.db.latencyMs }}&nbsp;мс }
             } @else {
-              Недоступна
+              Не отвечает
             }
           </span>
         </div>
-        <div class="sysMetric" [class.sysMetricBad]="s.migrations.pendingNames.length > 0">
-          <span class="sysMetricLabel">Миграции</span>
-          <span class="sysMetricValue">
-            @if (s.migrations.appliedCount == null) {
-              неизвестно
-            } @else if (s.migrations.pendingNames.length > 0) {
-              не хватает {{ s.migrations.pendingNames.length }}
-            } @else {
-              синхрон {{ s.migrations.appliedCount }}/{{ s.migrations.expectedCount }}
-            }
-          </span>
+        <div
+          class="dashTile"
+          [class.dashTile--bad]="s.migrations.appliedCount === null || s.migrations.pendingNames.length > 0"
+        >
+          <span class="dashTileLabel">Миграции</span>
+          <span class="dashTileValue">{{ migrationTileLabel(s) }}</span>
+          @if (s.migrations.pendingNames.length > 0) {
+            <span class="dashTileHint">{{ formatPendingMigrationNames(s.migrations.pendingNames) }}</span>
+          }
         </div>
-        <div class="sysMetric">
-          <span class="sysMetricLabel">Среда</span>
-          <span class="sysMetricValue">{{ s.environment.nodeEnv }}</span>
+        <div class="dashTile">
+          <span class="dashTileLabel">Среда API</span>
+          <span class="dashTileValue">{{ s.environment.nodeEnv }}</span>
         </div>
       </div>
 
-      <div class="sysDbDebug">
-        <p class="sysDbDebugLine">
-          <span class="sysDbDebugLabel">API endpoint (текущий фронт):</span>
-          <code class="sysInlineCode">{{ apiEndpointSummary() }}</code>
-        </p>
-        <p class="sysDbDebugLine">
-          <span class="sysDbDebugLabel">Ожидаемое подключение backend к БД:</span>
-          <code class="sysInlineCode">{{ dbConnectionSummary(s) }}</code>
-        </p>
-        <p class="sysDbDebugLine">
-          <span class="sysDbDebugLabel">Ожидаемый Docker порт:</span>
-          <code class="sysInlineCode"
-            >{{ s.dbConnection.dockerExpectedHostPort }}:{{ s.dbConnection.dockerExpectedContainerPort }}</code
-          >
-          (host:container)
-        </p>
-      </div>
+      <section class="dashSection" aria-label="Что сделать и команды">
+        <h2 class="dashSectionTitle">Сейчас</h2>
+        <p class="dashSectionLead">Коротко: что не так и какие команды скопировать.</p>
 
-      <div class="sysActions">
-        <app-ui-button type="button" variant="primary" (clicked)="openNotices()">
-          Предупреждения и команды
-        </app-ui-button>
-        <app-ui-button variant="soft" type="button" (clicked)="refresh()">Обновить</app-ui-button>
-      </div>
+        <div class="dashFeed">
+          @for (n of s.notices; track trackNoticeId($index, n)) {
+            <article
+              class="noticeCard"
+              [class.noticeCard--critical]="n.severity === 'critical'"
+              [class.noticeCard--warning]="n.severity === 'warning'"
+              [class.noticeCard--info]="n.severity === 'info'"
+            >
+              <header class="noticeCardHead">
+                <span class="noticeCardSev">{{ severityLabel(n.severity) }}</span>
+                <h3 class="noticeCardTitle">{{ n.title }}</h3>
+              </header>
+              @if (n.summary.trim()) {
+                <p class="noticeCardSummary">{{ n.summary }}</p>
+              }
+              @if (n.nextSteps.trim()) {
+                <div class="noticeCardNext">
+                  <span class="noticeCardNextLabel">Что делать</span>
+                  <p class="noticeCardNextText">{{ n.nextSteps }}</p>
+                </div>
+              } @else if (n.detail.trim()) {
+                <p class="noticeCardSummary">{{ n.detail }}</p>
+              }
 
-      @if (s.migrations.pendingNames.length > 0) {
-        <p class="sysMigrationHint" role="status">
-          <span class="sysMigrationHintLead">Нужно применить миграции Prisma.</span>
-          В списке:
-          <span class="sysMigrationNames">{{ formatPendingMigrationNames(s.migrations.pendingNames) }}</span>
-          Откройте «Предупреждения и команды» — там команды для Windows (PowerShell) и Docker; на проде не используйте
-          <code class="sysInlineCode">migrate reset</code>.
-        </p>
-      }
+              @if (n.commands.length > 0) {
+                <div class="noticeCardCmds">
+                  <span class="noticeCardCmdsLabel">Команды</span>
+                  <ul class="noticeCmdList">
+                    @for (c of n.commands; track $index) {
+                      <li class="noticeCmdItem">
+                        <div class="noticeCmdHead">
+                          <span class="noticeCmdLabel">{{ c.label }}</span>
+                          <app-ui-button
+                            variant="soft"
+                            type="button"
+                            (clicked)="copyText(c.label, c.snippet)"
+                          >
+                            Копировать
+                          </app-ui-button>
+                        </div>
+                        <pre class="noticeCmdPre" tabindex="0">{{ c.snippet }}</pre>
+                      </li>
+                    }
+                  </ul>
+                </div>
+              }
+
+              @if (n.aiPrompt.trim()) {
+                <details class="noticeAi">
+                  <summary class="noticeAiSummary">Промпт для ИИ (по желанию)</summary>
+                  <pre class="noticeAiPre">{{ n.aiPrompt }}</pre>
+                  <app-ui-button variant="soft" type="button" (clicked)="copyText('промпт для ИИ', n.aiPrompt)">
+                    Копировать промпт
+                  </app-ui-button>
+                </details>
+              }
+            </article>
+          }
+        </div>
+      </section>
+
+      <details class="dashTech">
+        <summary class="dashTechSummary">Технические детали</summary>
+        <div class="dashTechBody">
+          <p class="dashTechLine">
+            <span class="dashTechKey">API (этот фронт):</span>
+            <code class="dashCode">{{ apiEndpointSummary() }}</code>
+          </p>
+          <p class="dashTechLine">
+            <span class="dashTechKey">Подключение backend к БД (из env):</span>
+            <code class="dashCode">{{ dbConnectionSummary(s) }}</code>
+          </p>
+          <p class="dashTechLine">
+            <span class="dashTechKey">Ожидаемый Docker-порт Postgres (host:container):</span>
+            <code class="dashCode"
+              >{{ s.dbConnection.dockerExpectedHostPort }}:{{ s.dbConnection.dockerExpectedContainerPort }}</code
+            >
+          </p>
+        </div>
+      </details>
+
+      <div class="dashActions">
+        <app-ui-button variant="primary" type="button" (clicked)="refresh()">Обновить проверку</app-ui-button>
+      </div>
 
       @if (copyHint(); as hint) {
-        <p class="sysHint" role="status">{{ hint }}</p>
+        <p class="dashHint" role="status">{{ hint }}</p>
       }
     }
   </div>
 </app-content-card>
-
-<ng-template #modalContentTpl>
-  @if (status(); as s) {
-    <div class="modalNotices">
-      @for (n of s.notices; track n.id) {
-        <article class="notice" [class.noticeCritical]="n.severity === 'critical'" [class.noticeWarning]="n.severity === 'warning'">
-          <header class="noticeHead">
-            <span class="noticeSev">{{ severityLabel(n.severity) }}</span>
-            <h3 class="noticeTitle">{{ n.title }}</h3>
-          </header>
-          <p class="noticeDetail">{{ n.detail }}</p>
-          @if (n.commands.length > 0) {
-            <div class="noticeBlock">
-              <span class="noticeBlockLabel">Команды</span>
-              <pre class="noticePre">{{ n.commands.join('\n') }}</pre>
-              <app-ui-button variant="soft" type="button" (clicked)="copyText('команды', n.commands.join('\n'))">
-                Копировать команды
-              </app-ui-button>
-            </div>
-          }
-          <div class="noticeBlock">
-            <span class="noticeBlockLabel">Промпт для ИИ</span>
-            <pre class="noticePre noticePrePrompt">{{ n.aiPrompt }}</pre>
-            <app-ui-button variant="soft" type="button" (clicked)="copyText('промпт', n.aiPrompt)">
-              Копировать промпт
-            </app-ui-button>
-          </div>
-        </article>
-      }
-    </div>
-  }
-</ng-template>
-
-@if (noticesModalOpen()) {
-  <ui-modal
-    title="Предупреждения и команды"
-    [content]="modalContentTpl"
-    size="lg"
-    [closeOnBackdrop]="true"
-    (close)="closeNotices()"
-  />
-}

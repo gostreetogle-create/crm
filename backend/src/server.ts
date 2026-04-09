@@ -1,3 +1,5 @@
+import cors from "cors";
+console.log("CORS middleware initialized with origin: true");
 import { createApp } from "./app.js";
 import { config } from "./config.js";
 import { writeDiagnostic } from "./lib/diagnostic-log.js";

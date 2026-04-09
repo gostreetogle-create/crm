@@ -19,7 +19,6 @@ dotenvConfig({ path: resolvedEnvPath, override: true });
 
 const EnvSchema = z.object({
   PORT: z.coerce.number().optional(),
-  CORS_ORIGIN: z.string().optional(),
   JWT_SECRET: z.string().optional(),
   /** Максимальный размер JSON body (например: 2mb, 10mb, 25mb). */
   JSON_BODY_LIMIT: z.string().trim().optional(),
@@ -76,7 +75,6 @@ const tradeGoodsPhotosDirResolved = tradeGoodsPhotosDirRaw
 
 export const config = {
   port: env.PORT ?? 3000,
-  corsOrigin: env.CORS_ORIGIN ?? "*",
   jwtSecret,
   nodeEnv,
   jsonBodyLimit: env.JSON_BODY_LIMIT && env.JSON_BODY_LIMIT.length > 0 ? env.JSON_BODY_LIMIT : "25mb",
@@ -86,14 +84,3 @@ export const config = {
   /** Плоский каталог: имя файла = артикул товара (`code`), напр. `TG-001.jpg`. */
   tradeGoodsPhotosDir: tradeGoodsPhotosDirResolved,
 } as const;
-
-// SECURITY: не используем CORS "*" в production, иначе фронт/скрипты из других доменов
-// могут получить доступ к API с учетом credentials.
-if (nodeEnv === "production") {
-  const origin = (env.CORS_ORIGIN ?? "").trim();
-  if (!origin || origin === "*") {
-    throw new Error(
-      'CORS_ORIGIN must be set to an explicit origin in production (no "*").',
-    );
-  }
-}

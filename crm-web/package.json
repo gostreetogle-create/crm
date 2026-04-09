@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "start": "nx serve crm-web --host 0.0.0.0 --port 4200",
+    "start": "nx serve crm-web --host 0.0.0.0 --port 4200 --proxyConfig=proxy.conf.json",
     "build": "nx build",
     "test": "nx test",
     "test:critical": "nx test dictionaries-state",

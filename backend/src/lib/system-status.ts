@@ -10,12 +10,23 @@ const backendRoot = path.resolve(
   "..",
 );
 
+/** Готовый блок «скопировал — вставил в терминал»; `label` — что это за сценарий. */
+export type SystemNoticeCommand = {
+  label: string;
+  snippet: string;
+};
+
 export type SystemNotice = {
   id: string;
   severity: "info" | "warning" | "critical";
+  /** Короткий заголовок карточки */
   title: string;
-  detail: string;
-  commands: string[];
+  /** Одна строка: в чём суть проблемы или статуса */
+  summary: string;
+  /** Простым языком: что сделать дальше (без потока лога) */
+  nextSteps: string;
+  commands: SystemNoticeCommand[];
+  /** Дополнительно для ИИ; в UI можно свернуть */
   aiPrompt: string;
 };
 
@@ -119,25 +130,34 @@ function buildNotices(params: {
   const notices: SystemNotice[] = [];
 
   if (!params.dbOk) {
+    const errShort =
+      params.dbError?.trim().slice(0, 100) ||
+      "С базой не получается связаться.";
     notices.push({
       id: "db_unreachable",
       severity: "critical",
-      title: "База данных недоступна",
-      detail:
-        params.dbError?.trim() ||
-        "Не удалось выполнить запрос к PostgreSQL. API и проверки ролей будут отвечать ошибками.",
+      title: "База не отвечает",
+      summary: errShort,
+      nextSteps:
+        "Чаще всего не запущен Postgres или неверный DATABASE_URL в backend/.env. Сначала команда 1, потом обнови страницу.",
       commands: [
-        "Локально (Docker): из корня репозитория",
-        "docker compose -f deploy/docker-compose.yml up -d postgres",
-        "Если используете --env-file, проверьте что файл существует: deploy/.env",
-        "На сервере: cd deploy && docker compose --env-file .env up -d postgres",
-        "Проверить DATABASE_URL в backend/.env или в deploy (сервис backend).",
-        "Сверка портов: DATABASE_URL.port должен совпадать с host-портом Docker (обычно 5432).",
+        {
+          label: "1. Запустить Postgres",
+          snippet: "docker compose up -d postgres",
+        },
+        {
+          label: "2. Если контейнер есть, но выключен",
+          snippet: "docker start crm_postgres",
+        },
+        {
+          label: "3. Посмотреть DATABASE_URL",
+          snippet: 'Get-Content .\\backend\\.env | Select-String "DATABASE_URL"',
+        },
       ],
       aiPrompt:
         "В проекте CRM backend не подключается к PostgreSQL. Ошибка: " +
         (params.dbError ?? "unknown") +
-        ". Проверь docker-compose.yml в корне репозитория, health postgres, DATABASE_URL, логи: docker compose logs -f postgres backend. Предложи конкретные шаги исправления.",
+        ". Проверь docker-compose в корне репозитория, контейнер crm_postgres, DATABASE_URL в backend/.env, логи: docker compose logs -f postgres. Предложи конкретные шаги исправления.",
     });
     return notices;
   }
@@ -146,15 +166,22 @@ function buildNotices(params: {
     notices.push({
       id: "migrations_table_missing",
       severity: "critical",
-      title: "Не удалось прочитать таблицу миграций",
-      detail:
-        "Запрос к _prisma_migrations не выполнился. Возможна пустая или повреждённая схема — нужны миграции.",
+      title: "База не готова",
+      summary: "База пустая, другая или не та строка подключения в .env.",
+      nextSteps: "Сначала команда 1. Не помогло — проверь backend/.env. Потом «Обновить» на этой странице.",
       commands: [
-        "Локально (PowerShell, из корня репозитория): cd backend; npx prisma migrate deploy",
-        "Локально (bash): cd backend && npx prisma migrate deploy",
-        "Docker (из корня репозитория): docker compose --env-file deploy/.env exec backend npx prisma migrate deploy",
-        "На сервере (из каталога deploy): docker compose --env-file .env exec backend npx prisma migrate deploy",
-        "После правок образа: пересобрать backend — entrypoint выполнит migrate deploy.",
+        {
+          label: "1. Применить миграции",
+          snippet: "cd backend; npx prisma migrate deploy",
+        },
+        {
+          label: "2. Если ошибка Prisma Client",
+          snippet: "cd backend; npx prisma generate; npx prisma migrate deploy",
+        },
+        {
+          label: "3. Если backend в Docker",
+          snippet: "docker compose exec backend npx prisma migrate deploy",
+        },
       ],
       aiPrompt:
         "В CRM Prisma не читает _prisma_migrations при живой БД. Разбери причину (права, схема public, пустая БД), предложи команды prisma migrate deploy или восстановление.",
@@ -164,37 +191,60 @@ function buildNotices(params: {
 
   if (params.pending.length > 0) {
     const list = params.pending.join(", ");
+    const count = params.pending.length;
     notices.push({
       id: "migrations_pending",
       severity: "critical",
-      title: "Есть неприменённые миграции",
-      detail: `В коде образа есть миграции, которых нет в БД: ${list}. Пока они не применены, схема может не совпадать с кодом (ошибки API).`,
+      title: "Миграции не совпадают",
+      summary:
+        count === 1
+          ? `В коде есть обновление базы, которого нет в базе: ${list}.`
+          : `В коде не хватает ${count} обновлений базы. Первое: ${params.pending[0]}.`,
+      nextSteps:
+        "Сделай команду 1, дождись конца, нажми «Обновить проверку». migrate reset на живой базе не запускай — сотрёт данные.",
       commands: [
-        "Локально (PowerShell): cd backend; npx prisma migrate deploy",
-        "Локально (bash): cd backend && npx prisma migrate deploy",
-        "Docker из корня репо: docker compose --env-file deploy/.env up -d --build backend",
-        "Или только migrate: docker compose --env-file deploy/.env exec backend npx prisma migrate deploy",
-        "Сервер (Linux, bash): cd deploy && ./deploy.sh — entrypoint выполнит migrate deploy",
-        "Сервер вручную (из deploy): docker compose --env-file .env exec backend npx prisma migrate deploy",
-        "Логи backend: docker compose --env-file deploy/.env logs -f backend",
+        {
+          label: "1. Применить миграции",
+          snippet: "cd backend; npx prisma migrate deploy",
+        },
+        {
+          label: "2. После git pull",
+          snippet: "cd backend; npm install; npx prisma generate; npx prisma migrate deploy",
+        },
+        {
+          label: "3. Backend в Docker",
+          snippet: "docker compose exec backend npx prisma migrate deploy",
+        },
       ],
       aiPrompt:
         "В CRM не применены миграции Prisma: " +
         list +
-        ". Объясни безопасно применить migrate deploy: локально в Windows PowerShell (cd backend; npx prisma migrate deploy), в Docker из корня репо (docker compose --env-file deploy/.env), entrypoint-backend.sh, как проверить логи и что не делать (migrate reset на проде).",
+        ". Объясни безопасно применить migrate deploy: локально Windows PowerShell (cd backend; npx prisma migrate deploy), Docker (docker compose exec backend), что не делать (migrate reset на проде).",
     });
   }
 
   if (params.extraInDb.length > 0) {
+    const first = params.extraInDb[0]!;
+    const extraSummary =
+      params.extraInDb.length === 1
+        ? `В базе есть миграция, которой нет у тебя в коде: ${first}.`
+        : `В базе есть миграции, которых нет у тебя в коде: ${params.extraInDb.slice(0, 3).join(", ")}${params.extraInDb.length > 3 ? ` и ещё ${params.extraInDb.length - 3}` : ""}.`;
     notices.push({
       id: "migrations_extra_in_db",
       severity: "warning",
-      title: "В БД есть миграции, которых нет в текущем коде",
-      detail: `Имена: ${params.extraInDb.join(", ")}. Обычно это другая версия образа или ручные правки. Сверьте версию деплоя с репозиторием.`,
+      title: "Миграция из другой версии",
+      summary: extraSummary,
+      nextSteps:
+        "Обычно база новее или старее твоего кода. Подтяни тот же коммит, что на сервере, или базу под свой код. reset без бэкапа не делай.",
       commands: [
-        "Сверить git SHA образа / WEB_BUILD_ID с веткой на GitHub.",
-        "Не запускать migrate reset на продакшене без бэкапа.",
-        "Обратиться к разработчикам, если рассинхрон после восстановления БД из архива.",
+        {
+          label: "1. Какой сейчас коммит",
+          snippet: "git log -1 --oneline",
+        },
+        {
+          label: "2. Какая ветка",
+          snippet: "git branch --show-current",
+        },
       ],
       aiPrompt:
         "В CRM в _prisma_migrations есть записи, отсутствующие в prisma/migrations текущего кода: " +
@@ -207,12 +257,14 @@ function buildNotices(params: {
     notices.push({
       id: "all_ok",
       severity: "info",
-      title: "Критичных предупреждений нет",
-      detail:
-        "База отвечает, миграции из образа применены. При сбоях API смотрите логи backend и поле requestId в ответе.",
+      title: "Всё в порядке",
+      summary: "База отвечает, миграции совпадают с кодом.",
+      nextSteps: "Если сайт глючит — смотри логи backend. После git pull зайди сюда снова.",
       commands: [
-        "Логи backend: cd deploy && docker compose --env-file .env logs -f backend",
-        "Шпаргалка: deploy/README.md и docs/dev-logs-and-diagnostics.md",
+        {
+          label: "1. Логи backend",
+          snippet: "docker compose logs -f backend",
+        },
       ],
       aiPrompt:
         "Кратко опиши, как в проекте CRM смотреть логи Docker backend, искать JSON-диагностику и requestId при ошибке 500.",

@@ -53,12 +53,7 @@ export function createApp() {
   // One trusted proxy hop (nginx). Avoids permissive mode that breaks express-rate-limit validation.
   app.set("trust proxy", 1);
 
-  app.use(
-    cors({
-      origin: config.corsOrigin,
-      credentials: true,
-    }),
-  );
+  app.use(cors({ origin: true, credentials: true }));
   app.use(helmet());
   app.use(express.json({ limit: config.jsonBodyLimit }));
   app.use(requestContextMiddleware);
@@ -128,6 +123,11 @@ export function createApp() {
   authed.use("/authz-matrix", authzMatrixReadRouter);
   authed.use("/users", usersReadRouter);
 
+  const bulkAdminGuard = express.Router();
+  bulkAdminGuard.use(requireAdmin);
+  bulkAdminGuard.use(bulkRouter);
+  authed.use("/bulk", bulkAdminGuard);
+
   const admin = express.Router();
   admin.use(requireAuth);
   admin.use(requireAdmin);
@@ -135,7 +135,6 @@ export function createApp() {
   admin.use("/roles", rolesWriteRouter);
   admin.use("/db-backups", dbBackupsRouter);
   admin.use("/system", systemAdminRouter);
-  admin.use("/bulk", bulkRouter);
   admin.use("/authz-matrix", authzMatrixDiagnosticsRouter);
   admin.use("/authz-matrix", authzMatrixWriteRouter);
 
