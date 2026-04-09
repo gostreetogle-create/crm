@@ -78,6 +78,7 @@
 | 47 | 2026-04-09 | Push в `origin/main`: стабилизация BL КП/заказов (statuses/orders/контракты/тесты) и единый release-gate/deploy контур (report, self-check, cross-platform runbook) | backend, crm-web, deploy, docs | `3eea6de` |
 | 48 | 2026-04-09 | Push в `origin/main`: миграция frontend на store (KpBuilder, хаб справочников, админ-карточки, AppHealthStore), DI фасадов на маршруте `/справочники`, Playwright smoke, бюджеты `srm-front`, чеклист `store-migration-checklist.md` | crm-web, docs | `2002c9a` |
 | 49 | 2026-04-09 | Push в `origin/main`: админка — дашборд статуса системы и API notices (команды для копирования); канон фронта — ИИ в критичных зонах, пост-пулл, целевая модульность; правки конфигов backend/crm-web; запись в журнале | crm-web, backend, docs | `712bc63` |
+| 50 | 2026-04-09 | Push в `origin/main`: `backend/package-lock.json` — исправление `npm ci` в Docker (отсутствовали `@emnapi/core` / `@emnapi/runtime` в lock) | backend | `c9f26ba` |
 
 ---
 
