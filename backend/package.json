@@ -15,7 +15,10 @@
     "db:reset": "prisma migrate reset --force",
     "authz:check": "tsx scripts/authz-integrity-check.ts",
     "authz:check:ci": "tsx scripts/authz-integrity-check.ts --skip-no-db",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "test": "vitest run",
+    "test:critical": "vitest run test/commercial-offer-status.test.ts test/change-offer-status.service.test.ts test/create-order-from-paid-offer.service.test.ts test/commercial-offers.status-route.test.ts test/commercial-offers.delete-route.test.ts test/orders.route-contract.test.ts",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@prisma/client": "^6.3.0",
@@ -34,9 +37,12 @@
     "@types/cors": "*",
     "@types/express": "*",
     "@types/multer": "^2.1.0",
+    "@types/supertest": "^7.2.0",
     "prisma": "^6.3.0",
+    "supertest": "^7.2.2",
     "tsx": "*",
-    "typescript": "*"
+    "typescript": "*",
+    "vitest": "^4.1.4"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

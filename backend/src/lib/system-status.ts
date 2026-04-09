@@ -21,6 +21,15 @@ export type SystemNotice = {
 
 export type SystemStatusPayload = {
   db: { ok: boolean; latencyMs?: number; error?: string };
+  dbConnection: {
+    databaseUrlPresent: boolean;
+    protocol: string | null;
+    host: string | null;
+    port: number | null;
+    database: string | null;
+    dockerExpectedHostPort: number;
+    dockerExpectedContainerPort: number;
+  };
   migrations: {
     expectedCount: number;
     appliedCount: number | null;
@@ -30,6 +39,44 @@ export type SystemStatusPayload = {
   notices: SystemNotice[];
   environment: { nodeEnv: string };
 };
+
+function parseDbConnectionInfo() {
+  const raw = String(process.env.DATABASE_URL ?? "").trim();
+  if (!raw) {
+    return {
+      databaseUrlPresent: false,
+      protocol: null,
+      host: null,
+      port: null,
+      database: null,
+      dockerExpectedHostPort: 5432,
+      dockerExpectedContainerPort: 5432,
+    } as const;
+  }
+  try {
+    const u = new URL(raw);
+    const dbName = u.pathname.replace(/^\//, "").trim() || null;
+    return {
+      databaseUrlPresent: true,
+      protocol: (u.protocol || "").replace(/:$/, "") || null,
+      host: u.hostname || null,
+      port: u.port ? Number(u.port) : 5432,
+      database: dbName,
+      dockerExpectedHostPort: 5432,
+      dockerExpectedContainerPort: 5432,
+    } as const;
+  } catch {
+    return {
+      databaseUrlPresent: true,
+      protocol: null,
+      host: null,
+      port: null,
+      database: null,
+      dockerExpectedHostPort: 5432,
+      dockerExpectedContainerPort: 5432,
+    } as const;
+  }
+}
 
 function listExpectedMigrationFolders(): string[] {
   const migDir = path.join(backendRoot, "prisma", "migrations");
@@ -81,14 +128,16 @@ function buildNotices(params: {
         "Не удалось выполнить запрос к PostgreSQL. API и проверки ролей будут отвечать ошибками.",
       commands: [
         "Локально (Docker): из корня репозитория",
-        "docker compose -f deploy/docker-compose.yml --env-file deploy/.env up -d postgres",
+        "docker compose -f deploy/docker-compose.yml up -d postgres",
+        "Если используете --env-file, проверьте что файл существует: deploy/.env",
         "На сервере: cd deploy && docker compose --env-file .env up -d postgres",
         "Проверить DATABASE_URL в backend/.env или в deploy (сервис backend).",
+        "Сверка портов: DATABASE_URL.port должен совпадать с host-портом Docker (обычно 5432).",
       ],
       aiPrompt:
         "В проекте CRM backend не подключается к PostgreSQL. Ошибка: " +
         (params.dbError ?? "unknown") +
-        ". Проверь deploy/docker-compose.yml, health postgres, DATABASE_URL, логи: docker compose logs -f postgres backend. Предложи конкретные шаги исправления.",
+        ". Проверь docker-compose.yml в корне репозитория, health postgres, DATABASE_URL, логи: docker compose logs -f postgres backend. Предложи конкретные шаги исправления.",
     });
     return notices;
   }
@@ -103,7 +152,7 @@ function buildNotices(params: {
       commands: [
         "Локально (PowerShell, из корня репозитория): cd backend; npx prisma migrate deploy",
         "Локально (bash): cd backend && npx prisma migrate deploy",
-        "Docker (из корня репозитория): docker compose -f deploy/docker-compose.yml --env-file deploy/.env exec backend npx prisma migrate deploy",
+        "Docker (из корня репозитория): docker compose --env-file deploy/.env exec backend npx prisma migrate deploy",
         "На сервере (из каталога deploy): docker compose --env-file .env exec backend npx prisma migrate deploy",
         "После правок образа: пересобрать backend — entrypoint выполнит migrate deploy.",
       ],
@@ -123,16 +172,16 @@ function buildNotices(params: {
       commands: [
         "Локально (PowerShell): cd backend; npx prisma migrate deploy",
         "Локально (bash): cd backend && npx prisma migrate deploy",
-        "Docker из корня репо: docker compose -f deploy/docker-compose.yml --env-file deploy/.env up -d --build backend",
-        "Или только migrate: docker compose -f deploy/docker-compose.yml --env-file deploy/.env exec backend npx prisma migrate deploy",
+        "Docker из корня репо: docker compose --env-file deploy/.env up -d --build backend",
+        "Или только migrate: docker compose --env-file deploy/.env exec backend npx prisma migrate deploy",
         "Сервер (Linux, bash): cd deploy && ./deploy.sh — entrypoint выполнит migrate deploy",
         "Сервер вручную (из deploy): docker compose --env-file .env exec backend npx prisma migrate deploy",
-        "Логи backend: docker compose -f deploy/docker-compose.yml --env-file deploy/.env logs -f backend",
+        "Логи backend: docker compose --env-file deploy/.env logs -f backend",
       ],
       aiPrompt:
         "В CRM не применены миграции Prisma: " +
         list +
-        ". Объясни безопасно применить migrate deploy: локально в Windows PowerShell (cd backend; npx prisma migrate deploy), в Docker из корня репо (docker compose -f deploy/docker-compose.yml --env-file deploy/.env), entrypoint-backend.sh, как проверить логи и что не делать (migrate reset на проде).",
+        ". Объясни безопасно применить migrate deploy: локально в Windows PowerShell (cd backend; npx prisma migrate deploy), в Docker из корня репо (docker compose --env-file deploy/.env), entrypoint-backend.sh, как проверить логи и что не делать (migrate reset на проде).",
     });
   }
 
@@ -175,6 +224,7 @@ function buildNotices(params: {
 
 export async function getSystemStatus(): Promise<SystemStatusPayload> {
   const expected = listExpectedMigrationFolders();
+  const dbConnection = parseDbConnectionInfo();
   let dbOk = false;
   let latencyMs: number | undefined;
   let dbError: string | undefined;
@@ -219,6 +269,7 @@ export async function getSystemStatus(): Promise<SystemStatusPayload> {
     db: dbOk
       ? { ok: true, latencyMs }
       : { ok: false, error: dbError },
+    dbConnection,
     migrations: {
       expectedCount: expected.length,
       appliedCount: applied?.length ?? null,

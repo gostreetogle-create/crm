@@ -68,10 +68,19 @@
 }
 
 .kp-sheet__orgDetails {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(245px, 34%);
+  gap: 8px 12px;
+  align-items: start;
   text-align: left;
   font-size: 9.5pt;
   line-height: 1.42;
   color: #101828;
+}
+
+.kp-sheet__orgRecipient {
+  max-width: 72%;
+  min-width: 0;
 }
 
 .kp-sheet__orgLine {
@@ -94,6 +103,60 @@
 
 .kp-sheet__orgLine--contact {
   font-weight: 500;
+}
+
+.kp-sheet__metaBox {
+  border: 1px solid rgba(16, 24, 40, 0.18);
+  border-radius: 6px;
+  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.86);
+}
+
+.kp-sheet__metaLine {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 4px;
+  margin: 0 0 4px;
+}
+
+.kp-sheet__metaLine:last-child {
+  margin-bottom: 0;
+}
+
+.kp-sheet__metaLabel {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.kp-sheet__metaValue {
+  font-variant-numeric: tabular-nums;
+  text-align: left;
+}
+
+.kp-sheet__metaInline {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.kp-sheet__metaInput {
+  width: 100%;
+  min-width: 0;
+  max-width: 130px;
+  border: 1px solid rgba(16, 24, 40, 0.2);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.92);
+  padding: 1px 4px;
+  font: inherit;
+  line-height: 1.3;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.kp-sheet__metaInput--narrow {
+  max-width: 56px;
 }
 
 .kp-sheet__table-wrap {
@@ -579,7 +642,8 @@
   .kp-sheet__cell-input,
   textarea.kp-sheet__cell-input,
   .kp-sheet__totalLead--vat .kp-sheet__cell-input,
-  .kp-sheet__vatAmountWrap .kp-sheet__cell-input {
+  .kp-sheet__vatAmountWrap .kp-sheet__cell-input,
+  .kp-sheet__metaInput {
     border: none !important;
     border-radius: 0 !important;
     background: transparent !important;
@@ -592,6 +656,12 @@
     min-height: 0 !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+  }
+
+  .kp-sheet__metaBox {
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
   }
 
   .kp-sheet__table,

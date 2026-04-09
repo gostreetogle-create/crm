@@ -9,6 +9,9 @@ deploy/.env
 deploy/prebuilt-web/*
 !deploy/prebuilt-web/.gitkeep
 deploy/prebuilt-web.zip
+release-gate-report.json
+**/release-gate-report*.json
+**/probe-report*.json
 backend/node_modules/
 backend/dist/
 backend/backups/

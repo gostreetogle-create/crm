@@ -47,8 +47,8 @@ import { API_CONFIG } from '@srm/platform-core';
 type ProposalStatusKey =
   | 'proposal_draft'
   | 'proposal_waiting'
-  | 'proposal_approved'
   | 'proposal_paid';
+type CatalogSyncDecision = 'sync' | 'skip' | 'abort';
 
 type OfferLinePayload = {
   lineNo: number;
@@ -64,6 +64,10 @@ type OfferLinePayload = {
 
 type CommercialOfferDto = {
   id: string;
+  number?: string | null;
+  createdAt?: string | null;
+  prepaymentPercent?: number | null;
+  productionLeadDays?: number | null;
   currentStatusKey: ProposalStatusKey;
   organizationId: string | null;
   organizationContactId: string | null;
@@ -110,7 +114,10 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
   /** Подтверждение записи вручную введённых строк в справочник «Товары» (см. interaction-system.md — не window.confirm). */
   readonly catalogSyncConfirmOpen = signal(false);
   readonly catalogSyncConfirmNames = signal<string[]>([]);
-  private catalogSyncResolve: ((confirmed: boolean) => void) | null = null;
+  private catalogSyncResolve: ((decision: CatalogSyncDecision) => void) | null = null;
+  readonly paidOrderNumberModalOpen = signal(false);
+  readonly paidOrderNumberDraft = signal('');
+  private paidOrderNumberResolve: ((value: string | null) => void) | null = null;
 
   /** Справочник организаций для выпадающего списка в шаблоне КП. */
   readonly organizations = this.kpBuilderFacade.organizations;
@@ -152,6 +159,10 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
      * При выборе организации с контактами — один контакт для строки «Контакт:» в КП (id из справочника).
      */
     organizationContactId: this.fb.nonNullable.control(''),
+    number: this.fb.nonNullable.control(''),
+    createdAt: this.fb.nonNullable.control(new Date().toISOString()),
+    prepaymentPercent: this.fb.nonNullable.control('80', [Validators.pattern(/^\d{1,3}$/)]),
+    productionLeadDays: this.fb.nonNullable.control('30', [Validators.pattern(/^\d{1,3}$/)]),
     /** Ставка НДС, % (по умолчанию 22). */
     vatPercent: this.fb.nonNullable.control('22', [kpVatPercentValidator()]),
     /** Сумма НДС в рублях (редактируемая; изначально считается от итога). */
@@ -330,8 +341,7 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
   canMoveTo(status: ProposalStatusKey): boolean {
     const current = this.offerStatusKey();
     if (current === 'proposal_draft') return status === 'proposal_waiting';
-    if (current === 'proposal_waiting') return status === 'proposal_approved' || status === 'proposal_draft';
-    if (current === 'proposal_approved') return status === 'proposal_paid' || status === 'proposal_waiting';
+    if (current === 'proposal_waiting') return status === 'proposal_paid' || status === 'proposal_draft';
     return false;
   }
 
@@ -354,11 +364,11 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
     return out;
   }
 
-  private async askCatalogSyncConfirm(names: string[]): Promise<boolean> {
+  private async askCatalogSyncConfirm(names: string[]): Promise<CatalogSyncDecision> {
     if (names.length === 0) {
-      return true;
+      return 'sync';
     }
-    return await new Promise<boolean>((resolve) => {
+    return await new Promise<CatalogSyncDecision>((resolve) => {
       this.catalogSyncConfirmNames.set(names);
       this.catalogSyncResolve = resolve;
       this.catalogSyncConfirmOpen.set(true);
@@ -373,10 +383,10 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
     this.catalogSyncConfirmOpen.set(false);
     const r = this.catalogSyncResolve;
     this.catalogSyncResolve = null;
-    r(true);
+    r('sync');
   }
 
-  /** Отмена: не сохранять КП (закрытие крестиком/backdrop/Escape — то же). */
+  /** Отмена в диалоге: сохранить КП, но не записывать позиции в справочник «Товары». */
   cancelCatalogSyncSave(): void {
     if (!this.catalogSyncResolve) {
       this.catalogSyncConfirmOpen.set(false);
@@ -385,7 +395,19 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
     this.catalogSyncConfirmOpen.set(false);
     const r = this.catalogSyncResolve;
     this.catalogSyncResolve = null;
-    r(false);
+    r('skip');
+  }
+
+  /** Закрытие крестиком/backdrop/Escape: полностью отменить сохранение КП. */
+  dismissCatalogSyncSave(): void {
+    if (!this.catalogSyncResolve) {
+      this.catalogSyncConfirmOpen.set(false);
+      return;
+    }
+    this.catalogSyncConfirmOpen.set(false);
+    const r = this.catalogSyncResolve;
+    this.catalogSyncResolve = null;
+    r('abort');
   }
 
   async saveOffer(): Promise<string | null> {
@@ -393,12 +415,13 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
       return this.offerId();
     }
     const catalogNames = this.namesNeedingCatalogSave();
-    if (!(await this.askCatalogSyncConfirm(catalogNames))) {
+    const catalogDecision = await this.askCatalogSyncConfirm(catalogNames);
+    if (catalogDecision === 'abort') {
       return null;
     }
     this.isSavingOffer.set(true);
     this.saveError.set(null);
-    const payload = this.buildOfferPayload();
+    const payload = this.buildOfferPayload(catalogDecision === 'skip');
     const id = this.offerId();
     return await new Promise((resolve) => {
       const req$ = id
@@ -424,9 +447,19 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
     if (!this.canMoveTo(statusKey)) return;
     const id = await this.saveOffer();
     if (!id) return;
+    let orderNumber: string | null | undefined = undefined;
+    if (statusKey === 'proposal_paid') {
+      orderNumber = await this.askOrderNumberForPaid();
+      if (orderNumber === null) {
+        return;
+      }
+    }
     this.isSavingOffer.set(true);
     this.http
-      .post<CommercialOfferDto>(this.offersEndpoint(`/${id}/status`), { statusKey })
+      .post<CommercialOfferDto>(this.offersEndpoint(`/${id}/status`), {
+        statusKey,
+        ...(statusKey === 'proposal_paid' ? { orderNumber } : {}),
+      })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (saved) => {
@@ -438,6 +471,37 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
           this.isSavingOffer.set(false);
         },
       });
+  }
+
+  private async askOrderNumberForPaid(): Promise<string | null> {
+    const defaultValue = this.offerId() ? '' : '';
+    return await new Promise<string | null>((resolve) => {
+      this.paidOrderNumberDraft.set(defaultValue);
+      this.paidOrderNumberResolve = resolve;
+      this.paidOrderNumberModalOpen.set(true);
+    });
+  }
+
+  confirmPaidOrderNumber(): void {
+    if (!this.paidOrderNumberResolve) {
+      return;
+    }
+    const resolve = this.paidOrderNumberResolve;
+    this.paidOrderNumberResolve = null;
+    this.paidOrderNumberModalOpen.set(false);
+    const raw = this.paidOrderNumberDraft().trim();
+    resolve(raw.length ? raw : '');
+  }
+
+  cancelPaidOrderNumber(): void {
+    if (!this.paidOrderNumberResolve) {
+      this.paidOrderNumberModalOpen.set(false);
+      return;
+    }
+    const resolve = this.paidOrderNumberResolve;
+    this.paidOrderNumberResolve = null;
+    this.paidOrderNumberModalOpen.set(false);
+    resolve(null);
   }
 
   /** Добавить позицию из витрины в таблицу КП и в PDF. Тот же товар — увеличить кол-во, не дублировать строку. */
@@ -459,8 +523,42 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
       g.patchValue({ qty: formatKpQtyString(cur + 1) });
       return;
     }
+    // Если в форме только стартовая пустая строка, заполняем ее вместо добавления новой.
+    if (linesArr.length === 1 && this.isPlaceholderEmptyLine(linesArr.at(0)?.getRawValue() as KpLineItem)) {
+      linesArr.at(0)?.patchValue({
+        name: p.title,
+        qty: '1',
+        unit,
+        price: String(p.price),
+        imageUrl,
+        description: p.description?.trim() ?? '',
+        catalogProductId: p.id,
+      });
+      return;
+    }
     linesArr.push(
       this.lineGroup(p.title, '1', unit, String(p.price), imageUrl, p.description?.trim() ?? '', p.id),
+    );
+  }
+
+  private isPlaceholderEmptyLine(line: KpLineItem | null | undefined): boolean {
+    if (!line) return true;
+    const name = String(line.name ?? '').trim();
+    const description = String(line.description ?? '').trim();
+    const imageUrl = String(line.imageUrl ?? '').trim();
+    const catalogProductId = String(line.catalogProductId ?? '').trim();
+    const qty = parseKpNumber(String(line.qty ?? '0'));
+    const price = parseKpNumber(String(line.price ?? '0'));
+    const unit = String(line.unit ?? '').trim().toLowerCase();
+    const unitIsDefault = unit === '' || unit === 'шт.' || unit === 'шт';
+    return (
+      name.length === 0 &&
+      description.length === 0 &&
+      imageUrl.length === 0 &&
+      catalogProductId.length === 0 &&
+      qty <= 1 &&
+      price === 0 &&
+      unitIsDefault
     );
   }
 
@@ -508,7 +606,7 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
     return `${base}/api/commercial-offers${path}`;
   }
 
-  private buildOfferPayload(): Record<string, unknown> {
+  private buildOfferPayload(skipCatalogSync: boolean): Record<string, unknown> {
     const rawLines = this.lines().getRawValue() as KpLineItem[];
     const lines = rawLines.map((line, idx) => ({
       lineNo: idx + 1,
@@ -523,12 +621,16 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
     }));
     const filtered = lines.filter((line) => line.name.length > 0);
     return {
+      number: this.form.controls.number.value || null,
       currentStatusKey: this.offerStatusKey(),
       organizationId: this.extractRecipientOrgId(),
       organizationContactId: this.form.controls.organizationContactId.value || null,
       recipient: this.form.controls.recipient.value || null,
       vatPercent: parseKpNumber(this.form.controls.vatPercent.value),
       vatAmount: parseKpNumber(this.form.controls.vatAmount.value),
+      prepaymentPercent: parseKpNumber(this.form.controls.prepaymentPercent.value),
+      productionLeadDays: parseKpNumber(this.form.controls.productionLeadDays.value),
+      skipCatalogSync,
       lines: filtered,
     };
   }
@@ -562,6 +664,10 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
     this.offerStatusKey.set(offer.currentStatusKey ?? 'proposal_draft');
     this.form.patchValue(
       {
+        number: offer.number ?? '',
+        createdAt: offer.createdAt ?? new Date().toISOString(),
+        prepaymentPercent: String(offer.prepaymentPercent ?? 80),
+        productionLeadDays: String(offer.productionLeadDays ?? 30),
         recipient: offer.recipient ?? '',
         organizationContactId: offer.organizationContactId ?? '',
         vatPercent: String(offer.vatPercent ?? 22),

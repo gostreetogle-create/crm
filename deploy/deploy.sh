@@ -7,9 +7,176 @@ if [[ -z "${BASH_VERSION:-}" ]]; then
   exit 1
 fi
 
+run_self_check() {
+  local failed=0
+  echo "[deploy] Self-check environment:"
+  if command -v bash >/dev/null 2>&1; then
+    echo "[deploy]   bash: $(bash --version 2>/dev/null | head -n1 || echo unknown)"
+  else
+    echo "[deploy]   bash: not found"
+  fi
+  if command -v powershell >/dev/null 2>&1; then
+    echo "[deploy]   powershell: available"
+  else
+    echo "[deploy]   powershell: not found"
+  fi
+  if command -v npm >/dev/null 2>&1; then
+    echo "[deploy]   npm: $(npm --version 2>/dev/null || echo unknown)"
+  else
+    echo "[deploy]   npm: not found"
+  fi
+
+  run_check() {
+    local title="$1"
+    shift
+    echo "[deploy] Self-check: ${title}"
+    if "$@" >/dev/null 2>&1; then
+      return 0
+    fi
+    echo "[deploy] WARNING: self-check failed for ${title}"
+    failed=$((failed + 1))
+  }
+
+  run_check "deploy.sh --help" bash "${SCRIPT_DIR}/deploy.sh" --help
+  run_check "run-release-gate.sh --help" bash "${REPO_ROOT}/deploy/scripts/run-release-gate.sh" --help
+  run_check "run-concurrency-probe.sh --help" bash "${REPO_ROOT}/deploy/scripts/run-concurrency-probe.sh" --help
+  run_check "run-release-gate.ps1 -Help" powershell -ExecutionPolicy Bypass -File "${REPO_ROOT}/deploy/scripts/run-release-gate.ps1" -Help
+  run_check "run-concurrency-probe.ps1 -Help" powershell -ExecutionPolicy Bypass -File "${REPO_ROOT}/deploy/scripts/run-concurrency-probe.ps1" -Help
+
+  if [[ "${failed}" -gt 0 ]]; then
+    echo "[deploy] Self-check completed with warnings (${failed})."
+    echo "[deploy] Tip: for *.sh issues check line endings (LF) and bash availability."
+    return 0
+  fi
+}
+
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+  cat <<'EOF'
+Usage:
+  bash deploy/deploy.sh
+  bash deploy/deploy.sh --self-check
+
+What it does:
+  - checks deploy/.env required fields
+  - optionally unpacks deploy/prebuilt-web.zip to deploy/prebuilt-web/
+  - builds web/backend images and runs docker compose
+  - checks backend health and web availability
+
+Pre-deploy gate (recommended before deploy):
+  powershell -ExecutionPolicy Bypass -File deploy/scripts/run-release-gate.ps1 -SkipMigrate -ReportPath "./release-gate-report.json"
+  bash deploy/scripts/run-release-gate.sh --skip-migrate --report-path "./release-gate-report.json"
+
+Optional env:
+  GATE_REPORT_PATH=<path-to-json>   Custom gate report path (default: ./release-gate-report.json)
+                                    Relative path is resolved from repository root.
+
+Extra:
+  --self-check                      Run help checks for deploy/gate/probe scripts and exit.
+                                    Non-blocking: may finish with warnings in mixed shell envs.
+EOF
+  exit 0
+fi
+
+if [[ "${1:-}" == "--self-check" ]]; then
+  SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+  REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+  run_self_check
+  echo "[deploy] Self-check finished."
+  exit 0
+fi
+
+if [[ "$#" -gt 0 ]]; then
+  echo "[deploy] Unknown argument(s): $*" >&2
+  echo "[deploy] Use: bash deploy/deploy.sh --help" >&2
+  exit 1
+fi
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 cd "${SCRIPT_DIR}"
+
+# Обязательный pre-deploy gate: см. docs/release-gates.md
+# Локально перед выкладкой:
+#   cd backend && npm run test:critical
+#   cd ../crm-web && npm run test:critical
+echo "[deploy] Pre-deploy gate: проверьте docs/release-gates.md (раздел 'Stop-list (деплой блокируется)')."
+print_gate_report_regen_commands() {
+  local report_target="${1:-./release-gate-report.json}"
+  echo "[deploy]   powershell -ExecutionPolicy Bypass -File deploy/scripts/run-release-gate.ps1 -SkipMigrate -ReportPath \"${report_target}\""
+  echo "[deploy]   bash deploy/scripts/run-release-gate.sh --skip-migrate --report-path \"${report_target}\""
+}
+
+detect_gate_report_age_sec() {
+  local path="$1"
+  if command -v python >/dev/null 2>&1; then
+    python - <<'PY' "$path" 2>/dev/null || true
+import os, sys, time
+path = sys.argv[1]
+print(int(time.time() - os.path.getmtime(path)))
+PY
+    return 0
+  fi
+
+  if command -v stat >/dev/null 2>&1; then
+    local mtime now
+    # GNU stat (Linux)
+    mtime="$(stat -c %Y "$path" 2>/dev/null || true)"
+    if [[ -z "${mtime}" ]]; then
+      # BSD stat (macOS, some NAS)
+      mtime="$(stat -f %m "$path" 2>/dev/null || true)"
+    fi
+    if [[ -n "${mtime}" ]]; then
+      now="$(date +%s)"
+      echo $(( now - mtime ))
+      return 0
+    fi
+  fi
+
+  echo ""
+}
+
+GATE_REPORT_DEFAULT="${REPO_ROOT}/release-gate-report.json"
+if [[ -n "${GATE_REPORT_PATH:-}" ]]; then
+  if [[ "${GATE_REPORT_PATH}" =~ ^[A-Za-z]:[\\/].* || "${GATE_REPORT_PATH}" == /* ]]; then
+    GATE_REPORT="${GATE_REPORT_PATH}"
+  else
+    GATE_REPORT="${REPO_ROOT}/${GATE_REPORT_PATH#./}"
+  fi
+  echo "[deploy] Gate report path source: GATE_REPORT_PATH=${GATE_REPORT_PATH}"
+else
+  GATE_REPORT="${GATE_REPORT_DEFAULT}"
+  echo "[deploy] Gate report path source: default (${GATE_REPORT_DEFAULT})"
+fi
+if [[ -f "${GATE_REPORT}" ]]; then
+  echo "[deploy] Найден gate-отчёт: ${GATE_REPORT}"
+  gate_status_line="$(sed -n 's/.*"gateStatus"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "${GATE_REPORT}" | head -n1 || true)"
+  if [[ "${gate_status_line}" == "passed" ]]; then
+    echo "[deploy] Gate status: passed."
+  elif [[ -n "${gate_status_line}" ]]; then
+    echo "[deploy] ВНИМАНИЕ: gate status в отчёте = ${gate_status_line} (ожидался passed)."
+    echo "[deploy] Рекомендуется пересоздать отчёт:"
+    print_gate_report_regen_commands "${GATE_REPORT}"
+  else
+    echo "[deploy] ВНИМАНИЕ: не удалось прочитать gateStatus из отчёта."
+    echo "[deploy] Рекомендуется пересоздать отчёт:"
+    print_gate_report_regen_commands "${GATE_REPORT}"
+  fi
+
+  gate_age_sec="$(detect_gate_report_age_sec "${GATE_REPORT}")"
+  if [[ -n "${gate_age_sec}" && "${gate_age_sec}" =~ ^[0-9]+$ ]]; then
+    if [[ "${gate_age_sec}" -gt 86400 ]]; then
+      age_sec="${gate_age_sec}"
+      age_hours=$(( age_sec / 3600 ))
+      echo "[deploy] ВНИМАНИЕ: gate-отчёт старше 24ч (примерно ${age_hours} ч). Рекомендуется прогнать gate заново."
+      print_gate_report_regen_commands "${GATE_REPORT}"
+    fi
+  else
+    echo "[deploy] Примечание: не удалось определить возраст gate-отчёта (нет python/stat)."
+  fi
+else
+  echo "[deploy] Напоминание: перед деплоем сохраните gate-отчёт:"
+  print_gate_report_regen_commands "${GATE_REPORT}"
+fi
 
 # Сначала deploy/, затем корень репозитория (канон: docker-compose.yml в корне, см. комментарий в compose).
 COMPOSE_FILE=""

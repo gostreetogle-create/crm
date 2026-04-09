@@ -6,6 +6,8 @@ import type { StandaloneDictionaryCreateKey } from '../standalone-dictionary-cre
 export type HubBoardQuickCreateTarget =
   | { kind: 'newMaterialPage' }
   | { kind: 'newMaterialCharacteristicPage' }
+  | { kind: 'catalogComplexCreate' }
+  | { kind: 'commercialOfferCreate' }
   | { kind: 'standalone'; key: StandaloneDictionaryCreateKey };
 
 export const HUB_BOARD_QUICK_CREATE = {
@@ -22,6 +24,8 @@ export const HUB_BOARD_QUICK_CREATE = {
   roles: { kind: 'standalone', key: 'roles' },
   users: { kind: 'standalone', key: 'users' },
   kpPhotos: { kind: 'standalone', key: 'kpPhotos' },
+  commercialOffers: { kind: 'commercialOfferCreate' },
+  catalogComplexes: { kind: 'catalogComplexCreate' },
   productionDetails: { kind: 'standalone', key: 'productionDetails' },
   products: { kind: 'standalone', key: 'products' },
   tradeGoods: { kind: 'standalone', key: 'tradeGoods' },

@@ -13,10 +13,10 @@ export type HubBoardDictionaryRowDef = {
  * Секция «Товар»: порядок сверху вниз — комплексы и торговые сущности, затем производственные справочники, затем остальное (единицы, категории).
  */
 export const HUB_BOARD_DICTIONARY_ROW_DEFS: readonly HubBoardDictionaryRowDef[] = [
+  { section: 'Товар', sectionId: 'dictionary-hub-section-goods', key: 'catalogComplexes', title: 'Комплексы' },
   { section: 'Товар', sectionId: 'dictionary-hub-section-goods', key: 'tradeGoods', title: 'Товары' },
   { section: 'Товар', sectionId: 'dictionary-hub-section-goods', key: 'products', title: 'Изделия' },
   { section: 'Товар', sectionId: 'dictionary-hub-section-goods', key: 'productionDetails', title: 'Детали' },
-  { section: 'Товар', sectionId: 'dictionary-hub-section-goods', key: 'workTypes', title: 'Вид работ' },
   { section: 'Товар', sectionId: 'dictionary-hub-section-goods', key: 'materials', title: 'Материалы' },
   {
     section: 'Товар',
@@ -30,7 +30,6 @@ export const HUB_BOARD_DICTIONARY_ROW_DEFS: readonly HubBoardDictionaryRowDef[] 
     key: 'geometries',
     title: 'Форма и габаритные размеры',
   },
-  { section: 'Товар', sectionId: 'dictionary-hub-section-goods', key: 'units', title: 'Единицы измерения' },
   {
     section: 'Товар',
     sectionId: 'dictionary-hub-section-goods',
@@ -42,6 +41,18 @@ export const HUB_BOARD_DICTIONARY_ROW_DEFS: readonly HubBoardDictionaryRowDef[] 
     sectionId: 'dictionary-hub-section-goods',
     key: 'tradeGoodSubcategories',
     title: 'Подкатегории товаров',
+  },
+  {
+    section: 'Производство и учёт',
+    sectionId: 'dictionary-hub-section-production-and-units',
+    key: 'workTypes',
+    title: 'Вид работ',
+  },
+  {
+    section: 'Производство и учёт',
+    sectionId: 'dictionary-hub-section-production-and-units',
+    key: 'units',
+    title: 'Единицы измерения',
   },
   { section: 'Цвет, отделка и покрытия', sectionId: 'dictionary-hub-section-surface', key: 'colors', title: 'Цвета (RAL)' },
   {
@@ -56,17 +67,35 @@ export const HUB_BOARD_DICTIONARY_ROW_DEFS: readonly HubBoardDictionaryRowDef[] 
   {
     section: 'Коммерческое предложение',
     sectionId: 'dictionary-hub-section-commercial',
+    key: 'commercialOffers',
+    title: 'Коммерческие предложения',
+  },
+  {
+    section: 'Коммерческое предложение',
+    sectionId: 'dictionary-hub-section-commercial',
+    key: 'orders',
+    title: 'Заказы',
+  },
+  {
+    section: 'Коммерческое предложение',
+    sectionId: 'dictionary-hub-section-commercial',
     key: 'kpPhotos',
     title: 'Фото для КП',
   },
-  { section: 'Пользователи и доступ', sectionId: 'dictionary-hub-section-access', key: 'roles', title: 'Роли' },
+  {
+    section: 'Пользователи и доступ',
+    sectionId: 'dictionary-hub-section-access',
+    key: 'roles',
+    title: 'Роли',
+  },
   { section: 'Пользователи и доступ', sectionId: 'dictionary-hub-section-access', key: 'users', title: 'Пользователи' },
 ];
 
 export const HUB_BOARD_SECTION_ORDER: readonly string[] = [
   'dictionary-hub-section-goods',
+  'dictionary-hub-section-production-and-units',
   'dictionary-hub-section-surface',
   'dictionary-hub-section-clients',
-  'dictionary-hub-section-commercial',
   'dictionary-hub-section-access',
+  'dictionary-hub-section-commercial',
 ];

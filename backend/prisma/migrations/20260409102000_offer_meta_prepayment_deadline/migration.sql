@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "CommercialOffer"
+ADD COLUMN "prepaymentPercent" DOUBLE PRECISION NOT NULL DEFAULT 80,
+ADD COLUMN "productionLeadDays" INTEGER NOT NULL DEFAULT 30;
+

@@ -19,14 +19,14 @@
 Из корня репозитория:
 
 ```bash
-docker compose -f deploy/docker-compose.yml down -v --remove-orphans
+docker compose down -v --remove-orphans
 ```
 
 Только Postgres (без backend/web), тот же эффект для тома БД:
 
 ```bash
-docker compose -f deploy/docker-compose.yml stop postgres
-docker compose -f deploy/docker-compose.yml rm -f postgres
+docker compose stop postgres
+docker compose rm -f postgres
 docker volume rm crm_pgdata
 ```
 

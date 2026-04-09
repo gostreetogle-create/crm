@@ -117,7 +117,6 @@ export const PERMISSION_CATALOG: Record<
 export const PERMISSION_KEYS_ORDERED: readonly PermissionKey[] = [
   'page.dictionaries',
   'page.demo',
-  'page.commercialProposal',
   'page.preferences',
   'page.admin.settings',
   ...DICTIONARY_HUB_PERMISSION_KEYS,

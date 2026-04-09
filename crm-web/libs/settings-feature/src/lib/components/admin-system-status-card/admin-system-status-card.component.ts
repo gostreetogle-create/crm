@@ -28,6 +28,15 @@ export type SystemNoticeDto = {
 
 export type SystemStatusDto = {
   db: { ok: boolean; latencyMs?: number; error?: string };
+  dbConnection: {
+    databaseUrlPresent: boolean;
+    protocol: string | null;
+    host: string | null;
+    port: number | null;
+    database: string | null;
+    dockerExpectedHostPort: number;
+    dockerExpectedContainerPort: number;
+  };
   migrations: {
     expectedCount: number;
     appliedCount: number | null;
@@ -136,5 +145,21 @@ export class AdminSystemStatusCardComponent implements OnInit {
     if (names.length === 0) return '';
     if (names.length <= 2) return names.join(', ') + '.';
     return `${names.slice(0, 2).join(', ')} и ещё ${names.length - 2}.`;
+  }
+
+  dbConnectionSummary(s: SystemStatusDto): string {
+    if (!s.dbConnection.databaseUrlPresent) {
+      return 'DATABASE_URL не задан';
+    }
+    const protocol = s.dbConnection.protocol ?? 'postgresql';
+    const host = s.dbConnection.host ?? '—';
+    const port = s.dbConnection.port ?? 5432;
+    const dbName = s.dbConnection.database ?? '—';
+    return `${protocol}://${host}:${port}/${dbName}`;
+  }
+
+  apiEndpointSummary(): string {
+    const base = this.apiConfig.baseUrl.replace(/\/$/, '');
+    return `${base}/api`;
   }
 }

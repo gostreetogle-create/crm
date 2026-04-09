@@ -303,7 +303,14 @@
                             <span class="crudCellText">{{ row?.[column.key] ?? '—' }}</span>
                           </span>
                         } @else {
-                          <span class="crudCellPlain">{{ row?.[column.key] ?? '—' }}</span>
+                          @if (cellTemplate) {
+                            <ng-container
+                              [ngTemplateOutlet]="cellTemplate"
+                              [ngTemplateOutletContext]="{ row: row, column: column, value: row?.[column.key] }"
+                            ></ng-container>
+                          } @else {
+                            <span class="crudCellPlain">{{ row?.[column.key] ?? '—' }}</span>
+                          }
                         }
                       </span>
                     </div>
@@ -320,7 +327,14 @@
                         <span class="crudCellText">{{ row?.[column.key] ?? '—' }}</span>
                       </span>
                     } @else {
-                      <span class="crudCellPlain">{{ row?.[column.key] ?? '—' }}</span>
+                      @if (cellTemplate) {
+                        <ng-container
+                          [ngTemplateOutlet]="cellTemplate"
+                          [ngTemplateOutletContext]="{ row: row, column: column, value: row?.[column.key] }"
+                        ></ng-container>
+                      } @else {
+                        <span class="crudCellPlain">{{ row?.[column.key] ?? '—' }}</span>
+                      }
                     }
                   }
                 </td>
@@ -396,7 +410,14 @@
                   <span class="crudCellText">{{ row?.[column.key] ?? '—' }}</span>
                 </span>
               } @else {
-                <span class="crudCellPlain">{{ row?.[column.key] ?? '—' }}</span>
+                @if (cellTemplate) {
+                  <ng-container
+                    [ngTemplateOutlet]="cellTemplate"
+                    [ngTemplateOutletContext]="{ row: row, column: column, value: row?.[column.key] }"
+                  ></ng-container>
+                } @else {
+                  <span class="crudCellPlain">{{ row?.[column.key] ?? '—' }}</span>
+                }
               }
             </span>
           </div>

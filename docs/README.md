@@ -10,6 +10,8 @@
 - `docs/frontend/interaction-system.md` — единый стандарт поведения интерфейса (Demo page как эталон).
 - `docs/frontend/ui-contract-v1.md` — формальный UI-контракт проекта.
 - `docs/frontend/ui-audit-wave1.md` — аудит дубликатов/расхождений UI (волна 1).
+- `docs/frontend/commercial-offers-bl-roadmap.md` — roadmap по устойчивой бизнес-логике КП (статусы, слой сервисов, тесты).
+- `docs/release-gates.md` — единый минимальный gate перед релизом (critical tests backend + frontend-state).
 
 ## Правило источника правды
 

@@ -19,3 +19,6 @@ export * from './lib/trade-good-subcategories.store';
 export * from './lib/complexes.store';
 export * from './lib/catalog-products.store';
 export * from './lib/catalog-articles.store';
+export * from './lib/commercial-offers.store';
+export * from './lib/commercial-offer-status.rules';
+export * from './lib/orders.store';

@@ -202,6 +202,17 @@
   outline-offset: 1px;
 }
 
+.dictionaryCommercialOfferStatusSelect {
+  min-width: 154px;
+  max-width: 100%;
+  font: inherit;
+  color: var(--text-primary);
+  background: var(--surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-card);
+  padding: 4px 8px;
+}
+
 /* Вкладки в объединённой модалке «Новый материал» / «Новая характеристика материала» */
 .dictionaryModalTabs {
   display: flex;

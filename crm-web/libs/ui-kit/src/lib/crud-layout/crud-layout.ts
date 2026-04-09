@@ -62,6 +62,12 @@ export class CrudLayoutComponent implements OnInit, OnChanges {
   @Input({ required: true }) data: CrudTableRow[] = [];
   @Input() toolbarActions: TemplateRef<unknown> | null = null;
   @Input() formActions: TemplateRef<unknown> | null = null;
+  /** Кастомный рендер ячейки (row/column/value) для точечных сценариев. */
+  @Input() cellTemplate: TemplateRef<{
+    row: CrudTableRow;
+    column: TableColumn;
+    value: unknown;
+  }> | null = null;
   @Input({ required: true }) title!: string;
   @Input() showHeader = true;
   @Input() showCardLabel = false;

@@ -93,6 +93,10 @@ import {
   TRADE_GOOD_SUBCATEGORIES_COLUMNS_FULL,
   CATALOG_COMPLEXES_COLUMNS,
   CATALOG_COMPLEXES_COLUMNS_FULL,
+  COMMERCIAL_OFFERS_COLUMNS,
+  COMMERCIAL_OFFERS_COLUMNS_FULL,
+  ORDERS_COLUMNS,
+  ORDERS_COLUMNS_FULL,
 } from './dictionaries-page-table-columns';
 import { complexPayloadFromValues } from './dictionaries-page-catalog-suite';
 import { productPayloadFromValues } from './dictionaries-page-products';
@@ -123,13 +127,16 @@ import {
   workTypesPayloadFromValues,
 } from './dictionaries-page-payload-builders';
 import {
+  canCommercialOfferTransition,
   ClientsStore,
   CoatingsStore,
   ColorsStore,
+  CommercialOffersStore,
   GeometriesStore,
   KpPhotosStore,
   MaterialCharacteristicsStore,
   MaterialsStore,
+  OrdersStore,
   OrganizationsStore,
   ProductionDetailsStore,
   ProductsStore,
@@ -137,6 +144,8 @@ import {
   TradeGoodCategoriesStore,
   TradeGoodSubcategoriesStore,
   ComplexesStore,
+  normalizeCommercialOfferStatusKey,
+  type ProposalStatusKey,
   ProductionWorkTypesStore,
   RolesStore,
   SurfaceFinishesStore,
@@ -332,6 +341,12 @@ export class DictionariesPage implements OnDestroy {
       case 'newMaterialCharacteristicPage':
         this.navigateToNewMaterialCharacteristicPage();
         break;
+      case 'catalogComplexCreate':
+        this.openCatalogComplexCreate();
+        break;
+      case 'commercialOfferCreate':
+        this.openCommercialOfferCreate();
+        break;
       case 'standalone':
         this.navigateToStandaloneDictionaryCreate(target.key);
         break;
@@ -342,6 +357,8 @@ export class DictionariesPage implements OnDestroy {
   readonly materialsStore = inject(MaterialsStore);
   readonly geometriesStore = inject(GeometriesStore);
   readonly unitsStore = inject(UnitsStore);
+  readonly commercialOffersStore = inject(CommercialOffersStore);
+  readonly ordersStore = inject(OrdersStore);
   readonly kpPhotosStore = inject(KpPhotosStore);
   readonly colorsStore = inject(ColorsStore);
   readonly coatingsStore = inject(CoatingsStore);
@@ -444,6 +461,8 @@ export class DictionariesPage implements OnDestroy {
   });
   readonly isCatalogComplexModalOpen = signal(false);
   readonly isCatalogComplexViewMode = signal(false);
+  readonly isOrdersModalOpen = signal(false);
+  readonly isOrdersViewMode = signal(false);
   readonly isMaterialCharacteristicsModalOpen = signal(false);
   readonly isMaterialCharacteristicsViewMode = signal(false);
   readonly isMaterialsModalOpen = signal(false);
@@ -819,6 +838,16 @@ export class DictionariesPage implements OnDestroy {
   }
 
   readonly unitsColumnsForTile = this.columnsForTile('units', this.unitsColumns, this.unitsColumnsFull);
+  readonly commercialOffersColumns = COMMERCIAL_OFFERS_COLUMNS;
+  readonly commercialOffersColumnsFull = COMMERCIAL_OFFERS_COLUMNS_FULL;
+  readonly commercialOffersColumnsForTile = this.columnsForTile(
+    'commercialOffers',
+    this.commercialOffersColumns,
+    this.commercialOffersColumnsFull,
+  );
+  readonly ordersColumns = ORDERS_COLUMNS;
+  readonly ordersColumnsFull = ORDERS_COLUMNS_FULL;
+  readonly ordersColumnsForTile = this.columnsForTile('orders', this.ordersColumns, this.ordersColumnsFull);
   readonly kpPhotosColumnsForTile = this.columnsForTile('kpPhotos', this.kpPhotosColumns, this.kpPhotosColumnsFull);
   readonly clientsColumnsForTile = this.columnsForTile('clients', this.clientsColumns, this.clientsColumnsFull);
   readonly organizationsColumnsForTile = this.columnsForTile(
@@ -1062,6 +1091,15 @@ export class DictionariesPage implements OnDestroy {
     isActive: [true],
   });
 
+  readonly ordersForm = this.fb.nonNullable.group({
+    orderNumber: ['', [Validators.required, Validators.minLength(1)]],
+    offerNumber: [''],
+    customerLabel: [''],
+    deadline: [''],
+    notes: [''],
+    linesSummary: [''],
+  });
+
   readonly kpPhotosForm = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.minLength(1)]],
     organizationId: ['', Validators.required],
@@ -1248,6 +1286,8 @@ export class DictionariesPage implements OnDestroy {
     this.materialCharacteristicsStore.loadItems();
     this.geometriesStore.loadItems();
     this.unitsStore.loadItems();
+    this.commercialOffersStore.loadItems();
+    this.ordersStore.loadItems();
     this.kpPhotosStore.loadItems();
     this.colorsStore.loadItems();
     this.coatingsStore.loadItems();
@@ -4120,6 +4160,188 @@ export class DictionariesPage implements OnDestroy {
     this.isCatalogComplexModalOpen.set(true);
   }
 
+  readonly commercialOfferStatusOptions: ReadonlyArray<{
+    key: ProposalStatusKey;
+    label: string;
+  }> = [
+    { key: 'proposal_draft', label: 'Черновик' },
+    { key: 'proposal_waiting', label: 'На согласовании' },
+    { key: 'proposal_paid', label: 'Оплачено' },
+  ];
+
+  openCommercialOfferCreate(): void {
+    if (!this.permissions.can('page.commercialProposal')) return;
+    void this.router.navigate(['/коммерческое'], {
+      queryParams: { offerId: null },
+      queryParamsHandling: 'merge',
+    });
+  }
+
+  openCommercialOfferEdit(id: string): void {
+    if (!this.permissions.can('page.commercialProposal')) return;
+    void this.router.navigate(['/коммерческое'], {
+      queryParams: { offerId: id },
+      queryParamsHandling: 'merge',
+    });
+  }
+
+  openCommercialOfferView(id: string): void {
+    this.openCommercialOfferEdit(id);
+  }
+
+  duplicateCommercialOffer(id: string): void {
+    if (!this.permissions.can('page.commercialProposal')) return;
+    this.commercialOffersStore.duplicate(id, (newId) => this.openCommercialOfferEdit(newId));
+  }
+
+  deleteCommercialOffer(id: string): void {
+    if (!this.permissions.crud().canDelete) return;
+    this.commercialOffersStore.remove(id);
+  }
+
+  openOrdersEdit(id: string): void {
+    if (!this.permissions.crud().canEdit) return;
+    const item = this.ordersStore.items().find((x) => x.id === id);
+    if (!item) return;
+    this.ordersStore.startEdit(id);
+    this.ordersForm.reset({
+      orderNumber: item.orderNumber ?? '',
+      offerNumber: item.offerNumber ?? '',
+      customerLabel: item.customerLabel ?? '',
+      deadline: this.dateInputFromIso(item.deadline),
+      notes: item.notes ?? '',
+      linesSummary: this.orderLinesSummary(item.linesSnapshot),
+    });
+    this.ordersForm.enable({ emitEvent: false });
+    this.ordersForm.controls.offerNumber.disable({ emitEvent: false });
+    this.ordersForm.controls.customerLabel.disable({ emitEvent: false });
+    this.ordersForm.controls.linesSummary.disable({ emitEvent: false });
+    this.isOrdersViewMode.set(false);
+    this.isOrdersModalOpen.set(true);
+  }
+
+  openOrdersView(id: string): void {
+    const item = this.ordersStore.items().find((x) => x.id === id);
+    if (!item) return;
+    this.ordersStore.resetForm();
+    this.ordersForm.reset({
+      orderNumber: item.orderNumber ?? '',
+      offerNumber: item.offerNumber ?? '',
+      customerLabel: item.customerLabel ?? '',
+      deadline: this.dateInputFromIso(item.deadline),
+      notes: item.notes ?? '',
+      linesSummary: this.orderLinesSummary(item.linesSnapshot),
+    });
+    this.ordersForm.disable({ emitEvent: false });
+    this.isOrdersViewMode.set(true);
+    this.isOrdersModalOpen.set(true);
+  }
+
+  closeOrdersModal(): void {
+    this.ordersStore.resetForm();
+    this.isOrdersViewMode.set(false);
+    this.isOrdersModalOpen.set(false);
+  }
+
+  submitOrders(): void {
+    if (this.ordersForm.invalid) {
+      this.ordersForm.markAllAsTouched();
+      scrollToFirstInvalidControlInForm('orders-form', this.doc);
+      return;
+    }
+    const editId = this.ordersStore.editId();
+    if (!editId) return;
+    this.ordersStore.update(editId, {
+      orderNumber: this.ordersForm.controls.orderNumber.value?.trim() || undefined,
+      deadline: this.ordersForm.controls.deadline.value?.trim() || null,
+      notes: this.ordersForm.controls.notes.value?.trim() || null,
+    });
+    this.closeOrdersModal();
+  }
+
+  deleteOrder(id: string): void {
+    if (!this.permissions.crud().canDelete) return;
+    this.ordersStore.remove(id);
+  }
+
+  onCommercialOfferStatusChange(
+    row: Record<string, unknown>,
+    nextKeyRaw: string,
+    event?: Event,
+  ): void {
+    event?.stopPropagation();
+    const selectEl = event?.target as HTMLSelectElement | null;
+    const id = String(row['id'] ?? '').trim();
+    const current = this.currentCommercialOfferStatusById(id) ?? normalizeCommercialOfferStatusKey(row['statusKey']);
+    const next = nextKeyRaw.trim();
+    if (!id || !next || next === current) return;
+    const inFlight = this.commercialOffersStore.processingStatusIds().has(id);
+    if (inFlight) return;
+    if (
+      next !== 'proposal_draft' &&
+      next !== 'proposal_waiting' &&
+      next !== 'proposal_paid'
+    ) {
+      if (selectEl) {
+        selectEl.value = current;
+      }
+      return;
+    }
+    if (!canCommercialOfferTransition(current, next)) {
+      if (selectEl) {
+        selectEl.value = current;
+      }
+      return;
+    }
+    this.commercialOffersStore.updateStatus(id, next);
+  }
+
+  canCommercialOfferTransition(currentRaw: unknown, nextRaw: unknown): boolean {
+    return canCommercialOfferTransition(currentRaw, nextRaw);
+  }
+
+  isCommercialOfferStatusProcessing(row: Record<string, unknown>): boolean {
+    const id = `${row['id'] ?? ''}`.trim();
+    if (!id) return false;
+    return this.commercialOffersStore.processingStatusIds().has(id);
+  }
+
+  commercialOfferStatusValue(row: Record<string, unknown>): string {
+    const id = `${row['id'] ?? ''}`.trim();
+    if (!id) {
+      return normalizeCommercialOfferStatusKey(row['statusKey']);
+    }
+    return this.currentCommercialOfferStatusById(id) ?? normalizeCommercialOfferStatusKey(row['statusKey']);
+  }
+
+  canCommercialOfferTransitionForOffer(idRaw: unknown, nextRaw: unknown): boolean {
+    const id = String(idRaw ?? '').trim();
+    const current = this.currentCommercialOfferStatusById(id);
+    return this.canCommercialOfferTransition(current ?? 'proposal_draft', nextRaw);
+  }
+
+  private currentCommercialOfferStatusById(id: string): ProposalStatusKey | null {
+    if (!id) return null;
+    const item = this.commercialOffersStore.items().find((x) => x.id === id);
+    if (!item) return null;
+    return normalizeCommercialOfferStatusKey(item.currentStatusKey);
+  }
+
+  private dateInputFromIso(iso: string | null): string {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return '';
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  private orderLinesSummary(lines: Array<{ name: string; qty: number; unit: string }>): string {
+    if (!Array.isArray(lines) || lines.length === 0) return '—';
+    return lines.map((line) => `${line.name} × ${line.qty} ${line.unit}`.trim()).join('\n');
+  }
+
   openKpPhotosCreate(): void {
     if (!this.permissions.crud().canCreate) return;
     this.navigateToStandaloneDictionaryCreate('kpPhotos');
@@ -5853,6 +6075,11 @@ export class DictionariesPage implements OnDestroy {
       control.invalid &&
       (control.touched || control.dirty || this.complexesStore.formSubmitAttempted())
     );
+  }
+
+  isOrdersInvalid(controlName: keyof typeof this.ordersForm.controls): boolean {
+    const control = this.ordersForm.controls[controlName];
+    return control.invalid && (control.touched || control.dirty);
   }
 
   isKpPhotosInvalid(controlName: keyof typeof this.kpPhotosForm.controls): boolean {

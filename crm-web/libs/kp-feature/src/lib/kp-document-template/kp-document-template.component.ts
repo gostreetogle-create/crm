@@ -98,6 +98,11 @@ export class KpDocumentTemplateComponent {
   /** НДС под итогом: ставка % и сумма (редактируемые). */
   @Input() vatPercentCtrl: FormControl<string> | null = null;
   @Input() vatAmountCtrl: FormControl<string> | null = null;
+  /** Верхний правый инфо-блок КП: номер, дата, предоплата, срок производства. */
+  @Input() offerNumberCtrl: FormControl<string> | null = null;
+  @Input() createdAtCtrl: FormControl<string> | null = null;
+  @Input() prepaymentPercentCtrl: FormControl<string> | null = null;
+  @Input() productionLeadDaysCtrl: FormControl<string> | null = null;
 
   @Input() totalRub: number | null = null;
   @Input() showTotal = true;
@@ -126,6 +131,17 @@ export class KpDocumentTemplateComponent {
 
   lineItemsValue(): KpLineItem[] {
     return (this.linesForm?.getRawValue() ?? []) as KpLineItem[];
+  }
+
+  createdAtLabel(): string {
+    const raw = String(this.createdAtCtrl?.value ?? '').trim();
+    if (!raw) return '';
+    const d = new Date(raw);
+    if (Number.isNaN(d.getTime())) return '';
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}.${month}.${year}г.`;
   }
 
   resolvedBgPage1(): string {

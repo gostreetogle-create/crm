@@ -32,57 +32,163 @@
           @if (selectedOrganization(); as org) {
             <div class="kp-sheet__orgStrip">
               <div class="kp-sheet__orgDetails" aria-live="polite">
-                <div class="kp-sheet__orgLine kp-sheet__orgLine--intro">Коммерческое предложение для:</div>
-                <div class="kp-sheet__orgLine kp-sheet__orgLine--name">{{ org.name }}</div>
-                @if (org.inn?.trim()) {
-                  <div class="kp-sheet__orgLine">
-                    <span class="kp-sheet__orgPrefix">ИНН:</span>
-                    {{ org.inn }}
-                  </div>
-                }
-                @if (org.email?.trim()) {
-                  <div class="kp-sheet__orgLine">
-                    <span class="kp-sheet__orgPrefix">&#64;Почта:</span>
-                    {{ org.email }}
-                  </div>
-                }
-                @if (org.phone?.trim()) {
-                  <div class="kp-sheet__orgLine">
-                    <span class="kp-sheet__orgPrefix">Тел.</span>
-                    {{ org.phone }}
-                  </div>
-                }
-                @if (selectedOrganizationContact(); as c) {
-                  <div class="kp-sheet__orgLine">
-                    <span class="kp-sheet__orgPrefix">Контакт:</span>
-                    {{ clientLabel(c) }}
-                  </div>
-                  @if (c.phone.trim()) {
-                    <div class="kp-sheet__orgLine">
-                      <span class="kp-sheet__orgPrefix">Тел.</span>
-                      {{ c.phone }}
-                    </div>
+                <div class="kp-sheet__orgRecipient">
+                  <div class="kp-sheet__orgLine kp-sheet__orgLine--intro">Коммерческое предложение для:</div>
+                  <div class="kp-sheet__orgLine kp-sheet__orgLine--name">{{ org.name }}</div>
+                  @if (org.inn?.trim()) {
+                    <div class="kp-sheet__orgLine"><span class="kp-sheet__orgPrefix">ИНН:</span> {{ org.inn }}</div>
                   }
-                }
+                  @if (org.email?.trim()) {
+                    <div class="kp-sheet__orgLine"><span class="kp-sheet__orgPrefix">&#64;Почта:</span> {{ org.email }}</div>
+                  }
+                  @if (org.phone?.trim()) {
+                    <div class="kp-sheet__orgLine"><span class="kp-sheet__orgPrefix">Тел.</span> {{ org.phone }}</div>
+                  }
+                  @if (selectedOrganizationContact(); as c) {
+                    <div class="kp-sheet__orgLine"><span class="kp-sheet__orgPrefix">Контакт:</span> {{ clientLabel(c) }}</div>
+                    @if (c.phone.trim()) {
+                      <div class="kp-sheet__orgLine"><span class="kp-sheet__orgPrefix">Тел.</span> {{ c.phone }}</div>
+                    }
+                  }
+                </div>
+                <div class="kp-sheet__metaBox">
+                  <div class="kp-sheet__metaLine">
+                    <span class="kp-sheet__metaLabel">№ КП:</span>
+                    <input
+                      type="text"
+                      class="kp-sheet__metaInput"
+                      [value]="offerNumberCtrl?.value ?? ''"
+                      (input)="offerNumberCtrl?.setValue($any($event.target).value ?? '')"
+                    />
+                  </div>
+                  <div class="kp-sheet__metaLine">
+                    <span class="kp-sheet__metaLabel">Дата создания:</span>
+                    <span class="kp-sheet__metaValue">{{ createdAtLabel() || '—' }}</span>
+                  </div>
+                  <div class="kp-sheet__metaLine">
+                    <span class="kp-sheet__metaLabel">Предоплата:</span>
+                    <span class="kp-sheet__metaInline">
+                      <input
+                        type="text"
+                        class="kp-sheet__metaInput kp-sheet__metaInput--narrow"
+                        [value]="prepaymentPercentCtrl?.value ?? ''"
+                        (input)="prepaymentPercentCtrl?.setValue($any($event.target).value ?? '')"
+                      />
+                      <span>%</span>
+                    </span>
+                  </div>
+                  <div class="kp-sheet__metaLine">
+                    <span class="kp-sheet__metaLabel">Срок производства:</span>
+                    <span class="kp-sheet__metaInline">
+                      <input
+                        type="text"
+                        class="kp-sheet__metaInput kp-sheet__metaInput--narrow"
+                        [value]="productionLeadDaysCtrl?.value ?? ''"
+                        (input)="productionLeadDaysCtrl?.setValue($any($event.target).value ?? '')"
+                      />
+                      <span>рабочих дней</span>
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           } @else if (selectedContact(); as person) {
               <div class="kp-sheet__orgStrip">
                 <div class="kp-sheet__orgDetails" aria-live="polite">
-                  <div class="kp-sheet__orgLine kp-sheet__orgLine--intro">Коммерческое предложение для:</div>
-                  <div class="kp-sheet__orgLine kp-sheet__orgLine--name">{{ clientLabel(person) }}</div>
-                  @if (person.phone.trim()) {
-                    <div class="kp-sheet__orgLine">
-                      <span class="kp-sheet__orgPrefix">Тел.</span>
-                      {{ person.phone }}
+                  <div class="kp-sheet__orgRecipient">
+                    <div class="kp-sheet__orgLine kp-sheet__orgLine--intro">Коммерческое предложение для:</div>
+                    <div class="kp-sheet__orgLine kp-sheet__orgLine--name">{{ clientLabel(person) }}</div>
+                    @if (person.phone.trim()) {
+                      <div class="kp-sheet__orgLine"><span class="kp-sheet__orgPrefix">Тел.</span> {{ person.phone }}</div>
+                    }
+                    @if (person.email.trim()) {
+                      <div class="kp-sheet__orgLine"><span class="kp-sheet__orgPrefix">&#64;Почта:</span> {{ person.email }}</div>
+                    }
+                  </div>
+                  <div class="kp-sheet__metaBox">
+                    <div class="kp-sheet__metaLine">
+                      <span class="kp-sheet__metaLabel">№ КП:</span>
+                      <input
+                        type="text"
+                        class="kp-sheet__metaInput"
+                        [value]="offerNumberCtrl?.value ?? ''"
+                        (input)="offerNumberCtrl?.setValue($any($event.target).value ?? '')"
+                      />
                     </div>
-                  }
-                  @if (person.email.trim()) {
-                    <div class="kp-sheet__orgLine">
-                      <span class="kp-sheet__orgPrefix">&#64;Почта:</span>
-                      {{ person.email }}
+                    <div class="kp-sheet__metaLine">
+                      <span class="kp-sheet__metaLabel">Дата создания:</span>
+                      <span class="kp-sheet__metaValue">{{ createdAtLabel() || '—' }}</span>
                     </div>
-                  }
+                    <div class="kp-sheet__metaLine">
+                      <span class="kp-sheet__metaLabel">Предоплата:</span>
+                      <span class="kp-sheet__metaInline">
+                        <input
+                          type="text"
+                          class="kp-sheet__metaInput kp-sheet__metaInput--narrow"
+                          [value]="prepaymentPercentCtrl?.value ?? ''"
+                          (input)="prepaymentPercentCtrl?.setValue($any($event.target).value ?? '')"
+                        />
+                        <span>%</span>
+                      </span>
+                    </div>
+                    <div class="kp-sheet__metaLine">
+                      <span class="kp-sheet__metaLabel">Срок производства:</span>
+                      <span class="kp-sheet__metaInline">
+                        <input
+                          type="text"
+                          class="kp-sheet__metaInput kp-sheet__metaInput--narrow"
+                          [value]="productionLeadDaysCtrl?.value ?? ''"
+                          (input)="productionLeadDaysCtrl?.setValue($any($event.target).value ?? '')"
+                        />
+                        <span>рабочих дней</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            } @else {
+              <div class="kp-sheet__orgStrip">
+                <div class="kp-sheet__orgDetails" aria-live="polite">
+                  <div class="kp-sheet__orgRecipient"></div>
+                  <div class="kp-sheet__metaBox">
+                    <div class="kp-sheet__metaLine">
+                      <span class="kp-sheet__metaLabel">№ КП:</span>
+                      <input
+                        type="text"
+                        class="kp-sheet__metaInput"
+                        [value]="offerNumberCtrl?.value ?? ''"
+                        (input)="offerNumberCtrl?.setValue($any($event.target).value ?? '')"
+                      />
+                    </div>
+                    <div class="kp-sheet__metaLine">
+                      <span class="kp-sheet__metaLabel">Дата создания:</span>
+                      <span class="kp-sheet__metaValue">{{ createdAtLabel() || '—' }}</span>
+                    </div>
+                    <div class="kp-sheet__metaLine">
+                      <span class="kp-sheet__metaLabel">Предоплата:</span>
+                      <span class="kp-sheet__metaInline">
+                        <input
+                          type="text"
+                          class="kp-sheet__metaInput kp-sheet__metaInput--narrow"
+                          [value]="prepaymentPercentCtrl?.value ?? ''"
+                          (input)="prepaymentPercentCtrl?.setValue($any($event.target).value ?? '')"
+                        />
+                        <span>%</span>
+                      </span>
+                    </div>
+                    <div class="kp-sheet__metaLine">
+                      <span class="kp-sheet__metaLabel">Срок производства:</span>
+                      <span class="kp-sheet__metaInline">
+                        <input
+                          type="text"
+                          class="kp-sheet__metaInput kp-sheet__metaInput--narrow"
+                          [value]="productionLeadDaysCtrl?.value ?? ''"
+                          (input)="productionLeadDaysCtrl?.setValue($any($event.target).value ?? '')"
+                        />
+                        <span>рабочих дней</span>
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
             }

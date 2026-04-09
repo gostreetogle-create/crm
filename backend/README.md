@@ -39,6 +39,11 @@ Express + TypeScript + Prisma + PostgreSQL.
    - `GET|POST /api/units`, `PUT|DELETE /api/units/:id`  
    - Каталог комплексов / товаров / позиций (JWT): `GET|POST /api/complexes`, `PUT|DELETE /api/complexes/:id`; `GET|POST /api/catalog-products` (фильтр `?complexId=`), `PUT|DELETE /api/catalog-products/:id`; `GET|POST /api/catalog-articles` (фильтр `?productId=`), `PUT|DELETE /api/catalog-articles/:id`. Производственные изделия по-прежнему `/api/products`.
 
+7. Тесты backend (Vitest):  
+   - Разовый прогон: `npm test`  
+   - Critical-набор (КП/статусы/заказы): `npm run test:critical`  
+   - Watch-режим: `npm run test:watch`
+
 ### Если в консоли Prisma: «Can't reach database server»
 
 Сначала запусти Postgres (см. выше). Пока БД недоступна, маршруты с обращением к БД будут отвечать **500** или (в админ-зоне) **503**.

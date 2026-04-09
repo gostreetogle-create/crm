@@ -191,7 +191,7 @@ model CommercialOffer {
   number         String?
   title          String?
   status         CommercialOfferStatus @default(DRAFT)
-  /// Канонический BL-статус для lifecycle КП: proposal_draft|proposal_waiting|proposal_approved|proposal_paid
+  /// Канонический BL-статус для lifecycle КП: proposal_draft|proposal_waiting|proposal_paid
   currentStatusKey String              @default("proposal_draft")
   organizationId String?
   clientId       String?
@@ -199,6 +199,8 @@ model CommercialOffer {
   recipient      String?
   validUntil     DateTime?
   currency       String                @default("RUB")
+  prepaymentPercent Float              @default(80)
+  productionLeadDays Int               @default(30)
   vatPercent     Float                 @default(22)
   vatAmount      Float                 @default(0)
   subtotalAmount Float                 @default(0)
@@ -212,11 +214,35 @@ model CommercialOffer {
   organizationContact Client? @relation("CommercialOfferOrganizationContact", fields: [organizationContactId], references: [id], onDelete: Restrict)
   lines        CommercialOfferLine[]
   printEvents  CommercialOfferPrintEvent[]
+  order        Order?
 
   @@index([organizationId])
   @@index([clientId])
   @@index([status])
   @@index([currentStatusKey])
+  @@index([createdAt])
+}
+
+/// Заказ, автоматически созданный из оплаченного КП (1:1 по commercialOfferId).
+model Order {
+  id                String   @id @default(uuid())
+  commercialOfferId String   @unique
+  orderNumber       String
+  offerNumber       String
+  customerLabel     String
+  deadline          DateTime?
+  /**
+   * Снимок состава без цен:
+   * [{ lineNo, name, description, qty, unit, sortOrder }]
+   */
+  linesSnapshot     Json
+  notes             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  commercialOffer CommercialOffer @relation(fields: [commercialOfferId], references: [id], onDelete: Restrict)
+
+  @@index([orderNumber])
   @@index([createdAt])
 }
 

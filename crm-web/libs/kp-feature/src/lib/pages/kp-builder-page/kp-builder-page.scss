@@ -85,6 +85,17 @@
   color: var(--text-primary);
 }
 
+.kp-builder__orderNumberInput {
+  width: 100%;
+  min-height: var(--ui-control-min-height, 32px);
+  border-radius: var(--radius-card);
+  border: 1px solid var(--border-color);
+  background: var(--surface);
+  color: var(--text-primary);
+  padding: 6px 10px;
+  font: inherit;
+}
+
 /** Кнопка печати — в конце строки тулбара (вправо) */
 .kp-builder__print-action {
   margin-left: auto;

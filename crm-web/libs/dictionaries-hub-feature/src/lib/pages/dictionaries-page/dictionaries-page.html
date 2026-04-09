@@ -833,6 +833,93 @@
       ></crud-layout>
         }
 
+            @case ('commercialOffers') {
+      <crud-layout
+        title="Коммерческие предложения"
+        [showHeader]="false"
+        [showCardLabel]="false"
+        [showNameSearch]="true"
+        nameSearchPlaceholder="Поиск по номеру, получателю, статусу…"
+        [showCreateAction]="false"
+        [canCreate]="permissions.can('page.commercialProposal')"
+        createAriaLabel="Создать коммерческое предложение"
+        createTitle="Создать коммерческое предложение"
+        [columns]="commercialOffersColumnsForTile()"
+        [data]="commercialOffersStore.commercialOffersData()"
+        [cellTemplate]="commercialOffersCellTpl"
+        [loading]="commercialOffersStore.loading()"
+        [maxTableBodyRows]="null"
+        [tablePagination]="true"
+        [tableDensity]="'compact'"
+        [tableBodyMaxHeight]="hubBoardDetailTableMaxHeight"
+        [canView]="permissions.can('page.commercialProposal')"
+        [canDuplicate]="permissions.can('page.commercialProposal')"
+        [canEdit]="permissions.can('page.commercialProposal')"
+        [canDelete]="permissions.crud().canDelete"
+        deleteConfirmMessage="Удалить коммерческое предложение?"
+        (create)="openCommercialOfferCreate()"
+        (view)="openCommercialOfferView($event)"
+        (duplicate)="duplicateCommercialOffer($event)"
+        (edit)="openCommercialOfferEdit($event)"
+        (delete)="deleteCommercialOffer($event)"
+      ></crud-layout>
+      <ng-template #commercialOffersCellTpl let-row="row" let-column="column" let-value="value">
+        @if (column.key === 'statusLabel') {
+          <select
+            class="dictionaryCommercialOfferStatusSelect"
+            [value]="commercialOfferStatusValue($any(row))"
+            [disabled]="isCommercialOfferStatusProcessing($any(row))"
+            (click)="$event.stopPropagation()"
+            (change)="onCommercialOfferStatusChange($any(row), $any($event.target).value, $event)"
+          >
+            @for (opt of commercialOfferStatusOptions; track opt.key) {
+              <option
+                [value]="opt.key"
+                [disabled]="!canCommercialOfferTransitionForOffer(row['id'], opt.key)"
+              >
+                {{ opt.label }}
+              </option>
+            }
+          </select>
+        } @else {
+          <span class="crudCellPlain">{{ value ?? '—' }}</span>
+        }
+      </ng-template>
+        @if (commercialOffersStore.error(); as offersErr) {
+          <p class="dictionaryHubLoadError" role="alert">{{ offersErr }}</p>
+        }
+        }
+
+            @case ('orders') {
+      <crud-layout
+        title="Заказы"
+        [showHeader]="false"
+        [showCardLabel]="false"
+        [showNameSearch]="true"
+        nameSearchPlaceholder="Поиск по номеру заказа, КП, заказчику…"
+        [showCreateAction]="false"
+        [canCreate]="false"
+        [columns]="ordersColumnsForTile()"
+        [data]="ordersStore.ordersData()"
+        [loading]="ordersStore.loading()"
+        [maxTableBodyRows]="null"
+        [tablePagination]="true"
+        [tableDensity]="'compact'"
+        [tableBodyMaxHeight]="hubBoardDetailTableMaxHeight"
+        [canView]="permissions.can('page.commercialProposal')"
+        [canDuplicate]="false"
+        [canEdit]="permissions.can('page.commercialProposal')"
+        [canDelete]="permissions.crud().canDelete"
+        deleteConfirmMessage="Удалить заказ?"
+        (view)="openOrdersView($event)"
+        (edit)="openOrdersEdit($event)"
+        (delete)="deleteOrder($event)"
+      ></crud-layout>
+      @if (ordersStore.error(); as ordersErr) {
+        <p class="dictionaryHubLoadError" role="alert">{{ ordersErr }}</p>
+      }
+        }
+
             @case ('kpPhotos') {
       <crud-layout
         title="Фото для КП"
@@ -4277,5 +4364,56 @@
     [formId]="'kp-photos-form'"
     [submitLabel]="kpPhotosStore.isEditMode() ? 'Сохранить изменения' : 'Создать запись'"
     (dismiss)="closeKpPhotosModal()"
+  />
+</ng-template>
+
+@if (isOrdersModalOpen()) {
+  <ui-modal
+    [title]="isOrdersViewMode() ? 'Просмотр заказа' : 'Редактирование заказа'"
+    [content]="ordersContentTpl"
+    [actions]="ordersActionsTpl"
+    size="md"
+    (close)="closeOrdersModal()"
+  ></ui-modal>
+}
+
+<ng-template #ordersContentTpl>
+  <form id="orders-form" class="dictionaryForm" [formGroup]="ordersForm" (ngSubmit)="submitOrders()">
+    <div class="dictionaryFormSectionBody dictionaryFormSectionBody--2">
+      <app-ui-form-field
+        label="Номер заказа"
+        [required]="true"
+        [invalid]="isOrdersInvalid('orderNumber')"
+        [errorText]="isOrdersInvalid('orderNumber') ? 'Укажите номер заказа' : ''"
+      >
+        <input type="text" formControlName="orderNumber" />
+      </app-ui-form-field>
+      <app-ui-form-field label="Срок" [required]="false">
+        <input type="date" formControlName="deadline" />
+      </app-ui-form-field>
+      <app-ui-form-field label="Номер КП" [required]="false">
+        <input type="text" formControlName="offerNumber" />
+      </app-ui-form-field>
+      <app-ui-form-field label="Заказчик" [required]="false">
+        <input type="text" formControlName="customerLabel" />
+      </app-ui-form-field>
+    </div>
+    <div class="dictionaryFormSectionBody">
+      <app-ui-form-field label="Состав (без цен)" [required]="false">
+        <textarea rows="4" formControlName="linesSummary"></textarea>
+      </app-ui-form-field>
+      <app-ui-form-field label="Примечание" [required]="false">
+        <textarea rows="3" formControlName="notes"></textarea>
+      </app-ui-form-field>
+    </div>
+  </form>
+</ng-template>
+
+<ng-template #ordersActionsTpl>
+  <app-ui-modal-form-actions
+    [viewMode]="isOrdersViewMode()"
+    [formId]="'orders-form'"
+    [submitLabel]="'Сохранить изменения'"
+    (dismiss)="closeOrdersModal()"
   />
 </ng-template>

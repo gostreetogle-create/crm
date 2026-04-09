@@ -24,10 +24,10 @@
 
 ### PostgreSQL в Docker
 
-`deploy/docker-compose.yml` поднимает Postgres; контейнер **`crm_postgres`**, на хосте по умолчанию **5432** (`POSTGRES_PORT` в `deploy/.env`). Команды из корня репозитория:
+`docker-compose.yml` в корне репозитория поднимает Postgres; контейнер **`crm_postgres`**, на хосте по умолчанию **5432** (`POSTGRES_PORT` в `deploy/.env`). Команды из корня репозитория:
 
 ```bash
-docker compose -f deploy/docker-compose.yml up -d postgres
+docker compose up -d postgres
 ```
 
 Если контейнер уже создан, но остановлен:
@@ -37,6 +37,21 @@ docker start crm_postgres
 ```
 
 Убедись, что `DATABASE_URL` в `backend/.env` указывает на **тот же хост и порт**, что проброшены из Docker (канон: `localhost:5432`).
+
+### Частый кейс Prisma: `prisma://` / `prisma+postgres://`
+
+Если видите ошибку вида:
+
+- `the URL must start with the protocol prisma:// or prisma+postgres://`
+
+значит backend запущен с Prisma Client в Data Proxy/Accelerate режиме, а локально используется обычный `DATABASE_URL=postgresql://...`.
+
+Что сделать:
+
+1. Остановить backend (`npm run dev`).
+2. В `backend/.env` оставить обычный URL `postgresql://...`.
+3. Выполнить в `backend/`: `npx prisma generate` (без `--no-engine`).
+4. Перезапустить backend.
 
 Полный сброс контейнеров и томов Docker для этого compose: см. раздел в `docs/dev-local-ports.md`.
 

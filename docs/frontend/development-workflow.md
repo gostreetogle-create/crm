@@ -15,6 +15,10 @@
 
 **Локальный запуск (Postgres + backend + `nx serve`):** [`backend-enable-runbook.md`](./backend-enable-runbook.md); для ассистента в Cursor — `.cursor/rules/local-dev-launch.mdc`.
 
+**Для задач по КП и сложной БЛ статусов:** использовать целевой roadmap [`commercial-offers-bl-roadmap.md`](./commercial-offers-bl-roadmap.md) как обязательный ориентир по порядку внедрения.
+
+**Минимальный release gate (critical tests):** [`../release-gates.md`](../release-gates.md).
+
 ## Прод-деплой на VPS (фронт)
 
 **Один только `git push` новый UI на сервер не доставляет:** статика не в git, она лежит на диске VPS в **`deploy/prebuilt-web/`**.

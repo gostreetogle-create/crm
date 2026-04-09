@@ -2,9 +2,100 @@
 
 Подробная инструкция: ZIP, rsync, первый запуск, логи, локальный Postgres и сброс БД.
 
+## Быстрый путь (3 шага)
+
+1. Прогоните gate с артефактом:  
+   `powershell -ExecutionPolicy Bypass -File deploy/scripts/run-release-gate.ps1 -SkipMigrate -ReportPath "./release-gate-report.json"`
+   (Linux/macOS: `bash deploy/scripts/run-release-gate.sh --skip-migrate --report-path "./release-gate-report.json"`)
+2. Соберите фронт-архив:  
+   `powershell -ExecutionPolicy Bypass -File deploy/scripts/pack-prebuilt-web.ps1`
+3. На сервере выполните `bash ./deploy.sh` из каталога `deploy/`.
+
+Детали и stop/go-правила: `docs/release-gates.md`.
+
+## Быстрый self-check
+
+Перед запуском можно быстро проверить, что скрипты доступны и флаги читаются:
+
+```bash
+bash ./deploy.sh --self-check
+bash ./deploy.sh --help
+powershell -ExecutionPolicy Bypass -File deploy/scripts/run-release-gate.ps1 -Help
+powershell -ExecutionPolicy Bypass -File deploy/scripts/run-concurrency-probe.ps1 -Help
+bash deploy/scripts/run-release-gate.sh --help
+bash deploy/scripts/run-concurrency-probe.sh --help
+```
+
+`--self-check` у `deploy.sh` non-blocking: в смешанной shell-среде может завершиться с предупреждениями.
+PowerShell-эквивалент запуска: `bash ./deploy/deploy.sh --self-check`.
+Интерпретация:
+- `Self-check finished.` без warning — всё ок.
+- `Self-check completed with warnings (...)` — не блокирует деплой, но проблемные скрипты лучше проверить вручную через `--help`.
+- В начале self-check печатаются версии/доступность `bash`, `powershell`, `npm`.
+Что проверить при warning: `bash --version`, LF-окончания у `*.sh`, прямой запуск help у PowerShell-скриптов.
+
 ---
 
 # Deploy — шпаргалка
+
+## 0) Обязательный pre-deploy gate
+
+Перед любой выкладкой прогоняем критичный минимум тестов:
+
+- `docs/release-gates.md`
+- Stop/Go правило: `docs/release-gates.md` (раздел `5) Stop-list (деплой блокируется)`)
+
+PowerShell-порядок:
+
+```powershell
+cd backend
+npm run test:critical
+cd ../crm-web
+npm run test:critical
+```
+
+Если любой шаг падает — деплой не продолжаем.
+
+Один запуск всем пакетом (migrate + critical + smoke):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File deploy/scripts/run-release-gate.ps1
+```
+
+Режим по умолчанию (если миграции не менялись):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File deploy/scripts/run-release-gate.ps1 -SkipMigrate
+```
+
+Режим по умолчанию с отчётом-артефактом:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File deploy/scripts/run-release-gate.ps1 -SkipMigrate -ReportPath "./release-gate-report.json"
+```
+
+Файл `release-gate-report.json` сохраняем к задаче/релизному комментарию как подтверждение прохождения pre-deploy gate.
+Подсказка по флагам: `powershell -ExecutionPolicy Bypass -File deploy/scripts/run-release-gate.ps1 -Help`
+и `bash deploy/scripts/run-release-gate.sh --help`.
+
+Shortcut daily-прогона critical-only:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File deploy/scripts/run-release-gate.ps1 -CriticalOnly
+```
+
+Linux/macOS shortcut:
+
+```bash
+bash deploy/scripts/run-release-gate.sh --critical-only
+```
+
+Опционально для рискованных изменений статусов/заказов: ручной стресс-прогон
+`deploy/scripts/run-concurrency-probe.ps1|.sh` (команда и параметры — в `docs/release-gates.md`).
+Подсказка по флагам probe: `powershell -ExecutionPolicy Bypass -File deploy/scripts/run-concurrency-probe.ps1 -Help`
+и `bash deploy/scripts/run-concurrency-probe.sh --help`.
+
+---
 
 ## Простыми словами: куда положить ZIP и что сделать на сервере
 
@@ -23,6 +114,22 @@ cd /opt/crm/deploy   # ваш путь к deploy, если другой — по
 ./deploy.sh
 ```
 
+Перед `./deploy.sh` проверьте, что есть свежий `release-gate-report.json` (полученный через `deploy/scripts/run-release-gate.ps1 -SkipMigrate -ReportPath "./release-gate-report.json"`).
+`deploy.sh` покажет `gateStatus` из отчёта и выведет предупреждение, если отчёт старше 24 часов.
+Если статус не `passed` или отчёт устарел, скрипт выведет готовые команды пересоздания отчёта (PowerShell и Bash).
+Подсказка по командам скрипта: `bash ./deploy.sh --help`.
+`deploy.sh` принимает только `--help`/`-h`; любые другие аргументы считаются ошибкой.
+Проверка возраста отчёта использует `python`, а при его отсутствии fallback через `stat`.
+Если путь к отчёту нестандартный, можно задать `GATE_REPORT_PATH=<path-to-json>` перед запуском `deploy.sh`.
+Важно: `GATE_REPORT_PATH` должен совпадать с путём, который использовался в `-ReportPath`/`--report-path` при создании gate-отчёта.
+Если `GATE_REPORT_PATH` относительный, `deploy.sh` трактует его относительно корня репозитория.
+Пример: `GATE_REPORT_PATH=./tmp/release-gate-nightly.json bash ./deploy.sh`.
+PowerShell-эквивалент: `$env:GATE_REPORT_PATH="./tmp/release-gate-nightly.json"; bash ./deploy.sh`.
+После запуска в той же PowerShell-сессии можно сбросить переменную: `Remove-Item Env:GATE_REPORT_PATH`.
+В Bash-сессии сброс: `unset GATE_REPORT_PATH`.
+При старте `deploy.sh` выводит источник пути отчёта: `default` или `GATE_REPORT_PATH=...`.
+Это же правило продублировано в `bash ./deploy.sh --help`: относительный путь резолвится от корня репозитория.
+
 Одна команда **`./deploy.sh`** сама: подтянет код с GitHub (если настроен git), при наличии zip — **распакует** его, **удалит** zip, соберёт/обновит контейнеры и поднимет сайт. Отдельно ничего архивировать на сервере не нужно — только залить **один** zip и запустить скрипт.
 
 **Куда скрипт «скидывает» файлы из архива**  
@@ -39,11 +146,12 @@ cd /opt/crm/deploy   # ваш путь к deploy, если другой — по
 | Шаг | Где | Что сделать |
 |-----|-----|-------------|
 | **1** | Локально | Закоммитить изменения и **`git push`** в GitHub (как обычно). |
-| **2** | Локально | **Сразу пересобрать** прод-фронт (команды в блоке ниже) — чтобы артефакты соответствовали только что запушенному коду. |
-| **3** | Локально → сервер | **Удобнее — один ZIP:** собрать архив (команды ниже), залить **`prebuilt-web.zip`** в каталог **`…/deploy/`** на сервере (рядом с `deploy.sh`). При **`./deploy.sh`** архив сам распакуется в `prebuilt-web/` и удалится. **Либо** по-прежнему залить **содержимое** `browser/` в **`…/deploy/prebuilt-web/`** без zip. |
-| **4** | Сервер | **`./deploy.sh`** в каталоге `deploy/` — подтянет репо с GitHub, при наличии `prebuilt-web.zip` распакует его, соберёт образы, поднимет контейнеры. |
+| **2** | Локально | Запустить pre-deploy gate и сохранить `release-gate-report.json` (раздел `0`). |
+| **3** | Локально | **Сразу пересобрать** прод-фронт (команды в блоке ниже) — чтобы артефакты соответствовали только что запушенному коду. |
+| **4** | Локально → сервер | **Удобнее — один ZIP:** собрать архив (команды ниже), залить **`prebuilt-web.zip`** в каталог **`…/deploy/`** на сервере (рядом с `deploy.sh`). При **`./deploy.sh`** архив сам распакуется в `prebuilt-web/` и удалится. **Либо** по-прежнему залить **содержимое** `browser/` в **`…/deploy/prebuilt-web/`** без zip. |
+| **5** | Сервер | **`./deploy.sh`** в каталоге `deploy/` — подтянет репо с GitHub, при наличии `prebuilt-web.zip` распакует его, соберёт образы, поднимет контейнеры. |
 
-Если сделать только шаги **1** и **4**, backend/репо обновятся, но **интерфейс останется старым**, пока не выполнены **2** и **3**.
+Если сделать только шаги **1** и **5**, backend/репо обновятся, но **интерфейс останется старым**, пока не выполнены **3** и **4**.
 
 ### Шаг 2 — команды локально
 

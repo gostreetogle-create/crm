@@ -41,6 +41,24 @@
         </div>
       </div>
 
+      <div class="sysDbDebug">
+        <p class="sysDbDebugLine">
+          <span class="sysDbDebugLabel">API endpoint (текущий фронт):</span>
+          <code class="sysInlineCode">{{ apiEndpointSummary() }}</code>
+        </p>
+        <p class="sysDbDebugLine">
+          <span class="sysDbDebugLabel">Ожидаемое подключение backend к БД:</span>
+          <code class="sysInlineCode">{{ dbConnectionSummary(s) }}</code>
+        </p>
+        <p class="sysDbDebugLine">
+          <span class="sysDbDebugLabel">Ожидаемый Docker порт:</span>
+          <code class="sysInlineCode"
+            >{{ s.dbConnection.dockerExpectedHostPort }}:{{ s.dbConnection.dockerExpectedContainerPort }}</code
+          >
+          (host:container)
+        </p>
+      </div>
+
       <div class="sysActions">
         <app-ui-button type="button" variant="primary" (clicked)="openNotices()">
           Предупреждения и команды

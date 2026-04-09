@@ -78,6 +78,28 @@
   align-items: center;
 }
 
+.sysDbDebug {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: var(--ui-space-2) var(--ui-space-3);
+  border: 1px dashed var(--border-color);
+  border-radius: var(--radius-card, 8px);
+  background: color-mix(in srgb, var(--surface-soft) 70%, transparent);
+}
+
+.sysDbDebugLine {
+  margin: 0;
+  font-size: var(--font-size-small);
+  line-height: 1.45;
+}
+
+.sysDbDebugLabel {
+  margin-right: 6px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
 .sysMigrationHint {
   margin: 0;
   padding: var(--ui-space-2) var(--ui-space-3);

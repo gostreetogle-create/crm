@@ -2,26 +2,18 @@ import { Router } from "express";
 import { z } from "zod";
 import * as Prisma from "@prisma/client";
 import { syncCatalogTradeGoodsForOffer } from "../lib/commercial-offer-catalog-sync.js";
+import { mapStatusKeyToLegacyStatus, normalizeCurrentStatusKey, STATUS_KEYS } from "../lib/commercial-offer-status.js";
 import { prisma } from "../lib/prisma.js";
+import {
+  changeCommercialOfferStatus,
+  ChangeOfferStatusError,
+} from "../services/commercial-offers/change-offer-status.service.js";
 
 export const commercialOffersRouter = Router();
 
 const StatusSchema = z.nativeEnum(Prisma.CommercialOfferStatus);
-const STATUS_KEYS = [
-  "proposal_draft",
-  "proposal_waiting",
-  "proposal_approved",
-  "proposal_paid",
-] as const;
 const StatusKeySchema = z.enum(STATUS_KEYS);
 type StatusKey = z.infer<typeof StatusKeySchema>;
-
-const ALLOWED_TRANSITIONS: Record<StatusKey, readonly StatusKey[]> = {
-  proposal_draft: ["proposal_waiting"],
-  proposal_waiting: ["proposal_approved", "proposal_draft"],
-  proposal_approved: ["proposal_paid", "proposal_waiting"],
-  proposal_paid: [],
-};
 
 const LineInputSchema = z.object({
   id: z.union([z.string().uuid(), z.null(), z.undefined()]).optional(),
@@ -47,16 +39,20 @@ const InputSchema = z.object({
   recipient: z.union([z.string(), z.null(), z.undefined()]).optional(),
   validUntil: z.union([z.string(), z.null(), z.undefined()]).optional(),
   currency: z.union([z.string(), z.null(), z.undefined()]).optional(),
+  prepaymentPercent: z.union([z.number(), z.null(), z.undefined()]).optional(),
+  productionLeadDays: z.union([z.number(), z.null(), z.undefined()]).optional(),
   vatPercent: z.union([z.number(), z.null(), z.undefined()]).optional(),
   vatAmount: z.union([z.number(), z.null(), z.undefined()]).optional(),
   subtotalAmount: z.union([z.number(), z.null(), z.undefined()]).optional(),
   totalAmount: z.union([z.number(), z.null(), z.undefined()]).optional(),
   notes: z.union([z.string(), z.null(), z.undefined()]).optional(),
+  skipCatalogSync: z.boolean().optional(),
   lines: z.array(LineInputSchema).optional(),
 });
 
 const StatusInputSchema = z.object({
   statusKey: StatusKeySchema,
+  orderNumber: z.union([z.string(), z.null(), z.undefined()]).optional(),
 });
 
 function cleanString(v: string | null | undefined): string | null {
@@ -80,11 +76,23 @@ function parseValidUntil(v: string | null | undefined): Date | null {
   return d;
 }
 
-function mapStatusKeyToLegacyStatus(key: StatusKey): Prisma.CommercialOfferStatus {
-  if (key === "proposal_draft") return Prisma.CommercialOfferStatus.DRAFT;
-  if (key === "proposal_waiting") return Prisma.CommercialOfferStatus.SENT;
-  if (key === "proposal_approved") return Prisma.CommercialOfferStatus.ACCEPTED;
-  return Prisma.CommercialOfferStatus.ACCEPTED;
+const OFFER_NUMBER_PREFIX = "КП-";
+const OFFER_NUMBER_PAD = 6;
+
+function nextOfferNumberFrom(lastRaw: string | null | undefined): string {
+  const last = cleanString(lastRaw);
+  if (!last) return `${OFFER_NUMBER_PREFIX}${String(1).padStart(OFFER_NUMBER_PAD, "0")}`;
+  const canonical = last.match(/^КП-(\d+)$/i);
+  if (canonical) {
+    const nextN = Number(canonical[1]) + 1;
+    return `${OFFER_NUMBER_PREFIX}${String(nextN).padStart(OFFER_NUMBER_PAD, "0")}`;
+  }
+  const m = last.match(/(\d+)(?!.*\d)/);
+  if (!m) return `${OFFER_NUMBER_PREFIX}${String(1).padStart(OFFER_NUMBER_PAD, "0")}`;
+  const digits = m[1];
+  const next = Number(digits) + 1;
+  const width = Math.max(OFFER_NUMBER_PAD, digits.length);
+  return `${OFFER_NUMBER_PREFIX}${String(next).padStart(width, "0")}`;
 }
 
 function normalizeLineInputs(lines: z.infer<typeof LineInputSchema>[] | undefined): z.infer<typeof LineInputSchema>[] {
@@ -125,6 +133,8 @@ type OfferRow = {
   recipient: string | null;
   validUntil: Date | null;
   currency: string;
+  prepaymentPercent: number;
+  productionLeadDays: number;
   vatPercent: number;
   vatAmount: number;
   subtotalAmount: number;
@@ -191,13 +201,15 @@ function mapOffer(row: OfferRow) {
     number: row.number,
     title: row.title,
     status: row.status,
-    currentStatusKey: row.currentStatusKey,
+    currentStatusKey: normalizeCurrentStatusKey(row.currentStatusKey) ?? row.currentStatusKey,
     organizationId: row.organizationId,
     clientId: row.clientId,
     organizationContactId: row.organizationContactId,
     recipient: row.recipient,
     validUntil: row.validUntil ? row.validUntil.toISOString() : null,
     currency: row.currency,
+    prepaymentPercent: row.prepaymentPercent,
+    productionLeadDays: row.productionLeadDays,
     vatPercent: row.vatPercent,
     vatAmount: row.vatAmount,
     subtotalAmount: row.subtotalAmount,
@@ -313,9 +325,18 @@ commercialOffersRouter.post("/", async (req, res, next) => {
     const amounts = computeAmounts(normalizedLines, d.vatPercent, d.vatAmount);
     const currentStatusKey = d.currentStatusKey ?? "proposal_draft";
     const row = await prisma.$transaction(async (tx) => {
+      const inputNumber = cleanString(d.number);
+      let numberToSave = inputNumber;
+      if (!numberToSave) {
+        const lastOffer = await tx.commercialOffer.findFirst({
+          orderBy: { createdAt: "desc" },
+          select: { number: true },
+        });
+        numberToSave = nextOfferNumberFrom(lastOffer?.number);
+      }
       const created = await tx.commercialOffer.create({
         data: {
-          number: cleanString(d.number),
+          number: numberToSave,
           title: cleanString(d.title),
           status: d.status ?? mapStatusKeyToLegacyStatus(currentStatusKey),
           currentStatusKey,
@@ -325,6 +346,12 @@ commercialOffersRouter.post("/", async (req, res, next) => {
           recipient: cleanString(d.recipient),
           validUntil: parseValidUntil(d.validUntil),
           currency: cleanString(d.currency)?.toUpperCase() ?? "RUB",
+          prepaymentPercent: Number.isFinite(d.prepaymentPercent as number)
+            ? Number(d.prepaymentPercent)
+            : 80,
+          productionLeadDays: Number.isFinite(d.productionLeadDays as number)
+            ? Math.max(0, Math.trunc(Number(d.productionLeadDays)))
+            : 30,
           vatPercent: amounts.vatPercent,
           vatAmount: amounts.vatAmount,
           subtotalAmount: amounts.subtotalAmount,
@@ -347,7 +374,9 @@ commercialOffersRouter.post("/", async (req, res, next) => {
         },
         select: { id: true },
       });
-      await syncCatalogTradeGoodsForOffer(tx, created.id);
+      if (!d.skipCatalogSync) {
+        await syncCatalogTradeGoodsForOffer(tx, created.id);
+      }
       return tx.commercialOffer.findUniqueOrThrow({
         where: { id: created.id },
         include: offerInclude,
@@ -406,6 +435,20 @@ commercialOffersRouter.put("/:id", async (req, res, next) => {
             ...(d.recipient !== undefined ? { recipient: cleanString(d.recipient) } : {}),
             ...(d.validUntil !== undefined ? { validUntil: parseValidUntil(d.validUntil) } : {}),
             ...(d.currency !== undefined ? { currency: cleanString(d.currency)?.toUpperCase() ?? "RUB" } : {}),
+            ...(d.prepaymentPercent !== undefined
+              ? {
+                  prepaymentPercent: Number.isFinite(d.prepaymentPercent as number)
+                    ? Number(d.prepaymentPercent)
+                    : 80,
+                }
+              : {}),
+            ...(d.productionLeadDays !== undefined
+              ? {
+                  productionLeadDays: Number.isFinite(d.productionLeadDays as number)
+                    ? Math.max(0, Math.trunc(Number(d.productionLeadDays)))
+                    : 30,
+                }
+              : {}),
             ...(d.vatPercent !== undefined ? { vatPercent: amounts.vatPercent } : {}),
             ...(d.vatAmount !== undefined ? { vatAmount: amounts.vatAmount } : {}),
             ...(d.subtotalAmount !== undefined || normalizedLines !== undefined
@@ -435,7 +478,9 @@ commercialOffersRouter.put("/:id", async (req, res, next) => {
               : {}),
           },
         });
-        await syncCatalogTradeGoodsForOffer(tx, id);
+        if (!d.skipCatalogSync) {
+          await syncCatalogTradeGoodsForOffer(tx, id);
+        }
         return tx.commercialOffer.findUniqueOrThrow({
           where: { id },
           include: offerInclude,
@@ -471,31 +516,32 @@ commercialOffersRouter.post("/:id/status", async (req, res, next) => {
       return;
     }
     const nextStatus = parsed.data.statusKey;
-    const row = await prisma.commercialOffer.findUnique({
+    try {
+      await changeCommercialOfferStatus({
+        prisma,
+        offerId: id,
+        nextStatus,
+        orderNumber: parsed.data.orderNumber ?? null,
+      });
+    } catch (err: unknown) {
+      if (err instanceof ChangeOfferStatusError) {
+        if (err.code === "not_found") {
+          res.status(404).json({ error: "not_found" });
+          return;
+        }
+        res.status(409).json({ error: err.code, ...(err.details ?? {}) });
+        return;
+      }
+      throw err;
+    }
+    const updated = await prisma.commercialOffer.findUnique({
       where: { id },
-      select: { id: true, currentStatusKey: true },
+      include: offerInclude,
     });
-    if (!row) {
+    if (!updated) {
       res.status(404).json({ error: "not_found" });
       return;
     }
-    const current = row.currentStatusKey as StatusKey;
-    if (!STATUS_KEYS.includes(current)) {
-      res.status(409).json({ error: "invalid_current_status", currentStatusKey: row.currentStatusKey });
-      return;
-    }
-    if (!ALLOWED_TRANSITIONS[current].includes(nextStatus)) {
-      res.status(409).json({ error: "illegal_status_transition", from: current, to: nextStatus });
-      return;
-    }
-    const updated = await prisma.commercialOffer.update({
-      where: { id },
-      data: {
-        currentStatusKey: nextStatus,
-        status: mapStatusKeyToLegacyStatus(nextStatus),
-      },
-      include: offerInclude,
-    });
     res.json(mapOffer(updated as OfferRow));
   } catch (e) {
     next(e);
@@ -532,10 +578,30 @@ commercialOffersRouter.delete("/:id", async (req, res, next) => {
     try {
       const offer = await prisma.commercialOffer.findUnique({
         where: { id },
-        select: { currentStatusKey: true },
+        select: {
+          currentStatusKey: true,
+          order: {
+            select: {
+              id: true,
+              orderNumber: true,
+            },
+          },
+        },
       });
       if (!offer) {
         res.status(404).json({ error: "not_found" });
+        return;
+      }
+      if (offer.order) {
+        res.status(409).json({
+          error: "offer_has_order",
+          message:
+            "Для этого КП уже создан заказ. Сначала удалите заказ, затем коммерческое предложение.",
+          order: {
+            id: offer.order.id,
+            number: offer.order.orderNumber,
+          },
+        });
         return;
       }
       if (offer.currentStatusKey === "proposal_paid") {

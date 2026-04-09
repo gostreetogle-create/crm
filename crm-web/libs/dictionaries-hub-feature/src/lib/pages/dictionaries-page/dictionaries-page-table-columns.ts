@@ -177,6 +177,27 @@ export const KP_PHOTOS_COLUMNS_FULL: TableColumn[] = [
   { key: 'isActiveLabel', label: 'Активен' },
 ];
 
+export const COMMERCIAL_OFFERS_COLUMNS: TableColumn[] = [{ key: 'hubLine', label: 'Коммерческое предложение' }];
+
+export const COMMERCIAL_OFFERS_COLUMNS_FULL: TableColumn[] = [
+  { key: 'numberOrTitle', label: 'Номер / заголовок' },
+  { key: 'statusLabel', label: 'Статус' },
+  { key: 'recipientLabel', label: 'Получатель' },
+  { key: 'totalAmountLabel', label: 'Итого ₽' },
+  { key: 'updatedAtLabel', label: 'Обновлено' },
+];
+
+export const ORDERS_COLUMNS: TableColumn[] = [{ key: 'hubLine', label: 'Заказ' }];
+
+export const ORDERS_COLUMNS_FULL: TableColumn[] = [
+  { key: 'orderNumber', label: 'Номер заказа' },
+  { key: 'customerLabel', label: 'Заказчик' },
+  { key: 'deadlineLabel', label: 'Срок' },
+  { key: 'offerNumberLabel', label: 'Номер КП' },
+  { key: 'linesLabel', label: 'Состав (без цен)' },
+  { key: 'updatedAtLabel', label: 'Обновлено' },
+];
+
 export const COLORS_COLUMNS: TableColumn[] = [{ key: 'hubLine', label: 'Цвет', swatchHexKey: 'hex' }];
 
 /** Full-view для раскрытия colors. */
