@@ -1,4 +1,11 @@
 <div class="kp-stack">
+  @if (catalogProducts.length) {
+    <datalist id="kpCatalogNameSuggestions">
+      @for (p of catalogProducts; track p.id) {
+        <option [value]="p.title"></option>
+      }
+    </datalist>
+  }
   @for (chunk of pageChunks(); track chunk.displayOffset; let chunkIndex = $index) {
     <section
       class="kp-sheet"
@@ -134,6 +141,8 @@
                       formControlName="name"
                       class="kp-sheet__cell-input kp-sheet__cell-input--name"
                       [class.kp-sheet__cell-input--invalid]="lineFieldInvalid(globalIdx, 'name')"
+                      [attr.list]="catalogProducts.length ? 'kpCatalogNameSuggestions' : null"
+                      (blur)="onKpLineNameCommit(globalIdx)"
                       aria-label="Наименование"
                     />
                   </td>

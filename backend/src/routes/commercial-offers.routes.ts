@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import * as Prisma from "@prisma/client";
+import { syncCatalogTradeGoodsForOffer } from "../lib/commercial-offer-catalog-sync.js";
 import { prisma } from "../lib/prisma.js";
 
 export const commercialOffersRouter = Router();
@@ -312,7 +313,7 @@ commercialOffersRouter.post("/", async (req, res, next) => {
     const amounts = computeAmounts(normalizedLines, d.vatPercent, d.vatAmount);
     const currentStatusKey = d.currentStatusKey ?? "proposal_draft";
     const row = await prisma.$transaction(async (tx) => {
-      return tx.commercialOffer.create({
+      const created = await tx.commercialOffer.create({
         data: {
           number: cleanString(d.number),
           title: cleanString(d.title),
@@ -344,6 +345,11 @@ commercialOffersRouter.post("/", async (req, res, next) => {
             })),
           },
         },
+        select: { id: true },
+      });
+      await syncCatalogTradeGoodsForOffer(tx, created.id);
+      return tx.commercialOffer.findUniqueOrThrow({
+        where: { id: created.id },
         include: offerInclude,
       });
     });
@@ -380,7 +386,7 @@ commercialOffersRouter.put("/:id", async (req, res, next) => {
         if (normalizedLines) {
           await tx.commercialOfferLine.deleteMany({ where: { commercialOfferId: id } });
         }
-        return tx.commercialOffer.update({
+        await tx.commercialOffer.update({
           where: { id },
           data: {
             ...(d.number !== undefined ? { number: cleanString(d.number) } : {}),
@@ -428,6 +434,10 @@ commercialOffersRouter.put("/:id", async (req, res, next) => {
                 }
               : {}),
           },
+        });
+        await syncCatalogTradeGoodsForOffer(tx, id);
+        return tx.commercialOffer.findUniqueOrThrow({
+          where: { id },
           include: offerInclude,
         });
       });

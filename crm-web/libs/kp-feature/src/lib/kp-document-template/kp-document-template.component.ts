@@ -6,6 +6,7 @@ import { formatClientFio } from '@srm/clients-data-access';
 import type { OrganizationItem } from '@srm/organizations-data-access';
 import { LucideEyeOff, LucideFileText, LucidePlus, LucideTrash2 } from '@lucide/angular';
 import { UiButtonComponent } from '@srm/ui-kit';
+import type { KpCatalogProduct } from '../kp-catalog-vitrine/kp-catalog-product.model';
 import {
   calcKpComputedTotal,
   calcKpLineSum,
@@ -113,6 +114,12 @@ export class KpDocumentTemplateComponent {
 
   /** Максимальный размер миниатюры в колонке «Фото», px (панель под таблицей). */
   @Input() photoThumbMaxPxCtrl: FormControl<string> | null = null;
+
+  /**
+   * Подсказки по наименованию: тот же каталог, что и витрина КП (`GET /api/trade-goods`).
+   * При точном совпадении названия (после blur) подставляются id, цена, ед., фото.
+   */
+  @Input() catalogProducts: readonly KpCatalogProduct[] = [];
 
   /** Пользователь нажал «Описание» под таблицей — показать колонку, пока не очистят все тексты. */
   private readonly descriptionColumnForced = signal(false);
@@ -277,6 +284,41 @@ export class KpDocumentTemplateComponent {
       return;
     }
     this.linesForm.removeAt(index);
+  }
+
+  /**
+   * После ввода наименования: при точном совпадении с карточкой витрины — привязать `catalogProductId`
+   * и заполнить поля как при «добавить с витрины»; иначе сбросить привязку.
+   */
+  onKpLineNameCommit(index: number): void {
+    const g = this.lineGroupAt(index);
+    const name = String(g.get('name')?.value ?? '').trim();
+    if (!name) {
+      g.patchValue({ catalogProductId: '' }, { emitEvent: false });
+      return;
+    }
+    const lower = name.toLowerCase();
+    const match = this.catalogProducts.find((p) => p.title.trim().toLowerCase() === lower);
+    if (!match) {
+      g.patchValue({ catalogProductId: '' }, { emitEvent: false });
+      return;
+    }
+    const direct = String(match.imageUrl ?? '').trim();
+    const imageUrl =
+      direct && (direct.startsWith('/') || direct.startsWith('http://') || direct.startsWith('https://'))
+        ? direct
+        : '';
+    const unit = match.defaultUnit?.trim() || 'шт.';
+    g.patchValue(
+      {
+        catalogProductId: match.id,
+        price: String(match.price),
+        unit,
+        description: match.description?.trim() ?? '',
+        imageUrl,
+      },
+      { emitEvent: true },
+    );
   }
 
   private rowsPerPageEffective(): number {
