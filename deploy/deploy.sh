@@ -55,6 +55,7 @@ if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
 Usage:
   bash deploy/deploy.sh
   bash deploy/deploy.sh --self-check
+  (run from repo root or from deploy/ directory)
 
 What it does:
   - checks deploy/.env required fields
@@ -73,6 +74,8 @@ Optional env:
 Extra:
   --self-check                      Run help checks for deploy/gate/probe scripts and exit.
                                     Non-blocking: may finish with warnings in mixed shell envs.
+                                    "Self-check finished." => OK.
+                                    "Self-check completed with warnings (...)" => verify failing scripts via --help.
 EOF
   exit 0
 fi

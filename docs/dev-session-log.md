@@ -75,6 +75,7 @@
 | 44 | 2026-04-07 | Push в `origin/main`: backend doctor + CI authz-check (skip без БД), асинхронная/строгая загрузка фото trade-goods, чистка warnings и helper preview-форматтеров | backend, crm-web, .github, docs | `b8267c1` |
 | 45 | 2026-04-07 | Push в `origin/main`: units API чеклист — обязательный/уникальный `code`, ошибки `field/message`, фильтрация и пагинация GET, аудит CRUD операций единиц | backend | `2ec0a6c` |
 | 46 | 2026-04-07 | Push в `origin/main`: минимальный Playwright smoke для srm-front (login→dictionaries, 404/403), non-blocking CI job `smoke-e2e`, обновлён runbook smoke | crm-web, .github, docs | `db2b1c2` |
+| 47 | 2026-04-09 | Push в `origin/main`: стабилизация BL КП/заказов (statuses/orders/контракты/тесты) и единый release-gate/deploy контур (report, self-check, cross-platform runbook) | backend, crm-web, deploy, docs | `3eea6de` |
 
 ---
 

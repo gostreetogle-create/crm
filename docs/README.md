@@ -12,6 +12,10 @@
 - `docs/frontend/ui-audit-wave1.md` — аудит дубликатов/расхождений UI (волна 1).
 - `docs/frontend/commercial-offers-bl-roadmap.md` — roadmap по устойчивой бизнес-логике КП (статусы, слой сервисов, тесты).
 - `docs/release-gates.md` — единый минимальный gate перед релизом (critical tests backend + frontend-state).
+  - быстрый preflight: `bash deploy/deploy.sh --self-check` (non-blocking, с диагностикой окружения).
+- `deploy/README.md` — краткая инструкция по выкладке.
+- `deploy/README.detailed.md` — подробная шпаргалка по деплою, runbook и диагностика.
+  - `deploy.sh` запускается как `bash deploy/deploy.sh` (из корня) или `bash ./deploy.sh` (из каталога `deploy/`).
 
 ## Правило источника правды
 
