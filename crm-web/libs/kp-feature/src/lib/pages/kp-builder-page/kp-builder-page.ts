@@ -19,7 +19,7 @@ import { FormArray, FormBuilder, ReactiveFormsModule, Validators } from '@angula
 import { ActivatedRoute, Router } from '@angular/router';
 import { TRADE_GOODS_REPOSITORY } from '@srm/trade-goods-data-access';
 import { KP_RECIPIENT_ORG_PREFIX } from '../../kp-document-template/kp-document-template.component';
-import { PageShellComponent, UiButtonComponent } from '@srm/ui-kit';
+import { PageShellComponent, UiButtonComponent, UiModal } from '@srm/ui-kit';
 import { KpCatalogVitrineComponent } from '../../kp-catalog-vitrine/kp-catalog-vitrine.component';
 import type { KpCatalogProduct } from '../../kp-catalog-vitrine/kp-catalog-product.model';
 import {
@@ -80,6 +80,7 @@ type CommercialOfferDto = {
     ReactiveFormsModule,
     PageShellComponent,
     UiButtonComponent,
+    UiModal,
     KpCatalogVitrineComponent,
     KpDocumentTemplateComponent,
     KpRecipientToolbarComponent,
@@ -105,6 +106,11 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
   readonly isSavingOffer = signal(false);
   readonly saveError = signal<string | null>(null);
   readonly lastSavedAt = signal<string | null>(null);
+
+  /** Подтверждение записи вручную введённых строк в справочник «Товары» (см. interaction-system.md — не window.confirm). */
+  readonly catalogSyncConfirmOpen = signal(false);
+  readonly catalogSyncConfirmNames = signal<string[]>([]);
+  private catalogSyncResolve: ((confirmed: boolean) => void) | null = null;
 
   /** Справочник организаций для выпадающего списка в шаблоне КП. */
   readonly organizations = this.kpBuilderFacade.organizations;
@@ -348,16 +354,38 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
     return out;
   }
 
-  private confirmCatalogSave(names: string[]): boolean {
-    if (names.length === 0) return true;
-    if (typeof globalThis.confirm !== 'function') return true;
-    if (names.length === 1) {
-      return globalThis.confirm(
-        `Сохранить в справочник «Товары» наименование «${names[0]}»?`,
-      );
+  private async askCatalogSyncConfirm(names: string[]): Promise<boolean> {
+    if (names.length === 0) {
+      return true;
     }
-    const list = names.map((n) => `«${n}»`).join(', ');
-    return globalThis.confirm(`Сохранить в справочник «Товары» наименования: ${list}?`);
+    return await new Promise<boolean>((resolve) => {
+      this.catalogSyncConfirmNames.set(names);
+      this.catalogSyncResolve = resolve;
+      this.catalogSyncConfirmOpen.set(true);
+    });
+  }
+
+  /** Подтвердить сохранение КП и создание/привязку позиций в «Товары». */
+  confirmCatalogSyncSave(): void {
+    if (!this.catalogSyncResolve) {
+      return;
+    }
+    this.catalogSyncConfirmOpen.set(false);
+    const r = this.catalogSyncResolve;
+    this.catalogSyncResolve = null;
+    r(true);
+  }
+
+  /** Отмена: не сохранять КП (закрытие крестиком/backdrop/Escape — то же). */
+  cancelCatalogSyncSave(): void {
+    if (!this.catalogSyncResolve) {
+      this.catalogSyncConfirmOpen.set(false);
+      return;
+    }
+    this.catalogSyncConfirmOpen.set(false);
+    const r = this.catalogSyncResolve;
+    this.catalogSyncResolve = null;
+    r(false);
   }
 
   async saveOffer(): Promise<string | null> {
@@ -365,7 +393,7 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
       return this.offerId();
     }
     const catalogNames = this.namesNeedingCatalogSave();
-    if (!this.confirmCatalogSave(catalogNames)) {
+    if (!(await this.askCatalogSyncConfirm(catalogNames))) {
       return null;
     }
     this.isSavingOffer.set(true);

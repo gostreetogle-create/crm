@@ -96,4 +96,34 @@
       </div>
     </div>
   </div>
+
+  @if (catalogSyncConfirmOpen()) {
+    <ui-modal
+      title="Сохранение в «Товары»"
+      [content]="kpCatalogSyncContentTpl"
+      [actions]="kpCatalogSyncActionsTpl"
+      size="sm"
+      (close)="cancelCatalogSyncSave()"
+    />
+  }
+
+  <ng-template #kpCatalogSyncContentTpl>
+    @if (catalogSyncConfirmNames().length === 1) {
+      <p class="kp-builder__catalogSyncMsg">
+        Сохранить в справочник «Товары» наименование «{{ catalogSyncConfirmNames()[0] }}»?
+      </p>
+    } @else {
+      <p class="kp-builder__catalogSyncMsg">Сохранить в справочник «Товары» наименования:</p>
+      <ul class="kp-builder__catalogSyncList">
+        @for (n of catalogSyncConfirmNames(); track n) {
+          <li>«{{ n }}»</li>
+        }
+      </ul>
+    }
+  </ng-template>
+
+  <ng-template #kpCatalogSyncActionsTpl>
+    <app-ui-button type="button" variant="soft" (clicked)="cancelCatalogSyncSave()">Отмена</app-ui-button>
+    <app-ui-button type="button" variant="primary" (clicked)="confirmCatalogSyncSave()">Сохранить</app-ui-button>
+  </ng-template>
 </app-page-shell>

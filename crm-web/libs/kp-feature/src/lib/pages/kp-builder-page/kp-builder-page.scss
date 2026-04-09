@@ -70,6 +70,21 @@
   color: #027a48;
 }
 
+.kp-builder__catalogSyncMsg {
+  margin: 0 0 0.5rem;
+  font-size: var(--font-size-base, 13px);
+  line-height: 1.45;
+  color: var(--text-primary);
+}
+
+.kp-builder__catalogSyncList {
+  margin: 0;
+  padding-left: 1.25rem;
+  font-size: var(--font-size-base, 13px);
+  line-height: 1.5;
+  color: var(--text-primary);
+}
+
 /** Кнопка печати — в конце строки тулбара (вправо) */
 .kp-builder__print-action {
   margin-left: auto;
