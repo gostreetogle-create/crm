@@ -1,0 +1,133 @@
+<app-page-shell>
+  <section class="boardRoot">
+    <header class="boardHeader">
+      <h1>Производство</h1>
+      <div class="headerControls">
+        <div class="viewToggle">
+          <button type="button" class="filterBtn" [class.filterBtn--active]="viewMode() === 'KANBAN'" (click)="setView('KANBAN')">
+            Канбан
+          </button>
+          <button type="button" class="filterBtn" [class.filterBtn--active]="viewMode() === 'GANTT'" (click)="setView('GANTT')">
+            Ганта
+          </button>
+        </div>
+        <div class="filters">
+          @for (f of filters; track f.value) {
+            <button
+              type="button"
+              class="filterBtn"
+              [class.filterBtn--active]="store.filter() === f.value"
+              (click)="setFilter(f.value)"
+            >
+              {{ f.label }}
+            </button>
+          }
+        </div>
+      </div>
+    </header>
+
+    @if (store.loading()) {
+      <p class="hint">Загрузка заказов...</p>
+    } @else if (!hasData()) {
+      <p class="hint">Заказы не найдены.</p>
+    } @else if (viewMode() === 'GANTT') {
+      <app-production-gantt
+        [orders]="store.filteredOrders()"
+        (dateChange)="onGanttDateChange($event)"
+        (taskClick)="openOrder($event)"
+      />
+    } @else {
+      <div class="boardGrid">
+        <section
+          class="boardCol boardCol--pending"
+          cdkDropList
+          [id]="'PENDING'"
+          [cdkDropListData]="ordersByStatus('PENDING')"
+          [cdkDropListConnectedTo]="dropListConnections.PENDING"
+          (cdkDropListDropped)="onDrop($event, 'PENDING')"
+        >
+          <h2>Ожидает</h2>
+          @for (order of store.pendingOrders(); track order.id) {
+            <app-content-card
+              class="orderCard"
+              [title]="order.orderNumber"
+              [hideTitle]="true"
+              cdkDrag
+              [cdkDragData]="order"
+            >
+              <div class="orderCardHead">
+                <strong>{{ order.orderNumber }}</strong>
+                <span>{{ order.customerLabel || '—' }}</span>
+              </div>
+              <div class="orderCardMeta">
+                <span [class.overdue]="isOverdue(order)">Дедлайн: {{ order.deadline || '—' }}</span>
+                <span>Прогресс: {{ progressLabel(order) }}</span>
+              </div>
+              <a class="openLink" [routerLink]="['/производство', order.id]">Открыть</a>
+            </app-content-card>
+          }
+        </section>
+
+        <section
+          class="boardCol boardCol--in-progress"
+          cdkDropList
+          [id]="'IN_PROGRESS'"
+          [cdkDropListData]="ordersByStatus('IN_PROGRESS')"
+          [cdkDropListConnectedTo]="dropListConnections.IN_PROGRESS"
+          (cdkDropListDropped)="onDrop($event, 'IN_PROGRESS')"
+        >
+          <h2>В работе</h2>
+          @for (order of store.inProgressOrders(); track order.id) {
+            <app-content-card
+              class="orderCard"
+              [title]="order.orderNumber"
+              [hideTitle]="true"
+              cdkDrag
+              [cdkDragData]="order"
+            >
+              <div class="orderCardHead">
+                <strong>{{ order.orderNumber }}</strong>
+                <span>{{ order.customerLabel || '—' }}</span>
+              </div>
+              <div class="orderCardMeta">
+                <span [class.overdue]="isOverdue(order)">Дедлайн: {{ order.deadline || '—' }}</span>
+                <span>Прогресс: {{ progressLabel(order) }}</span>
+              </div>
+              <a class="openLink" [routerLink]="['/производство', order.id]">Открыть</a>
+            </app-content-card>
+          }
+        </section>
+
+        <section
+          class="boardCol boardCol--done"
+          cdkDropList
+          [id]="'DONE'"
+          [cdkDropListData]="ordersByStatus('DONE')"
+          [cdkDropListConnectedTo]="dropListConnections.DONE"
+          (cdkDropListDropped)="onDrop($event, 'DONE')"
+        >
+          <h2>Готово</h2>
+          @for (order of store.doneOrders(); track order.id) {
+            <app-content-card
+              class="orderCard"
+              [title]="order.orderNumber"
+              [hideTitle]="true"
+              cdkDrag
+              [cdkDragData]="order"
+            >
+              <div class="orderCardHead">
+                <strong>{{ order.orderNumber }}</strong>
+                <span>{{ order.customerLabel || '—' }}</span>
+              </div>
+              <div class="orderCardMeta">
+                <span [class.overdue]="isOverdue(order)">Дедлайн: {{ order.deadline || '—' }}</span>
+                <span>Прогресс: {{ progressLabel(order) }}</span>
+              </div>
+              <a class="openLink" [routerLink]="['/производство', order.id]">Открыть</a>
+            </app-content-card>
+          }
+        </section>
+      </div>
+    }
+  </section>
+</app-page-shell>

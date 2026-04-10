@@ -1,0 +1,132 @@
+<app-page-shell>
+  @if (store.order(); as order) {
+    <section class="orderRoot">
+      <app-content-card title="Карточка заказа" [hideTitle]="true">
+        <div class="orderHeader">
+          <div><strong>Номер заказа:</strong> {{ order.orderNumber }}</div>
+          <div><strong>Клиент:</strong> {{ order.customerLabel || '—' }}</div>
+          <div><strong>Дедлайн:</strong> {{ order.deadline || '—' }}</div>
+          <div>
+            <strong>Статус производства:</strong>
+            <span class="badge" [class]="'badge badge--' + (order.productionStatus || 'PENDING')">
+              {{ badgeLabel(order.productionStatus) }}
+            </span>
+          </div>
+        </div>
+
+        <div class="orderActions">
+          @if (order.productionStatus === 'PENDING') {
+            <button type="button" class="actionBtn" (click)="startOrder()">Запустить в работу</button>
+          }
+          @if (store.allDone()) {
+            <button type="button" class="actionBtn actionBtn--success" (click)="finishOrder()">Завершить</button>
+          }
+          <a routerLink="/производство" class="backLink">К доске</a>
+        </div>
+      </app-content-card>
+
+      <app-content-card title="Позиции заказа" [hideTitle]="true">
+        <table class="linesTable">
+          <thead>
+            <tr>
+              <th>№</th>
+              <th>Название</th>
+              <th>Кол-во</th>
+              <th>Ед.</th>
+              <th>Рабочий</th>
+              <th>Период</th>
+              <th>Статус</th>
+              <th>Действия</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of store.lineRows(); track row.line.lineNo) {
+              <tr>
+                <td>{{ row.line.lineNo }}</td>
+                <td>{{ row.line.name }}</td>
+                <td>{{ row.line.qty }}</td>
+                <td>{{ row.line.unit }}</td>
+                <td>
+                  @if (row.assignment) {
+                    {{ store.workerLabel(row.assignment.workerId) }}
+                  } @else {
+                    —
+                  }
+                </td>
+                <td>
+                  @if (row.assignment) {
+                    {{ row.assignment.startDate || '—' }} - {{ row.assignment.endDate || '—' }}
+                  } @else {
+                    —
+                  }
+                </td>
+                <td>
+                  @if (row.assignment) {
+                    <span class="badge" [class]="'badge badge--' + row.assignment.status">
+                      {{ badgeLabel(row.assignment.status) }}
+                    </span>
+                  } @else {
+                    —
+                  }
+                </td>
+                <td>
+                  @if (!row.assignment) {
+                    <button type="button" class="smallBtn" (click)="openAssign(row.line.lineNo)">Назначить</button>
+                  } @else {
+                    <div class="rowActions">
+                      <button type="button" class="smallBtn" (click)="markDone(row.assignment.id)">Готово</button>
+                      <button type="button" class="smallBtn smallBtn--danger" (click)="remove(row.assignment.id)">
+                        Снять
+                      </button>
+                    </div>
+                  }
+                </td>
+              </tr>
+
+              @if (assigningLineNo() === row.line.lineNo) {
+                <tr class="assignRow">
+                  <td colspan="8">
+                    <div class="assignForm">
+                      <select
+                        [ngModel]="assignForm().workerId"
+                        (ngModelChange)="assignForm.set({ ...assignForm(), workerId: $event })"
+                      >
+                        <option value="">Выберите рабочего</option>
+                        @for (w of store.workers(); track w.id) {
+                          <option [value]="w.id">{{ store.workerLabel(w.id) }}</option>
+                        }
+                      </select>
+                      <input
+                        type="date"
+                        [ngModel]="assignForm().startDate"
+                        (ngModelChange)="assignForm.set({ ...assignForm(), startDate: $event })"
+                      />
+                      <input
+                        type="date"
+                        [ngModel]="assignForm().endDate"
+                        (ngModelChange)="assignForm.set({ ...assignForm(), endDate: $event })"
+                      />
+                      <button type="button" class="smallBtn" (click)="saveAssign()">Сохранить</button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </app-content-card>
+
+      <app-content-card title="Прогресс выполнения" [hideTitle]="true">
+        <div class="progressLabel">Выполнено {{ progress().done }} из {{ progress().total }} позиций</div>
+        <div class="progressTrack">
+          <div
+            class="progressBar"
+            [style.width.%]="progress().total ? (progress().done / progress().total) * 100 : 0"
+          ></div>
+        </div>
+      </app-content-card>
+    </section>
+  } @else {
+    <p>Заказ не найден.</p>
+  }
+</app-page-shell>

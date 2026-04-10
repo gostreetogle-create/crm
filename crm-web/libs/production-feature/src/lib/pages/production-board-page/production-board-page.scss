@@ -1,0 +1,109 @@
+:host {
+  display: block;
+}
+
+.boardRoot {
+  display: grid;
+  gap: 16px;
+}
+
+.boardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.headerControls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.viewToggle {
+  display: flex;
+  gap: 8px;
+}
+
+.filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.filterBtn {
+  border: 1px solid var(--border-color);
+  background: var(--surface);
+  color: var(--text-primary);
+  border-radius: var(--radius-pill);
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+.filterBtn--active {
+  border-color: var(--accent);
+  background: var(--surface-soft);
+}
+
+.boardGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.boardCol {
+  padding: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-card);
+  background: color-mix(in srgb, var(--surface) 92%, var(--surface-soft));
+}
+
+.boardCol h2 {
+  margin: 0 0 10px;
+  font-size: 14px;
+}
+
+.boardCol--pending h2 {
+  color: #7a7a7a;
+}
+
+.boardCol--in-progress h2 {
+  color: #2877ff;
+}
+
+.boardCol--done h2 {
+  color: #29a34a;
+}
+
+.orderCard {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.orderCardHead {
+  display: grid;
+  gap: 4px;
+}
+
+.orderCardMeta {
+  display: grid;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.openLink {
+  text-decoration: none;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.overdue {
+  color: #d52222;
+}
+
+.hint {
+  margin: 0;
+  color: var(--text-muted);
+}

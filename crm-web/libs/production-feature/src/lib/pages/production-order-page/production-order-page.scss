@@ -1,0 +1,113 @@
+:host {
+  display: block;
+}
+
+.orderRoot {
+  display: grid;
+  gap: 12px;
+}
+
+.orderHeader {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.orderActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  align-items: center;
+}
+
+.backLink {
+  margin-left: auto;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.actionBtn,
+.smallBtn {
+  border: 1px solid var(--border-color);
+  background: var(--surface-soft);
+  color: var(--text-primary);
+  border-radius: var(--radius-pill);
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.actionBtn--success {
+  border-color: #2aa84a;
+}
+
+.smallBtn--danger {
+  border-color: #d52222;
+  color: #d52222;
+}
+
+.linesTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.linesTable th,
+.linesTable td {
+  border-bottom: 1px solid var(--border-color);
+  padding: 8px;
+  text-align: left;
+}
+
+.rowActions {
+  display: flex;
+  gap: 6px;
+}
+
+.assignForm {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  gap: 8px;
+}
+
+.assignForm select,
+.assignForm input {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 6px 8px;
+  background: var(--surface);
+  color: var(--text-primary);
+}
+
+.badge {
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+}
+
+.badge--PENDING {
+  background: color-mix(in srgb, #7a7a7a 22%, transparent);
+}
+
+.badge--IN_PROGRESS {
+  background: color-mix(in srgb, #2877ff 22%, transparent);
+}
+
+.badge--DONE {
+  background: color-mix(in srgb, #29a34a 22%, transparent);
+}
+
+.progressLabel {
+  margin-bottom: 6px;
+}
+
+.progressTrack {
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--surface-soft);
+  overflow: hidden;
+}
+
+.progressBar {
+  height: 100%;
+  background: linear-gradient(90deg, #2877ff 0%, #29a34a 100%);
+}
