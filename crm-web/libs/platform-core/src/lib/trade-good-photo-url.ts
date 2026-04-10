@@ -5,16 +5,23 @@
 
 const MEDIA_PREFIX = '/media/trade-goods/';
 
+/** Схлопывает ошибочный повтор `_thumb_320_thumb_320` (старые snapshot / двойная нормализация). */
+export function dedupeTradeGoodThumbFilename(basename: string): string {
+  let s = basename.trim();
+  // Повторяющийся суффикс варианта превью
+  s = s.replace(/(_thumb_320)+(\.webp)$/i, '_thumb_320$2');
+  s = s.replace(/(_medium_640)+(\.webp)$/i, '_medium_640$2');
+  return s;
+}
+
 export function ensureTradeGoodThumbBasename(basename: string): string {
-  console.log('[ensureThumb] input:', basename);
-  const name = basename;
+  const name = dedupeTradeGoodThumbFilename(basename);
   const lower = name.toLowerCase();
   if (
     lower.includes('_thumb_320') ||
     lower.includes('_medium_640') ||
     lower.includes('_original')
   ) {
-    console.log('[ensureThumb] output (early full):', name);
     return name;
   }
   const lastDot = name.lastIndexOf('.');
@@ -25,12 +32,9 @@ export function ensureTradeGoodThumbBasename(basename: string): string {
     stemLower.includes('_medium_640') ||
     stemLower.includes('_original')
   ) {
-    console.log('[ensureThumb] output (early stem):', name);
     return name;
   }
-  const result = `${stem}_thumb_320.webp`;
-  console.log('[ensureThumb] output:', result);
-  return result;
+  return `${stem}_thumb_320.webp`;
 }
 
 export function normalizeTradeGoodRelativePhoto(raw: string): string {

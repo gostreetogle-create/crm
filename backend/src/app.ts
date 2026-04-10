@@ -80,6 +80,13 @@ export function createApp() {
   if (!fs.existsSync(config.tradeGoodsPhotosDir)) {
     fs.mkdirSync(config.tradeGoodsPhotosDir, { recursive: true });
   }
+  // Схлопываем ошибочный двойной суффикс в URL до отдачи файла (совпадает с dedupe на фронте).
+  app.use("/media/trade-goods", (req, _res, next) => {
+    if (req.url.includes("_thumb_320_thumb_320")) {
+      req.url = req.url.replace(/_thumb_320_thumb_320/g, "_thumb_320");
+    }
+    next();
+  });
   app.use(
     "/media/trade-goods",
     express.static(config.tradeGoodsPhotosDir, {
