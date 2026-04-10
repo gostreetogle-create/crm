@@ -1,11 +1,13 @@
 import { Router } from "express";
 import { z } from "zod";
+import type * as Prisma from "@prisma/client";
 import type { ProductionStatus } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 
 export const productionRouter = Router();
 
 const ProductionStatusSchema = z.enum(["PENDING", "IN_PROGRESS", "DONE"]);
+const ProductionLineStatusSchema = z.enum(["DESIGNING", "IN_PROGRESS", "DONE"]);
 
 function parseIsoDate(v: string | undefined): Date | null {
   if (v == null || v === "") return null;
@@ -17,6 +19,27 @@ function cleanNotes(v: string | null | undefined): string | null {
   if (v == null) return null;
   const s = String(v).trim();
   return s ? s : null;
+}
+
+function normalizeLineStatus(value: unknown): "DESIGNING" | "IN_PROGRESS" | "DONE" {
+  if (value === "IN_PROGRESS" || value === "DONE" || value === "DESIGNING") return value;
+  return "DESIGNING";
+}
+
+function normalizeLinesSnapshot(linesSnapshot: unknown): Array<Record<string, unknown>> {
+  if (!Array.isArray(linesSnapshot)) return [];
+  return linesSnapshot.map((line) => {
+    const row = typeof line === "object" && line !== null ? { ...(line as Record<string, unknown>) } : {};
+    row.status = normalizeLineStatus(row.status);
+    return row;
+  });
+}
+
+function withNormalizedLines<T extends { linesSnapshot: unknown }>(row: T): T & { linesSnapshot: Array<Record<string, unknown>> } {
+  return {
+    ...row,
+    linesSnapshot: normalizeLinesSnapshot(row.linesSnapshot),
+  };
 }
 
 const OrderStatusBodySchema = z.object({
@@ -33,12 +56,17 @@ const AssignBodySchema = z.object({
 
 const AssignmentUpdateBodySchema = z
   .object({
+    workerId: z.union([z.string(), z.null(), z.undefined()]).optional(),
     status: ProductionStatusSchema.optional(),
     startDate: z.union([z.string(), z.null(), z.undefined()]).optional(),
     endDate: z.union([z.string(), z.null(), z.undefined()]).optional(),
     notes: z.union([z.string(), z.null(), z.undefined()]).optional(),
   })
   .strict();
+
+const LineStatusBodySchema = z.object({
+  status: ProductionLineStatusSchema,
+});
 
 productionRouter.get("/orders", async (req, res, next) => {
   try {
@@ -50,7 +78,7 @@ productionRouter.get("/orders", async (req, res, next) => {
         },
       },
     });
-    res.json(rows);
+    res.json(rows.map((row) => withNormalizedLines(row)));
   } catch (e) {
     req.log?.error({ route: "GET /production/orders", err: String(e) });
     next(e);
@@ -77,7 +105,7 @@ productionRouter.get("/orders/:id", async (req, res, next) => {
       res.status(404).json({ error: "not_found" });
       return;
     }
-    res.json(row);
+    res.json(withNormalizedLines(row));
   } catch (e) {
     req.log?.error({ route: "GET /production/orders/:id", err: String(e) });
     next(e);
@@ -132,7 +160,11 @@ productionRouter.put("/orders/:id/status", async (req, res, next) => {
 
 productionRouter.put("/orders/:id", async (req, res) => {
   const { id } = req.params;
-  const { deadline, productionStart } = req.body;
+  const { deadline, productionStart, notes } = req.body as {
+    deadline?: string | null;
+    productionStart?: string | null;
+    notes?: string | null;
+  };
   try {
     const updated = await prisma.order.update({
       where: { id },
@@ -143,12 +175,61 @@ productionRouter.put("/orders/:id", async (req, res) => {
         ...(productionStart !== undefined && {
           productionStart: productionStart ? new Date(productionStart) : null,
         }),
+        ...(notes !== undefined && {
+          notes: cleanNotes(notes),
+        }),
       },
     });
     res.json(updated);
   } catch (e) {
     req.log?.error({ route: "PUT /production/orders/:id", err: String(e) });
     res.status(500).json({ error: "Ошибка обновления заказа" });
+  }
+});
+
+productionRouter.patch("/orders/:id/lines/:lineNo/status", async (req, res, next) => {
+  try {
+    const { id, lineNo } = req.params;
+    if (!id || !lineNo) {
+      res.status(400).json({ error: "missing_params" });
+      return;
+    }
+    const parsedLineNo = Number.parseInt(lineNo, 10);
+    if (!Number.isFinite(parsedLineNo) || parsedLineNo <= 0) {
+      res.status(400).json({ error: "invalid_line_no" });
+      return;
+    }
+    const parsed = LineStatusBodySchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "invalid_body", details: parsed.error.flatten() });
+      return;
+    }
+
+    const order = await prisma.order.findUnique({ where: { id } });
+    if (!order) {
+      res.status(404).json({ error: "not_found" });
+      return;
+    }
+
+    const lines = normalizeLinesSnapshot(order.linesSnapshot);
+    const idx = lines.findIndex((line) => Number(line.lineNo) === parsedLineNo);
+    if (idx < 0) {
+      res.status(404).json({ error: "line_not_found" });
+      return;
+    }
+    lines[idx] = { ...lines[idx], status: parsed.data.status };
+
+    const updated = await prisma.order.update({
+      where: { id },
+      data: { linesSnapshot: lines as unknown as Prisma.JsonArray },
+      include: {
+        assignments: { include: { worker: true } },
+      },
+    });
+    res.json(withNormalizedLines(updated));
+  } catch (e) {
+    req.log?.error({ route: "PATCH /production/orders/:id/lines/:lineNo/status", err: String(e) });
+    next(e);
   }
 });
 
@@ -254,11 +335,20 @@ productionRouter.put("/assignments/:id", async (req, res, next) => {
     }
     const b = parsed.data;
     const data: {
+      workerId?: string;
       status?: ProductionStatus;
       startDate?: Date;
       endDate?: Date;
       notes?: string | null;
     } = {};
+    if (b.workerId !== undefined) {
+      const workerId = String(b.workerId ?? "").trim();
+      if (!workerId) {
+        res.status(400).json({ error: "invalid_body", message: "workerId cannot be empty" });
+        return;
+      }
+      data.workerId = workerId;
+    }
     if (b.status !== undefined) data.status = b.status as ProductionStatus;
     if (b.startDate !== undefined) {
       if (b.startDate === null) {

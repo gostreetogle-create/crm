@@ -1,0 +1,54 @@
+<app-content-card class="orderCard" [title]="order.orderNumber" [hideTitle]="true">
+  <div class="orderCardInner" [class]="'orderCardInner orderCardInner--' + stripeClass(order)">
+    <button type="button" class="orderCardBody" (click)="emitOpenDrawer()">
+      <div class="orderCardHead">
+        <div class="orderCardHeadTop">
+          <strong>{{ order.orderNumber }}</strong>
+          <span class="statusBadge" [class]="'statusBadge statusBadge--' + statusClass(order.productionStatus)">
+            {{ order.productionStatus === 'DONE' ? 'Готово' : (order.productionStatus === 'IN_PROGRESS' ? 'В работе' : 'Проектирование') }}
+          </span>
+        </div>
+        <span>{{ order.customerLabel || '—' }}</span>
+      </div>
+      <div class="orderCardMeta">
+        <span [class.overdue]="isOverdue(order)">Дедлайн: {{ formatDeadline(order.deadline) }}</span>
+        @if (isOverdue(order)) {
+          <span class="overdueBadge">Просрочен</span>
+        }
+        <span>Прогресс: {{ progressLabel(order) }}</span>
+      </div>
+    </button>
+    <div class="miniProgressTrack" aria-hidden="true">
+      <div class="miniProgressBar" [style.width.%]="progressPercent(order)"></div>
+    </div>
+    <div class="orderLinesToggleWrap">
+      <button type="button" class="orderLinesToggle" [attr.aria-expanded]="expanded" (click)="emitTogglePositions($event)">
+        <span>Позиции</span>
+        <span class="orderLinesToggleIcon" [class.orderLinesToggleIcon--open]="expanded">∨</span>
+      </button>
+    </div>
+    <div class="orderLinesPanel" [class.orderLinesPanel--expanded]="expanded">
+      <div class="orderLinesList">
+        @for (line of order.linesSnapshot || []; track line.lineNo) {
+        <button type="button" class="orderLineRow" (click)="emitOpenPosition(line.lineNo, $event)">
+            <div class="lineThumb">
+              @if (hasLinePhoto(line)) {
+              <img [src]="resolvePhotoUrl(line)" [alt]="line.name" loading="lazy" />
+              } @else {
+                <div class="lineThumbPlaceholder" aria-hidden="true">📦</div>
+              }
+            </div>
+            <div class="lineMain">
+              <div class="lineName">{{ line.name }}</div>
+              <div class="lineQty">Количество: {{ line.qty }} {{ line.unit }}</div>
+            </div>
+            <span class="lineStatusDot" [class]="'lineStatusDot lineStatusDot--' + statusClass(lineStatus(order, line.lineNo))"></span>
+        </button>
+        } @empty {
+          <p class="lineEmpty">Нет позиций</p>
+        }
+      </div>
+    </div>
+    <a class="openLink" [routerLink]="['/производство', order.id]" (click)="$event.stopPropagation()">Открыть</a>
+  </div>
+</app-content-card>

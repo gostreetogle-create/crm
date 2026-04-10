@@ -25,6 +25,14 @@ export {
 } from './lib/cards/public-api';
 export { DictionaryPreviewCardComponent } from './lib/dictionary-preview-card/dictionary-preview-card.component';
 export { DictionaryPreviewCardNoPhotoComponent } from './lib/dictionary-preview-card/dictionary-preview-card-no-photo.component';
+export {
+  ProductionOrderCardComponent,
+  type ProductionOrderCardModel,
+  type ProductionOrderCardStatus,
+  type ProductionOrderCardAssignment,
+  type ProductionOrderCardLine,
+  type ProductionOrderCardPositionOpenEvent,
+} from './lib/production-order-card/production-order-card.component';
 export { ThemePickerComponent } from './lib/theme-picker/theme-picker.component';
 export { FiltersBarComponent, type FilterOption } from './lib/filters-bar/filters-bar.component';
 export {

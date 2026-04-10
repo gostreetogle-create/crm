@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { LucidePlus } from '@lucide/angular';
 import { ContentCardComponent, PageShellComponent } from '@srm/ui-kit';
 import { AssignPayload, ProductionStatus } from '../../production.types';
 import { ProductionOrderStore } from '../../state/production-order.store';
@@ -9,7 +10,7 @@ import { ProductionOrderStore } from '../../state/production-order.store';
 @Component({
   standalone: true,
   selector: 'app-production-order-page',
-  imports: [CommonModule, FormsModule, RouterLink, PageShellComponent, ContentCardComponent],
+  imports: [CommonModule, FormsModule, RouterLink, PageShellComponent, ContentCardComponent, LucidePlus],
   providers: [ProductionOrderStore],
   templateUrl: './production-order-page.html',
   styleUrl: './production-order-page.scss',
@@ -25,6 +26,11 @@ export class ProductionOrderPage implements OnInit {
   });
 
   readonly progress = computed(() => this.store.progress());
+  readonly progressPercent = computed(() => {
+    const p = this.progress();
+    if (!p.total) return 0;
+    return Math.round((p.done / p.total) * 100);
+  });
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -35,8 +41,19 @@ export class ProductionOrderPage implements OnInit {
 
   badgeLabel(status: ProductionStatus | null | undefined): string {
     if (status === 'IN_PROGRESS') return 'В работе';
-    if (status === 'DONE') return 'Готово';
+    if (status === 'DONE') return 'Выполнен';
     return 'Ожидает';
+  }
+
+  formatLongDate(dateValue: string | null | undefined): string {
+    if (!dateValue) return '—';
+    const date = new Date(dateValue);
+    if (Number.isNaN(date.getTime())) return '—';
+    return new Intl.DateTimeFormat('ru-RU', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    }).format(date);
   }
 
   openAssign(lineNo: number): void {

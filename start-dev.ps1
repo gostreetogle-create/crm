@@ -12,6 +12,43 @@ $root = $PSScriptRoot
 $backend = Join-Path $root "backend"
 $front = Join-Path $root "crm-web"
 
+function Stop-ProcessByPort {
+    param(
+        [Parameter(Mandatory = $true)]
+        [int]$Port
+    )
+
+    $connections = Get-NetTCPConnection -LocalPort $Port -ErrorAction SilentlyContinue
+    if (-not $connections) {
+        return
+    }
+
+    $pids = $connections |
+        Select-Object -ExpandProperty OwningProcess -Unique |
+        Where-Object { $_ -gt 0 }
+
+    $allowedProcessNames = @("node", "npm", "npx")
+
+    foreach ($pid in $pids) {
+        try {
+            $proc = Get-Process -Id $pid -ErrorAction Stop
+            $processName = $proc.ProcessName.ToLowerInvariant()
+            if ($allowedProcessNames -contains $processName) {
+                Write-Host "Stopping PID $pid on port $Port ($($proc.ProcessName))..." -ForegroundColor DarkYellow
+                Stop-Process -Id $pid -Force -ErrorAction Stop
+            } else {
+                Write-Host "Skip PID $pid on port $Port ($($proc.ProcessName)): not node/npm/npx." -ForegroundColor Yellow
+            }
+        } catch {
+            Write-Host "Cannot stop PID $pid on port ${Port}: $($_.Exception.Message)" -ForegroundColor DarkGray
+        }
+    }
+}
+
+Write-Host "Freeing ports 3000 and 4200..." -ForegroundColor Cyan
+Stop-ProcessByPort -Port 3000
+Stop-ProcessByPort -Port 4200
+
 Write-Host "Starting backend (port 3000)..." -ForegroundColor Cyan
 Start-Process powershell -ArgumentList @(
     "-NoExit",

@@ -1,0 +1,212 @@
+:host {
+  display: block;
+}
+
+.ganttRoot {
+  display: grid;
+}
+
+.emptyState {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.ganttHost {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  overflow: auto;
+}
+
+.ganttGridHeader,
+.orderRow,
+.lineRow {
+  display: grid;
+  grid-template-columns: 220px minmax(720px, 1fr);
+}
+
+.labelHeader {
+  padding: 10px;
+  border-right: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  position: sticky;
+  left: 0;
+  z-index: 4;
+  background: var(--surface);
+}
+
+.timelineHeader {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
+  min-height: 38px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.weekCell {
+  border-right: 1px solid var(--border-color);
+  font-size: 11px;
+  padding: 8px 6px;
+  white-space: nowrap;
+}
+
+.weekCell--odd {
+  background: #f8fafc;
+}
+
+.labelCell {
+  border: 0;
+  border-right: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+  background: var(--surface);
+  text-align: left;
+  position: sticky;
+  left: 0;
+  z-index: 3;
+}
+
+.orderLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+.toggleBtn {
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.labelMain {
+  display: grid;
+  min-width: 0;
+}
+
+.labelMain strong {
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.labelMain span,
+.lineLabel {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lineLabel {
+  padding: 6px 10px 6px 28px;
+  cursor: pointer;
+  display: block;
+}
+
+.trackCell {
+  border: 0;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--surface);
+  position: relative;
+  min-height: 44px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
+  cursor: pointer;
+}
+
+.trackCell--line {
+  min-height: 32px;
+}
+
+.weekStripe {
+  border-right: 1px solid color-mix(in srgb, var(--border-color) 70%, transparent);
+}
+
+.weekStripe--odd {
+  background: #f8fafc;
+}
+
+.bar {
+  position: absolute;
+  top: 8px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.bar--designing {
+  background: #1e3a8a;
+}
+
+.bar--in-progress {
+  background: #2563eb;
+}
+
+.bar--done {
+  background: #16a34a;
+}
+
+.bar--line {
+  top: 6px;
+  height: 20px;
+  padding: 0;
+}
+
+.bar--line-designing {
+  background: #64748b;
+}
+
+.bar--line-in-progress {
+  background: #eab308;
+}
+
+.bar--line-done {
+  background: #16a34a;
+}
+
+.lineNoDates {
+  position: absolute;
+  top: 15px;
+  height: 2px;
+  border-top: 2px dashed #94a3b8;
+  opacity: 0.9;
+}
+
+.todayLine {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #dc2626;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.todayBadge {
+  position: absolute;
+  top: -18px;
+  transform: translateX(-50%);
+  background: #dc2626;
+  color: #fff;
+  border-radius: 999px;
+  font-size: 10px;
+  line-height: 1;
+  padding: 3px 7px;
+  z-index: 5;
+  pointer-events: none;
+}

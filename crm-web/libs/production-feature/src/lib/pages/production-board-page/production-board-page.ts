@@ -1,10 +1,23 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
-import { RouterLink } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { API_CONFIG } from '@srm/platform-core';
 import { ProductionGanttComponent } from '../../components/production-gantt/production-gantt.component';
-import { ContentCardComponent, PageShellComponent } from '@srm/ui-kit';
-import { ProductionOrder, ProductionStatus } from '../../production.types';
+import {
+  PageShellComponent,
+  ProductionOrderCardComponent,
+  type ProductionOrderCardModel,
+  type ProductionOrderCardPositionOpenEvent,
+} from '@srm/ui-kit';
+import {
+  AssignPayload,
+  ProductionLineStatus,
+  ProductionLineSnapshot,
+  ProductionOrder,
+  ProductionStatus,
+  Worker,
+} from '../../production.types';
 import { ProductionStore } from '../../state/production.store';
 
 @Component({
@@ -12,10 +25,10 @@ import { ProductionStore } from '../../state/production.store';
   selector: 'app-production-board-page',
   imports: [
     CommonModule,
-    RouterLink,
+    FormsModule,
     DragDropModule,
     PageShellComponent,
-    ContentCardComponent,
+    ProductionOrderCardComponent,
     ProductionGanttComponent,
   ],
   providers: [ProductionStore],
@@ -24,7 +37,25 @@ import { ProductionStore } from '../../state/production.store';
 })
 export class ProductionBoardPage implements OnInit {
   readonly store = inject(ProductionStore);
+  private readonly api = inject(API_CONFIG);
   readonly viewMode = signal<'KANBAN' | 'GANTT'>('KANBAN');
+  readonly mediaBaseUrl = this.api.baseUrl.replace(/\/$/, '');
+  readonly expandedOrders = signal<Record<string, boolean>>({});
+  readonly selectedOrder = signal<ProductionOrder | null>(null);
+  readonly selectedPosition = signal<{ orderId: string; lineNo: number } | null>(null);
+  readonly positionEditor = signal<{ workerId: string; startDate: string; endDate: string; status: ProductionLineStatus }>({
+    workerId: '',
+    startDate: '',
+    endDate: '',
+    status: 'DESIGNING',
+  });
+  readonly positionSaveState = signal<Record<'status' | 'worker' | 'dates', 'idle' | 'saving' | 'saved'>>({
+    status: 'idle',
+    worker: 'idle',
+    dates: 'idle',
+  });
+  readonly commentDraft = signal('');
+  readonly savingComment = signal(false);
   readonly columns: ProductionStatus[] = ['PENDING', 'IN_PROGRESS', 'DONE'];
   readonly dropListConnections: Record<ProductionStatus, ProductionStatus[]> = {
     PENDING: ['IN_PROGRESS', 'DONE'],
@@ -33,34 +64,124 @@ export class ProductionBoardPage implements OnInit {
   };
   readonly filters = [
     { value: 'ALL', label: 'Все' },
-    { value: 'PENDING', label: 'Ожидает' },
+    { value: 'PENDING', label: 'Проектирование' },
     { value: 'IN_PROGRESS', label: 'В работе' },
     { value: 'DONE', label: 'Готово' },
   ] as const;
 
   readonly hasData = computed(() => this.store.orders().length > 0);
+  readonly teamMembers = computed(() =>
+    this.store.workers().map((worker) => this.mapWorkerCard(worker)),
+  );
 
   ngOnInit(): void {
     this.store.loadOrders();
+    this.store.loadWorkers();
   }
 
   setFilter(filter: 'ALL' | ProductionStatus): void {
     this.store.filter.set(filter);
   }
 
-  isOverdue(order: ProductionOrder): boolean {
-    if (!order.deadline || order.productionStatus === 'DONE') return false;
-    const deadline = new Date(order.deadline);
-    if (Number.isNaN(deadline.getTime())) return false;
-    const today = new Date();
-    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
-    const deadlineStart = new Date(deadline.getFullYear(), deadline.getMonth(), deadline.getDate()).getTime();
-    return deadlineStart < todayStart;
+  progressPercent(order: ProductionOrder): number {
+    const p = this.store.progress(order);
+    if (!p.total) return 0;
+    return Math.round((p.done / p.total) * 100);
   }
 
-  progressLabel(order: ProductionOrder): string {
-    const p = this.store.progress(order);
-    return `${p.done} из ${p.total}`;
+  toggleOrderLines(orderId: string): void {
+    const state = this.expandedOrders();
+    this.expandedOrders.set({ ...state, [orderId]: !state[orderId] });
+  }
+
+  isOrderExpanded(orderId: string): boolean {
+    return !!this.expandedOrders()[orderId];
+  }
+
+  openOrderDrawer(orderCard: ProductionOrderCardModel): void {
+    const fullOrder = this.store.orders().find((order) => order.id === orderCard.id);
+    this.selectedOrder.set(fullOrder ?? (orderCard as ProductionOrder));
+    this.commentDraft.set('');
+  }
+
+  closeOrderDrawer(): void {
+    this.selectedOrder.set(null);
+    this.commentDraft.set('');
+  }
+
+  openPositionDrawer(event: ProductionOrderCardPositionOpenEvent): void {
+    const order = this.store.orders().find((item) => item.id === event.orderId);
+    if (!order) return;
+    const assignment = order.assignments.find((item) => item.lineNo === event.lineNo);
+    this.selectedPosition.set({ orderId: event.orderId, lineNo: event.lineNo });
+    this.positionEditor.set({
+      workerId: assignment?.workerId ?? '',
+      startDate: this.toInputDate(assignment?.startDate),
+      endDate: this.toInputDate(assignment?.endDate),
+      status: this.lineSnapshotStatus(order, event.lineNo),
+    });
+  }
+
+  closePositionDrawer(): void {
+    this.selectedPosition.set(null);
+    this.positionSaveState.set({ status: 'idle', worker: 'idle', dates: 'idle' });
+  }
+
+  startOrder(order: ProductionOrder, event?: Event): void {
+    event?.stopPropagation();
+    if (order.productionStatus === 'PENDING') {
+      this.store.updateOrderStatus(order.id, 'IN_PROGRESS');
+      this.selectedOrder.set({ ...order, productionStatus: 'IN_PROGRESS' });
+    }
+  }
+
+  lineWorker(order: ProductionOrder, lineNo: number): string {
+    const assignment = order.assignments?.find((item) => item.lineNo === lineNo);
+    return assignment?.workerName || 'Не назначен';
+  }
+
+  lineStatus(order: ProductionOrder, lineNo: number): ProductionStatus {
+    const status = this.lineSnapshotStatus(order, lineNo);
+    if (status === 'IN_PROGRESS') return 'IN_PROGRESS';
+    if (status === 'DONE') return 'DONE';
+    return 'PENDING';
+  }
+
+  hasLinePhoto(line: ProductionLineSnapshot | undefined): boolean {
+    if (!line) return false;
+    const photo = line.photoUrl || line.photo || line.imageUrl || line.thumbnailUrl;
+    return typeof photo === 'string' && photo.trim().length > 0;
+  }
+
+  linePhotoUrl(line: ProductionLineSnapshot | undefined): string {
+    if (!line) return '';
+    const raw = line.photoUrl || line.photo || line.imageUrl || line.thumbnailUrl || '';
+    if (!raw) return '';
+    if (/^https?:\/\//i.test(raw) || raw.startsWith('data:') || raw.startsWith('/')) return raw;
+    return `/media/trade-goods/${raw}`;
+  }
+
+  statusLabel(status: ProductionStatus): string {
+    if (status === 'IN_PROGRESS') return 'В работе';
+    if (status === 'DONE') return 'Готово';
+    return 'Проектирование';
+  }
+
+  statusClass(status: ProductionStatus): string {
+    if (status === 'IN_PROGRESS') return 'in-progress';
+    if (status === 'DONE') return 'done';
+    return 'pending';
+  }
+
+  formatLongDate(dateValue: string | null | undefined): string {
+    if (!dateValue) return '—';
+    const date = new Date(dateValue);
+    if (Number.isNaN(date.getTime())) return '—';
+    return new Intl.DateTimeFormat('ru-RU', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    }).format(date);
   }
 
   ordersByStatus(status: ProductionStatus): ProductionOrder[] {
@@ -82,5 +203,259 @@ export class ProductionBoardPage implements OnInit {
 
   setView(mode: 'KANBAN' | 'GANTT'): void {
     this.viewMode.set(mode);
+  }
+
+  commentItems(order: ProductionOrder): Array<{ timestamp: string | null; text: string }> {
+    if (!order.notes?.trim()) return [];
+    return order.notes
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line) => {
+        const m = line.match(/^\[(.+?)\]\s*(.+)$/);
+        if (!m) return { timestamp: null, text: line };
+        return { timestamp: m[1]?.trim() || null, text: m[2]?.trim() || '' };
+      })
+      .filter((item) => item.text.length > 0);
+  }
+
+  formatCommentTime(timestamp: string | null): string {
+    if (!timestamp) return 'Без времени';
+    const date = new Date(timestamp);
+    if (Number.isNaN(date.getTime())) return timestamp;
+    return new Intl.DateTimeFormat('ru-RU', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(date);
+  }
+
+  addComment(): void {
+    const order = this.selectedOrder();
+    const text = this.commentDraft().trim();
+    if (!order || !text) return;
+
+    const nowIso = new Date().toISOString();
+    const line = `[${nowIso}] ${text}`;
+    const existing = order.notes?.trim() ?? '';
+    const nextNotes = existing ? `${existing}\n${line}` : line;
+
+    this.savingComment.set(true);
+    this.store.updateOrderNotes(order.id, nextNotes);
+    this.selectedOrder.set({ ...order, notes: nextNotes });
+    this.commentDraft.set('');
+    this.savingComment.set(false);
+  }
+
+  selectedPositionOrder(): ProductionOrder | null {
+    const selected = this.selectedPosition();
+    if (!selected) return null;
+    return this.store.orders().find((item) => item.id === selected.orderId) ?? null;
+  }
+
+  selectedPositionLine(): ProductionLineSnapshot | null {
+    const selected = this.selectedPosition();
+    const order = this.selectedPositionOrder();
+    if (!selected || !order?.linesSnapshot) return null;
+    return order.linesSnapshot.find((line) => line.lineNo === selected.lineNo) ?? null;
+  }
+
+  selectedPositionAssignment() {
+    const selected = this.selectedPosition();
+    const order = this.selectedPositionOrder();
+    if (!selected || !order) return undefined;
+    return order.assignments.find((item) => item.lineNo === selected.lineNo);
+  }
+
+  workerLabel(workerId: string): string {
+    const w = this.store.workers().find((item) => item.id === workerId);
+    if (!w) return workerId;
+    if (w.name && w.name.trim()) return w.name;
+    const full = [w.lastName, w.firstName, w.patronymic].filter(Boolean).join(' ').trim();
+    return full || workerId;
+  }
+
+  workerInitials(name: string): string {
+    const parts = name
+      .split(' ')
+      .map((item) => item.trim())
+      .filter(Boolean);
+    if (!parts.length) return '??';
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return `${parts[0][0] || ''}${parts[1][0] || ''}`.toUpperCase();
+  }
+
+  savePositionWorker(): void {
+    const selected = this.selectedPosition();
+    const order = this.selectedPositionOrder();
+    const assignment = this.selectedPositionAssignment();
+    const editor = this.positionEditor();
+    if (!selected || !order || !editor.workerId) return;
+    this.markPositionSaving('worker');
+    if (assignment) {
+      this.store.updateAssignment(assignment.id, { workerId: editor.workerId });
+      this.markPositionSaved('worker');
+      return;
+    }
+    if (!editor.startDate || !editor.endDate) return;
+    const payload: AssignPayload = {
+      lineNo: selected.lineNo,
+      workerId: editor.workerId,
+      startDate: editor.startDate,
+      endDate: editor.endDate,
+      status: this.assignmentStatusFromLine(editor.status),
+    };
+    this.store.assign(order.id, payload);
+    this.markPositionSaved('worker');
+  }
+
+  savePositionDates(): void {
+    const selected = this.selectedPosition();
+    const order = this.selectedPositionOrder();
+    const assignment = this.selectedPositionAssignment();
+    const editor = this.positionEditor();
+    if (!selected || !order || !editor.startDate || !editor.endDate) return;
+    this.markPositionSaving('dates');
+    if (assignment) {
+      this.store.updateAssignment(assignment.id, { startDate: editor.startDate, endDate: editor.endDate });
+      this.markPositionSaved('dates');
+      return;
+    }
+    if (!editor.workerId) return;
+    const payload: AssignPayload = {
+      lineNo: selected.lineNo,
+      workerId: editor.workerId,
+      startDate: editor.startDate,
+      endDate: editor.endDate,
+      status: this.assignmentStatusFromLine(editor.status),
+    };
+    this.store.assign(order.id, payload);
+    this.markPositionSaved('dates');
+  }
+
+  savePositionStatus(): void {
+    const selected = this.selectedPosition();
+    const order = this.selectedPositionOrder();
+    const editor = this.positionEditor();
+    if (!selected || !order) return;
+    this.markPositionSaving('status');
+    this.store.updateLineStatus(order.id, selected.lineNo, editor.status);
+    this.markPositionSaved('status');
+  }
+
+  onPositionStatusChange(status: ProductionLineStatus): void {
+    this.positionEditor.set({ ...this.positionEditor(), status });
+    this.savePositionStatus();
+  }
+
+  onPositionWorkerChange(workerId: string): void {
+    this.positionEditor.set({ ...this.positionEditor(), workerId });
+    this.savePositionWorker();
+  }
+
+  onPositionStartDateChange(startDate: string): void {
+    this.positionEditor.set({ ...this.positionEditor(), startDate });
+    this.savePositionDates();
+  }
+
+  onPositionEndDateChange(endDate: string): void {
+    this.positionEditor.set({ ...this.positionEditor(), endDate });
+    this.savePositionDates();
+  }
+
+  private toInputDate(value: string | null | undefined): string {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toISOString().slice(0, 10);
+  }
+
+  private lineSnapshotStatus(order: ProductionOrder, lineNo: number): ProductionLineStatus {
+    const line = (order.linesSnapshot ?? []).find((item) => item.lineNo === lineNo);
+    const status = line?.status;
+    if (status === 'IN_PROGRESS' || status === 'DONE' || status === 'DESIGNING') return status;
+    return 'DESIGNING';
+  }
+
+  private assignmentStatusFromLine(status: ProductionLineStatus): ProductionStatus {
+    if (status === 'IN_PROGRESS') return 'IN_PROGRESS';
+    if (status === 'DONE') return 'DONE';
+    return 'PENDING';
+  }
+
+  private mapWorkerCard(worker: Worker): {
+    id: string;
+    name: string;
+    initials: string;
+    statusDot: 'free' | 'busy-soft' | 'busy-hard';
+    statusText: string;
+    title: string;
+  } {
+    const name = this.workerLabel(worker.id);
+    const activeAssignments = this.store
+      .orders()
+      .flatMap((order) =>
+        order.assignments
+          .filter((assignment) => assignment.workerId === worker.id && assignment.status !== 'DONE')
+          .map((assignment) => ({ order, assignment })),
+      );
+
+    if (!activeAssignments.length) {
+      return {
+        id: worker.id,
+        name,
+        initials: this.workerInitials(name),
+        statusDot: 'free',
+        statusText: 'Свободен',
+        title: `${name} — свободен`,
+      };
+    }
+
+    const withEndDate = activeAssignments.filter((item) => this.parseDateSafe(item.assignment.endDate));
+    const currentOrder = activeAssignments[0]?.order.orderNumber || '—';
+
+    if (withEndDate.length) {
+      const nearest = withEndDate
+        .map((item) => ({ ...item, end: this.parseDateSafe(item.assignment.endDate)! }))
+        .sort((a, b) => a.end.getTime() - b.end.getTime())[0];
+      const endLabel = this.formatLongDate(nearest.end.toISOString());
+      return {
+        id: worker.id,
+        name,
+        initials: this.workerInitials(name),
+        statusDot: 'busy-soft',
+        statusText: `Занят до ${endLabel}`,
+        title: `${name} — заказ ${nearest.order.orderNumber}`,
+      };
+    }
+
+    return {
+      id: worker.id,
+      name,
+      initials: this.workerInitials(name),
+      statusDot: 'busy-hard',
+      statusText: 'Занят',
+      title: `${name} — заказ ${currentOrder}`,
+    };
+  }
+
+  private parseDateSafe(value: string | null | undefined): Date | null {
+    if (!value) return null;
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return null;
+    return date;
+  }
+
+  private markPositionSaving(key: 'status' | 'worker' | 'dates'): void {
+    this.positionSaveState.update((state) => ({ ...state, [key]: 'saving' }));
+  }
+
+  private markPositionSaved(key: 'status' | 'worker' | 'dates'): void {
+    this.positionSaveState.update((state) => ({ ...state, [key]: 'saved' }));
+    setTimeout(() => {
+      this.positionSaveState.update((state) => (state[key] === 'saved' ? { ...state, [key]: 'idle' } : state));
+    }, 1100);
   }
 }

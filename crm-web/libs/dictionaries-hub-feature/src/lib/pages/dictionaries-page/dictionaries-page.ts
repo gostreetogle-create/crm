@@ -847,6 +847,30 @@ export class DictionariesPage implements OnDestroy {
   );
   readonly ordersColumns = ORDERS_COLUMNS;
   readonly ordersColumnsFull = ORDERS_COLUMNS_FULL;
+  readonly ordersCompositionSpecColumns: UiSpecTableColumn[] = [
+    { key: 'name', label: 'Позиция', tone: 'emphasis' },
+    { key: 'qtyLabel', label: 'Кол-во', tone: 'muted', align: 'end' },
+    { key: 'unit', label: 'Ед.', tone: 'muted' },
+  ];
+
+  ordersCompositionSpecRows(lines: unknown): Array<Record<string, unknown>> {
+    if (!Array.isArray(lines)) return [];
+    return lines
+      .slice()
+      .map((raw) => {
+        const l = raw as { lineNo?: unknown; name?: unknown; qty?: unknown; unit?: unknown };
+        const lineNo = typeof l.lineNo === 'number' ? l.lineNo : Number.MAX_SAFE_INTEGER;
+        const qty = typeof l.qty === 'number' ? l.qty : 0;
+        return {
+          lineNo,
+          name: l.name ?? '—',
+          qtyLabel: qty,
+          unit: l.unit ?? '—',
+        };
+      })
+      .sort((a, b) => Number(a['lineNo']) - Number(b['lineNo']));
+  }
+
   readonly ordersColumnsForTile = this.columnsForTile('orders', this.ordersColumns, this.ordersColumnsFull);
   readonly kpPhotosColumnsForTile = this.columnsForTile('kpPhotos', this.kpPhotosColumns, this.kpPhotosColumnsFull);
   readonly clientsColumnsForTile = this.columnsForTile('clients', this.clientsColumns, this.clientsColumnsFull);

@@ -970,6 +970,16 @@
         }
 
             @case ('orders') {
+      <ng-template #ordersExpandComposition let-row>
+        <app-ui-spec-table
+          caption="Состав заказа"
+          variant="embed"
+          emptyText="Нет строк состава."
+          [showOrdinalColumn]="true"
+          [columns]="ordersCompositionSpecColumns"
+          [rows]="ordersCompositionSpecRows($any(row)['compositionLines'])"
+        />
+      </ng-template>
       <crud-layout
         title="Заказы"
         [showHeader]="false"
@@ -990,6 +1000,8 @@
         [canEdit]="permissions.can('page.commercialProposal')"
         [canDelete]="permissions.crud().canDelete"
         deleteConfirmMessage="Удалить заказ?"
+        [expandableRows]="true"
+        [expandRowTemplate]="ordersExpandComposition"
         (view)="openOrdersView($event)"
         (edit)="openOrdersEdit($event)"
         (delete)="deleteOrder($event)"

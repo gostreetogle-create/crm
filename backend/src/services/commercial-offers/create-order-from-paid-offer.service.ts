@@ -16,6 +16,7 @@ type OfferSnapshotForOrder = {
     unit: string;
     unitPrice: number;
     lineSum: number;
+    imageUrl?: string | null;
     sortOrder: number;
   }>;
 };
@@ -90,8 +91,10 @@ export async function createOrderFromPaidOfferIfNeeded(params: CreateOrderFromPa
             description: line.description,
             qty: line.qty,
             unit: line.unit,
+            status: "DESIGNING",
             unitPrice: line.unitPrice,
             lineSum: line.lineSum,
+            imageUrl: cleanString(line.imageUrl),
             sortOrder: line.sortOrder,
           })),
       },

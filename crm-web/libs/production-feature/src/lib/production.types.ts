@@ -1,4 +1,5 @@
 export type ProductionStatus = 'PENDING' | 'IN_PROGRESS' | 'DONE';
+export type ProductionLineStatus = 'DESIGNING' | 'IN_PROGRESS' | 'DONE';
 
 export type ProductionAssignment = {
   id: string;
@@ -18,12 +19,18 @@ export type ProductionLineSnapshot = {
   quantity?: number;
   qty: number;
   unit: string;
+  status?: ProductionLineStatus;
+  photoUrl?: string | null;
+  photo?: string | null;
+  imageUrl?: string | null;
+  thumbnailUrl?: string | null;
 };
 
 export type ProductionOrder = {
   id: string;
   orderNumber: string;
   customerLabel: string;
+  notes?: string | null;
   createdAt?: string | null;
   productionStart?: string | null;
   deadline: string | null;

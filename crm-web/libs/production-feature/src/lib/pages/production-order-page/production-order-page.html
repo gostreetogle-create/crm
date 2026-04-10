@@ -5,7 +5,7 @@
         <div class="orderHeader">
           <div><strong>Номер заказа:</strong> {{ order.orderNumber }}</div>
           <div><strong>Клиент:</strong> {{ order.customerLabel || '—' }}</div>
-          <div><strong>Дедлайн:</strong> {{ order.deadline || '—' }}</div>
+          <div><strong>Дедлайн:</strong> {{ formatLongDate(order.deadline) }}</div>
           <div>
             <strong>Статус производства:</strong>
             <span class="badge" [class]="'badge badge--' + (order.productionStatus || 'PENDING')">
@@ -16,7 +16,7 @@
 
         <div class="orderActions">
           @if (order.productionStatus === 'PENDING') {
-            <button type="button" class="actionBtn" (click)="startOrder()">Запустить в работу</button>
+            <button type="button" class="actionBtn actionBtn--primary" (click)="startOrder()">Запустить в работу</button>
           }
           @if (store.allDone()) {
             <button type="button" class="actionBtn actionBtn--success" (click)="finishOrder()">Завершить</button>
@@ -43,7 +43,9 @@
             @for (row of store.lineRows(); track row.line.lineNo) {
               <tr>
                 <td>{{ row.line.lineNo }}</td>
-                <td>{{ row.line.name }}</td>
+                <td>
+                  <span class="lineNameClamp" [title]="row.line.name">{{ row.line.name }}</span>
+                </td>
                 <td>{{ row.line.qty }}</td>
                 <td>{{ row.line.unit }}</td>
                 <td>
@@ -71,7 +73,10 @@
                 </td>
                 <td>
                   @if (!row.assignment) {
-                    <button type="button" class="smallBtn" (click)="openAssign(row.line.lineNo)">Назначить</button>
+                    <button type="button" class="smallBtn smallBtn--assign" (click)="openAssign(row.line.lineNo)">
+                      <svg lucidePlus [size]="14" aria-hidden="true"></svg>
+                      <span>Назначить</span>
+                    </button>
                   } @else {
                     <div class="rowActions">
                       <button type="button" class="smallBtn" (click)="markDone(row.assignment.id)">Готово</button>
@@ -117,7 +122,10 @@
       </app-content-card>
 
       <app-content-card title="Прогресс выполнения" [hideTitle]="true">
-        <div class="progressLabel">Выполнено {{ progress().done }} из {{ progress().total }} позиций</div>
+        <div class="progressHead">
+          <div class="progressLabel">Выполнено {{ progress().done }} из {{ progress().total }} позиций</div>
+          <strong class="progressPercent">{{ progressPercent() }}%</strong>
+        </div>
         <div class="progressTrack">
           <div
             class="progressBar"

@@ -47,6 +47,7 @@ export class OrdersStore {
         deadlineLabel: formatRuDateOrDash(item.deadline),
         offerNumberLabel: item.offerNumber || '—',
         linesLabel: this.linesSummary(item.linesSnapshot),
+        compositionLines: item.linesSnapshot,
         updatedAtLabel: formatRuDateTimeOrDash(item.updatedAt),
       })),
   );

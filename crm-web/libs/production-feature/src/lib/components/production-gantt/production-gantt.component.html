@@ -1,0 +1,91 @@
+<section class="ganttRoot">
+  @if (!orders().length) {
+    <p class="emptyState">Нет заказов для отображения</p>
+  } @else {
+    <div class="ganttHost">
+      <div class="ganttGridHeader">
+        <div class="labelHeader">Заказы и позиции</div>
+        <div class="timelineHeader" [style.width.px]="timelineWidthPx()">
+          @for (week of weekCells(); track week.key) {
+            <div class="weekCell" [class.weekCell--odd]="week.odd">{{ week.label }}</div>
+          }
+          <div class="todayBadge" [style.left.px]="todayLeftPx()">Сегодня</div>
+          <div class="todayLine" [style.left.px]="todayLeftPx()"></div>
+        </div>
+      </div>
+
+      <div class="ganttBody">
+        @for (row of rows(); track row.order.id) {
+          <div class="orderRow">
+            <div class="labelCell orderLabel" (click)="onOrderClick(row.order)">
+              <button type="button" class="toggleBtn" (click)="toggleOrder(row.order.id, $event)">
+                {{ isExpanded(row.order.id) ? '▾' : '▸' }}
+              </button>
+              <div class="labelMain">
+                <strong>{{ row.order.orderNumber }}</strong>
+                <span>{{ row.order.customerLabel || '—' }}</span>
+              </div>
+            </div>
+            <button
+              type="button"
+              class="trackCell"
+              [style.width.px]="timelineWidthPx()"
+              (click)="onOrderClick(row.order)"
+              [title]="tooltipForOrder(row)"
+            >
+              @for (week of weekCells(); track week.key) {
+                <div class="weekStripe" [class.weekStripe--odd]="week.odd"></div>
+              }
+              <div class="todayLine" [style.left.px]="todayLeftPx()"></div>
+              <div
+                class="bar"
+                [class]="'bar bar--' + orderClass(row.order)"
+                [style.left.px]="row.leftPx"
+                [style.width.px]="row.widthPx"
+              >
+                <span>{{ row.order.orderNumber }}</span>
+              </div>
+            </button>
+          </div>
+
+          @if (isExpanded(row.order.id)) {
+            @for (lineRow of row.lines; track lineRow.line.lineNo) {
+              <div class="lineRow">
+                <button type="button" class="labelCell lineLabel" (click)="onLineClick(row.order.id, lineRow.line.lineNo)">
+                  <span>{{ lineRow.line.name }}</span>
+                </button>
+                <button
+                  type="button"
+                  class="trackCell trackCell--line"
+                  [style.width.px]="timelineWidthPx()"
+                  (click)="onLineClick(row.order.id, lineRow.line.lineNo)"
+                  [title]="tooltipForLine(lineRow)"
+                >
+                  @for (week of weekCells(); track week.key) {
+                    <div class="weekStripe" [class.weekStripe--odd]="week.odd"></div>
+                  }
+                  <div class="todayLine" [style.left.px]="todayLeftPx()"></div>
+                  @if (lineRow.start && lineRow.end) {
+                    <div
+                      class="bar bar--line"
+                      [class]="'bar bar--line bar--line-' + lineBarClass(lineRow.line.status)"
+                      [style.left.px]="lineRow.leftPx"
+                      [style.width.px]="lineRow.widthPx"
+                    ></div>
+                  } @else {
+                    <div
+                      class="lineNoDates"
+                      [style.left.px]="lineRow.fallbackLeftPx"
+                      [style.width.px]="lineRow.fallbackWidthPx"
+                      title="Для позиции не заданы даты назначения"
+                    ></div>
+                  }
+                </button>
+              </div>
+            }
+          }
+        }
+      </div>
+    </div>
+  }
+</section>

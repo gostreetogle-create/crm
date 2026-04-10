@@ -1,7 +1,14 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { API_CONFIG } from '@srm/platform-core';
-import { ProductionOrder, ProductionStatus } from '../production.types';
+import {
+  AssignPayload,
+  ProductionLineStatus,
+  ProductionOrder,
+  ProductionStatus,
+  UpdateAssignmentPayload,
+  Worker,
+} from '../production.types';
 
 @Injectable()
 export class ProductionStore {
@@ -11,6 +18,7 @@ export class ProductionStore {
   readonly orders = signal<ProductionOrder[]>([]);
   readonly loading = signal(false);
   readonly filter = signal<'ALL' | ProductionStatus>('ALL');
+  readonly workers = signal<Worker[]>([]);
 
   readonly filteredOrders = computed(() => {
     const mode = this.filter();
@@ -76,10 +84,72 @@ export class ProductionStore {
       });
   }
 
+  updateOrderNotes(id: string, notes: string | null): void {
+    const previousOrders = this.orders();
+    const target = previousOrders.find((order) => order.id === id);
+    if (!target) return;
+
+    this.orders.set(
+      previousOrders.map((order) =>
+        order.id === id ? { ...order, notes } : order,
+      ),
+    );
+
+    this.http
+      .put(this.endpoint(`/api/production/orders/${id}`), {
+        notes,
+      })
+      .subscribe({
+        error: () => this.orders.set(previousOrders),
+      });
+  }
+
   progress(order: ProductionOrder): { done: number; total: number } {
-    const total = order.assignments?.length ?? 0;
-    const done = (order.assignments ?? []).filter((a) => a.status === 'DONE').length;
+    const lines = order.linesSnapshot ?? [];
+    const total = lines.length;
+    const done = lines.filter((line) => line.status === 'DONE').length;
     return { done, total };
+  }
+
+  loadWorkers(): void {
+    this.http.get<Worker[]>(this.endpoint('/api/workers')).subscribe({
+      next: (list) => this.workers.set(Array.isArray(list) ? list : []),
+      error: () => this.workers.set([]),
+    });
+  }
+
+  assign(orderId: string, body: AssignPayload): void {
+    this.http.post(this.endpoint(`/api/production/orders/${orderId}/assign`), body).subscribe({
+      next: () => this.loadOrders(),
+    });
+  }
+
+  updateAssignment(id: string, body: UpdateAssignmentPayload): void {
+    this.http.put(this.endpoint(`/api/production/assignments/${id}`), body).subscribe({
+      next: () => this.loadOrders(),
+    });
+  }
+
+  updateLineStatus(orderId: string, lineNo: number, status: ProductionLineStatus): void {
+    const previousOrders = this.orders();
+    const target = previousOrders.find((order) => order.id === orderId);
+    if (!target) return;
+
+    this.orders.set(
+      previousOrders.map((order) => {
+        if (order.id !== orderId) return order;
+        const lines = (order.linesSnapshot ?? []).map((line) =>
+          line.lineNo === lineNo ? { ...line, status } : line,
+        );
+        return { ...order, linesSnapshot: lines };
+      }),
+    );
+
+    this.http
+      .patch(this.endpoint(`/api/production/orders/${orderId}/lines/${lineNo}/status`), { status })
+      .subscribe({
+        error: () => this.orders.set(previousOrders),
+      });
   }
 
   private endpoint(path: string): string {
