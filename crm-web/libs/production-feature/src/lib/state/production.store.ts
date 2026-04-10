@@ -67,7 +67,7 @@ export class ProductionStore {
     );
 
     this.http
-      .put(this.endpoint(`/api/production/${id}`), {
+      .put(this.endpoint(`/api/production/orders/${id}`), {
         productionStart,
         deadline,
       })

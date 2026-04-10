@@ -21,10 +21,7 @@
             "input": "public"
           }
         ],
-        "styles": [
-          "./src/styles.scss",
-          "node_modules/frappe-gantt/dist/frappe-gantt.css"
-        ]
+        "styles": ["./src/styles.scss"]
       },
       "configurations": {
         "production": {

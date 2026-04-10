@@ -27,7 +27,6 @@
     "@fontsource/montserrat": "^5.2.5",
     "@lucide/angular": "^1.7.0",
     "@ngrx/signals": "^21.1.0",
-    "frappe-gantt": "^1.2.2",
     "rxjs": "~7.8.0",
     "zone.js": "^0.16.1"
   },

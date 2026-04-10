@@ -13,7 +13,9 @@ export type ProductionAssignment = {
 
 export type ProductionLineSnapshot = {
   lineNo: number;
+  title?: string;
   name: string;
+  quantity?: number;
   qty: number;
   unit: string;
 };
@@ -27,6 +29,7 @@ export type ProductionOrder = {
   deadline: string | null;
   productionStatus: ProductionStatus;
   assignments: ProductionAssignment[];
+  linesSnapshot?: ProductionLineSnapshot[];
 };
 
 export type ProductionOrderDetail = {

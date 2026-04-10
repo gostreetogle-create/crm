@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { ProductionGanttComponent } from '../../components/production-gantt/production-gantt.component';
 import { ContentCardComponent, PageShellComponent } from '@srm/ui-kit';
 import { ProductionOrder, ProductionStatus } from '../../production.types';
@@ -24,7 +24,6 @@ import { ProductionStore } from '../../state/production.store';
 })
 export class ProductionBoardPage implements OnInit {
   readonly store = inject(ProductionStore);
-  private readonly router = inject(Router);
   readonly today = new Date();
   readonly viewMode = signal<'KANBAN' | 'GANTT'>('KANBAN');
   readonly columns: ProductionStatus[] = ['PENDING', 'IN_PROGRESS', 'DONE'];
@@ -79,13 +78,5 @@ export class ProductionBoardPage implements OnInit {
 
   setView(mode: 'KANBAN' | 'GANTT'): void {
     this.viewMode.set(mode);
-  }
-
-  onGanttDateChange(payload: { id: string; productionStart: string; deadline: string }): void {
-    this.store.updateOrderSchedule(payload.id, payload.productionStart, payload.deadline);
-  }
-
-  openOrder(id: string): void {
-    this.router.navigate(['/производство', id]);
   }
 }
