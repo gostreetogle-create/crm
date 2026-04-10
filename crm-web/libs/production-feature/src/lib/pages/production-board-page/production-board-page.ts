@@ -1,9 +1,10 @@
-import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
-import { FormsModule } from '@angular/forms';
 import { API_CONFIG } from '@srm/platform-core';
+import { OrderDrawerComponent } from '../../components/order-drawer/order-drawer.component';
+import { PositionDrawerComponent } from '../../components/position-drawer/position-drawer.component';
 import { ProductionGanttComponent } from '../../components/production-gantt/production-gantt.component';
+import { TeamPanelComponent, type TeamPanelMember } from '../../components/team-panel/team-panel.component';
 import {
   PageShellComponent,
   ProductionOrderCardComponent,
@@ -24,12 +25,13 @@ import { ProductionStore } from '../../state/production.store';
   standalone: true,
   selector: 'app-production-board-page',
   imports: [
-    CommonModule,
-    FormsModule,
     DragDropModule,
     PageShellComponent,
     ProductionOrderCardComponent,
     ProductionGanttComponent,
+    TeamPanelComponent,
+    OrderDrawerComponent,
+    PositionDrawerComponent,
   ],
   providers: [ProductionStore],
   templateUrl: './production-board-page.html',
@@ -69,8 +71,11 @@ export class ProductionBoardPage implements OnInit {
     { value: 'DONE', label: 'Готово' },
   ] as const;
 
+  /** Активная колонка канбана на узких экранах (табы). */
+  readonly mobileKanbanTab = signal<ProductionStatus>('PENDING');
+
   readonly hasData = computed(() => this.store.orders().length > 0);
-  readonly teamMembers = computed(() =>
+  readonly teamMembers = computed<TeamPanelMember[]>(() =>
     this.store.workers().map((worker) => this.mapWorkerCard(worker)),
   );
 
@@ -81,6 +86,10 @@ export class ProductionBoardPage implements OnInit {
 
   setFilter(filter: 'ALL' | ProductionStatus): void {
     this.store.filter.set(filter);
+  }
+
+  setMobileKanbanTab(tab: ProductionStatus): void {
+    this.mobileKanbanTab.set(tab);
   }
 
   progressPercent(order: ProductionOrder): number {
@@ -127,50 +136,11 @@ export class ProductionBoardPage implements OnInit {
     this.positionSaveState.set({ status: 'idle', worker: 'idle', dates: 'idle' });
   }
 
-  startOrder(order: ProductionOrder, event?: Event): void {
-    event?.stopPropagation();
+  startOrder(order: ProductionOrder): void {
     if (order.productionStatus === 'PENDING') {
       this.store.updateOrderStatus(order.id, 'IN_PROGRESS');
       this.selectedOrder.set({ ...order, productionStatus: 'IN_PROGRESS' });
     }
-  }
-
-  lineWorker(order: ProductionOrder, lineNo: number): string {
-    const assignment = order.assignments?.find((item) => item.lineNo === lineNo);
-    return assignment?.workerName || 'Не назначен';
-  }
-
-  lineStatus(order: ProductionOrder, lineNo: number): ProductionStatus {
-    const status = this.lineSnapshotStatus(order, lineNo);
-    if (status === 'IN_PROGRESS') return 'IN_PROGRESS';
-    if (status === 'DONE') return 'DONE';
-    return 'PENDING';
-  }
-
-  hasLinePhoto(line: ProductionLineSnapshot | undefined): boolean {
-    if (!line) return false;
-    const photo = line.photoUrl || line.photo || line.imageUrl || line.thumbnailUrl;
-    return typeof photo === 'string' && photo.trim().length > 0;
-  }
-
-  linePhotoUrl(line: ProductionLineSnapshot | undefined): string {
-    if (!line) return '';
-    const raw = line.photoUrl || line.photo || line.imageUrl || line.thumbnailUrl || '';
-    if (!raw) return '';
-    if (/^https?:\/\//i.test(raw) || raw.startsWith('data:') || raw.startsWith('/')) return raw;
-    return `/media/trade-goods/${raw}`;
-  }
-
-  statusLabel(status: ProductionStatus): string {
-    if (status === 'IN_PROGRESS') return 'В работе';
-    if (status === 'DONE') return 'Готово';
-    return 'Проектирование';
-  }
-
-  statusClass(status: ProductionStatus): string {
-    if (status === 'IN_PROGRESS') return 'in-progress';
-    if (status === 'DONE') return 'done';
-    return 'pending';
   }
 
   formatLongDate(dateValue: string | null | undefined): string {
@@ -203,33 +173,6 @@ export class ProductionBoardPage implements OnInit {
 
   setView(mode: 'KANBAN' | 'GANTT'): void {
     this.viewMode.set(mode);
-  }
-
-  commentItems(order: ProductionOrder): Array<{ timestamp: string | null; text: string }> {
-    if (!order.notes?.trim()) return [];
-    return order.notes
-      .split('\n')
-      .map((line) => line.trim())
-      .filter(Boolean)
-      .map((line) => {
-        const m = line.match(/^\[(.+?)\]\s*(.+)$/);
-        if (!m) return { timestamp: null, text: line };
-        return { timestamp: m[1]?.trim() || null, text: m[2]?.trim() || '' };
-      })
-      .filter((item) => item.text.length > 0);
-  }
-
-  formatCommentTime(timestamp: string | null): string {
-    if (!timestamp) return 'Без времени';
-    const date = new Date(timestamp);
-    if (Number.isNaN(date.getTime())) return timestamp;
-    return new Intl.DateTimeFormat('ru-RU', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(date);
   }
 
   addComment(): void {
@@ -385,14 +328,7 @@ export class ProductionBoardPage implements OnInit {
     return 'PENDING';
   }
 
-  private mapWorkerCard(worker: Worker): {
-    id: string;
-    name: string;
-    initials: string;
-    statusDot: 'free' | 'busy-soft' | 'busy-hard';
-    statusText: string;
-    title: string;
-  } {
+  private mapWorkerCard(worker: Worker): TeamPanelMember {
     const name = this.workerLabel(worker.id);
     const activeAssignments = this.store
       .orders()
@@ -410,6 +346,7 @@ export class ProductionBoardPage implements OnInit {
         statusDot: 'free',
         statusText: 'Свободен',
         title: `${name} — свободен`,
+        activePositionCount: 0,
       };
     }
 
@@ -428,6 +365,7 @@ export class ProductionBoardPage implements OnInit {
         statusDot: 'busy-soft',
         statusText: `Занят до ${endLabel}`,
         title: `${name} — заказ ${nearest.order.orderNumber}`,
+        activePositionCount: activeAssignments.length,
       };
     }
 
@@ -438,6 +376,7 @@ export class ProductionBoardPage implements OnInit {
       statusDot: 'busy-hard',
       statusText: 'Занят',
       title: `${name} — заказ ${currentOrder}`,
+      activePositionCount: activeAssignments.length,
     };
   }
 

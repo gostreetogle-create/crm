@@ -3,8 +3,9 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { LucidePlus } from '@lucide/angular';
+import { API_CONFIG, resolveTradeGoodLinePhotoUrl } from '@srm/platform-core';
 import { ContentCardComponent, PageShellComponent } from '@srm/ui-kit';
-import { AssignPayload, ProductionStatus } from '../../production.types';
+import { AssignPayload, ProductionLineSnapshot, ProductionStatus } from '../../production.types';
 import { ProductionOrderStore } from '../../state/production-order.store';
 
 @Component({
@@ -18,6 +19,8 @@ import { ProductionOrderStore } from '../../state/production-order.store';
 export class ProductionOrderPage implements OnInit {
   readonly route = inject(ActivatedRoute);
   readonly store = inject(ProductionOrderStore);
+  private readonly api = inject(API_CONFIG);
+  readonly mediaBaseUrl = this.api.baseUrl.replace(/\/$/, '');
   readonly assigningLineNo = signal<number | null>(null);
   readonly assignForm = signal<{ workerId: string; startDate: string; endDate: string }>({
     workerId: '',
@@ -43,6 +46,30 @@ export class ProductionOrderPage implements OnInit {
     if (status === 'IN_PROGRESS') return 'В работе';
     if (status === 'DONE') return 'Выполнен';
     return 'Ожидает';
+  }
+
+  hasLinePhoto(line: ProductionLineSnapshot): boolean {
+    const photo = line.photoUrl || line.photo || line.imageUrl || line.thumbnailUrl;
+    return typeof photo === 'string' && photo.trim().length > 0;
+  }
+
+  resolveLinePhoto(line: ProductionLineSnapshot): string {
+    const raw = line.photoUrl || line.photo || line.imageUrl || line.thumbnailUrl || '';
+    return resolveTradeGoodLinePhotoUrl(raw, this.mediaBaseUrl);
+  }
+
+  lineSnapshotLabel(line: ProductionLineSnapshot): string {
+    const s = line.status ?? 'DESIGNING';
+    if (s === 'IN_PROGRESS') return 'В работе';
+    if (s === 'DONE') return 'Готово';
+    return 'Проектирование';
+  }
+
+  lineSnapshotClass(line: ProductionLineSnapshot): string {
+    const s = line.status ?? 'DESIGNING';
+    if (s === 'IN_PROGRESS') return 'in-progress';
+    if (s === 'DONE') return 'done';
+    return 'pending';
   }
 
   formatLongDate(dateValue: string | null | undefined): string {

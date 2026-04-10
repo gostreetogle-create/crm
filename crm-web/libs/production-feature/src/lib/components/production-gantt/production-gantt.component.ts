@@ -1,11 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, input, output, signal } from '@angular/core';
+import { Component, computed, inject, input, output, signal } from '@angular/core';
 import { ProductionAssignment, ProductionLineSnapshot, ProductionOrder } from '../../production.types';
+import { ProductionStore } from '../../state/production.store';
 
 type WeekCell = { key: string; start: Date; end: Date; label: string; odd: boolean };
 type LineRow = {
   line: ProductionLineSnapshot;
   assignment?: ProductionAssignment;
+  assignmentId?: string;
   start?: Date;
   end?: Date;
   leftPx: number;
@@ -33,6 +35,8 @@ const WEEK_COL_PX = 72;
   styleUrl: './production-gantt.component.scss',
 })
 export class ProductionGanttComponent {
+  private readonly store = inject(ProductionStore);
+
   readonly orders = input<ProductionOrder[]>([]);
   readonly orderSelected = output<ProductionOrder>();
   readonly lineSelected = output<{ orderId: string; lineNo: number }>();
@@ -100,6 +104,44 @@ export class ProductionGanttComponent {
     return `${line.line.name}\n${this.formatDate(line.start)} — ${this.formatDate(line.end)}\n${this.lineStatusLabel(line.line.status)}`;
   }
 
+  onLineBarPointerDown(event: PointerEvent, lineRow: LineRow): void {
+    const assignmentId = lineRow.assignmentId;
+    if (!assignmentId || !lineRow.start || !lineRow.end) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const startX = event.clientX;
+    const origStart = new Date(lineRow.start.getTime());
+    const origEnd = new Date(lineRow.end.getTime());
+    const totalPx = this.timelineWidthPx();
+    const rangeStart = this.range().start.getTime();
+    const rangeEnd = this.range().end.getTime();
+    const rangeMs = Math.max(DAY_MS, rangeEnd - rangeStart);
+
+    const onMove = (ev: PointerEvent): void => {
+      ev.preventDefault();
+    };
+    const onUp = (ev: PointerEvent): void => {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      const dx = ev.clientX - startX;
+      if (Math.abs(dx) < 4) return;
+      const deltaMs = (dx / totalPx) * rangeMs;
+      const deltaDays = Math.round(deltaMs / DAY_MS);
+      const newStart = this.addDays(origStart, deltaDays);
+      const newEnd = this.addDays(origEnd, deltaDays);
+      this.store.updateAssignment(assignmentId, {
+        startDate: this.toIsoDate(newStart),
+        endDate: this.toIsoDate(newEnd),
+      });
+    };
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+  }
+
+  private toIsoDate(d: Date): string {
+    return d.toISOString().slice(0, 10);
+  }
+
   private mapRows(orders: ProductionOrder[]): OrderRow[] {
     return orders.map((order) => {
       const fallbackStart = this.parseDate(order.createdAt) ?? this.parseDate(order.productionStart) ?? this.today;
@@ -111,6 +153,7 @@ export class ProductionGanttComponent {
         return {
           line,
           assignment,
+          assignmentId: assignment?.id,
           start: lineStart ?? undefined,
           end: lineEnd ?? undefined,
           leftPx: lineStart ? this.offsetPx(lineStart) : 0,

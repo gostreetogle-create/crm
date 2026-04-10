@@ -1,0 +1,46 @@
+<aside class="teamPanel">
+  <h2>Команда</h2>
+  <div class="teamList">
+    @for (member of members; track member.id) {
+      <div class="teamRow">
+        <article
+          class="teamItem"
+          [class.teamItem--open]="expandedWorkerId() === member.id"
+          [title]="member.title"
+          (click)="toggleWorker(member.id)"
+        >
+          <div class="teamAvatar">{{ member.initials }}</div>
+          <div class="teamMeta">
+            <div class="teamNameRow">
+              <span class="teamName">{{ member.name }}</span>
+              @if (member.activePositionCount > 0) {
+                <span class="teamCount">{{ member.activePositionCount }}</span>
+              }
+            </div>
+            <div class="teamStatus">
+              <span class="teamDot" [class]="'teamDot teamDot--' + member.statusDot"></span>
+              <span>{{ member.statusText }}</span>
+            </div>
+          </div>
+        </article>
+        @if (expandedWorkerId() === member.id) {
+          <div class="teamDetail" (click)="$event.stopPropagation()">
+            <div class="teamDetailHead">Активные заказы</div>
+            <ul class="teamOrderList">
+              @for (order of activeOrdersFor(member.id); track order.id) {
+                <li>
+                  <a [routerLink]="['/производство', order.id]" class="teamOrderLink">{{ order.orderNumber }}</a>
+                  <span class="teamOrderClient">{{ order.customerLabel || '—' }}</span>
+                </li>
+              } @empty {
+                <li class="teamDetailEmpty">Нет активных заказов</li>
+              }
+            </ul>
+          </div>
+        }
+      </div>
+    } @empty {
+      <p class="hint">Сотрудники не найдены.</p>
+    }
+  </div>
+</aside>

@@ -17,6 +17,7 @@ type OfferSnapshotForOrder = {
     unitPrice: number;
     lineSum: number;
     imageUrl?: string | null;
+    catalogProductId?: string | null;
     sortOrder: number;
   }>;
 };
@@ -31,6 +32,21 @@ function cleanString(v: string | null | undefined): string | null {
   if (v == null) return null;
   const t = String(v).trim();
   return t ? t : null;
+}
+
+/** Храним в snapshot относительный путь `/media/trade-goods/...` или имя файла, без абсолютного URL. */
+function normalizeImageUrlForSnapshot(raw: string | null | undefined): string | null {
+  const s = cleanString(raw);
+  if (!s) return null;
+  if (/^https?:\/\//i.test(s)) {
+    try {
+      const u = new URL(s);
+      return u.pathname;
+    } catch {
+      return s;
+    }
+  }
+  return s;
 }
 
 function resolveOrderNumber(rawOrderNumber: string | null | undefined, offerNumber: string | null): string {
@@ -94,7 +110,8 @@ export async function createOrderFromPaidOfferIfNeeded(params: CreateOrderFromPa
             status: "DESIGNING",
             unitPrice: line.unitPrice,
             lineSum: line.lineSum,
-            imageUrl: cleanString(line.imageUrl),
+            imageUrl: normalizeImageUrlForSnapshot(line.imageUrl ?? null),
+            catalogProductId: cleanString(line.catalogProductId ?? null),
             sortOrder: line.sortOrder,
           })),
       },

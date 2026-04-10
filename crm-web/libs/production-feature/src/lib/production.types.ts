@@ -24,6 +24,8 @@ export type ProductionLineSnapshot = {
   photo?: string | null;
   imageUrl?: string | null;
   thumbnailUrl?: string | null;
+  /** ID товара (TradeGood) из КП — для фото и бэкфилла */
+  catalogProductId?: string | null;
 };
 
 export type ProductionOrder = {

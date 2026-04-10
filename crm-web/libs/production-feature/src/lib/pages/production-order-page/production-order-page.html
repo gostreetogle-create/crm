@@ -30,12 +30,13 @@
           <thead>
             <tr>
               <th>№</th>
+              <th>Фото</th>
               <th>Название</th>
               <th>Кол-во</th>
               <th>Ед.</th>
+              <th>Статус позиции</th>
               <th>Рабочий</th>
               <th>Период</th>
-              <th>Статус</th>
               <th>Действия</th>
             </tr>
           </thead>
@@ -43,11 +44,23 @@
             @for (row of store.lineRows(); track row.line.lineNo) {
               <tr>
                 <td>{{ row.line.lineNo }}</td>
+                <td class="linePhotoCell">
+                  @if (hasLinePhoto(row.line)) {
+                    <img [src]="resolveLinePhoto(row.line)" [alt]="row.line.name" class="lineThumb" loading="lazy" />
+                  } @else {
+                    <div class="lineThumbPlaceholder" aria-hidden="true">📦</div>
+                  }
+                </td>
                 <td>
                   <span class="lineNameClamp" [title]="row.line.name">{{ row.line.name }}</span>
                 </td>
                 <td>{{ row.line.qty }}</td>
                 <td>{{ row.line.unit }}</td>
+                <td>
+                  <span class="lineStatusPill" [class]="'lineStatusPill--' + lineSnapshotClass(row.line)">
+                    {{ lineSnapshotLabel(row.line) }}
+                  </span>
+                </td>
                 <td>
                   @if (row.assignment) {
                     {{ store.workerLabel(row.assignment.workerId) }}
@@ -57,16 +70,7 @@
                 </td>
                 <td>
                   @if (row.assignment) {
-                    {{ row.assignment.startDate || '—' }} - {{ row.assignment.endDate || '—' }}
-                  } @else {
-                    —
-                  }
-                </td>
-                <td>
-                  @if (row.assignment) {
-                    <span class="badge" [class]="'badge badge--' + row.assignment.status">
-                      {{ badgeLabel(row.assignment.status) }}
-                    </span>
+                    {{ row.assignment.startDate || '—' }} — {{ row.assignment.endDate || '—' }}
                   } @else {
                     —
                   }
@@ -90,7 +94,7 @@
 
               @if (assigningLineNo() === row.line.lineNo) {
                 <tr class="assignRow">
-                  <td colspan="8">
+                  <td colspan="9">
                     <div class="assignForm">
                       <select
                         [ngModel]="assignForm().workerId"

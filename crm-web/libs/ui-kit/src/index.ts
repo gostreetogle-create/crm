@@ -45,3 +45,5 @@ export {
   UiStatusSelectComponent,
   type UiStatusSelectOption,
 } from './lib/ui-status-select/ui-status-select.component';
+export { ToastService, type ToastItem, type ToastType } from './lib/toast/toast.service';
+export { ToastContainerComponent } from './lib/toast/toast-container.component';

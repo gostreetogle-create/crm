@@ -1,0 +1,86 @@
+<div class="drawerBackdrop" (click)="onBackdropClick()"></div>
+<aside class="orderDrawer" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+  <button type="button" class="drawerClose" (click)="close.emit()">✕</button>
+  <header class="drawerHeader">
+    <h3>{{ order.orderNumber }}</h3>
+    <span class="drawerStatusBadge" [class]="'drawerStatusBadge drawerStatusBadge--' + statusClass(order.productionStatus)">
+      {{ statusLabel(order.productionStatus) }}
+    </span>
+  </header>
+  <div class="drawerMeta">
+    <p><strong>Клиент:</strong> {{ order.customerLabel || '—' }}</p>
+    <p><strong>Дедлайн:</strong> {{ formatLongDate(order.deadline) }}</p>
+  </div>
+  <div class="drawerProgress">
+    <div class="drawerProgressHead">
+      <span>Прогресс позиций</span>
+      <strong>{{ progressPercent }}%</strong>
+    </div>
+    <div class="drawerProgressTrack">
+      <div class="drawerProgressBar" [style.width.%]="progressPercent"></div>
+    </div>
+  </div>
+  <div class="drawerLines">
+    @for (line of order.linesSnapshot || []; track line.lineNo) {
+      <div class="drawerLineRow">
+        <div class="lineThumb lineThumb--lg">
+          @if (hasLinePhoto(line)) {
+            <img [src]="linePhotoUrl(line)" [alt]="line.name" loading="lazy" />
+          } @else {
+            <div class="lineThumbPlaceholder" aria-hidden="true">📦</div>
+          }
+        </div>
+        <div class="drawerLineMain">
+          <div class="drawerLineName">{{ line.name }}</div>
+          <div class="drawerLineMeta">
+            {{ line.qty }} {{ line.unit }} · {{ lineWorker(order, line.lineNo) }}
+          </div>
+        </div>
+        <span class="lineStatusDot" [class]="'lineStatusDot lineStatusDot--' + statusClass(lineStatus(order, line.lineNo))"></span>
+      </div>
+    } @empty {
+      <p class="lineEmpty">Нет позиций</p>
+    }
+  </div>
+  <div class="drawerActions">
+    <button
+      type="button"
+      class="drawerAction drawerAction--primary"
+      [disabled]="order.productionStatus !== 'PENDING'"
+      (click)="onStartOrderClick($event)"
+    >
+      Запустить в работу
+    </button>
+    <a
+      class="drawerAction drawerAction--primary drawerAction--link"
+      [routerLink]="['/производство', order.id]"
+      (click)="close.emit()"
+      >Открыть</a>
+    <button type="button" class="drawerAction" (click)="close.emit()">К доске</button>
+  </div>
+  <section class="drawerNotes">
+    <h4>Комментарии / заметки</h4>
+    <div class="drawerNotesComposer">
+      <textarea
+        rows="3"
+        class="drawerNotesInput"
+        placeholder="Добавьте комментарий по заказу..."
+        [ngModel]="commentDraft"
+        (ngModelChange)="commentDraftChange.emit($event)"
+      ></textarea>
+      <button type="button" class="drawerAction drawerAction--primary" [disabled]="savingComment" (click)="addComment.emit()">
+        Добавить
+      </button>
+    </div>
+    <div class="drawerCommentsList">
+      @for (item of commentItems(order); track $index) {
+        <article class="drawerCommentItem">
+          <time>{{ formatCommentTime(item.timestamp) }}</time>
+          <p>{{ item.text }}</p>
+        </article>
+      } @empty {
+        <p class="drawerNotesEmpty">Комментариев пока нет.</p>
+      }
+    </div>
+  </section>
+</aside>

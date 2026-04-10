@@ -3,7 +3,7 @@
     <header class="boardHeader">
       <h1>Производство</h1>
       <div class="headerControls">
-        <div class="viewToggle">
+        <div class="viewToggle viewToggleGantt">
           <button type="button" class="filterBtn" [class.filterBtn--active]="viewMode() === 'KANBAN'" (click)="setView('KANBAN')">
             Канбан
           </button>
@@ -12,7 +12,7 @@
           </button>
         </div>
         @if (viewMode() === 'KANBAN') {
-          <div class="filters">
+          <div class="filters filtersDesktop">
             @for (f of filters; track f.value) {
               <button
                 type="button"
@@ -30,42 +30,56 @@
 
     <div class="boardLayout" [class.boardLayout--gantt]="viewMode() === 'GANTT'">
       @if (viewMode() === 'KANBAN') {
-        <aside class="teamPanel">
-          <h2>Команда</h2>
-          <div class="teamList">
-            @for (member of teamMembers(); track member.id) {
-              <article class="teamItem" [title]="member.title">
-                <div class="teamAvatar">{{ member.initials }}</div>
-                <div class="teamMeta">
-                  <div class="teamName">{{ member.name }}</div>
-                  <div class="teamStatus">
-                    <span class="teamDot" [class]="'teamDot teamDot--' + member.statusDot"></span>
-                    <span>{{ member.statusText }}</span>
-                  </div>
-                </div>
-              </article>
-            } @empty {
-              <p class="hint">Сотрудники не найдены.</p>
-            }
-          </div>
-        </aside>
+        <div class="teamPanelWrap">
+          <app-team-panel [members]="teamMembers()" [orders]="store.orders()" />
+        </div>
       }
 
       <section class="boardMain">
         @if (store.loading()) {
           <p class="hint">Загрузка заказов...</p>
         } @else if (viewMode() === 'GANTT') {
-          <app-production-gantt
-            [orders]="store.filteredOrders()"
-            (orderSelected)="openOrderDrawer($event)"
-            (lineSelected)="openPositionDrawer($event)"
-          />
+          <div class="ganttHostWrap">
+            <app-production-gantt
+              [orders]="store.filteredOrders()"
+              (orderSelected)="openOrderDrawer($event)"
+              (lineSelected)="openPositionDrawer($event)"
+            />
+          </div>
         } @else if (!hasData()) {
           <p class="hint">Заказы не найдены.</p>
         } @else {
-          <div class="boardGrid">
+          <div class="mobileKanbanTabs">
+            <button
+              type="button"
+              class="filterBtn"
+              [class.filterBtn--active]="mobileKanbanTab() === 'PENDING'"
+              (click)="setMobileKanbanTab('PENDING')"
+            >
+              Проектирование
+            </button>
+            <button
+              type="button"
+              class="filterBtn"
+              [class.filterBtn--active]="mobileKanbanTab() === 'IN_PROGRESS'"
+              (click)="setMobileKanbanTab('IN_PROGRESS')"
+            >
+              В работе
+            </button>
+            <button
+              type="button"
+              class="filterBtn"
+              [class.filterBtn--active]="mobileKanbanTab() === 'DONE'"
+              (click)="setMobileKanbanTab('DONE')"
+            >
+              Готово
+            </button>
+          </div>
+
+          <div cdkDropListGroup class="boardGrid">
             <section
               class="boardCol boardCol--pending"
+              [class.boardCol--active-mobile]="mobileKanbanTab() === 'PENDING'"
               cdkDropList
               [id]="'PENDING'"
               [cdkDropListData]="ordersByStatus('PENDING')"
@@ -83,12 +97,13 @@
                   (openDrawer)="openOrderDrawer($event)"
                   (togglePositions)="toggleOrderLines($event)"
                   (openPositionDrawer)="openPositionDrawer($event)"
-                ></app-production-order-card>
+                />
               }
             </section>
 
             <section
               class="boardCol boardCol--in-progress"
+              [class.boardCol--active-mobile]="mobileKanbanTab() === 'IN_PROGRESS'"
               cdkDropList
               [id]="'IN_PROGRESS'"
               [cdkDropListData]="ordersByStatus('IN_PROGRESS')"
@@ -106,12 +121,13 @@
                   (openDrawer)="openOrderDrawer($event)"
                   (togglePositions)="toggleOrderLines($event)"
                   (openPositionDrawer)="openPositionDrawer($event)"
-                ></app-production-order-card>
+                />
               }
             </section>
 
             <section
               class="boardCol boardCol--done"
+              [class.boardCol--active-mobile]="mobileKanbanTab() === 'DONE'"
               cdkDropList
               [id]="'DONE'"
               [cdkDropListData]="ordersByStatus('DONE')"
@@ -129,222 +145,40 @@
                   (openDrawer)="openOrderDrawer($event)"
                   (togglePositions)="toggleOrderLines($event)"
                   (openPositionDrawer)="openPositionDrawer($event)"
-                ></app-production-order-card>
+                />
               }
             </section>
           </div>
         }
       </section>
-      </div>
+    </div>
   </section>
   @if (selectedOrder(); as order) {
-    <div class="drawerBackdrop" (click)="closeOrderDrawer()"></div>
-    <aside class="orderDrawer" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
-      <button type="button" class="drawerClose" (click)="closeOrderDrawer()">✕</button>
-      <header class="drawerHeader">
-        <h3>{{ order.orderNumber }}</h3>
-        <span class="drawerStatusBadge" [class]="'drawerStatusBadge drawerStatusBadge--' + statusClass(order.productionStatus)">
-          {{ statusLabel(order.productionStatus) }}
-        </span>
-      </header>
-      <div class="drawerMeta">
-        <p><strong>Клиент:</strong> {{ order.customerLabel || '—' }}</p>
-        <p><strong>Дедлайн:</strong> {{ formatLongDate(order.deadline) }}</p>
-      </div>
-      <div class="drawerProgress">
-        <div class="drawerProgressHead">
-          <span>Прогресс позиций</span>
-          <strong>{{ progressPercent(order) }}%</strong>
-        </div>
-        <div class="drawerProgressTrack">
-          <div class="drawerProgressBar" [style.width.%]="progressPercent(order)"></div>
-        </div>
-      </div>
-      <div class="drawerLines">
-        @for (line of order.linesSnapshot || []; track line.lineNo) {
-          <div class="drawerLineRow">
-            <div class="lineThumb lineThumb--lg">
-              @if (hasLinePhoto(line)) {
-                <img [src]="linePhotoUrl(line)" [alt]="line.name" loading="lazy" />
-              } @else {
-                <div class="lineThumbPlaceholder" aria-hidden="true">📦</div>
-              }
-            </div>
-            <div class="drawerLineMain">
-              <div class="drawerLineName">{{ line.name }}</div>
-              <div class="drawerLineMeta">
-                {{ line.qty }} {{ line.unit }} · {{ lineWorker(order, line.lineNo) }}
-              </div>
-            </div>
-            <span class="lineStatusDot" [class]="'lineStatusDot lineStatusDot--' + statusClass(lineStatus(order, line.lineNo))"></span>
-          </div>
-        } @empty {
-          <p class="lineEmpty">Нет позиций</p>
-        }
-      </div>
-      <div class="drawerActions">
-        <button
-          type="button"
-          class="drawerAction drawerAction--primary"
-          [disabled]="order.productionStatus !== 'PENDING'"
-          (click)="startOrder(order, $event)"
-        >
-          Запустить в работу
-        </button>
-        <button type="button" class="drawerAction" (click)="closeOrderDrawer()">К доске</button>
-      </div>
-      <section class="drawerNotes">
-        <h4>Комментарии / заметки</h4>
-        <div class="drawerNotesComposer">
-          <textarea
-            rows="3"
-            class="drawerNotesInput"
-            placeholder="Добавьте комментарий по заказу..."
-            [ngModel]="commentDraft()"
-            (ngModelChange)="commentDraft.set($event)"
-          ></textarea>
-          <button type="button" class="drawerAction drawerAction--primary" [disabled]="savingComment()" (click)="addComment()">
-            Добавить
-          </button>
-        </div>
-        <div class="drawerCommentsList">
-          @for (item of commentItems(order); track $index) {
-            <article class="drawerCommentItem">
-              <time>{{ formatCommentTime(item.timestamp) }}</time>
-              <p>{{ item.text }}</p>
-            </article>
-          } @empty {
-            <p class="drawerNotesEmpty">Комментариев пока нет.</p>
-          }
-        </div>
-      </section>
-    </aside>
+    <app-order-drawer
+      [order]="order"
+      [commentDraft]="commentDraft()"
+      [savingComment]="savingComment()"
+      [progressPercent]="progressPercent(order)"
+      (close)="closeOrderDrawer()"
+      (startOrder)="startOrder($event)"
+      (commentDraftChange)="commentDraft.set($event)"
+      (addComment)="addComment()"
+    />
   }
-  @if (selectedPosition() && selectedPositionOrder(); as posOrder) {
-    <div class="drawerBackdrop" (click)="closePositionDrawer()"></div>
-    <aside class="orderDrawer lineDrawer" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
-      <button type="button" class="drawerClose" (click)="closePositionDrawer()">✕</button>
-      @if (selectedPositionLine(); as line) {
-        <div class="lineDrawerHeader">
-          <div class="lineDrawerImage lineDrawerImage--head">
-            @if (hasLinePhoto(line)) {
-              <img [src]="linePhotoUrl(line)" [alt]="line.name" />
-            } @else {
-              <div class="lineThumbPlaceholder" aria-hidden="true">📦</div>
-            }
-          </div>
-          <div class="lineDrawerHeaderText">
-            <h3>{{ line.name }}</h3>
-            <p>{{ line.qty }} {{ line.unit }}</p>
-          </div>
-        </div>
-
-        <section class="lineEditorSection">
-          <div class="lineSectionHead">
-            <h4>Статус</h4>
-            <span class="saveHint" [class]="'saveHint saveHint--' + positionSaveState().status">
-              @if (positionSaveState().status === 'saving') {
-                Сохранение...
-              } @else if (positionSaveState().status === 'saved') {
-                ✓ Сохранено
-              }
-            </span>
-          </div>
-          <div class="statusPills" role="tablist" aria-label="Статус позиции">
-            <button
-              type="button"
-              class="statusPill statusPill--designing"
-              [class.statusPill--active]="positionEditor().status === 'DESIGNING'"
-              (click)="onPositionStatusChange('DESIGNING')"
-            >
-              Проектирование
-            </button>
-            <button
-              type="button"
-              class="statusPill statusPill--in-progress"
-              [class.statusPill--active]="positionEditor().status === 'IN_PROGRESS'"
-              (click)="onPositionStatusChange('IN_PROGRESS')"
-            >
-              В работе
-            </button>
-            <button
-              type="button"
-              class="statusPill statusPill--done"
-              [class.statusPill--active]="positionEditor().status === 'DONE'"
-              (click)="onPositionStatusChange('DONE')"
-            >
-              Готово
-            </button>
-          </div>
-        </section>
-
-        <section class="lineEditorSection">
-          <div class="lineSectionHead">
-            <h4>Рабочий</h4>
-            <span class="saveHint" [class]="'saveHint saveHint--' + positionSaveState().worker">
-              @if (positionSaveState().worker === 'saving') {
-                Сохранение...
-              } @else if (positionSaveState().worker === 'saved') {
-                ✓ Сохранено
-              }
-            </span>
-          </div>
-          <div class="workerSelectWrap">
-            <span class="workerAvatar">
-              {{ workerInitials(workerLabel(positionEditor().workerId || '??')) }}
-            </span>
-            <select
-              [ngModel]="positionEditor().workerId"
-              (ngModelChange)="positionEditor.set({ ...positionEditor(), workerId: $event })"
-              (change)="onPositionWorkerChange($any($event.target).value)"
-            >
-              <option value="">Выберите рабочего</option>
-              @for (worker of store.workers(); track worker.id) {
-                <option [value]="worker.id">{{ workerLabel(worker.id) }}</option>
-              }
-            </select>
-          </div>
-        </section>
-
-        <section class="lineEditorSection">
-          <div class="lineSectionHead">
-            <h4>Планирование</h4>
-            <span class="saveHint" [class]="'saveHint saveHint--' + positionSaveState().dates">
-              @if (positionSaveState().dates === 'saving') {
-                Сохранение...
-              } @else if (positionSaveState().dates === 'saved') {
-                ✓ Сохранено
-              }
-            </span>
-          </div>
-          <div class="lineDateGrid">
-            <label class="dateField">
-              <span>Начало</span>
-              <div class="dateInputWrap">
-                <span>📅</span>
-                <input
-                  type="date"
-                  [ngModel]="positionEditor().startDate"
-                  (ngModelChange)="positionEditor.set({ ...positionEditor(), startDate: $event })"
-                  (change)="onPositionStartDateChange($any($event.target).value)"
-                />
-              </div>
-            </label>
-            <label class="dateField">
-              <span>Окончание</span>
-              <div class="dateInputWrap">
-                <span>📅</span>
-                <input
-                  type="date"
-                  [ngModel]="positionEditor().endDate"
-                  (ngModelChange)="positionEditor.set({ ...positionEditor(), endDate: $event })"
-                  (change)="onPositionEndDateChange($any($event.target).value)"
-                />
-              </div>
-            </label>
-          </div>
-        </section>
-      }
-    </aside>
+  @if (selectedPositionLine(); as line) {
+    <app-position-drawer
+      [line]="line"
+      [workers]="store.workers()"
+      [workerId]="positionEditor().workerId"
+      [startDate]="positionEditor().startDate"
+      [endDate]="positionEditor().endDate"
+      [lineStatus]="positionEditor().status"
+      [positionSaveState]="positionSaveState()"
+      (close)="closePositionDrawer()"
+      (statusChange)="onPositionStatusChange($event)"
+      (workerChange)="onPositionWorkerChange($event)"
+      (startDateChange)="onPositionStartDateChange($event)"
+      (endDateChange)="onPositionEndDateChange($event)"
+    />
   }
 </app-page-shell>

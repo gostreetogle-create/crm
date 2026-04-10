@@ -20,11 +20,8 @@ export class ProductionOrderStore {
 
   readonly allDone = computed(() => {
     const current = this.order();
-    if (!current) return false;
-    const total = current.linesSnapshot.length;
-    if (total === 0) return false;
-    const done = current.assignments.filter((a) => a.status === 'DONE').length;
-    return done === total;
+    if (!current?.linesSnapshot.length) return false;
+    return current.linesSnapshot.every((line) => line.status === 'DONE');
   });
 
   loadOrder(id: string): void {
@@ -73,7 +70,7 @@ export class ProductionOrderStore {
     const current = this.order();
     if (!current) return { done: 0, total: 0 };
     const total = current.linesSnapshot.length;
-    const done = current.assignments.filter((a) => a.status === 'DONE').length;
+    const done = current.linesSnapshot.filter((line) => line.status === 'DONE').length;
     return { done, total };
   }
 

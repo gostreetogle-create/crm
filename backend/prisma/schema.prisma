@@ -241,7 +241,7 @@ model Order {
    * Снимок состава без цен:
    * [{ lineNo, name, description, qty, unit, sortOrder }]
    */
-  linesSnapshot     Json
+  linesSnapshot     Json @default("[]")
   notes             String?
   productionStatus  ProductionStatus @default(PENDING)
   productionStart   DateTime?

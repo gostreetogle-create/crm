@@ -15,6 +15,8 @@
     "db:reset": "prisma migrate reset --force",
     "authz:check": "tsx scripts/authz-integrity-check.ts",
     "authz:check:ci": "tsx scripts/authz-integrity-check.ts --skip-no-db",
+    "backfill:images": "tsx scripts/backfill-lines-image-url.ts",
+    "regen:thumbs": "tsx scripts/regenerate-thumbs.ts",
     "db:studio": "prisma studio",
     "test": "vitest run",
     "test:critical": "vitest run test/commercial-offer-status.test.ts test/change-offer-status.service.test.ts test/create-order-from-paid-offer.service.test.ts test/commercial-offers.status-route.test.ts test/commercial-offers.delete-route.test.ts test/orders.route-contract.test.ts",

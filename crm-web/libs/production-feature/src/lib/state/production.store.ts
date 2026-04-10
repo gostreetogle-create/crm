@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { API_CONFIG } from '@srm/platform-core';
+import { ToastService } from '@srm/ui-kit';
 import {
   AssignPayload,
   ProductionLineStatus,
@@ -14,6 +15,7 @@ import {
 export class ProductionStore {
   private readonly http = inject(HttpClient);
   private readonly api = inject(API_CONFIG);
+  private readonly toast = inject(ToastService);
 
   readonly orders = signal<ProductionOrder[]>([]);
   readonly loading = signal(false);
@@ -59,7 +61,10 @@ export class ProductionStore {
     );
 
     this.http.put(this.endpoint(`/api/production/orders/${id}/status`), { status }).subscribe({
-      error: () => this.orders.set(previousOrders),
+      error: () => {
+        this.orders.set(previousOrders);
+        this.toast.show('Не удалось сохранить', 'error');
+      },
     });
   }
 
@@ -80,7 +85,10 @@ export class ProductionStore {
         deadline,
       })
       .subscribe({
-        error: () => this.orders.set(previousOrders),
+        error: () => {
+          this.orders.set(previousOrders);
+          this.toast.show('Не удалось сохранить', 'error');
+        },
       });
   }
 
@@ -100,7 +108,10 @@ export class ProductionStore {
         notes,
       })
       .subscribe({
-        error: () => this.orders.set(previousOrders),
+        error: () => {
+          this.orders.set(previousOrders);
+          this.toast.show('Не удалось сохранить', 'error');
+        },
       });
   }
 
@@ -119,14 +130,79 @@ export class ProductionStore {
   }
 
   assign(orderId: string, body: AssignPayload): void {
-    this.http.post(this.endpoint(`/api/production/orders/${orderId}/assign`), body).subscribe({
-      next: () => this.loadOrders(),
+    const previousOrders = this.orders();
+    this.http.post<unknown>(this.endpoint(`/api/production/orders/${orderId}/assign`), body).subscribe({
+      next: (created) => {
+        const createdAssignment = created as {
+          id?: string;
+          orderId?: string;
+          lineNo?: number;
+          workerId?: string;
+          worker?: { name?: string };
+          status?: ProductionStatus;
+          startDate?: string | null;
+          endDate?: string | null;
+        };
+        if (!createdAssignment?.id) return;
+        this.orders.set(
+          previousOrders.map((order) => {
+            if (order.id !== orderId) return order;
+            const nextAssignment = {
+              id: String(createdAssignment.id),
+              orderId,
+              lineNo: Number(createdAssignment.lineNo ?? body.lineNo),
+              workerId: String(createdAssignment.workerId ?? body.workerId),
+              workerName: createdAssignment.worker?.name,
+              status: (createdAssignment.status ?? body.status ?? 'PENDING') as ProductionStatus,
+              startDate: createdAssignment.startDate ?? body.startDate,
+              endDate: createdAssignment.endDate ?? body.endDate,
+            };
+            const withoutSameLine = order.assignments.filter((a) => a.lineNo !== nextAssignment.lineNo);
+            return { ...order, assignments: [...withoutSameLine, nextAssignment] };
+          }),
+        );
+      },
+      error: () => {
+        this.orders.set(previousOrders);
+        this.toast.show('Не удалось сохранить', 'error');
+      },
     });
   }
 
   updateAssignment(id: string, body: UpdateAssignmentPayload): void {
-    this.http.put(this.endpoint(`/api/production/assignments/${id}`), body).subscribe({
-      next: () => this.loadOrders(),
+    const previousOrders = this.orders();
+    this.http.put<unknown>(this.endpoint(`/api/production/assignments/${id}`), body).subscribe({
+      next: (updated) => {
+        const updatedAssignment = updated as {
+          id?: string;
+          workerId?: string;
+          worker?: { name?: string };
+          status?: ProductionStatus;
+          startDate?: string | null;
+          endDate?: string | null;
+        };
+        const assignmentId = String(updatedAssignment.id ?? id);
+        this.orders.set(
+          previousOrders.map((order) => ({
+            ...order,
+            assignments: order.assignments.map((assignment) => {
+              if (assignment.id !== assignmentId) return assignment;
+              return {
+                ...assignment,
+                workerId: updatedAssignment.workerId ?? assignment.workerId,
+                workerName: updatedAssignment.worker?.name ?? assignment.workerName,
+                status: updatedAssignment.status ?? assignment.status,
+                startDate: updatedAssignment.startDate ?? assignment.startDate,
+                endDate: updatedAssignment.endDate ?? assignment.endDate,
+              };
+            }),
+          })),
+        );
+      },
+      error: () => {
+        this.orders.set(previousOrders);
+        this.toast.show('Не удалось сохранить', 'error');
+      },
     });
   }
 
@@ -148,7 +224,10 @@ export class ProductionStore {
     this.http
       .patch(this.endpoint(`/api/production/orders/${orderId}/lines/${lineNo}/status`), { status })
       .subscribe({
-        error: () => this.orders.set(previousOrders),
+        error: () => {
+          this.orders.set(previousOrders);
+          this.toast.show('Не удалось сохранить', 'error');
+        },
       });
   }
 

@@ -67,6 +67,8 @@ export async function changeCommercialOfferStatus(params: ChangeOfferStatusParam
             unitPrice: true,
             lineSum: true,
             sortOrder: true,
+            imageUrl: true,
+            catalogProductId: true,
           },
         },
       },

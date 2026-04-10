@@ -1,0 +1,109 @@
+<div class="drawerBackdrop" (click)="onBackdropClick()"></div>
+<aside class="orderDrawer lineDrawer" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+  <button type="button" class="drawerClose" (click)="close.emit()">✕</button>
+  <div class="lineDrawerHeader">
+    <div class="lineDrawerImage lineDrawerImage--head">
+      @if (hasLinePhoto(line)) {
+        <img [src]="linePhotoUrl(line)" [alt]="line.name" />
+      } @else {
+        <div class="lineThumbPlaceholder" aria-hidden="true">📦</div>
+      }
+    </div>
+    <div class="lineDrawerHeaderText">
+      <h3>{{ line.name }}</h3>
+      <p>{{ line.qty }} {{ line.unit }}</p>
+    </div>
+  </div>
+
+  <section class="lineEditorSection">
+    <div class="lineSectionHead">
+      <h4>Статус</h4>
+      <span class="saveHint" [class]="'saveHint saveHint--' + positionSaveState.status">
+        @if (positionSaveState.status === 'saving') {
+          Сохранение...
+        } @else if (positionSaveState.status === 'saved') {
+          ✓ Сохранено
+        }
+      </span>
+    </div>
+    <div class="statusPills" role="tablist" aria-label="Статус позиции">
+      <button
+        type="button"
+        class="statusPill statusPill--designing"
+        [class.statusPill--active]="lineStatus === 'DESIGNING'"
+        (click)="statusChange.emit('DESIGNING')"
+      >
+        Проектирование
+      </button>
+      <button
+        type="button"
+        class="statusPill statusPill--in-progress"
+        [class.statusPill--active]="lineStatus === 'IN_PROGRESS'"
+        (click)="statusChange.emit('IN_PROGRESS')"
+      >
+        В работе
+      </button>
+      <button
+        type="button"
+        class="statusPill statusPill--done"
+        [class.statusPill--active]="lineStatus === 'DONE'"
+        (click)="statusChange.emit('DONE')"
+      >
+        Готово
+      </button>
+    </div>
+  </section>
+
+  <section class="lineEditorSection">
+    <div class="lineSectionHead">
+      <h4>Рабочий</h4>
+      <span class="saveHint" [class]="'saveHint saveHint--' + positionSaveState.worker">
+        @if (positionSaveState.worker === 'saving') {
+          Сохранение...
+        } @else if (positionSaveState.worker === 'saved') {
+          ✓ Сохранено
+        }
+      </span>
+    </div>
+    <div class="workerSelectWrap">
+      <span class="workerAvatar">
+        {{ workerInitials(workerLabel(workerId || '??')) }}
+      </span>
+      <select [ngModel]="workerId" (ngModelChange)="workerChange.emit($event)">
+        <option value="">Выберите рабочего</option>
+        @for (worker of workers; track worker.id) {
+          <option [value]="worker.id">{{ workerLabel(worker.id) }}</option>
+        }
+      </select>
+    </div>
+  </section>
+
+  <section class="lineEditorSection">
+    <div class="lineSectionHead">
+      <h4>Планирование</h4>
+      <span class="saveHint" [class]="'saveHint saveHint--' + positionSaveState.dates">
+        @if (positionSaveState.dates === 'saving') {
+          Сохранение...
+        } @else if (positionSaveState.dates === 'saved') {
+          ✓ Сохранено
+        }
+      </span>
+    </div>
+    <div class="lineDateGrid">
+      <label class="dateField">
+        <span>Начало</span>
+        <div class="dateInputWrap">
+          <span>📅</span>
+          <input type="date" [ngModel]="startDate" (ngModelChange)="startDateChange.emit($event)" />
+        </div>
+      </label>
+      <label class="dateField">
+        <span>Окончание</span>
+        <div class="dateInputWrap">
+          <span>📅</span>
+          <input type="date" [ngModel]="endDate" (ngModelChange)="endDateChange.emit($event)" />
+        </div>
+      </label>
+    </div>
+  </section>
+</aside>
