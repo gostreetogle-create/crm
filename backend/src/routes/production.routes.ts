@@ -1,7 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
-import type * as Prisma from "@prisma/client";
-import type { ProductionStatus } from "@prisma/client";
+import type { Prisma, ProductionStatus } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 
 export const productionRouter = Router();
@@ -221,7 +220,7 @@ productionRouter.patch("/orders/:id/lines/:lineNo/status", async (req, res, next
 
     const updated = await prisma.order.update({
       where: { id },
-      data: { linesSnapshot: lines as unknown as Prisma.JsonArray },
+      data: { linesSnapshot: lines as Prisma.InputJsonValue },
       include: {
         assignments: { include: { worker: true } },
       },
