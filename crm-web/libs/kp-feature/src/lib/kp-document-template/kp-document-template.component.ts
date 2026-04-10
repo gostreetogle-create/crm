@@ -81,6 +81,8 @@ export const KP_RECIPIENT_CONTACT_PREFIX = 'contact:';
 export class KpDocumentTemplateComponent {
   /** Добавить строку в таблицу КП (кнопка под таблицей в превью). */
   @Output() readonly addLineClick = new EventEmitter<void>();
+  /** Открыть модалку вставки позиций из JSON. */
+  @Output() readonly openJsonImportClick = new EventEmitter<void>();
 
   /** Строки КП: редактирование и удаление в превью; в печати кнопки скрываются через `kp-no-print`. */
   @Input({ required: true }) linesForm!: FormArray;
@@ -101,6 +103,7 @@ export class KpDocumentTemplateComponent {
   /** Верхний правый инфо-блок КП: номер, дата, предоплата, срок производства. */
   @Input() offerNumberCtrl: FormControl<string> | null = null;
   @Input() createdAtCtrl: FormControl<string> | null = null;
+  @Input() validUntilCtrl: FormControl<string> | null = null;
   @Input() prepaymentPercentCtrl: FormControl<string> | null = null;
   @Input() productionLeadDaysCtrl: FormControl<string> | null = null;
 
@@ -142,6 +145,28 @@ export class KpDocumentTemplateComponent {
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const year = d.getFullYear();
     return `${day}.${month}.${year}г.`;
+  }
+
+  validUntilLabel(): string {
+    const raw = String(this.validUntilCtrl?.value ?? '').trim();
+    if (!raw) return '';
+    const d = new Date(raw);
+    if (Number.isNaN(d.getTime())) return '';
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}.${month}.${year}г.`;
+  }
+
+  isValidUntilExpired(): boolean {
+    const raw = String(this.validUntilCtrl?.value ?? '').trim();
+    if (!raw) return false;
+    const d = new Date(raw);
+    if (Number.isNaN(d.getTime())) return false;
+    const today = new Date();
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+    const validUntilStart = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+    return validUntilStart < todayStart;
   }
 
   resolvedBgPage1(): string {

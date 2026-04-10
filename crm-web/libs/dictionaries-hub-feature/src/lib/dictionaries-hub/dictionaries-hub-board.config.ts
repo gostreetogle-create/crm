@@ -51,6 +51,12 @@ export const HUB_BOARD_DICTIONARY_ROW_DEFS: readonly HubBoardDictionaryRowDef[] 
   {
     section: 'Производство и учёт',
     sectionId: 'dictionary-hub-section-production-and-units',
+    key: 'workers',
+    title: 'Рабочие',
+  },
+  {
+    section: 'Производство и учёт',
+    sectionId: 'dictionary-hub-section-production-and-units',
     key: 'units',
     title: 'Единицы измерения',
   },

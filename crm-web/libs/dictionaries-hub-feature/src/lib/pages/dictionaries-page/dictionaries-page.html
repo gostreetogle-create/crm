@@ -409,6 +409,74 @@
       ></crud-layout>
         }
 
+            @case ('workers') {
+      @if (workersStore.error()) {
+        <p class="dictionaryHubLoadError" role="alert">{{ workersStore.error() }}</p>
+      }
+      <div class="dictionaryHubWorkersQuickAdd">
+        <label class="dictionaryHubWorkersQuickAdd__field">
+          <span class="dictionaryHubWorkersQuickAdd__label">Имя</span>
+          <input
+            type="text"
+            class="dictionaryHubWorkersQuickAdd__input"
+            [value]="workerAddName()"
+            (input)="workerAddName.set($any($event.target).value)"
+            (keydown.enter)="submitWorkersQuickAdd()"
+            placeholder="ФИО"
+            autocomplete="name"
+            [attr.aria-label]="'Имя рабочего'"
+          />
+        </label>
+        <label class="dictionaryHubWorkersQuickAdd__field">
+          <span class="dictionaryHubWorkersQuickAdd__label">Роль</span>
+          <input
+            type="text"
+            class="dictionaryHubWorkersQuickAdd__input"
+            [value]="workerAddRole()"
+            (input)="workerAddRole.set($any($event.target).value)"
+            placeholder="Необязательно"
+            [attr.aria-label]="'Роль рабочего'"
+          />
+        </label>
+        <app-ui-button
+          type="button"
+          variant="primary"
+          [disabled]="
+            !permissions.crud().canCreate || workersStore.loading() || !workerAddName().trim().length
+          "
+          (clicked)="submitWorkersQuickAdd()"
+        >
+          Добавить
+        </app-ui-button>
+      </div>
+      @if (!workersStore.loading() && workersStore.workers().length === 0) {
+        <p class="dictionaryHubWorkersEmpty" role="status">Рабочие не добавлены</p>
+      }
+      <crud-layout
+        title="Рабочие"
+        [showHeader]="false"
+        [showCardLabel]="false"
+        [showNameSearch]="true"
+        [showCreateAction]="false"
+        [canCreate]="permissions.crud().canCreate"
+        createAriaLabel="Добавить рабочего"
+        createTitle="Добавить рабочего"
+        [columns]="workersColumnsForTile()"
+        [data]="workersStore.workersData()"
+        [loading]="workersStore.loading()"
+        [maxTableBodyRows]="null"
+        [tablePagination]="true"
+        [tableDensity]="'compact'"
+        [tableBodyMaxHeight]="hubBoardDetailTableMaxHeight"
+        [canView]="false"
+        [canDuplicate]="false"
+        [canEdit]="false"
+        [canDelete]="permissions.crud().canDelete"
+        deleteConfirmMessage="Удалить рабочего из списка?"
+        (delete)="deleteWorker($event)"
+      ></crud-layout>
+        }
+
             @case ('productionDetails') {
       <crud-layout
         title="Детали"
@@ -591,6 +659,18 @@
         (edit)="openTradeGoodsEdit($event)"
         (delete)="deleteTradeGood($event)"
       ></crud-layout>
+      @if (tradeGoodsStore.hasMore()) {
+        <div class="dictionaryTileLoadMore">
+          <app-ui-button
+            type="button"
+            variant="soft"
+            [disabled]="tradeGoodsStore.loadingMore()"
+            (clicked)="tradeGoodsStore.loadMore()"
+          >
+            {{ tradeGoodsStore.loadingMore() ? 'Загрузка...' : 'Загрузить ещё' }}
+          </app-ui-button>
+        </div>
+      }
         }
 
             @case ('catalogComplexes') {
@@ -865,22 +945,21 @@
       ></crud-layout>
       <ng-template #commercialOffersCellTpl let-row="row" let-column="column" let-value="value">
         @if (column.key === 'statusLabel') {
-          <select
-            class="dictionaryCommercialOfferStatusSelect"
-            [value]="commercialOfferStatusValue($any(row))"
-            [disabled]="isCommercialOfferStatusProcessing($any(row))"
+          <ui-status-select
+            [selectClass]="'dictionaryCommercialOfferStatusSelect'"
+            [currentStatus]="commercialOfferStatusValue($any(row))"
+            [options]="commercialOfferOptionsForRow($any(row))"
+            [processing]="isCommercialOfferStatusProcessing($any(row))"
             (click)="$event.stopPropagation()"
-            (change)="onCommercialOfferStatusChange($any(row), $any($event.target).value, $event)"
-          >
-            @for (opt of commercialOfferStatusOptions; track opt.key) {
-              <option
-                [value]="opt.key"
-                [disabled]="!canCommercialOfferTransitionForOffer(row['id'], opt.key)"
-              >
-                {{ opt.label }}
-              </option>
+            (statusChange)="onCommercialOfferStatusChange($any(row), $event)"
+          />
+        } @else if (column.key === 'numberOrTitle') {
+          <span class="dictionaryCommercialOfferTitleCell">
+            <span class="crudCellPlain">{{ value ?? '—' }}</span>
+            @if ($any(row).isExpired) {
+              <span class="dictionaryCommercialOfferExpiredBadge">Истёк</span>
             }
-          </select>
+          </span>
         } @else {
           <span class="crudCellPlain">{{ value ?? '—' }}</span>
         }

@@ -24,7 +24,6 @@ import { ProductionStore } from '../../state/production.store';
 })
 export class ProductionBoardPage implements OnInit {
   readonly store = inject(ProductionStore);
-  readonly today = new Date();
   readonly viewMode = signal<'KANBAN' | 'GANTT'>('KANBAN');
   readonly columns: ProductionStatus[] = ['PENDING', 'IN_PROGRESS', 'DONE'];
   readonly dropListConnections: Record<ProductionStatus, ProductionStatus[]> = {
@@ -50,8 +49,13 @@ export class ProductionBoardPage implements OnInit {
   }
 
   isOverdue(order: ProductionOrder): boolean {
-    if (!order.deadline) return false;
-    return new Date(order.deadline).getTime() < this.today.getTime();
+    if (!order.deadline || order.productionStatus === 'DONE') return false;
+    const deadline = new Date(order.deadline);
+    if (Number.isNaN(deadline.getTime())) return false;
+    const today = new Date();
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+    const deadlineStart = new Date(deadline.getFullYear(), deadline.getMonth(), deadline.getDate()).getTime();
+    return deadlineStart < todayStart;
   }
 
   progressLabel(order: ProductionOrder): string {

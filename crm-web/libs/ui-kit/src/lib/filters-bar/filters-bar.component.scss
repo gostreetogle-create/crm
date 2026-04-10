@@ -6,6 +6,10 @@
   display: grid;
   grid-template-columns: 1.2fr 1fr 1fr;
   gap: var(--ui-nav-gap);
+  padding: var(--ui-space-2, 8px);
+  border-radius: var(--filters-bar-radius, 8px);
+  background: var(--filters-bar-bg, var(--surface));
+  box-shadow: var(--filters-bar-shadow, 0 1px 3px rgba(0, 0, 0, 0.06));
 }
 
 :host.filtersBarHost--middle .filtersBar {

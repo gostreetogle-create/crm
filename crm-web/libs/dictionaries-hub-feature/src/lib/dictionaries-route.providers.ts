@@ -1,6 +1,7 @@
 import type { Provider } from '@angular/core';
 import { DictionariesMaterialStandaloneFlowService } from './dictionaries-material-standalone-flow.service';
 import { DictionariesPageOrchestrationFacade } from './pages/dictionaries-page/dictionaries-page-orchestration.facade';
+import { WorkersStore } from './pages/dictionaries-page/workers.store';
 import { COLORS_REPOSITORY, ColorsHttpRepository } from '@srm/colors-data-access';
 import { CLIENTS_REPOSITORY, ClientsHttpRepository } from '@srm/clients-data-access';
 import {
@@ -125,5 +126,6 @@ export const DICTIONARIES_ROUTE_PROVIDERS: Provider[] = [
   { provide: COMPLEXES_REPOSITORY, useExisting: ComplexesHttpRepository },
   DictionariesHubCatalogService,
   DictionariesLinkedPropagationService,
+  WorkersStore,
   DictionariesPageOrchestrationFacade,
 ];

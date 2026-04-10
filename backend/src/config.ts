@@ -20,6 +20,15 @@ dotenvConfig({ path: resolvedEnvPath, override: true });
 const EnvSchema = z.object({
   PORT: z.coerce.number().optional(),
   JWT_SECRET: z.string().optional(),
+  /**
+   * Один разрешённый Origin (как в браузере), без завершающего слэша.
+   * В Docker из `deploy/.env` → `docker-compose.yml`. Значение `*` или пусто = не задавать whitelist (удобно для локального dev).
+   */
+  CORS_ORIGIN: z.string().optional(),
+  /**
+   * Несколько Origin через запятую; если непусто, имеет приоритет над CORS_ORIGIN.
+   */
+  CORS_ALLOWED_ORIGINS: z.string().optional(),
   /** Максимальный размер JSON body (например: 2mb, 10mb, 25mb). */
   JSON_BODY_LIMIT: z.string().trim().optional(),
   /** Абсолютный или относительный путь к каталогу архивов БД (volume в Docker). */
@@ -73,10 +82,24 @@ const tradeGoodsPhotosDirResolved = tradeGoodsPhotosDirRaw
     : path.resolve(backendRoot, tradeGoodsPhotosDirRaw)
   : path.resolve(backendRoot, "uploads", "trade-goods-photos");
 
+const corsMultiRaw = env.CORS_ALLOWED_ORIGINS?.trim();
+const corsSingleRaw = env.CORS_ORIGIN?.trim();
+const corsAllowedOrigins =
+  corsMultiRaw && corsMultiRaw.length > 0
+    ? corsMultiRaw
+        .split(",")
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0)
+    : corsSingleRaw && corsSingleRaw.length > 0 && corsSingleRaw !== "*"
+      ? [corsSingleRaw]
+      : [];
+
 export const config = {
   port: env.PORT ?? 3000,
   jwtSecret,
   nodeEnv,
+  /** Пустой массив → CORS отражает Origin запроса (`origin: true`), как в прежней версии. */
+  corsAllowedOrigins,
   jsonBodyLimit: env.JSON_BODY_LIMIT && env.JSON_BODY_LIMIT.length > 0 ? env.JSON_BODY_LIMIT : "25mb",
   backupDir: backupDirResolved,
   /** Абсолютный путь к корню файлов КП (подпапки = organizationId). */

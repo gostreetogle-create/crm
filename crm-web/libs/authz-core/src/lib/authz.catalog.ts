@@ -12,6 +12,7 @@ export const PERMISSION_CATALOG: Record<
   'page.dictionaries': { labelRu: 'Раздел «Справочники»', group: 'page' },
   'page.demo': { labelRu: 'Раздел «Demo»', group: 'page' },
   'page.commercialProposal': { labelRu: 'Раздел «Коммерческое предложение»', group: 'page' },
+  'page.production': { labelRu: 'Раздел «Производство»', group: 'page' },
   'page.preferences': { labelRu: 'Раздел «Настройки»', group: 'page' },
   'page.admin.settings': { labelRu: 'Раздел «Админ-настройки»', group: 'page' },
   'dict.hub.materials': { labelRu: 'Плитка «Материалы»', group: 'dict' },

@@ -33,3 +33,7 @@ export {
 } from './lib/pattern-showcase/public-api';
 export { UiStateCardComponent, type UiStateCardTone } from './lib/state-card/ui-state-card.component';
 export { UiSpecTableComponent, type UiSpecTableColumn } from './lib/ui-spec-table/ui-spec-table.component';
+export {
+  UiStatusSelectComponent,
+  type UiStatusSelectOption,
+} from './lib/ui-status-select/ui-status-select.component';

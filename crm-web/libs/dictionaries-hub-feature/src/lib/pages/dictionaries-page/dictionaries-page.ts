@@ -49,6 +49,10 @@ import {
   splitHubBoardPickerHalves,
 } from '../../dictionaries-hub/dictionaries-hub-board';
 import { resolveHubBoardQuickCreate } from '../../dictionaries-hub/dictionaries-hub-quick-create.registry';
+import {
+  DICTIONARIES_HUB_BASE,
+  STATIC_DICTIONARIES_CHILD_SEGMENTS,
+} from '../../dictionaries-canonical-paths';
 import { scrollToFirstInvalidControlInForm } from '../../dictionaries-form-a11y';
 import {
   CLIENTS_COLUMNS,
@@ -73,6 +77,8 @@ import {
   SURFACE_FINISHES_COLUMNS_FULL,
   UNITS_COLUMNS,
   UNITS_COLUMNS_FULL,
+  WORKERS_COLUMNS,
+  WORKERS_COLUMNS_FULL,
   USERS_COLUMNS,
   USERS_COLUMNS_FULL,
   WORK_TYPES_COLUMNS,
@@ -122,9 +128,11 @@ import {
   workTypesPayloadFromValues,
 } from './dictionaries-page-payload-builders';
 import { DictionariesPageOrchestrationFacade } from './dictionaries-page-orchestration.facade';
+import { WorkersStore } from './workers.store';
 import { DictionariesPagePermissionsFacade } from './dictionaries-page-permissions.facade';
 import {
   canCommercialOfferTransition,
+  commercialOfferStatusSelectOptions,
   ClientsStore,
   CoatingsStore,
   ColorsStore,
@@ -199,6 +207,7 @@ import {
   UiModal as UiModalComponent,
   UiModalFormActionsComponent,
   UiSpecTableComponent,
+  UiStatusSelectComponent,
   type UiSpecTableColumn,
 } from '@srm/ui-kit';
 @Component({
@@ -228,6 +237,7 @@ import {
     DictionaryStandaloneCreateShellComponent,
     NewMaterialFullscreenPageComponent,
     UiSpecTableComponent,
+    UiStatusSelectComponent,
   ],
   templateUrl: './dictionaries-page.html',
   styleUrl: './dictionaries-page.scss',
@@ -346,6 +356,7 @@ export class DictionariesPage implements OnDestroy {
   readonly materialsStore = inject(MaterialsStore);
   readonly geometriesStore = inject(GeometriesStore);
   readonly unitsStore = inject(UnitsStore);
+  readonly workersStore = inject(WorkersStore);
   readonly commercialOffersStore = inject(CommercialOffersStore);
   readonly ordersStore = inject(OrdersStore);
   readonly kpPhotosStore = inject(KpPhotosStore);
@@ -400,6 +411,8 @@ export class DictionariesPage implements OnDestroy {
   private readonly tradeGoodsMediaService = inject(TradeGoodsMediaService);
 
   readonly isWorkTypesModalOpen = signal(false);
+  readonly workerAddName = signal('');
+  readonly workerAddRole = signal('');
   readonly isProductionDetailsModalOpen = signal(false);
   readonly isProductionDetailsViewMode = signal(false);
   readonly isProductsModalOpen = signal(false);
@@ -588,14 +601,14 @@ export class DictionariesPage implements OnDestroy {
   standaloneDictionaryTitle(key: StandaloneDictionaryCreateKey): string {
     if (key === 'tradeGoods') {
       const mode = this.standaloneActionModeFromQuery();
-      if (mode === 'edit') return 'Р РµРґР°РєС‚РёСЂРѕРІР°РЅРёРµ С‚РѕРІР°СЂР° / РєРѕРјРїР»РµРєСЃР°';
-      if (mode === 'copy') return 'РљРѕРїРёСЏ С‚РѕРІР°СЂР° / РєРѕРјРїР»РµРєСЃР°';
-      return 'РќРѕРІС‹Р№ С‚РѕРІР°СЂ РёР»Рё РєРѕРјРїР»РµРєСЃ';
+      if (mode === 'edit') return 'Редактирование товара / комплекса';
+      if (mode === 'copy') return 'Копия товара / комплекса';
+      return 'Новый товар или комплекс';
     }
     const base = STANDALONE_DICTIONARY_CREATE.find((x) => x.key === key)?.title ?? '';
     const mode = this.standaloneActionModeFromQuery();
-    if (mode === 'edit') return base.replace(/^РќРѕРІС‹Р№|^РќРѕРІР°СЏ|^РќРѕРІРѕРµ/, 'Р РµРґР°РєС‚РёСЂРѕРІР°РЅРёРµ');
-    if (mode === 'copy') return base.replace(/^РќРѕРІС‹Р№|^РќРѕРІР°СЏ|^РќРѕРІРѕРµ/, 'РљРѕРїРёСЏ');
+    if (mode === 'edit') return base.replace(/^Новый|^Новая|^Новое/, 'Редактирование');
+    if (mode === 'copy') return base.replace(/^Новый|^Новая|^Новое/, 'Копия');
     return base;
   }
 
@@ -710,6 +723,8 @@ export class DictionariesPage implements OnDestroy {
   readonly geometriesColumnsFull = GEOMETRIES_COLUMNS_FULL;
   readonly unitsColumns = UNITS_COLUMNS;
   readonly unitsColumnsFull = UNITS_COLUMNS_FULL;
+  readonly workersColumns = WORKERS_COLUMNS;
+  readonly workersColumnsFull = WORKERS_COLUMNS_FULL;
   readonly kpPhotosColumns = KP_PHOTOS_COLUMNS;
   readonly kpPhotosColumnsFull = KP_PHOTOS_COLUMNS_FULL;
   readonly colorsColumns = COLORS_COLUMNS;
@@ -822,6 +837,7 @@ export class DictionariesPage implements OnDestroy {
   }
 
   readonly unitsColumnsForTile = this.columnsForTile('units', this.unitsColumns, this.unitsColumnsFull);
+  readonly workersColumnsForTile = this.columnsForTile('workers', this.workersColumns, this.workersColumnsFull);
   readonly commercialOffersColumns = COMMERCIAL_OFFERS_COLUMNS;
   readonly commercialOffersColumnsFull = COMMERCIAL_OFFERS_COLUMNS_FULL;
   readonly commercialOffersColumnsForTile = this.columnsForTile(
@@ -1187,7 +1203,7 @@ export class DictionariesPage implements OnDestroy {
 
   constructor() {
     // Р СѓСЃСЃРєРѕРµ РЅР°Р·РІР°РЅРёРµ РІ Р·Р°РіРѕР»РѕРІРєРµ РІРєР»Р°РґРєРё Р±СЂР°СѓР·РµСЂР°.
-    this.doc.title = 'РЎРїСЂР°РІРѕС‡РЅРёРєРё вЂ” CRM';
+    this.doc.title = 'Справочники — CRM';
 
     /**
      * Р”Р»СЏ СЃРїРµС†РёР°Р»СЊРЅС‹С… РїРѕР»РЅРѕСЌРєСЂР°РЅРЅС‹С… СЃС†РµРЅР°СЂРёРµРІ (РјР°С‚РµСЂРёР°Р»/С…Р°СЂР°РєС‚РµСЂРёСЃС‚РёРєР°) РґРѕСЃС‚Р°С‚РѕС‡РЅРѕ
@@ -1266,7 +1282,8 @@ export class DictionariesPage implements OnDestroy {
       this.syncMaterialCharacteristicCoatingFromReference(coatingId ? String(coatingId) : '');
     });
 
-    this.dictionariesOrchestrator.loadInitial();
+    const initialHubKey = this.hubBoardSelectedKey() ?? this.hubBoardRows()[0]?.key ?? null;
+    this.dictionariesOrchestrator.loadInitial(initialHubKey);
 
     this.sub.add(
       this.workTypesForm.controls.name.valueChanges.subscribe(() => {
@@ -1355,9 +1372,9 @@ export class DictionariesPage implements OnDestroy {
     this.sub.add(
       this.router.events.pipe(filter((e): e is NavigationStart => e instanceof NavigationStart)).subscribe((e) => {
         const currentPath = (this.router.url ?? '').split('?')[0] ?? '';
-        if (!currentPath.startsWith('/СЃРїСЂР°РІРѕС‡РЅРёРєРё')) return;
+        if (!currentPath.startsWith(DICTIONARIES_HUB_BASE)) return;
         const targetPath = (e.url ?? '').split('?')[0] ?? '';
-        if (targetPath.startsWith('/СЃРїСЂР°РІРѕС‡РЅРёРєРё')) return;
+        if (targetPath.startsWith(DICTIONARIES_HUB_BASE)) return;
         this.drainDictionaryModalsOnLeaveHub();
       }),
     );
@@ -2194,8 +2211,7 @@ export class DictionariesPage implements OnDestroy {
         id,
         deleteRelated ? { deleteRelated: true } : undefined,
       );
-      const items = await this.hubCatalogService.loadTradeGoodListItems();
-      this.tradeGoodsStore.applyLoadedItems(items);
+      this.tradeGoodsStore.loadItems();
       this.closeTradeGoodsModal();
     } catch (e: unknown) {
       const msg =
@@ -2276,8 +2292,7 @@ export class DictionariesPage implements OnDestroy {
       this.revokeTradeGoodBlobUrls();
       this.tradeGoodPendingPreviewUrls.set([]);
       this.tradeGoodPendingFiles.set([]);
-      const items = await this.hubCatalogService.loadTradeGoodListItems();
-      this.tradeGoodsStore.applyLoadedItems(items);
+      this.tradeGoodsStore.loadItems();
     } catch (e: unknown) {
       const msg =
         e instanceof HttpErrorResponse
@@ -2588,7 +2603,10 @@ export class DictionariesPage implements OnDestroy {
   navigateToNewMaterialPage(mode: 'create' | 'edit' | 'copy' = 'create', id?: string): void {
     if (!this.permissionsFacade.canStandaloneMode(mode)) return;
     const queryParams = mode === 'create' ? {} : { mode, id: (id ?? '').trim() || null };
-    void this.router.navigate(['/СЃРїСЂР°РІРѕС‡РЅРёРєРё', 'РЅРѕРІС‹Р№-РјР°С‚РµСЂРёР°Р»'], { queryParams });
+    void this.router.navigate(
+      [DICTIONARIES_HUB_BASE, STATIC_DICTIONARIES_CHILD_SEGMENTS[1]],
+      { queryParams },
+    );
   }
 
   navigateToNewMaterialCharacteristicPage(mode: 'create' | 'edit' | 'copy' = 'create', id?: string): void {
@@ -2597,7 +2615,10 @@ export class DictionariesPage implements OnDestroy {
       this.materialStandaloneFlow.markChainFromMaterialStandalone();
     }
     const queryParams = mode === 'create' ? {} : { mode, id: (id ?? '').trim() || null };
-    void this.router.navigate(['/СЃРїСЂР°РІРѕС‡РЅРёРєРё', 'РЅРѕРІР°СЏ-С…Р°СЂР°РєС‚РµСЂРёСЃС‚РёРєР°-РјР°С‚РµСЂРёР°Р»Р°'], { queryParams });
+    void this.router.navigate(
+      [DICTIONARIES_HUB_BASE, STATIC_DICTIONARIES_CHILD_SEGMENTS[2]],
+      { queryParams },
+    );
   }
 
   /**
@@ -2658,7 +2679,7 @@ export class DictionariesPage implements OnDestroy {
     if (!row) return;
     const queryParams =
       mode === 'create' ? {} : { mode, id: (id ?? '').trim() || null };
-    void this.router.navigate(['/СЃРїСЂР°РІРѕС‡РЅРёРєРё', row.path], { queryParams });
+    void this.router.navigate([DICTIONARIES_HUB_BASE, row.path], { queryParams });
   }
 
   private shouldNavigateToStandaloneAction(
@@ -3997,6 +4018,21 @@ export class DictionariesPage implements OnDestroy {
     }
   }
 
+  submitWorkersQuickAdd(): void {
+    if (!this.permissionsFacade.canCreate()) return;
+    const name = this.workerAddName().trim();
+    if (!name) return;
+    const role = this.workerAddRole().trim();
+    this.workersStore.createWorker(name, role || undefined);
+    this.workerAddName.set('');
+    this.workerAddRole.set('');
+  }
+
+  deleteWorker(id: string): void {
+    if (!this.permissionsFacade.canDelete()) return;
+    this.workersStore.deleteWorker(id);
+  }
+
   duplicateUnit(id: string): void {
     if (!this.permissionsFacade.canDuplicate()) return;
     if (this.shouldNavigateToStandaloneAction('units', 'copy', id)) return;
@@ -4114,18 +4150,21 @@ export class DictionariesPage implements OnDestroy {
     this.isCatalogComplexModalOpen.set(true);
   }
 
-  readonly commercialOfferStatusOptions: ReadonlyArray<{
-    key: ProposalStatusKey;
-    label: string;
-  }> = [
-    { key: 'proposal_draft', label: 'Р§РµСЂРЅРѕРІРёРє' },
-    { key: 'proposal_waiting', label: 'РќР° СЃРѕРіР»Р°СЃРѕРІР°РЅРёРё' },
-    { key: 'proposal_paid', label: 'РћРїР»Р°С‡РµРЅРѕ' },
-  ];
+  /**
+   * Формирует опции для ui-status-select конкретной строки КП.
+   * Флаг disabled рассчитывается по COMMERCIAL_OFFER_ALLOWED_TRANSITIONS.
+   * Вызывать только из шаблона ячейки statusLabel.
+   */
+  commercialOfferOptionsForRow(row: Record<string, unknown>): ReturnType<
+    typeof commercialOfferStatusSelectOptions
+  > {
+    const current = this.commercialOfferStatusValue(row) as ProposalStatusKey;
+    return commercialOfferStatusSelectOptions(current);
+  }
 
   openCommercialOfferCreate(): void {
     if (!this.permissionsFacade.canPage('page.commercialProposal')) return;
-    void this.router.navigate(['/РєРѕРјРјРµСЂС‡РµСЃРєРѕРµ'], {
+    void this.router.navigate(['/коммерческое'], {
       queryParams: { offerId: null },
       queryParamsHandling: 'merge',
     });
@@ -4133,7 +4172,7 @@ export class DictionariesPage implements OnDestroy {
 
   openCommercialOfferEdit(id: string): void {
     if (!this.permissionsFacade.canPage('page.commercialProposal')) return;
-    void this.router.navigate(['/РєРѕРјРјРµСЂС‡РµСЃРєРѕРµ'], {
+    void this.router.navigate(['/коммерческое'], {
       queryParams: { offerId: id },
       queryParamsHandling: 'merge',
     });
@@ -4218,36 +4257,21 @@ export class DictionariesPage implements OnDestroy {
     this.ordersStore.remove(id);
   }
 
-  onCommercialOfferStatusChange(
-    row: Record<string, unknown>,
-    nextKeyRaw: string,
-    event?: Event,
-  ): void {
-    event?.stopPropagation();
-    const selectEl = event?.target as HTMLSelectElement | null;
+  /**
+   * Обработчик смены статуса из ui-status-select.
+   * Валидация допустимого перехода делегирована disabled-состоянию опций —
+   * дополнительная проверка canCommercialOfferTransition здесь не нужна.
+   * Откат select.value не нужен: ngModel синхронизирует значение автоматически.
+   */
+  onCommercialOfferStatusChange(row: Record<string, unknown>, nextKeyRaw: string): void {
     const id = String(row['id'] ?? '').trim();
-    const current = this.currentCommercialOfferStatusById(id) ?? normalizeCommercialOfferStatusKey(row['statusKey']);
+    const current =
+      this.currentCommercialOfferStatusById(id) ?? normalizeCommercialOfferStatusKey(row['statusKey']);
     const next = nextKeyRaw.trim();
     if (!id || !next || next === current) return;
-    const inFlight = this.commercialOffersStore.processingStatusIds().has(id);
-    if (inFlight) return;
-    if (
-      next !== 'proposal_draft' &&
-      next !== 'proposal_waiting' &&
-      next !== 'proposal_paid'
-    ) {
-      if (selectEl) {
-        selectEl.value = current;
-      }
-      return;
-    }
-    if (!canCommercialOfferTransition(current, next)) {
-      if (selectEl) {
-        selectEl.value = current;
-      }
-      return;
-    }
-    this.commercialOffersStore.updateStatus(id, next);
+    if (this.commercialOffersStore.processingStatusIds().has(id)) return;
+    if (next !== 'proposal_draft' && next !== 'proposal_waiting' && next !== 'proposal_paid') return;
+    this.commercialOffersStore.updateStatus(id, next as ProposalStatusKey);
   }
 
   canCommercialOfferTransition(currentRaw: unknown, nextRaw: unknown): boolean {
@@ -4266,12 +4290,6 @@ export class DictionariesPage implements OnDestroy {
       return normalizeCommercialOfferStatusKey(row['statusKey']);
     }
     return this.currentCommercialOfferStatusById(id) ?? normalizeCommercialOfferStatusKey(row['statusKey']);
-  }
-
-  canCommercialOfferTransitionForOffer(idRaw: unknown, nextRaw: unknown): boolean {
-    const id = String(idRaw ?? '').trim();
-    const current = this.currentCommercialOfferStatusById(id);
-    return this.canCommercialOfferTransition(current ?? 'proposal_draft', nextRaw);
   }
 
   private currentCommercialOfferStatusById(id: string): ProposalStatusKey | null {

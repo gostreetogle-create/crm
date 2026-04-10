@@ -11,12 +11,14 @@ import {
   type TradeGoodItem,
   type TradeGoodItemInput,
   type TradeGoodListItem,
+  type TradeGoodsPage,
   type TradeGoodsRepository,
 } from '@srm/trade-goods-data-access';
 import {
   hubCatalogLoadProductById,
   hubCatalogLoadProductListItems,
   hubCatalogLoadTradeGoodById,
+  hubCatalogLoadTradeGoodListPage,
   hubCatalogLoadTradeGoodListItems,
   hubCatalogRemoveTradeGood,
   hubCatalogSaveProduct,
@@ -64,5 +66,9 @@ export class DictionariesHubCatalogService {
 
   loadTradeGoodListItems(): Promise<TradeGoodListItem[]> {
     return hubCatalogLoadTradeGoodListItems(this.tradeGoodsRepo);
+  }
+
+  loadTradeGoodListPage(page: number, pageSize: number): Promise<TradeGoodsPage> {
+    return hubCatalogLoadTradeGoodListPage(this.tradeGoodsRepo, page, pageSize);
   }
 }

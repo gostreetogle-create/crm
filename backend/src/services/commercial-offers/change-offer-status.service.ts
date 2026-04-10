@@ -23,11 +23,11 @@ type ChangeOfferStatusParams = {
   prisma: Prisma.PrismaClient;
   offerId: string;
   nextStatus: StatusKey;
-  orderNumber?: string | null;
+  requestedOrderNumber?: string | null;
 };
 
 export async function changeCommercialOfferStatus(params: ChangeOfferStatusParams): Promise<void> {
-  const { prisma, offerId, nextStatus, orderNumber } = params;
+  const { prisma, offerId, nextStatus, requestedOrderNumber } = params;
   const row = await prisma.commercialOffer.findUnique({
     where: { id: offerId },
     select: { id: true, currentStatusKey: true },
@@ -64,6 +64,8 @@ export async function changeCommercialOfferStatus(params: ChangeOfferStatusParam
             description: true,
             qty: true,
             unit: true,
+            unitPrice: true,
+            lineSum: true,
             sortOrder: true,
           },
         },
@@ -84,7 +86,7 @@ export async function changeCommercialOfferStatus(params: ChangeOfferStatusParam
         client: after.client,
         lines: after.lines,
       },
-      requestedOrderNumber: orderNumber,
+      requestedOrderNumber,
     });
   });
 }

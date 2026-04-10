@@ -5,6 +5,14 @@
 import type { TableColumn } from '@srm/ui-kit';
 
 /** На хабе одна колонка hubLine; короткий заголовок колонки по смыслу справочника (см. naming convention). */
+export const WORKERS_COLUMNS: TableColumn[] = [{ key: 'hubLine', label: 'Рабочий' }];
+
+export const WORKERS_COLUMNS_FULL: TableColumn[] = [
+  { key: 'name', label: 'Имя' },
+  { key: 'roleLabel', label: 'Роль' },
+];
+
+/** На хабе одна колонка hubLine; короткий заголовок колонки по смыслу справочника (см. naming convention). */
 export const WORK_TYPES_COLUMNS: TableColumn[] = [{ key: 'hubLine', label: 'Вид работ' }];
 
 /** Full-view для раскрытия: показываем все значимые поля строки. */

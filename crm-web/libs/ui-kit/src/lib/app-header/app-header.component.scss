@@ -53,18 +53,12 @@
   grid-template-columns: auto 1fr auto;
   gap: var(--ui-nav-gap);
   align-items: center;
-  padding: var(--ui-app-header-padding-y) var(--ui-app-header-padding-x);
-  border-bottom: 1px solid color-mix(in srgb, var(--border-color) 72%, var(--accent) 14%);
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--surface) 92%, var(--surface-soft) 8%) 0%,
-    color-mix(in srgb, var(--surface) 88%, transparent) 100%
-  );
+  min-height: 48px;
+  padding: 4px var(--ui-app-header-padding-x);
+  border-bottom: 1px solid var(--app-header-border-bottom, color-mix(in srgb, var(--border-color) 72%, var(--accent) 14%));
+  background: var(--app-header-bg, var(--surface));
   backdrop-filter: blur(var(--ui-backdrop-blur-sm));
-  box-shadow:
-    0 1px 0 rgba(184, 159, 110, 0.2),
-    0 var(--ui-shadow-card-thin-offset-y) 0 color-mix(in srgb, var(--accent) 18%, var(--border-color) 82%),
-    0 10px 28px color-mix(in srgb, var(--accent) 5%, transparent);
+  box-shadow: var(--app-header-shadow, 0 1px 4px rgba(0, 0, 0, 0.08));
 }
 
 .brand {
@@ -90,8 +84,8 @@
 
 .brandLogo {
   flex-shrink: 0;
-  width: 40px;
-  height: 40px;
+  width: 28px;
+  height: 28px;
   display: block;
   object-fit: contain;
 }
@@ -112,9 +106,13 @@
 }
 
 .mainNav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
   text-decoration: none;
   color: var(--text-primary);
   padding: var(--ui-nav-link-padding-y) var(--ui-nav-link-padding-x);
+  font-size: var(--font-size-control);
   border-radius: var(--radius-pill);
   border: 1px solid transparent;
 }

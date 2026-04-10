@@ -66,6 +66,13 @@
                     <span class="kp-sheet__metaValue">{{ createdAtLabel() || '—' }}</span>
                   </div>
                   <div class="kp-sheet__metaLine">
+                    <span class="kp-sheet__metaLabel">Действует до:</span>
+                    <span class="kp-sheet__metaValue">{{ validUntilLabel() || '—' }}</span>
+                  </div>
+                  @if (isValidUntilExpired()) {
+                    <div class="kp-sheet__metaWarning">Срок действия истёк</div>
+                  }
+                  <div class="kp-sheet__metaLine">
                     <span class="kp-sheet__metaLabel">Предоплата:</span>
                     <span class="kp-sheet__metaInline">
                       <input
@@ -120,6 +127,13 @@
                       <span class="kp-sheet__metaValue">{{ createdAtLabel() || '—' }}</span>
                     </div>
                     <div class="kp-sheet__metaLine">
+                      <span class="kp-sheet__metaLabel">Действует до:</span>
+                      <span class="kp-sheet__metaValue">{{ validUntilLabel() || '—' }}</span>
+                    </div>
+                    @if (isValidUntilExpired()) {
+                      <div class="kp-sheet__metaWarning">Срок действия истёк</div>
+                    }
+                    <div class="kp-sheet__metaLine">
                       <span class="kp-sheet__metaLabel">Предоплата:</span>
                       <span class="kp-sheet__metaInline">
                         <input
@@ -164,6 +178,13 @@
                       <span class="kp-sheet__metaLabel">Дата создания:</span>
                       <span class="kp-sheet__metaValue">{{ createdAtLabel() || '—' }}</span>
                     </div>
+                    <div class="kp-sheet__metaLine">
+                      <span class="kp-sheet__metaLabel">Действует до:</span>
+                      <span class="kp-sheet__metaValue">{{ validUntilLabel() || '—' }}</span>
+                    </div>
+                    @if (isValidUntilExpired()) {
+                      <div class="kp-sheet__metaWarning">Срок действия истёк</div>
+                    }
                     <div class="kp-sheet__metaLine">
                       <span class="kp-sheet__metaLabel">Предоплата:</span>
                       <span class="kp-sheet__metaInline">
@@ -348,6 +369,15 @@
                 (clicked)="addLineClick.emit()"
               >
                 <svg lucidePlus [size]="18" aria-hidden="true"></svg>
+              </app-ui-button>
+              <app-ui-button
+                type="button"
+                variant="soft"
+                ariaLabel="Вставить строки из JSON"
+                title="Вставить из JSON"
+                (clicked)="openJsonImportClick.emit()"
+              >
+                &#123; &#125; JSON
               </app-ui-button>
               @if (showAddDescriptionColumnButton()) {
                 <app-ui-button

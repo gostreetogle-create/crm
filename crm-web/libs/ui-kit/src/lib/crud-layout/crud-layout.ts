@@ -143,6 +143,21 @@ export class CrudLayoutComponent implements OnInit, OnChanges {
       this.tableCurrentPage = 1;
     }
     if (changes['data']) {
+      const ids = new Set(
+        this.data
+          .map((row) => this.rowId(row))
+          .filter((id) => id.length > 0),
+      );
+      if (this.expandedRowId && !ids.has(this.expandedRowId)) {
+        this.expandedRowId = null;
+      }
+      if (this.openRowMenuIndex !== null) {
+        const row = this.crudTableBodyRows[this.openRowMenuIndex] ?? null;
+        const rowId = row ? this.rowId(row) : '';
+        if (!rowId || !ids.has(rowId)) {
+          this.openRowMenuIndex = null;
+        }
+      }
       const pc = this.tablePageCount;
       if (this.tableCurrentPage > pc) {
         this.tableCurrentPage = Math.max(1, pc);

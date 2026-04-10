@@ -14,6 +14,8 @@ type OfferSnapshotForOrder = {
     description: string | null;
     qty: number;
     unit: string;
+    unitPrice: number;
+    lineSum: number;
     sortOrder: number;
   }>;
 };
@@ -80,7 +82,18 @@ export async function createOrderFromPaidOfferIfNeeded(params: CreateOrderFromPa
         customerLabel,
         deadline: offer.validUntil,
         notes: cleanString(offer.notes),
-        linesSnapshot: [...offer.lines].sort((a, b) => a.sortOrder - b.sortOrder),
+        linesSnapshot: [...offer.lines]
+          .sort((a, b) => a.sortOrder - b.sortOrder)
+          .map((line) => ({
+            lineNo: line.lineNo,
+            name: line.name,
+            description: line.description,
+            qty: line.qty,
+            unit: line.unit,
+            unitPrice: line.unitPrice,
+            lineSum: line.lineSum,
+            sortOrder: line.sortOrder,
+          })),
       },
     });
   } catch (err: unknown) {

@@ -24,6 +24,14 @@
 
 ## Текущие записи
 
+## [TD-20260410-01] UiStatusSelect в ui-kit (один потребитель — хаб КП)
+- **Дата:** 2026-04-10
+- **Задача:** stabilize КП status select (`ui-status-select` — ngModel, API `currentStatus` / `processing`, опции с disabled по переходам).
+- **Где:** `crm-web/libs/ui-kit/src/lib/ui-status-select/ui-status-select.component.ts`, экспорт в `crm-web/libs/ui-kit/src/index.ts`; использование в `crm-web/libs/dictionaries-hub-feature/src/lib/pages/dictionaries-page/dictionaries-page.ts`, `dictionaries-page.html`.
+- **Что зафиксировано:** компонент размещён в `@srm/ui-kit` как универсальный, не привязанный к домену КП; пока второй потребитель не появился — запись напоминает пересмотреть необходимость отдельного упоминания в логе.
+- **Триггер удаления записи:** появление второго независимого потребителя `UiStatusSelectComponent` вне сценария КП на хабе (или явное решение закрепить компонент как часть дизайн-системы без оговорок).
+- **Статус:** open
+
 ## [TD-20260403-01] Mega-file dictionaries-page (гейт 6200 строк)
 - **Дата:** 2026-04-03
 - **Где:** `crm-web/libs/dictionaries-hub-feature/src/lib/pages/dictionaries-page/dictionaries-page.ts`, `crm-web/scripts/check-dictionaries-page-size.cjs`
@@ -37,7 +45,7 @@
 - **Статус:** done
 - **Ссылка на коммит/PR:** TBD
 
-Активных отклонений (статус `open`) нет.
+Активное отклонение (статус `open`): TD-20260410-01 (см. выше).
 
 ## Правила
 

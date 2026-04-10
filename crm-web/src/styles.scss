@@ -19,6 +19,8 @@
   --text-form-label: var(--app-descriptive-text-color);
   --ui-field-label-value-gap: var(--ui-space-2, 6px);
   --ui-form-control-bg: color-mix(in srgb, var(--accent, #4f6f82) 6.5%, #ffffff);
+  --ui-form-control-text: #1a1a2e;
+  --ui-form-control-placeholder: rgba(0, 0, 0, 0.45);
   --field-invalid-border: var(--danger, #9f2d20);
   --field-invalid-focus: var(--danger, #9f2d20);
 
@@ -43,9 +45,9 @@
   --app-main-padding-x: 16px;
   --ui-page-shell-max-width: min(1720px, calc(100vw - (var(--ui-page-shell-padding-x, 14px) * 2)));
 
-  --ui-control-compact-height: 28px;
+  --ui-control-compact-height: 32px;
   --ui-row-action-size: 28px;
-  --ui-form-stack-gap: 10px;
+  --ui-form-stack-gap: 16px;
   --ui-form-actions-gap: 8px;
   --ui-toolbar-gap: 6px;
   --ui-toolbar-group-gap: 4px;

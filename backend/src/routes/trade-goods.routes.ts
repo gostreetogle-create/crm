@@ -2,13 +2,16 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { Router } from "express";
 import multer from "multer";
+import sharp from "sharp";
 import { z } from "zod";
 import { config } from "../config.js";
 import {
   clearTradeGoodPhotoFilesAsync,
   extFromImageMime,
   listTradeGoodPhotoPublicUrls,
+  listTradeGoodPhotoVariantPublicUrls,
   resolveTradeGoodPhotoDisplayUrl,
+  resolveTradeGoodPhotoDisplayUrlVariant,
   stemFromTradeGoodArticleCode,
 } from "../lib/trade-good-photo-resolve.js";
 import { prisma } from "../lib/prisma.js";
@@ -216,7 +219,9 @@ function mapTradeGood(row: TradeGoodRowWithLines) {
     kind: row.kind,
     photoPrimaryIndex: primaryIdx,
     photoUrls: listTradeGoodPhotoPublicUrls(config.tradeGoodsPhotosDir, row.code),
-    photoUrl: tradeGoodPhotoUrlJson(row.code, primaryIdx),
+    photoUrl:
+      resolveTradeGoodPhotoDisplayUrlVariant(config.tradeGoodsPhotosDir, row.code, primaryIdx, "medium_640") ??
+      tradeGoodPhotoUrlJson(row.code, primaryIdx),
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
     lines: row.lines.map((l: any) => ({
@@ -268,8 +273,10 @@ function mapTradeGoodListItem(
     isActive: g.isActive,
     kind: g.kind,
     photoPrimaryIndex: primaryIdx,
-    photoUrls: listTradeGoodPhotoPublicUrls(config.tradeGoodsPhotosDir, g.code),
-    photoUrl: tradeGoodPhotoUrlJson(g.code, primaryIdx),
+    photoUrls: listTradeGoodPhotoVariantPublicUrls(config.tradeGoodsPhotosDir, g.code, "thumb_320"),
+    photoUrl:
+      resolveTradeGoodPhotoDisplayUrlVariant(config.tradeGoodsPhotosDir, g.code, primaryIdx, "thumb_320") ??
+      tradeGoodPhotoUrlJson(g.code, primaryIdx),
     linesCount: lines.length,
     productsSummary,
     compositionLines: lines.map((l: any) => ({
@@ -309,10 +316,20 @@ function tradeGoodLineCreateData(line: {
   };
 }
 
-tradeGoodsRouter.get("/", async (_req, res, next) => {
+function parsePositiveInt(raw: unknown, fallback: number): number {
+  const n = Number.parseInt(String(raw ?? ""), 10);
+  return Number.isFinite(n) && n >= 1 ? n : fallback;
+}
+
+tradeGoodsRouter.get("/", async (req, res, next) => {
   try {
+    const page = parsePositiveInt(req.query["page"], 1);
+    const pageSize = Math.min(parsePositiveInt(req.query["pageSize"], 50), 200);
+    const skip = (page - 1) * pageSize;
     const list = await prisma.tradeGood.findMany({
       orderBy: { name: "asc" },
+      skip,
+      take: pageSize,
       include: {
         ...classificationInclude,
         lines: {
@@ -321,12 +338,16 @@ tradeGoodsRouter.get("/", async (_req, res, next) => {
         },
       },
     });
-    res.json(
-      list.map((g) => {
+    const total = await prisma.tradeGood.count();
+    res.json({
+      data: list.map((g) => {
         const lines = [...g.lines].sort((a, b) => a.sortOrder - b.sortOrder);
         return mapTradeGoodListItem(g as TradeGoodRowWithLines, lines);
       }),
-    );
+      total,
+      page,
+      pageSize,
+    });
   } catch (e) {
     next(e);
   }
@@ -473,8 +494,24 @@ tradeGoodsRouter.post(
           res.status(400).json({ error: "unsupported_file_type" });
           return;
         }
-        const name = `${stem}_${i + 1}${ext}`;
-        await fs.writeFile(path.join(dir, name), f.buffer);
+        const originalName = `${stem}_${i + 1}${ext}`;
+        const originalAbs = path.join(dir, originalName);
+        await fs.writeFile(originalAbs, f.buffer);
+        const source = sharp(f.buffer, { failOn: "none", limitInputPixels: 40_000_000 }).rotate();
+        await source
+          .clone()
+          .resize({ width: 320, fit: "inside", withoutEnlargement: true })
+          .webp({ quality: 80 })
+          .toFile(path.join(dir, `${stem}_${i + 1}_thumb_320.webp`));
+        await source
+          .clone()
+          .resize({ width: 640, fit: "inside", withoutEnlargement: true })
+          .webp({ quality: 80 })
+          .toFile(path.join(dir, `${stem}_${i + 1}_medium_640.webp`));
+        await source
+          .clone()
+          .webp({ quality: 80 })
+          .toFile(path.join(dir, `${stem}_${i + 1}_original.webp`));
       }
       const updated = await prisma.tradeGood.update({
         where: { id },

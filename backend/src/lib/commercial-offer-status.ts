@@ -13,7 +13,7 @@ const LEGACY_APPROVED_KEY = "proposal_approved";
 export const ALLOWED_TRANSITIONS: Record<StatusKey, readonly StatusKey[]> = {
   proposal_draft: ["proposal_waiting"],
   proposal_waiting: ["proposal_paid", "proposal_draft"],
-  proposal_paid: [],
+  proposal_paid: ["proposal_waiting"],
 };
 
 export function normalizeCurrentStatusKey(raw: string): StatusKey | null {

@@ -51,8 +51,12 @@ const InputSchema = z.object({
 });
 
 const StatusInputSchema = z.object({
-  statusKey: StatusKeySchema,
+  nextStatus: StatusKeySchema.optional(),
+  statusKey: StatusKeySchema.optional(),
   orderNumber: z.union([z.string(), z.null(), z.undefined()]).optional(),
+}).refine((data) => Boolean(data.nextStatus ?? data.statusKey), {
+  message: "nextStatus or statusKey is required",
+  path: ["nextStatus"],
 });
 
 function cleanString(v: string | null | undefined): string | null {
@@ -79,20 +83,17 @@ function parseValidUntil(v: string | null | undefined): Date | null {
 const OFFER_NUMBER_PREFIX = "КП-";
 const OFFER_NUMBER_PAD = 6;
 
-function nextOfferNumberFrom(lastRaw: string | null | undefined): string {
-  const last = cleanString(lastRaw);
-  if (!last) return `${OFFER_NUMBER_PREFIX}${String(1).padStart(OFFER_NUMBER_PAD, "0")}`;
-  const canonical = last.match(/^КП-(\d+)$/i);
-  if (canonical) {
-    const nextN = Number(canonical[1]) + 1;
-    return `${OFFER_NUMBER_PREFIX}${String(nextN).padStart(OFFER_NUMBER_PAD, "0")}`;
+function nextOfferNumberFromAll(numbers: Array<string | null | undefined>): string {
+  let max = 0;
+  for (const raw of numbers) {
+    const value = cleanString(raw);
+    if (!value) continue;
+    const canonical = value.match(/^КП-(\d+)$/i);
+    if (!canonical) continue;
+    const n = Number(canonical[1]);
+    if (Number.isFinite(n) && n > max) max = n;
   }
-  const m = last.match(/(\d+)(?!.*\d)/);
-  if (!m) return `${OFFER_NUMBER_PREFIX}${String(1).padStart(OFFER_NUMBER_PAD, "0")}`;
-  const digits = m[1];
-  const next = Number(digits) + 1;
-  const width = Math.max(OFFER_NUMBER_PAD, digits.length);
-  return `${OFFER_NUMBER_PREFIX}${String(next).padStart(width, "0")}`;
+  return `${OFFER_NUMBER_PREFIX}${String(max + 1).padStart(OFFER_NUMBER_PAD, "0")}`;
 }
 
 function normalizeLineInputs(lines: z.infer<typeof LineInputSchema>[] | undefined): z.infer<typeof LineInputSchema>[] {
@@ -296,6 +297,89 @@ commercialOffersRouter.get("/", async (req, res, next) => {
   }
 });
 
+commercialOffersRouter.post("/duplicate/:id", async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const duplicated = await prisma.$transaction(async (tx) => {
+      const source = await tx.commercialOffer.findUnique({
+        where: { id },
+        include: {
+          lines: {
+            orderBy: { sortOrder: "asc" as const },
+            select: {
+              lineNo: true,
+              name: true,
+              description: true,
+              qty: true,
+              unit: true,
+              unitPrice: true,
+              imageUrl: true,
+              catalogProductId: true,
+              sortOrder: true,
+            },
+          },
+        },
+      });
+      if (!source) return null;
+
+      const allNumbers = await tx.commercialOffer.findMany({ select: { number: true } });
+      const number = nextOfferNumberFromAll(allNumbers.map((row) => row.number));
+      const currentStatusKey: StatusKey = "proposal_draft";
+      const normalizedLines = normalizeLineInputs(source.lines);
+      const amounts = computeAmounts(normalizedLines, undefined, undefined);
+
+      const created = await tx.commercialOffer.create({
+        data: {
+          number,
+          title: source.title,
+          status: mapStatusKeyToLegacyStatus(currentStatusKey),
+          currentStatusKey,
+          organizationId: source.organizationId,
+          clientId: source.clientId,
+          organizationContactId: null,
+          recipient: null,
+          validUntil: null,
+          currency: "RUB",
+          prepaymentPercent: 80,
+          productionLeadDays: 30,
+          vatPercent: amounts.vatPercent,
+          vatAmount: amounts.vatAmount,
+          subtotalAmount: amounts.subtotalAmount,
+          totalAmount: amounts.totalAmount,
+          notes: source.notes,
+          lines: {
+            create: normalizedLines.map((line) => ({
+              lineNo: line.lineNo!,
+              name: line.name.trim(),
+              description: cleanString(line.description),
+              qty: line.qty,
+              unit: line.unit.trim(),
+              unitPrice: line.unitPrice,
+              lineSum: round2(line.qty * line.unitPrice),
+              imageUrl: cleanString(line.imageUrl),
+              catalogProductId: cleanString(line.catalogProductId),
+              sortOrder: line.sortOrder!,
+            })),
+          },
+        },
+        select: { id: true },
+      });
+
+      return tx.commercialOffer.findUniqueOrThrow({
+        where: { id: created.id },
+        include: offerInclude,
+      });
+    });
+    if (!duplicated) {
+      res.status(404).json({ error: "not_found" });
+      return;
+    }
+    res.status(201).json(mapOffer(duplicated as OfferRow));
+  } catch (e) {
+    next(e);
+  }
+});
+
 commercialOffersRouter.get("/:id", async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -328,11 +412,10 @@ commercialOffersRouter.post("/", async (req, res, next) => {
       const inputNumber = cleanString(d.number);
       let numberToSave = inputNumber;
       if (!numberToSave) {
-        const lastOffer = await tx.commercialOffer.findFirst({
-          orderBy: { createdAt: "desc" },
+        const allNumbers = await tx.commercialOffer.findMany({
           select: { number: true },
         });
-        numberToSave = nextOfferNumberFrom(lastOffer?.number);
+        numberToSave = nextOfferNumberFromAll(allNumbers.map((row) => row.number));
       }
       const created = await tx.commercialOffer.create({
         data: {
@@ -515,13 +598,13 @@ commercialOffersRouter.post("/:id/status", async (req, res, next) => {
       res.status(400).json({ error: "invalid_body", details: parsed.error.flatten() });
       return;
     }
-    const nextStatus = parsed.data.statusKey;
+    const nextStatus = parsed.data.nextStatus ?? parsed.data.statusKey!;
     try {
       await changeCommercialOfferStatus({
         prisma,
         offerId: id,
         nextStatus,
-        orderNumber: parsed.data.orderNumber ?? null,
+        requestedOrderNumber: parsed.data.orderNumber ?? null,
       });
     } catch (err: unknown) {
       if (err instanceof ChangeOfferStatusError) {

@@ -59,6 +59,9 @@
               </div>
               <div class="orderCardMeta">
                 <span [class.overdue]="isOverdue(order)">Дедлайн: {{ order.deadline || '—' }}</span>
+                @if (isOverdue(order)) {
+                  <span class="overdueBadge">Просрочен</span>
+                }
                 <span>Прогресс: {{ progressLabel(order) }}</span>
               </div>
               <a class="openLink" [routerLink]="['/производство', order.id]">Открыть</a>
@@ -89,6 +92,9 @@
               </div>
               <div class="orderCardMeta">
                 <span [class.overdue]="isOverdue(order)">Дедлайн: {{ order.deadline || '—' }}</span>
+                @if (isOverdue(order)) {
+                  <span class="overdueBadge">Просрочен</span>
+                }
                 <span>Прогресс: {{ progressLabel(order) }}</span>
               </div>
               <a class="openLink" [routerLink]="['/производство', order.id]">Открыть</a>
@@ -119,6 +125,9 @@
               </div>
               <div class="orderCardMeta">
                 <span [class.overdue]="isOverdue(order)">Дедлайн: {{ order.deadline || '—' }}</span>
+                @if (isOverdue(order)) {
+                  <span class="overdueBadge">Просрочен</span>
+                }
                 <span>Прогресс: {{ progressLabel(order) }}</span>
               </div>
               <a class="openLink" [routerLink]="['/производство', order.id]">Открыть</a>

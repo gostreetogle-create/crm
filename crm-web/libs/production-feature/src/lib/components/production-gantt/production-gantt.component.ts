@@ -21,7 +21,7 @@ type SourceRow = {
   customerLabel: string;
   title: string;
   status: ProductionOrder['productionStatus'];
-  statusClass: 'pending' | 'in-progress' | 'done';
+  statusClass: 'pending' | 'in-progress' | 'done' | 'overdue';
   start: Date;
   end: Date;
   done: number;
@@ -107,6 +107,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
                     [class.bar--pending]="row.statusClass === 'pending'"
                     [class.bar--in-progress]="row.statusClass === 'in-progress'"
                     [class.bar--done]="row.statusClass === 'done'"
+                    [class.bar--overdue]="row.statusClass === 'overdue'"
                     [style.left.%]="row.left"
                     [style.width.%]="row.width"
                     (click)="onBarClick($event, row)"
@@ -301,6 +302,9 @@ const DAY_MS = 24 * 60 * 60 * 1000;
     }
     .bar--done {
       background: #29a34a;
+    }
+    .bar--overdue {
+      background: #d52222;
     }
     .barLabel {
       line-height: 30px;
@@ -592,7 +596,7 @@ export class ProductionGanttComponent {
         customerLabel: order.customerLabel || '',
         title: `${order.orderNumber} ${order.customerLabel || ''}`.trim(),
         status: order.productionStatus,
-        statusClass: this.statusClass(order.productionStatus),
+        statusClass: this.statusClass(order),
         start,
         end,
         done,
@@ -789,7 +793,9 @@ export class ProductionGanttComponent {
     return Math.min(Math.max(value, min), max);
   }
 
-  private statusClass(status: ProductionOrder['productionStatus']): 'pending' | 'in-progress' | 'done' {
+  private statusClass(order: ProductionOrder): 'pending' | 'in-progress' | 'done' | 'overdue' {
+    if (this.isOverdue(order)) return 'overdue';
+    const status = order.productionStatus;
     switch (status) {
       case 'IN_PROGRESS':
         return 'in-progress';
@@ -798,5 +804,15 @@ export class ProductionGanttComponent {
       default:
         return 'pending';
     }
+  }
+
+  private isOverdue(order: ProductionOrder): boolean {
+    if (!order.deadline || order.productionStatus === 'DONE') return false;
+    const deadline = this.parseDate(order.deadline);
+    if (!deadline) return false;
+    const today = new Date();
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+    const deadlineStart = new Date(deadline.getFullYear(), deadline.getMonth(), deadline.getDate()).getTime();
+    return deadlineStart < todayStart;
   }
 }

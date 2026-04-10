@@ -45,6 +45,7 @@ import { KpBuilderOffersStore } from '../../kp-builder-state/kp-builder-offers.s
 import {
   canTransition,
   formatRuDateOrDash,
+  labelByStatusKey,
   mapOfferDtoToPayload,
   normalizeStatusKey,
   type CommercialOfferDto,
@@ -56,6 +57,20 @@ type CatalogSyncDecision = 'sync' | 'skip' | 'abort';
 
 const OFFER_NUMBER_PREFIX = 'КП-';
 const OFFER_NUMBER_PAD = 6;
+const JSON_IMPORT_EXAMPLE = `[
+  {
+    "name": "Игровой комплекс",
+    "qty": 1,
+    "unit": "шт",
+    "unitPrice": 250000
+  },
+  {
+    "name": "Навес металлический",
+    "qty": 2,
+    "unit": "шт",
+    "unitPrice": 85000
+  }
+]`;
 
 @Component({
   selector: 'app-kp-builder-page',
@@ -100,6 +115,10 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
   readonly paidOrderNumberModalOpen = signal(false);
   readonly paidOrderNumberDraft = signal('');
   private paidOrderNumberResolve: ((value: string | null) => void) | null = null;
+  readonly jsonImportModalOpen = signal(false);
+  readonly jsonImportDraft = signal('');
+  readonly jsonImportError = signal<string | null>(null);
+  readonly jsonImportExample = JSON_IMPORT_EXAMPLE;
 
   /** Справочник организаций для выпадающего списка в шаблоне КП. */
   readonly organizations = this.kpBuilderFacade.organizations;
@@ -114,6 +133,9 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
   readonly kpCatalogProducts = signal<KpCatalogProduct[]>([]);
   readonly draftOffers = this.kpBuilderOffersStore.draftOffers;
   readonly formatRuDateOrDash = formatRuDateOrDash;
+  readonly proposalWaitingActionLabel = labelByStatusKey('proposal_waiting');
+  readonly labelByStatusKey = labelByStatusKey;
+  readonly normalizeStatusKey = normalizeStatusKey;
 
   @ViewChild('previewHost', { read: ElementRef }) previewHost?: ElementRef<HTMLElement>;
 
@@ -145,6 +167,7 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
     organizationContactId: this.fb.nonNullable.control(''),
     number: this.fb.nonNullable.control(''),
     createdAt: this.fb.nonNullable.control(new Date().toISOString()),
+    validUntil: this.fb.nonNullable.control(''),
     prepaymentPercent: this.fb.nonNullable.control('80', [Validators.pattern(/^\d{1,3}$/)]),
     productionLeadDays: this.fb.nonNullable.control('30', [Validators.pattern(/^\d{1,3}$/)]),
     /** Ставка НДС, % (по умолчанию 22). */
@@ -336,6 +359,7 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
         organizationContactId: '',
         number: '',
         createdAt: new Date().toISOString(),
+        validUntil: '',
         prepaymentPercent: '80',
         productionLeadDays: '30',
         vatPercent: '22',
@@ -458,6 +482,86 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
   addLine(): void {
     if (!this.canEditOffer()) return;
     this.lines().push(this.lineGroup('', '1', 'шт.', '0', '', '', ''));
+  }
+
+  openJsonImportModal(): void {
+    if (!this.canEditOffer()) return;
+    this.jsonImportError.set(null);
+    this.jsonImportModalOpen.set(true);
+  }
+
+  closeJsonImportModal(): void {
+    this.jsonImportModalOpen.set(false);
+    this.jsonImportError.set(null);
+  }
+
+  fillJsonImportExample(): void {
+    this.jsonImportDraft.set(this.jsonImportExample);
+    this.jsonImportError.set(null);
+  }
+
+  addLinesFromJson(): void {
+    if (!this.canEditOffer()) return;
+    const raw = this.jsonImportDraft().trim();
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      this.jsonImportError.set('Невалидный JSON. Проверьте формат массива.');
+      return;
+    }
+    if (!Array.isArray(parsed)) {
+      this.jsonImportError.set('Ожидается JSON-массив вида [{ name, qty, unit, unitPrice }].');
+      return;
+    }
+
+    type JsonLine = { name?: unknown; qty?: unknown; unit?: unknown; unitPrice?: unknown };
+    const importedLines = parsed.map((entry): KpLineItem => {
+      const item = (entry ?? {}) as JsonLine;
+      const name = String(item.name ?? '').trim();
+      const qtyNum = parseKpNumber(String(item.qty ?? '1'));
+      const qty = qtyNum > 0 ? qtyNum : 1;
+      const unitPriceNum = parseKpNumber(String(item.unitPrice ?? '0'));
+      const unitPrice = Number.isFinite(unitPriceNum) ? unitPriceNum : 0;
+      const unit = String(item.unit ?? '').trim() || 'шт';
+      return {
+        name,
+        description: '',
+        qty: formatKpQtyString(qty),
+        unit,
+        price: String(unitPrice),
+        imageUrl: '',
+        catalogProductId: '',
+      };
+    });
+
+    const linesArr = this.lines();
+    if (importedLines.length === 0) {
+      this.closeJsonImportModal();
+      return;
+    }
+
+    const firstImported = importedLines[0];
+    if (linesArr.length === 1 && this.isPlaceholderEmptyLine(linesArr.at(0)?.getRawValue() as KpLineItem)) {
+      linesArr.at(0)?.patchValue({
+        name: firstImported.name,
+        description: firstImported.description,
+        qty: firstImported.qty,
+        unit: firstImported.unit,
+        price: firstImported.price,
+        imageUrl: firstImported.imageUrl,
+        catalogProductId: firstImported.catalogProductId,
+      });
+      for (const line of importedLines.slice(1)) {
+        linesArr.push(this.lineGroup(line.name, line.qty, line.unit, line.price, '', '', ''));
+      }
+    } else {
+      for (const line of importedLines) {
+        linesArr.push(this.lineGroup(line.name, line.qty, line.unit, line.price, '', '', ''));
+      }
+    }
+
+    this.closeJsonImportModal();
   }
 
   canEditOffer(): boolean {
@@ -584,7 +688,7 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private async askOrderNumberForPaid(): Promise<string | null> {
-    const defaultValue = this.offerId() ? '' : '';
+    const defaultValue = this.form.controls.number.value?.trim() ?? '';
     return await new Promise<string | null>((resolve) => {
       this.paidOrderNumberDraft.set(defaultValue);
       this.paidOrderNumberResolve = resolve;
@@ -715,6 +819,7 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
     const source: CommercialOfferDto = {
       id: this.offerId() ?? '',
       number: this.form.controls.number.value || null,
+      validUntil: this.form.controls.validUntil.value || null,
       currentStatusKey: this.offerStatusKey(),
       organizationId: this.extractRecipientOrgId(),
       organizationContactId: this.form.controls.organizationContactId.value || null,
@@ -768,6 +873,7 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
       {
         number: offer.number ?? '',
         createdAt: offer.createdAt ?? new Date().toISOString(),
+        validUntil: offer.validUntil ?? '',
         prepaymentPercent: String(offer.prepaymentPercent ?? 80),
         productionLeadDays: String(offer.productionLeadDays ?? 30),
         recipient: offer.recipient ?? '',

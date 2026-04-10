@@ -2,6 +2,7 @@ import fs from "node:fs";
 import express from "express";
 import cors from "cors";
 import { config } from "./config.js";
+import { resolveCorsOptions } from "./lib/cors-settings.js";
 import helmet from "helmet";
 import { clientsRouter } from "./routes/clients.routes.js";
 import { organizationsRouter } from "./routes/organizations.routes.js";
@@ -20,6 +21,8 @@ import { productionWorkTypesRouter } from "./routes/production-work-types.routes
 import { productionDetailsRouter } from "./routes/production-details.routes.js";
 import { productsRouter } from "./routes/products.routes.js";
 import { ordersRouter } from "./routes/orders.routes.js";
+import { workersRouter } from "./routes/workers.routes.js";
+import { productionRouter } from "./routes/production.routes.js";
 import { tradeGoodsRouter } from "./routes/trade-goods.routes.js";
 import { tradeGoodCategoriesRouter } from "./routes/trade-good-categories.routes.js";
 import { tradeGoodSubcategoriesRouter } from "./routes/trade-good-subcategories.routes.js";
@@ -53,7 +56,7 @@ export function createApp() {
   // One trusted proxy hop (nginx). Avoids permissive mode that breaks express-rate-limit validation.
   app.set("trust proxy", 1);
 
-  app.use(cors({ origin: true, credentials: true }));
+  app.use(cors(resolveCorsOptions()));
   app.use(helmet());
   app.use(express.json({ limit: config.jsonBodyLimit }));
   app.use(requestContextMiddleware);
@@ -106,6 +109,8 @@ export function createApp() {
   authed.use("/production-details", productionDetailsRouter);
   authed.use("/products", productsRouter);
   authed.use("/orders", ordersRouter);
+  authed.use("/workers", workersRouter);
+  authed.use("/production", productionRouter);
   authed.use("/trade-goods", tradeGoodsRouter);
   authed.use("/trade-good-categories", tradeGoodCategoriesRouter);
   authed.use("/trade-good-subcategories", tradeGoodSubcategoriesRouter);

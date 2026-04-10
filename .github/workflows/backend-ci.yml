@@ -36,6 +36,12 @@ jobs:
       - name: Build (tsc + prisma generate)
         run: npm run build
 
+      - name: Critical tests (Vitest)
+        run: npm run test:critical
+        env:
+          NODE_ENV: test
+          JWT_SECRET: ci-jwt-secret-min-16chars-xx
+
       - name: Backend preflight
         run: npm run doctor
 

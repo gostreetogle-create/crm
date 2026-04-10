@@ -185,10 +185,16 @@ enum TradeGoodKind {
   COMPLEX
 }
 
+enum ProductionStatus {
+  PENDING
+  IN_PROGRESS
+  DONE
+}
+
 /// Шапка коммерческого предложения (строки позиций — отдельный шаг).
 model CommercialOffer {
   id             String                @id @default(uuid())
-  number         String?
+  number         String?               @unique
   title          String?
   status         CommercialOfferStatus @default(DRAFT)
   /// Канонический BL-статус для lifecycle КП: proposal_draft|proposal_waiting|proposal_paid
@@ -237,13 +243,43 @@ model Order {
    */
   linesSnapshot     Json
   notes             String?
+  productionStatus  ProductionStatus @default(PENDING)
+  productionStart   DateTime?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
   commercialOffer CommercialOffer @relation(fields: [commercialOfferId], references: [id], onDelete: Restrict)
+  assignments     WorkerAssignment[]
 
   @@index([orderNumber])
   @@index([createdAt])
+}
+
+model Worker {
+  id          String             @id @default(cuid())
+  name        String
+  role        String?
+  isActive    Boolean            @default(true)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  assignments WorkerAssignment[]
+}
+
+model WorkerAssignment {
+  id        String           @id @default(cuid())
+  orderId   String
+  order     Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  workerId  String
+  worker    Worker           @relation(fields: [workerId], references: [id], onDelete: Restrict)
+  lineNo    Int
+  startDate DateTime
+  endDate   DateTime
+  status    ProductionStatus @default(PENDING)
+  notes     String?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@unique([orderId, workerId, lineNo])
 }
 
 /// Строка КП (snapshot-данные, не пересчитываются из каталога задним числом).

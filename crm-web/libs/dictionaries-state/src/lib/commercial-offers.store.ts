@@ -3,7 +3,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { finalize } from 'rxjs/operators';
 import { API_CONFIG } from '@srm/platform-core';
 import { labelByStatusKey, normalizeCommercialOfferStatusKey, type ProposalStatusKey } from './commercial-offer-status.rules';
-import { mapOfferDtoToPayload, type CommercialOfferDto } from './commercial-offers.mapper';
+import type { CommercialOfferDto } from './commercial-offers.mapper';
 import { addProcessingId, removeProcessingId } from './processing-by-id.util';
 import {
   mapCommercialOfferDeleteError,
@@ -20,6 +20,7 @@ type CommercialOfferListItem = {
   clientLabel: string | null;
   recipient: string | null;
   totalAmount: number;
+  validUntil: string | null;
   updatedAt: string;
 };
 
@@ -42,12 +43,14 @@ export class CommercialOffersStore {
         const statusLabel = labelByStatusKey(normalizedStatus);
         const recipientLabel =
           item.organizationLabel?.trim() || item.clientLabel?.trim() || item.recipient?.trim() || '—';
+        const isExpired = this.isExpired(item.validUntil);
         return {
           id: item.id,
           hubLine: `${header} · ${statusLabel}`,
           numberOrTitle: header,
           statusLabel,
           statusKey: normalizedStatus,
+          isExpired,
           recipientLabel,
           totalAmountLabel: `${formatRuMoney2(item.totalAmount)} ₽`,
           updatedAtLabel: formatRuDateTimeOrDash(item.updatedAt),
@@ -108,25 +111,27 @@ export class CommercialOffersStore {
   duplicate(id: string, onCreated?: (newId: string) => void): void {
     this.loading.set(true);
     this.error.set(null);
-    this.http.get<CommercialOfferDto>(this.endpoint(`/${id}`)).subscribe({
-      next: (source) => {
-        const payload = mapOfferDtoToPayload(source, { copyTitle: true, skipCatalogSync: false });
-        this.http.post<CommercialOfferDto>(this.endpoint(), payload).subscribe({
-          next: (created) => {
-            onCreated?.(created.id);
-            this.loadItems();
-          },
-          error: (err) => {
-            this.loading.set(false);
-            this.error.set(err instanceof Error ? err.message : 'Не удалось скопировать коммерческое предложение');
-          },
-        });
+    this.http.post<CommercialOfferDto>(this.endpoint(`/duplicate/${id}`), {}).subscribe({
+      next: (created) => {
+        onCreated?.(created.id);
+        this.loadItems();
       },
       error: (err) => {
         this.loading.set(false);
-        this.error.set(err instanceof Error ? err.message : 'Не удалось загрузить исходное коммерческое предложение');
+        this.error.set(err instanceof Error ? err.message : 'Не удалось скопировать коммерческое предложение');
       },
     });
+  }
+
+  private isExpired(validUntilRaw: string | null | undefined): boolean {
+    const raw = String(validUntilRaw ?? '').trim();
+    if (!raw) return false;
+    const value = new Date(raw);
+    if (Number.isNaN(value.getTime())) return false;
+    const today = new Date();
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+    const valueStart = new Date(value.getFullYear(), value.getMonth(), value.getDate()).getTime();
+    return valueStart < todayStart;
   }
 
   private endpoint(path = ''): string {

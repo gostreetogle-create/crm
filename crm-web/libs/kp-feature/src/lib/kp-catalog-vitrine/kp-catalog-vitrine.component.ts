@@ -16,6 +16,7 @@ import {
   formatKpCatalogPriceRuble,
   kpCatalogSubcategoryText,
   normalizeKpImageSrcForDisplay,
+  toTradeGoodThumb320Url,
   sliceKpCatalogVisibleProducts,
   tryParseKpCatalogPageSize,
   type KpCatalogProductSort,
@@ -191,6 +192,6 @@ export class KpCatalogVitrineComponent {
 
   /** Только реальный URL с API; без внешних placeholder-картинок. */
   imageUrl(p: KpCatalogProduct): string {
-    return normalizeKpImageSrcForDisplay(String(p.imageUrl ?? '').trim());
+    return toTradeGoodThumb320Url(String(p.imageUrl ?? '').trim());
   }
 }

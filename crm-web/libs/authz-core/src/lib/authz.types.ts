@@ -6,6 +6,7 @@ export type PermissionKey =
   | 'page.dictionaries'
   | 'page.demo'
   | 'page.commercialProposal'
+  | 'page.production'
   | 'page.preferences'
   | 'page.admin.settings'
   | 'dict.hub.materials'

@@ -30,7 +30,7 @@
               [disabled]="isSavingOffer() || !canMoveTo('proposal_waiting')"
               (clicked)="changeStatus('proposal_waiting')"
             >
-              На согласование
+              {{ proposalWaitingActionLabel }}
             </app-ui-button>
             <app-ui-button
               type="button"
@@ -72,6 +72,7 @@
                 [organizationContactIdCtrl]="form.controls.organizationContactId"
                 [offerNumberCtrl]="form.controls.number"
                 [createdAtCtrl]="form.controls.createdAt"
+                [validUntilCtrl]="form.controls.validUntil"
                 [prepaymentPercentCtrl]="form.controls.prepaymentPercent"
                 [productionLeadDaysCtrl]="form.controls.productionLeadDays"
                 [vatPercentCtrl]="form.controls.vatPercent"
@@ -82,6 +83,7 @@
                 [photoThumbMaxPxCtrl]="form.controls.photoThumbMaxPx"
                 [catalogProducts]="kpCatalogProducts()"
                 (addLineClick)="addLine()"
+                (openJsonImportClick)="openJsonImportModal()"
               />
             </div>
           </div>
@@ -101,6 +103,7 @@
                   <tr>
                     <th>№</th>
                     <th>Дата создания</th>
+                    <th>Статус</th>
                     <th>Получатель</th>
                     <th class="kp-builder__drafts-col-action">Действия</th>
                   </tr>
@@ -110,6 +113,9 @@
                     <tr>
                       <td>{{ draft.number || '—' }}</td>
                       <td>{{ formatRuDateOrDash(draft.createdAt) }}</td>
+                      <td>
+                        {{ labelByStatusKey(normalizeStatusKey(draft.currentStatusKey ?? draft.statusKey)) }}
+                      </td>
                       <td>{{ draft.recipient || '—' }}</td>
                       <td class="kp-builder__drafts-col-action">
                         <div class="kp-builder__drafts-actions">
@@ -198,7 +204,7 @@
 
   @if (paidOrderNumberModalOpen()) {
     <ui-modal
-      title="Оплата КП и номер заказа"
+      title="Создать заказ"
       [content]="kpPaidOrderNumberContentTpl"
       [actions]="kpPaidOrderNumberActionsTpl"
       size="sm"
@@ -207,14 +213,12 @@
   }
 
   <ng-template #kpPaidOrderNumberContentTpl>
-    <p class="kp-builder__catalogSyncMsg">
-      Введите номер заказа. Если оставить пустым, будет использован номер КП.
-    </p>
+    <p class="kp-builder__catalogSyncMsg">Номер заказа</p>
     <input
       type="text"
       class="kp-builder__orderNumberInput"
       [value]="paidOrderNumberDraft()"
-      placeholder="Например: ЗК-2026-041"
+      placeholder="Например: З-000001"
       (input)="paidOrderNumberDraft.set($any($event.target).value ?? '')"
       (keydown.enter)="confirmPaidOrderNumber()"
     />
@@ -222,6 +226,39 @@
 
   <ng-template #kpPaidOrderNumberActionsTpl>
     <app-ui-button type="button" variant="soft" (clicked)="cancelPaidOrderNumber()">Отмена</app-ui-button>
-    <app-ui-button type="button" variant="primary" (clicked)="confirmPaidOrderNumber()">Оплачено</app-ui-button>
+    <app-ui-button type="button" variant="primary" (clicked)="confirmPaidOrderNumber()">Подтвердить</app-ui-button>
+  </ng-template>
+
+  @if (jsonImportModalOpen()) {
+    <ui-modal
+      title="Вставить строки из JSON"
+      [content]="kpJsonImportContentTpl"
+      [actions]="kpJsonImportActionsTpl"
+      size="sm"
+      (close)="closeJsonImportModal()"
+    />
+  }
+
+  <ng-template #kpJsonImportContentTpl>
+    <p class="kp-builder__catalogSyncMsg">Вставьте JSON-массив. Пример:</p>
+    <pre
+      class="kp-builder__jsonExample"
+      title="Нажмите чтобы скопировать"
+      (click)="fillJsonImportExample()"
+    >{{ jsonImportExample }}</pre>
+    <textarea
+      class="kp-builder__orderNumberInput"
+      rows="10"
+      [value]="jsonImportDraft()"
+      (input)="jsonImportDraft.set($any($event.target).value ?? '')"
+    ></textarea>
+    @if (jsonImportError()) {
+      <p class="kp-builder__status-error">{{ jsonImportError() }}</p>
+    }
+  </ng-template>
+
+  <ng-template #kpJsonImportActionsTpl>
+    <app-ui-button type="button" variant="soft" (clicked)="closeJsonImportModal()">Отмена</app-ui-button>
+    <app-ui-button type="button" variant="primary" (clicked)="addLinesFromJson()">Добавить строки</app-ui-button>
   </ng-template>
 </app-page-shell>

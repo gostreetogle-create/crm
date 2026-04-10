@@ -20,4 +20,12 @@ describe("commercial-offer-status rules", () => {
   it("allows no-op transition", () => {
     expect(canTransitionStatus("proposal_waiting", "proposal_waiting")).toBe(true);
   });
+
+  it("allows paid -> waiting rollback", () => {
+    expect(canTransitionStatus("proposal_paid", "proposal_waiting")).toBe(true);
+  });
+
+  it("still rejects paid -> draft", () => {
+    expect(canTransitionStatus("proposal_paid", "proposal_draft")).toBe(false);
+  });
 });

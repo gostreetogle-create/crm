@@ -45,6 +45,7 @@ function appendVersion(url: string, absPath: string): string {
 }
 
 type NumberedPhoto = { n: number; name: string };
+type TradeGoodPhotoVariant = "thumb_320" | "medium_640" | "original";
 
 function collectNumberedPhotos(rootDir: string, stem: string): NumberedPhoto[] {
   if (!fs.existsSync(rootDir) || !fs.statSync(rootDir).isDirectory()) {
@@ -128,6 +129,52 @@ export function listTradeGoodPhotoPublicUrls(
   return [appendVersion(tradeGoodPhotoPublicPath(legacy), abs)];
 }
 
+function variantNameForOriginalName(originalName: string, variant: TradeGoodPhotoVariant): string {
+  const ext = path.extname(originalName);
+  const base = ext ? originalName.slice(0, -ext.length) : originalName;
+  return `${base}_${variant}.webp`;
+}
+
+function resolveVariantPublicUrl(
+  rootDir: string,
+  originalName: string,
+  variant: TradeGoodPhotoVariant,
+): string | null {
+  const variantName = variantNameForOriginalName(originalName, variant);
+  const variantAbs = path.join(rootDir, variantName);
+  if (!fs.existsSync(variantAbs) || !fs.statSync(variantAbs).isFile()) return null;
+  return appendVersion(tradeGoodPhotoPublicPath(variantName), variantAbs);
+}
+
+export function listTradeGoodPhotoVariantPublicUrls(
+  rootDir: string,
+  articleCode: string | null | undefined,
+  variant: TradeGoodPhotoVariant,
+): string[] {
+  const stem = stemFromTradeGoodArticleCode(articleCode);
+  if (!stem) return [];
+  const numbered = collectNumberedPhotos(rootDir, stem);
+  if (numbered.length === 0) return listTradeGoodPhotoPublicUrls(rootDir, articleCode);
+  return numbered.map((x) => {
+    const fallbackAbs = path.join(rootDir, x.name);
+    const fallbackUrl = appendVersion(tradeGoodPhotoPublicPath(x.name), fallbackAbs);
+    return resolveVariantPublicUrl(rootDir, x.name, variant) ?? fallbackUrl;
+  });
+}
+
+export function resolveTradeGoodPhotoDisplayUrlVariant(
+  rootDir: string,
+  articleCode: string | null | undefined,
+  photoPrimaryIndex: number,
+  variant: TradeGoodPhotoVariant,
+): string | null {
+  const abs = findTradeGoodPrimaryPhotoAbsPath(rootDir, articleCode, photoPrimaryIndex);
+  if (!abs) return null;
+  const originalName = path.basename(abs);
+  const fallbackUrl = appendVersion(tradeGoodPhotoPublicPath(originalName), abs);
+  return resolveVariantPublicUrl(rootDir, originalName, variant) ?? fallbackUrl;
+}
+
 export function resolveTradeGoodPhotoDisplayUrl(
   rootDir: string,
   articleCode: string | null | undefined,
@@ -146,7 +193,7 @@ export function clearTradeGoodPhotoFiles(dir: string, articleCode: string | null
   if (!stem || !fs.existsSync(dir) || !fs.statSync(dir).isDirectory()) return;
 
   const names = fs.readdirSync(dir);
-  const reNumbered = new RegExp(`^${escapeRegex(stem)}_[0-9]+\\.[^.]+$`, "i");
+  const reNumbered = new RegExp(`^${escapeRegex(stem)}_[0-9]+(?:_[a-z0-9_]+)?\\.[^.]+$`, "i");
   const reLegacy = new RegExp(`^${escapeRegex(stem)}\\.[^.]+$`, "i");
   for (const name of names) {
     if (reNumbered.test(name) || reLegacy.test(name)) {
@@ -167,7 +214,7 @@ export async function clearTradeGoodPhotoFilesAsync(
   if (!stem || !fs.existsSync(dir) || !fs.statSync(dir).isDirectory()) return;
 
   const names = await fs.promises.readdir(dir);
-  const reNumbered = new RegExp(`^${escapeRegex(stem)}_[0-9]+\\.[^.]+$`, "i");
+  const reNumbered = new RegExp(`^${escapeRegex(stem)}_[0-9]+(?:_[a-z0-9_]+)?\\.[^.]+$`, "i");
   const reLegacy = new RegExp(`^${escapeRegex(stem)}\\.[^.]+$`, "i");
   await Promise.all(
     names.map(async (name) => {

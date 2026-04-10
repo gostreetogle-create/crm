@@ -25,13 +25,13 @@
   border: 1px solid color-mix(in srgb, var(--border-color) 55%, white);
   border-radius: var(--radius-card);
   background: var(--ui-form-control-bg, color-mix(in srgb, var(--accent) 6.5%, #ffffff));
-  color: var(--text-primary);
-  padding: var(--ui-space-1) var(--ui-input-padding-x);
+  color: var(--ui-form-control-text, #1a1a2e);
+  padding: 0 var(--ui-input-padding-x);
   font-family: var(--font-family-base);
   font-size: var(--font-size-control);
   font-weight: 400;
   line-height: 1.35;
-  min-height: var(--ui-control-compact-height);
+  min-height: var(--ui-control-min-height);
   transition:
     border-color 120ms ease,
     background-color 120ms ease,
@@ -42,7 +42,7 @@
   border: 1px solid color-mix(in srgb, var(--border-color) 55%, white);
   border-radius: var(--radius-card);
   background: var(--ui-form-control-bg, color-mix(in srgb, var(--accent) 6.5%, #ffffff));
-  color: var(--text-primary);
+  color: var(--ui-form-control-text, #1a1a2e);
   padding: var(--ui-space-1) var(--ui-input-padding-x);
   font-family: var(--font-family-base);
   font-size: var(--font-size-control);
@@ -52,6 +52,19 @@
     border-color 120ms ease,
     background-color 120ms ease,
     box-shadow 120ms ease;
+}
+
+.ui-form-field input::placeholder,
+.ui-form-field textarea::placeholder {
+  color: var(--ui-form-control-placeholder, rgba(0, 0, 0, 0.45));
+  opacity: 1;
+}
+
+.ui-form-field input:-ms-input-placeholder,
+.ui-form-field textarea:-ms-input-placeholder,
+.ui-form-field input::-ms-input-placeholder,
+.ui-form-field textarea::-ms-input-placeholder {
+  color: var(--ui-form-control-placeholder, rgba(0, 0, 0, 0.45));
 }
 
 .ui-form-field input:focus,

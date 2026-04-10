@@ -1,8 +1,8 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 import { API_CONFIG } from '@srm/platform-core';
-import type { TradeGoodItem, TradeGoodItemInput, TradeGoodListItem } from './trade-good-item';
+import type { TradeGoodItem, TradeGoodItemInput, TradeGoodListItem, TradeGoodsPage } from './trade-good-item';
 import { TradeGoodsRepository } from './trade-goods.repository';
 
 @Injectable()
@@ -16,7 +16,11 @@ export class TradeGoodsHttpRepository implements TradeGoodsRepository {
   }
 
   getItems(): Observable<TradeGoodListItem[]> {
-    return this.http.get<TradeGoodListItem[]>(this.endpoint());
+    return this.getItemsPage(1, 1000).pipe(map((page) => page.data));
+  }
+
+  getItemsPage(page: number, pageSize: number): Observable<TradeGoodsPage> {
+    return this.http.get<TradeGoodsPage>(this.endpoint(`?page=${page}&pageSize=${pageSize}`));
   }
 
   getById(id: string): Observable<TradeGoodItem> {

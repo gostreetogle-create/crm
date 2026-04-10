@@ -9,6 +9,7 @@ import type {
   TradeGoodItem,
   TradeGoodItemInput,
   TradeGoodListItem,
+  TradeGoodsPage,
   TradeGoodsRepository,
 } from '@srm/trade-goods-data-access';
 
@@ -73,4 +74,12 @@ export async function hubCatalogLoadTradeGoodListItems(
   repo: TradeGoodsRepository,
 ): Promise<TradeGoodListItem[]> {
   return firstValueFrom(repo.getItems());
+}
+
+export async function hubCatalogLoadTradeGoodListPage(
+  repo: TradeGoodsRepository,
+  page: number,
+  pageSize: number,
+): Promise<TradeGoodsPage> {
+  return firstValueFrom(repo.getItemsPage(page, pageSize));
 }

@@ -8,6 +8,7 @@ export function applyThemeTokensToDocument(
   theme: ThemeTokens,
   target: HTMLElement = document.documentElement,
 ): void {
+  const isDarkTheme = theme.name === 'dark';
   const root = target.style;
   root.setProperty('--font-family-base', theme.fontFamilyBase);
   root.setProperty('--font-size-base', theme.fontSizeBase);
@@ -20,13 +21,32 @@ export function applyThemeTokensToDocument(
   root.setProperty('--font-size-control', theme.fontSizeBase);
   root.setProperty('--text-form-label', theme.textMuted);
   root.setProperty('--bg-base', theme.bgBase);
+  root.setProperty('--background-primary', theme.bgBase);
+  root.setProperty('--background-secondary', theme.surfaceSoft);
   root.setProperty('--page-shell-bg-bottom', theme.pageShellBgBottom);
   root.setProperty('--bg-gradient-a', theme.bgGradientA);
   root.setProperty('--bg-gradient-b', theme.bgGradientB);
   root.setProperty('--surface', theme.surface);
   root.setProperty('--surface-soft', theme.surfaceSoft);
   root.setProperty('--border-color', theme.borderColor);
+  root.setProperty('--text-secondary', theme.textMuted);
   root.setProperty('--shadow-color', theme.shadowColor);
+  root.setProperty('--app-header-bg', isDarkTheme ? '#0d0d1a' : theme.surface);
+  root.setProperty(
+    '--app-header-border-bottom',
+    isDarkTheme ? 'rgba(255,255,255,0.1)' : 'color-mix(in srgb, var(--border-color) 72%, var(--accent) 14%)',
+  );
+  root.setProperty('--app-header-shadow', isDarkTheme ? 'none' : '0 1px 4px rgba(0,0,0,0.08)');
+  root.setProperty(
+    '--table-row-even-bg',
+    isDarkTheme ? 'color-mix(in srgb, var(--surface-soft) 62%, var(--surface) 38%)' : '#f8f9fa',
+  );
+  root.setProperty('--filters-bar-bg', theme.surface);
+  root.setProperty('--filters-bar-radius', '8px');
+  root.setProperty(
+    '--filters-bar-shadow',
+    isDarkTheme ? '0 1px 3px rgba(0,0,0,0.2)' : '0 1px 3px rgba(0,0,0,0.06)',
+  );
   root.setProperty('--accent', theme.accent);
   root.setProperty('--success', theme.success);
   root.setProperty('--icon-affirm', theme.iconAffirm);

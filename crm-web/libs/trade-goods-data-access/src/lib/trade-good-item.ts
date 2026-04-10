@@ -79,6 +79,13 @@ export type TradeGoodListItem = {
   updatedAt: string;
 };
 
+export type TradeGoodsPage = {
+  data: TradeGoodListItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+};
+
 export type TradeGoodLineInput = {
   id?: string | null;
   sortOrder?: number;

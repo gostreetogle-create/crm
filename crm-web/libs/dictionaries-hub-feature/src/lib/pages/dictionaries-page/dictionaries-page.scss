@@ -213,6 +213,26 @@
   padding: 4px 8px;
 }
 
+.dictionaryCommercialOfferTitleCell {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dictionaryCommercialOfferExpiredBadge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid #f87171;
+  background: #fee2e2;
+  color: #b91c1c;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 3px 8px;
+  white-space: nowrap;
+}
+
 /* Вкладки в объединённой модалке «Новый материал» / «Новая характеристика материала» */
 .dictionaryModalTabs {
   display: flex;
@@ -885,6 +905,12 @@
   font-size: 0.8125rem;
 }
 
+.dictionaryTileLoadMore {
+  margin-top: var(--ui-space-2);
+  display: flex;
+  justify-content: center;
+}
+
 /* Модалка товара: «Удалить» слева, «Отмена» + сохранение справа (дети ui-modal-form-actions — display: contents) */
 .tradeGoodsModalActions {
   display: flex;
@@ -1041,5 +1067,42 @@
 }
 
 #organizations-form .dictionaryFormSection legend {
+  color: var(--text-muted);
+}
+
+/* Рабочие: быстрый ввод над таблицей (хаб справочников). */
+.dictionaryHubWorkersQuickAdd {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-space-2);
+  align-items: flex-end;
+  margin-bottom: var(--ui-space-3);
+}
+
+.dictionaryHubWorkersQuickAdd__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: min(100%, 14rem);
+}
+
+.dictionaryHubWorkersQuickAdd__label {
+  font-size: var(--font-size-label);
+  color: var(--text-muted);
+}
+
+.dictionaryHubWorkersQuickAdd__input {
+  min-height: var(--ui-control-min-height);
+  padding: 6px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm, 6px);
+  background: var(--surface);
+  color: var(--text-primary);
+  font: inherit;
+}
+
+.dictionaryHubWorkersEmpty {
+  margin: 0 0 var(--ui-space-2);
+  font-size: var(--font-size-small);
   color: var(--text-muted);
 }

@@ -4,7 +4,8 @@
   color: var(--ui-button-primary-text);
   border-radius: var(--radius-card);
   padding: var(--ui-button-padding-y) var(--ui-button-padding-x);
-  min-height: var(--ui-control-compact-height);
+  height: var(--ui-control-min-height);
+  min-height: var(--ui-control-min-height);
   font-size: var(--font-size-control);
   line-height: 1.2;
   transition:
@@ -55,15 +56,15 @@
 }
 
 .uiButtonSm {
-  padding: calc(var(--ui-button-padding-y) * 0.45) calc(var(--ui-button-padding-x) * 0.65);
-  min-height: calc(var(--ui-control-compact-height) * 0.58);
+  padding: 0 calc(var(--ui-button-padding-x) * 0.75);
+  min-height: 28px;
   font-size: calc(var(--font-size-control) * 0.92);
 }
 
 .uiButtonSquare {
   padding: 0;
-  width: var(--ui-control-compact-height);
-  height: var(--ui-control-compact-height);
+  width: var(--ui-row-action-size, 28px);
+  height: var(--ui-row-action-size, 28px);
   display: inline-flex;
   align-items: center;
   justify-content: center;

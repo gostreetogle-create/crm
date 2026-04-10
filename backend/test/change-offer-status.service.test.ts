@@ -70,7 +70,6 @@ describe("changeCommercialOfferStatus", () => {
 
   it.each([
     ["proposal_draft", "proposal_paid"],
-    ["proposal_paid", "proposal_waiting"],
     ["proposal_paid", "proposal_draft"],
   ] as const)(
     "throws illegal_status_transition for %s -> %s",
@@ -90,6 +89,7 @@ describe("changeCommercialOfferStatus", () => {
     ["proposal_draft", "proposal_waiting"],
     ["proposal_waiting", "proposal_draft"],
     ["proposal_approved", "proposal_draft"],
+    ["proposal_paid", "proposal_waiting"],
   ] as const)(
     "updates status for valid transition %s -> %s without order creation",
     async (from, to) => {

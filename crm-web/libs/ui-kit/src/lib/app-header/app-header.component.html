@@ -24,6 +24,9 @@
     @if (canPage('page.commercialProposal')) {
       <a routerLink="/коммерческое" routerLinkActive="isActive">КП</a>
     }
+    @if (canPage('page.production')) {
+      <a routerLink="/производство" routerLinkActive="isActive">Производство</a>
+    }
     @if (canPage('page.dictionaries')) {
       <a routerLink="/справочники" routerLinkActive="isActive">Справочники</a>
     }

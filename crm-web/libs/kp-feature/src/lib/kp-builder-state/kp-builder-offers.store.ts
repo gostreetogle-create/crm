@@ -64,7 +64,7 @@ export class KpBuilderOffersStore {
     try {
       return await firstValueFrom(
         this.http.post<CommercialOfferDto>(this.endpoint(`/${id}/status`), {
-          statusKey,
+          nextStatus: statusKey,
           ...(statusKey === 'proposal_paid' ? { orderNumber } : {}),
         }),
       );

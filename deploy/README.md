@@ -217,7 +217,7 @@ docker compose -f docker-compose.yml --env-file deploy/.env up -d --force-recrea
 
 - SSH: **`Could not chdir to home directory …/homes/…`** — включите **личную папку** пользователя в DSM или игнорируйте; на деплой обычно не влияет. При сбоях **`mkdir /var/services/homes`** при сборке образов задайте, например: **`export HOME=/volume1/docker/crm`** и повторите.
 - В конце **`deploy.sh`** иногда бывает ложное **«backend не отвечает»**, хотя контейнер уже поднялся. Проверка: **`curl -fsS http://127.0.0.1:3000/health`** (порт из **`BACKEND_PORT`** в **`deploy/.env`**) и **`docker compose -f …/docker-compose.yml --env-file deploy/.env ps`**.
-- **`CORS_ORIGIN`** в **`deploy/.env`** должен совпадать с **реальным URL** в браузере (не только `localhost`, если заходите по IP, домену или туннелю).
+- **`CORS_ORIGIN`** в **`deploy/.env`** пробрасывается в backend как whitelist из **одного** Origin (должен совпадать с URL в браузере, включая схему и порт). Несколько Origin: **`CORS_ALLOWED_ORIGINS`** в том же **`deploy/.env`** (через запятую; имеет приоритет над **`CORS_ORIGIN`**, см. **`deploy/.env.example`**).
 - **`./deploy.sh`** не принимает лишних аргументов (не пишите **`./deploy.sh cd /opt/crm`** — сначала **`cd`**, потом скрипт). Справка: **`bash ./deploy.sh --help`**.
 
 Подробности и тонкости сокета Docker: **`deploy/README.detailed.md`** (раздел Synology).

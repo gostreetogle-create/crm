@@ -352,7 +352,11 @@
 .crudTable th,
 .crudTable td {
   border-bottom: 1px solid var(--border-color);
-  padding: var(--ui-button-padding-y) var(--ui-button-padding-x);
+  padding: var(--ui-table-cell-padding-y) var(--ui-table-cell-padding-x);
+}
+
+.crudTable thead th {
+  background: color-mix(in srgb, var(--surface) 96%, var(--text-primary) 4%);
 }
 
 /* Первая колонка «прилипает» слева при горизонтальном скролле в .tableView */
@@ -422,11 +426,12 @@
 }
 
 .crudTable tbody tr {
+  height: 40px;
   transition: background-color 100ms ease;
 }
 
 .crudTable tbody tr:nth-child(even) {
-  background: color-mix(in srgb, var(--surface-soft) 62%, var(--surface) 38%);
+  background: var(--table-row-even-bg, color-mix(in srgb, var(--surface-soft) 62%, var(--surface) 38%));
 }
 
 .crudTable tbody tr:hover {
@@ -502,10 +507,12 @@
   padding: 0;
   margin-right: var(--ui-space-1);
   transition:
+    opacity 120ms ease,
     background-color 120ms ease,
     border-color 120ms ease,
     box-shadow 120ms ease;
   cursor: pointer;
+  opacity: 0.4;
 }
 
 .rowActionBtn:hover {
@@ -516,6 +523,12 @@
 .rowActionBtn:focus-visible {
   outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent);
   outline-offset: 1px;
+  opacity: 1;
+}
+
+.crudTable tbody tr:hover .rowActionBtn,
+.crudTable tbody tr:focus-within .rowActionBtn {
+  opacity: 1;
 }
 
 .actionsCol .rowActionBtn:last-child {
@@ -629,6 +642,10 @@
 
 .crudTable th {
   font-size: var(--font-size-small);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary, var(--text-muted));
 }
 
 .crudDataRowExpandable {

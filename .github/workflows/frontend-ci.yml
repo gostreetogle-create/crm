@@ -56,7 +56,6 @@ jobs:
 
   smoke-e2e:
     runs-on: ubuntu-latest
-    continue-on-error: true
     defaults:
       run:
         working-directory: crm-web

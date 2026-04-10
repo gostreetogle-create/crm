@@ -44,6 +44,7 @@ export const DICTIONARY_HUB_PERMISSION_KEYS: readonly PermissionKey[] = [
   'dict.hub.roles',
   'dict.hub.users',
   'page.commercialProposal',
+  'page.production',
   'dict.hub.kp_photos',
   'dict.hub.production_details',
   'dict.hub.products',
