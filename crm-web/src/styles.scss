@@ -34,6 +34,7 @@
 
   /*
    * Высота под фиксированную шапку: --header-height выставляет AppHeader (ResizeObserver на .appHeaderShell).
+   * Не задавайте --header-height: 0 вручную — при 0px fallback не сработает (см. sync() в app-header).
    * Fallback — до первого кадра и без JS: safe-area + строка шапки (логотип 40px ≥ высоты контролов) + запас.
    */
   --app-main-padding-top-fallback: calc(

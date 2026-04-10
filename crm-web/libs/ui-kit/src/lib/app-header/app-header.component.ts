@@ -48,9 +48,19 @@ export class AppHeaderComponent implements AfterViewInit, OnDestroy {
     const root = document.documentElement;
     const sync = () => {
       const h = el.getBoundingClientRect().height;
-      root.style.setProperty('--header-height', `${Math.ceil(h)}px`);
+      const px = Math.ceil(h);
+      /*
+       * var(--header-height, fallback) не подставляет fallback, если свойство задано как 0px —
+       * это валидное значение. При нулевой высоте до первого layout убираем свойство.
+       */
+      if (px < 1) {
+        root.style.removeProperty('--header-height');
+      } else {
+        root.style.setProperty('--header-height', `${px}px`);
+      }
     };
     sync();
+    requestAnimationFrame(() => sync());
     this.resizeObserver = new ResizeObserver(() => sync());
     this.resizeObserver.observe(el);
   }
