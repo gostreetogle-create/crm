@@ -21,6 +21,13 @@ type OrderRow = {
   end: Date;
   leftPx: number;
   widthPx: number;
+  plannedStart: Date | null;
+  plannedEnd: Date | null;
+  plannedLeftPx: number;
+  plannedWidthPx: number;
+  hasPlanned: boolean;
+  hasActual: boolean;
+  isOverdue: boolean;
   lines: LineRow[];
 };
 
@@ -44,6 +51,11 @@ export class ProductionGanttComponent {
   readonly lineSelected = output<{ orderId: string; lineNo: number }>();
 
   private readonly expanded = signal<Record<string, boolean>>({});
+  private readonly dragState = signal<{
+    assignmentId: string;
+    dx: number;
+    mode: 'move' | 'start' | 'end';
+  } | null>(null);
   private readonly today = this.startOfDay(new Date());
 
   readonly range = computed(() => this.buildRange(this.orders()));
@@ -93,6 +105,17 @@ export class ProductionGanttComponent {
     this.orderSelected.emit(order);
   }
 
+  onOrderBarClick(event: MouseEvent, row: OrderRow): void {
+    event.stopPropagation();
+    this.orderSelected.emit(row.order);
+  }
+
+  orderProgress(order: ProductionOrder): string {
+    const p = this.store.progress(order);
+    if (!p.total) return '';
+    return `${p.done}/${p.total}`;
+  }
+
   onLineClick(orderId: string, lineNo: number): void {
     this.lineSelected.emit({ orderId, lineNo });
   }
@@ -113,11 +136,15 @@ export class ProductionGanttComponent {
   }
 
   orderRangeLabel(row: OrderRow): string {
-    return this.formatRangeShort(row.start, row.end);
+    if (row.hasPlanned) return this.formatRangeShort(row.plannedStart!, row.plannedEnd!);
+    if (row.hasActual) return this.formatRangeShort(row.start, row.end);
+    return '—';
   }
 
   orderDays(row: OrderRow): string {
-    return String(this.daysSpan(row.start, row.end));
+    if (row.hasPlanned) return String(this.daysSpan(row.plannedStart!, row.plannedEnd!));
+    if (row.hasActual) return String(this.daysSpan(row.start, row.end));
+    return '—';
   }
 
   lineRangeLabel(line: LineRow): string {
@@ -149,6 +176,37 @@ export class ProductionGanttComponent {
     this.beginLineBarDrag(event, lineRow, edge);
   }
 
+  barDragOffsetPx(assignmentId: string | undefined): number {
+    if (!assignmentId) return 0;
+    const state = this.dragState();
+    if (!state || state.assignmentId !== assignmentId) return 0;
+    const totalPx = this.timelineWidthPx();
+    const rangeMs = Math.max(DAY_MS, this.range().end.getTime() - this.range().start.getTime());
+    const deltaMs = (state.dx / totalPx) * rangeMs;
+    const deltaDays = Math.round(deltaMs / DAY_MS);
+    return deltaDays * (totalPx / (rangeMs / DAY_MS));
+  }
+
+  barDragWidthDeltaPx(assignmentId: string | undefined, widthPx: number): number {
+    if (!assignmentId) return widthPx;
+    const state = this.dragState();
+    if (!state || state.assignmentId !== assignmentId) return widthPx;
+    const offsetPx = this.barDragOffsetPx(assignmentId);
+    if (state.mode === 'move') return widthPx;
+    if (state.mode === 'start') return widthPx - offsetPx;
+    if (state.mode === 'end') return widthPx + offsetPx;
+    return widthPx;
+  }
+
+  barDragLeftPx(lineRow: LineRow): number {
+    const base = lineRow.leftPx;
+    const state = this.dragState();
+    if (!state || state.assignmentId !== lineRow.assignmentId) return base;
+    const offset = this.barDragOffsetPx(lineRow.assignmentId);
+    if (state.mode === 'move' || state.mode === 'start') return base + offset;
+    return base;
+  }
+
   private beginLineBarDrag(event: PointerEvent, lineRow: LineRow, mode: 'move' | 'start' | 'end'): void {
     const assignmentId = lineRow.assignmentId;
     if (!assignmentId || !lineRow.start || !lineRow.end) return;
@@ -164,10 +222,15 @@ export class ProductionGanttComponent {
 
     const onMove = (ev: PointerEvent): void => {
       ev.preventDefault();
+      const dx = ev.clientX - startX;
+      this.dragState.set({ assignmentId, dx, mode });
     };
-    const onUp = (ev: PointerEvent): void => {
+    const finish = (ev: PointerEvent): void => {
       document.removeEventListener('pointermove', onMove);
-      document.removeEventListener('pointerup', onUp);
+      document.removeEventListener('pointerup', finish);
+      document.removeEventListener('pointercancel', finish);
+      this.dragState.set(null);
+      if (ev.type === 'pointercancel') return;
       const dx = ev.clientX - startX;
       if (Math.abs(dx) < 4) return;
       const deltaMs = (dx / totalPx) * rangeMs;
@@ -197,7 +260,8 @@ export class ProductionGanttComponent {
       });
     };
     document.addEventListener('pointermove', onMove);
-    document.addEventListener('pointerup', onUp);
+    document.addEventListener('pointerup', finish);
+    document.addEventListener('pointercancel', finish);
   }
 
   /** start <= end, минимум один календарный день (конец не раньше начала). */
@@ -241,12 +305,28 @@ export class ProductionGanttComponent {
       const end = datedLines.length
         ? new Date(Math.max(...datedLines.map((line) => line.end!.getTime())))
         : fallbackEnd;
+      const plannedStart = this.parseDate(order.productionStart) ?? null;
+      const plannedEnd = this.parseDate(order.deadline) ?? null;
+      const hasPlanned = !!(plannedStart && plannedEnd);
+      const hasActual = datedLines.length > 0;
+      const deadline = this.parseDate(order.deadline);
+      const isOverdue =
+        !!deadline &&
+        this.startOfDay(deadline).getTime() < this.today.getTime() &&
+        order.productionStatus !== 'DONE';
       return {
         order,
         start,
         end,
         leftPx: this.offsetPx(start),
         widthPx: this.spanPx(start, end),
+        plannedStart,
+        plannedEnd,
+        plannedLeftPx: hasPlanned ? this.offsetPx(plannedStart!) : 0,
+        plannedWidthPx: hasPlanned ? this.spanPx(plannedStart!, plannedEnd!) : 0,
+        hasPlanned,
+        hasActual,
+        isOverdue,
         lines,
       };
     });

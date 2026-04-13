@@ -14,7 +14,7 @@
           </div>
           @for (row of rows(); track row.order.id) {
             <div class="labelStack">
-              <div class="labelCell orderLabel labelGrid">
+              <div class="labelCell orderLabel labelGrid" [class.orderLabel--overdue]="row.isOverdue">
                 <div class="labelCol labelCol--name">
                   <button type="button" class="toggleBtn" (click)="toggleOrder(row.order.id, $event)">
                     {{ isExpanded(row.order.id) ? '▾' : '▸' }}
@@ -57,19 +57,50 @@
             </div>
             @for (row of rows(); track row.order.id) {
               <div class="trackStack">
-                <div class="trackCell" [title]="tooltipForOrder(row)">
+                <div class="trackCell" [class.trackCell--overdue]="row.isOverdue" [title]="tooltipForOrder(row)">
                   @for (week of weekCells(); track week.key) {
                     <div class="weekStripe" [class.weekStripe--odd]="week.odd"></div>
                   }
                   <div class="todayLine" [style.left.px]="todayLeftPx()"></div>
-                  <div
-                    class="bar"
-                    [class]="'bar bar--' + orderClass(row.order)"
-                    [style.left.px]="row.leftPx"
-                    [style.width.px]="row.widthPx"
-                  >
-                    <span>{{ row.order.orderNumber }}</span>
-                  </div>
+                  @if (row.hasPlanned) {
+                    <div
+                      class="bar bar--planned"
+                      [style.left.px]="row.plannedLeftPx"
+                      [style.width.px]="row.plannedWidthPx"
+                      [attr.title]="'План: ' + orderRangeLabel(row)"
+                      (click)="onOrderBarClick($event, row)"
+                    ></div>
+                  }
+                  @if (row.hasActual) {
+                    <div
+                      [class]="
+                        'bar bar--actual bar--' +
+                        orderClass(row.order) +
+                        (row.isOverdue ? ' bar--overdue-badge' : '')
+                      "
+                      [style.left.px]="row.leftPx"
+                      [style.width.px]="row.widthPx"
+                      (click)="onOrderBarClick($event, row)"
+                    >
+                      <span>{{ row.order.orderNumber }}</span>
+                      @if (orderProgress(row.order)) {
+                        <span class="barProgress">{{ orderProgress(row.order) }}</span>
+                      }
+                    </div>
+                  }
+                  @if (!row.hasPlanned && !row.hasActual) {
+                    <div
+                      [class]="'bar bar--' + orderClass(row.order)"
+                      [style.left.px]="row.leftPx"
+                      [style.width.px]="row.widthPx"
+                      (click)="onOrderBarClick($event, row)"
+                    >
+                      <span>{{ row.order.orderNumber }}</span>
+                      @if (orderProgress(row.order)) {
+                        <span class="barProgress">{{ orderProgress(row.order) }}</span>
+                      }
+                    </div>
+                  }
                 </div>
                 @if (isExpanded(row.order.id)) {
                   @for (lineRow of row.lines; track lineRow.line.lineNo) {
@@ -81,8 +112,8 @@
                       @if (lineRow.start && lineRow.end && lineRow.assignmentId) {
                         <div
                           [class]="'bar bar--line bar--line-' + lineBarClass(lineRow.line.status) + ' bar--line-draggable'"
-                          [style.left.px]="lineRow.leftPx"
-                          [style.width.px]="lineRow.widthPx"
+                          [style.left.px]="barDragLeftPx(lineRow)"
+                          [style.width.px]="barDragWidthDeltaPx(lineRow.assignmentId, lineRow.widthPx)"
                         >
                           <div
                             class="bar-handle bar-handle--left"
@@ -99,8 +130,8 @@
                       } @else if (lineRow.start && lineRow.end) {
                         <div
                           [class]="'bar bar--line bar--line-' + lineBarClass(lineRow.line.status)"
-                          [style.left.px]="lineRow.leftPx"
-                          [style.width.px]="lineRow.widthPx"
+                          [style.left.px]="barDragLeftPx(lineRow)"
+                          [style.width.px]="barDragWidthDeltaPx(lineRow.assignmentId, lineRow.widthPx)"
                         ></div>
                       } @else {
                         <div
