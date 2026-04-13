@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, input, output, signal } from '@angular/core';
+import { Component, computed, ElementRef, inject, input, output, signal, viewChild } from '@angular/core';
 import { ProductionAssignment, ProductionLineSnapshot, ProductionOrder } from '../../production.types';
 import { ProductionStore } from '../../state/production.store';
 
@@ -36,6 +36,8 @@ const WEEK_COL_PX = 72;
 })
 export class ProductionGanttComponent {
   private readonly store = inject(ProductionStore);
+
+  private readonly scrollHost = viewChild.required<ElementRef<HTMLElement>>('ganttScrollCol');
 
   readonly orders = input<ProductionOrder[]>([]);
   readonly orderSelected = output<ProductionOrder>();
@@ -87,12 +89,45 @@ export class ProductionGanttComponent {
     return 'designing';
   }
 
-  onOrderClick(order: ProductionOrder): void {
+  onLabelClick(_event: Event, order: ProductionOrder): void {
     this.orderSelected.emit(order);
   }
 
   onLineClick(orderId: string, lineNo: number): void {
     this.lineSelected.emit({ orderId, lineNo });
+  }
+
+  scrollToToday(): void {
+    const el = this.scrollHost().nativeElement;
+    el.scrollLeft = Math.max(0, this.todayLeftPx() - 100);
+  }
+
+  formatRangeShort(start: Date, end: Date): string {
+    return `${this.formatShort(this.startOfDay(start))} — ${this.formatShort(this.startOfDay(end))}`;
+  }
+
+  daysSpan(start: Date, end: Date): number {
+    const s = this.startOfDay(start).getTime();
+    const e = this.startOfDay(end).getTime();
+    return Math.round((e - s) / DAY_MS);
+  }
+
+  orderRangeLabel(row: OrderRow): string {
+    return this.formatRangeShort(row.start, row.end);
+  }
+
+  orderDays(row: OrderRow): string {
+    return String(this.daysSpan(row.start, row.end));
+  }
+
+  lineRangeLabel(line: LineRow): string {
+    if (!line.start || !line.end) return '—';
+    return this.formatRangeShort(line.start, line.end);
+  }
+
+  lineDays(line: LineRow): string {
+    if (!line.start || !line.end) return '—';
+    return String(this.daysSpan(line.start, line.end));
   }
 
   tooltipForOrder(row: OrderRow): string {
@@ -104,14 +139,24 @@ export class ProductionGanttComponent {
     return `${line.line.name}\n${this.formatDate(line.start)} — ${this.formatDate(line.end)}\n${this.lineStatusLabel(line.line.status)}`;
   }
 
-  onLineBarPointerDown(event: PointerEvent, lineRow: LineRow): void {
+  onBarBodyPointerDown(event: PointerEvent, lineRow: LineRow): void {
+    const target = event.target as HTMLElement;
+    if (target.classList.contains('bar-handle')) return;
+    this.beginLineBarDrag(event, lineRow, 'move');
+  }
+
+  onResizeStart(event: PointerEvent, lineRow: LineRow, edge: 'start' | 'end'): void {
+    this.beginLineBarDrag(event, lineRow, edge);
+  }
+
+  private beginLineBarDrag(event: PointerEvent, lineRow: LineRow, mode: 'move' | 'start' | 'end'): void {
     const assignmentId = lineRow.assignmentId;
     if (!assignmentId || !lineRow.start || !lineRow.end) return;
     event.preventDefault();
     event.stopPropagation();
     const startX = event.clientX;
-    const origStart = new Date(lineRow.start.getTime());
-    const origEnd = new Date(lineRow.end.getTime());
+    const origStart = this.startOfDay(new Date(lineRow.start.getTime()));
+    const origEnd = this.startOfDay(new Date(lineRow.end.getTime()));
     const totalPx = this.timelineWidthPx();
     const rangeStart = this.range().start.getTime();
     const rangeEnd = this.range().end.getTime();
@@ -127,15 +172,42 @@ export class ProductionGanttComponent {
       if (Math.abs(dx) < 4) return;
       const deltaMs = (dx / totalPx) * rangeMs;
       const deltaDays = Math.round(deltaMs / DAY_MS);
-      const newStart = this.addDays(origStart, deltaDays);
-      const newEnd = this.addDays(origEnd, deltaDays);
+      let newStart = origStart;
+      let newEnd = origEnd;
+      if (mode === 'move') {
+        newStart = this.addDays(origStart, deltaDays);
+        newEnd = this.addDays(origEnd, deltaDays);
+      } else if (mode === 'start') {
+        newStart = this.addDays(origStart, deltaDays);
+        newEnd = origEnd;
+        if (newStart.getTime() > newEnd.getTime()) {
+          newStart = new Date(newEnd.getTime());
+        }
+      } else {
+        newEnd = this.addDays(origEnd, deltaDays);
+        newStart = origStart;
+        if (newEnd.getTime() < newStart.getTime()) {
+          newEnd = new Date(newStart.getTime());
+        }
+      }
+      const clamped = this.clampAssignmentRange(newStart, newEnd);
       this.store.updateAssignment(assignmentId, {
-        startDate: this.toIsoDate(newStart),
-        endDate: this.toIsoDate(newEnd),
+        startDate: this.toIsoDate(clamped.start),
+        endDate: this.toIsoDate(clamped.end),
       });
     };
     document.addEventListener('pointermove', onMove);
     document.addEventListener('pointerup', onUp);
+  }
+
+  /** start <= end, минимум один календарный день (конец не раньше начала). */
+  private clampAssignmentRange(start: Date, end: Date): { start: Date; end: Date } {
+    const s = this.startOfDay(start);
+    const e = this.startOfDay(end);
+    if (e.getTime() < s.getTime()) {
+      return { start: s, end: new Date(s.getTime()) };
+    }
+    return { start: s, end: e };
   }
 
   private toIsoDate(d: Date): string {

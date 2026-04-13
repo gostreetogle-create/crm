@@ -5,30 +5,49 @@
     <div class="ganttHost">
       <div class="ganttFlex">
         <div class="ganttLabelsColumn">
-          <div class="labelHeader">Заказы и позиции</div>
+          <div class="labelToolbarSpacer" aria-hidden="true"></div>
+          <div class="labelHeaderGrid labelGrid">
+            <div class="labelHeaderCell">Название</div>
+            <div class="labelHeaderCell">Исп.</div>
+            <div class="labelHeaderCell">Диапазон дат</div>
+            <div class="labelHeaderCell">Дней</div>
+          </div>
           @for (row of rows(); track row.order.id) {
             <div class="labelStack">
-              <div class="labelCell orderLabel" (click)="onOrderClick(row.order)">
-                <button type="button" class="toggleBtn" (click)="toggleOrder(row.order.id, $event)">
-                  {{ isExpanded(row.order.id) ? '▾' : '▸' }}
-                </button>
-                <div class="labelMain">
-                  <strong>{{ row.order.orderNumber }}</strong>
-                  <span>{{ row.order.customerLabel || '—' }}</span>
+              <div class="labelCell orderLabel labelGrid">
+                <div class="labelCol labelCol--name">
+                  <button type="button" class="toggleBtn" (click)="toggleOrder(row.order.id, $event)">
+                    {{ isExpanded(row.order.id) ? '▾' : '▸' }}
+                  </button>
+                  <div class="labelMain" (click)="onLabelClick($event, row.order)">
+                    <strong>{{ row.order.orderNumber }}</strong>
+                    <span>{{ row.order.customerLabel || '—' }}</span>
+                  </div>
                 </div>
+                <div class="labelCol labelCol--muted">—</div>
+                <div class="labelCol labelCol--dates">{{ orderRangeLabel(row) }}</div>
+                <div class="labelCol labelCol--num">{{ orderDays(row) }}</div>
               </div>
               @if (isExpanded(row.order.id)) {
                 @for (lineRow of row.lines; track lineRow.line.lineNo) {
-                  <button type="button" class="labelCell lineLabel" (click)="onLineClick(row.order.id, lineRow.line.lineNo)">
-                    <span class="lineLabelText">{{ lineRow.line.name }}</span>
+                  <button type="button" class="labelCell lineLabel labelGrid" (click)="onLineClick(row.order.id, lineRow.line.lineNo)">
+                    <div class="labelCol labelCol--name labelCol--lineName">
+                      <span class="lineLabelText">{{ lineRow.line.name }}</span>
+                    </div>
+                    <div class="labelCol labelCol--muted">—</div>
+                    <div class="labelCol labelCol--dates">{{ lineRangeLabel(lineRow) }}</div>
+                    <div class="labelCol labelCol--num">{{ lineDays(lineRow) }}</div>
                   </button>
                 }
               }
             </div>
           }
         </div>
-        <div class="ganttScrollCol">
+        <div class="ganttScrollCol" #ganttScrollCol>
           <div class="ganttTimelineInner" [style.width.px]="timelineWidthPx()">
+            <div class="timelineToolbar">
+              <button type="button" class="todayScrollBtn" (click)="scrollToToday()">Сегодня</button>
+            </div>
             <div class="timelineHeader">
               @for (week of weekCells(); track week.key) {
                 <div class="weekCell" [class.weekCell--odd]="week.odd">{{ week.label }}</div>
@@ -38,12 +57,7 @@
             </div>
             @for (row of rows(); track row.order.id) {
               <div class="trackStack">
-                <button
-                  type="button"
-                  class="trackCell"
-                  (click)="onOrderClick(row.order)"
-                  [title]="tooltipForOrder(row)"
-                >
+                <div class="trackCell" [title]="tooltipForOrder(row)">
                   @for (week of weekCells(); track week.key) {
                     <div class="weekStripe" [class.weekStripe--odd]="week.odd"></div>
                   }
@@ -56,15 +70,10 @@
                   >
                     <span>{{ row.order.orderNumber }}</span>
                   </div>
-                </button>
+                </div>
                 @if (isExpanded(row.order.id)) {
                   @for (lineRow of row.lines; track lineRow.line.lineNo) {
-                    <button
-                      type="button"
-                      class="trackCell trackCell--line"
-                      (click)="onLineClick(row.order.id, lineRow.line.lineNo)"
-                      [title]="tooltipForLine(lineRow)"
-                    >
+                    <div class="trackCell trackCell--line" [title]="tooltipForLine(lineRow)">
                       @for (week of weekCells(); track week.key) {
                         <div class="weekStripe" [class.weekStripe--odd]="week.odd"></div>
                       }
@@ -74,9 +83,19 @@
                           [class]="'bar bar--line bar--line-' + lineBarClass(lineRow.line.status) + ' bar--line-draggable'"
                           [style.left.px]="lineRow.leftPx"
                           [style.width.px]="lineRow.widthPx"
-                          (click)="$event.stopPropagation()"
-                          (pointerdown)="onLineBarPointerDown($event, lineRow)"
-                        ></div>
+                        >
+                          <div
+                            class="bar-handle bar-handle--left"
+                            title="Перетащите чтобы изменить начало"
+                            (pointerdown)="onResizeStart($event, lineRow, 'start'); $event.stopPropagation()"
+                          ></div>
+                          <div class="bar-body" (pointerdown)="onBarBodyPointerDown($event, lineRow)"></div>
+                          <div
+                            class="bar-handle bar-handle--right"
+                            title="Перетащите чтобы изменить конец"
+                            (pointerdown)="onResizeStart($event, lineRow, 'end'); $event.stopPropagation()"
+                          ></div>
+                        </div>
                       } @else if (lineRow.start && lineRow.end) {
                         <div
                           [class]="'bar bar--line bar--line-' + lineBarClass(lineRow.line.status)"
@@ -91,7 +110,7 @@
                           title="Для позиции не заданы даты назначения"
                         ></div>
                       }
-                    </button>
+                    </div>
                   }
                 }
               </div>

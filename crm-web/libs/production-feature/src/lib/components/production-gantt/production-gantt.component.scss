@@ -26,23 +26,74 @@
 }
 
 .ganttLabelsColumn {
-  width: 220px;
+  width: 410px;
   flex-shrink: 0;
   border-right: 1px solid var(--border-color);
   background: var(--surface);
   z-index: 2;
 }
 
-.labelHeader {
-  padding: 10px;
+.labelToolbarSpacer {
+  min-height: 36px;
+  box-sizing: border-box;
   border-bottom: 1px solid var(--border-color);
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text-muted);
+}
+
+.labelGrid {
+  display: grid;
+  grid-template-columns: 200px 40px 120px 50px;
+  align-items: center;
+  column-gap: 0;
+  box-sizing: border-box;
+}
+
+.labelHeaderGrid {
+  padding: 8px 6px;
+  border-bottom: 1px solid var(--border-color);
   min-height: 38px;
+}
+
+.labelHeaderCell {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--text-secondary, var(--text-muted));
+  font-weight: 600;
+  padding: 0 4px;
+  min-width: 0;
+}
+
+.labelCol {
+  padding: 0 4px;
+  min-width: 0;
+  font-size: 12px;
+}
+
+.labelCol--muted {
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.labelCol--dates {
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.labelCol--num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.labelCol--name {
   display: flex;
   align-items: center;
-  box-sizing: border-box;
+  gap: 8px;
+  min-width: 0;
+}
+
+.labelCol--lineName {
+  padding-left: 16px;
 }
 
 .labelStack {
@@ -60,12 +111,8 @@
 }
 
 .orderLabel {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
-  min-height: 44px;
-  cursor: pointer;
+  padding: 4px 6px;
+  min-height: 36px;
 }
 
 .toggleBtn {
@@ -79,6 +126,7 @@
   display: grid;
   min-width: 0;
   flex: 1;
+  cursor: pointer;
 }
 
 .labelMain strong {
@@ -97,8 +145,8 @@
 }
 
 .lineLabel {
-  padding: 6px 10px 6px 28px;
-  min-height: 32px;
+  padding: 2px 6px;
+  min-height: 28px;
   cursor: pointer;
 }
 
@@ -117,6 +165,31 @@
   min-width: 0;
   overflow-x: auto;
   overflow-y: hidden;
+}
+
+.timelineToolbar {
+  display: flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 8px;
+  box-sizing: border-box;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.todayScrollBtn {
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm, 6px);
+  border: 1px solid var(--border-color);
+  background: var(--surface-soft);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.todayScrollBtn:hover {
+  background: color-mix(in srgb, var(--surface-soft) 90%, var(--accent) 10%);
 }
 
 .ganttTimelineInner {
@@ -154,16 +227,16 @@
   border-bottom: 1px solid var(--border-color);
   background: var(--surface);
   position: relative;
-  min-height: 44px;
+  min-height: 36px;
   width: 100%;
   display: flex;
   flex-direction: row;
-  cursor: pointer;
+  cursor: default;
   padding: 0;
 }
 
 .trackCell--line {
-  min-height: 32px;
+  min-height: 28px;
 }
 
 .weekStripe {
@@ -178,15 +251,15 @@
 
 .bar {
   position: absolute;
-  top: 8px;
+  top: 4px;
   height: 28px;
-  border-radius: 8px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
-  padding: 0 10px;
+  padding: 0 8px;
   color: #fff;
-  font-size: 12px;
-  font-weight: 700;
+  font-size: 11px;
+  font-weight: 600;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -205,17 +278,52 @@
 }
 
 .bar--line {
-  top: 6px;
+  top: 4px;
   height: 20px;
   padding: 0;
+  overflow: visible;
+  align-items: stretch;
 }
 
 .bar--line-draggable {
-  cursor: grab;
+  cursor: default;
 }
 
-.bar--line-draggable:active {
-  cursor: grabbing;
+.bar-handle {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  width: 8px;
+  background: rgba(255, 255, 255, 0.3);
+  z-index: 2;
+  box-sizing: border-box;
+
+  &:hover {
+    width: 10px;
+    background: rgba(255, 255, 255, 0.6);
+  }
+}
+
+.bar-handle--left {
+  left: 0;
+  cursor: w-resize;
+  border-radius: 6px 0 0 6px;
+}
+
+.bar-handle--right {
+  right: 0;
+  cursor: e-resize;
+  border-radius: 0 6px 6px 0;
+}
+
+.bar-body {
+  flex: 1;
+  min-width: 0;
+  cursor: grab;
+
+  &:active {
+    cursor: grabbing;
+  }
 }
 
 .bar--line-designing {
@@ -232,7 +340,7 @@
 
 .lineNoDates {
   position: absolute;
-  top: 15px;
+  top: 13px;
   height: 2px;
   border-top: 2px dashed #94a3b8;
   opacity: 0.9;
