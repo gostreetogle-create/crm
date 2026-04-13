@@ -134,6 +134,10 @@
   box-sizing: border-box;
 }
 
+.labelCell.labelGrid {
+  display: grid;
+}
+
 .orderLabel {
   padding: 4px 6px;
   min-height: 52px;
