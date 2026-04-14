@@ -1,5 +1,7 @@
 # Backend: аудит (состояние на 2026-03-29) и дорожная карта
 
+> Исторический аудит на дату 2026-03-29. Актуальное состояние production/warehouse/supply/КП и прав доступа см. в `docs/ARCHITECTURE.md`.
+
 Цель этапа: довести backend до уровня **контракта с фронтом**, **схемы из `docs/backend-map/`**, и **деплоя «как на сервере»** по аналогии с монорепо [crmgenerator_nx](https://github.com/gostreetogle-create/crmgenerator_nx) (Docker, nginx, скрипт деплоя).
 
 ---

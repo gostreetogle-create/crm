@@ -2,14 +2,46 @@
 <aside class="orderDrawer" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
   <button type="button" class="drawerClose" (click)="close.emit()">✕</button>
   <header class="drawerHeader">
-    <h3>{{ order.orderNumber }}</h3>
+    <div class="drawerTitleRow">
+      <h3>{{ order.orderNumber }}</h3>
+      <button type="button" class="drawerEditBtn" aria-label="Редактировать заказ">✎</button>
+    </div>
     <span class="drawerStatusBadge" [class]="'drawerStatusBadge drawerStatusBadge--' + statusClass(order.productionStatus)">
       {{ statusLabel(order.productionStatus) }}
     </span>
   </header>
-  <div class="drawerMeta">
-    <p><strong>Клиент:</strong> {{ order.customerLabel || '—' }}</p>
-    <p><strong>Дедлайн:</strong> {{ formatLongDate(order.deadline) }}</p>
+  <div class="drawerSection">
+    <h4 class="drawerSectionTitle">Статус</h4>
+    <div class="drawerMeta">
+      <div class="drawerMetaRow">
+        <span class="drawerMetaIcon" aria-hidden="true">👤</span>
+        <p><strong>Клиент:</strong> {{ order.customerLabel || '—' }}</p>
+      </div>
+      <div class="drawerMetaRow">
+        <span class="drawerMetaIcon" aria-hidden="true">📅</span>
+        <p><strong>Дедлайн:</strong> {{ formatLongDate(order.deadline) }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="drawerSection">
+    <h4 class="drawerSectionTitle">Рабочий</h4>
+    <div class="drawerMetaRow">
+      <span class="drawerMetaIcon" aria-hidden="true">📋</span>
+      <p><strong>Статус заказа:</strong> {{ statusLabel(order.productionStatus) }}</p>
+    </div>
+  </div>
+  <div class="drawerSection">
+    <h4 class="drawerSectionTitle">Планирование</h4>
+    <div class="drawerScheduleGrid">
+      <label>
+        <span>Начало</span>
+        <input type="date" [ngModel]="startDateDraft" (ngModelChange)="startDateDraft = $event; onDateChange()" />
+      </label>
+      <label>
+        <span>Окончание</span>
+        <input type="date" [ngModel]="endDateDraft" (ngModelChange)="endDateDraft = $event; onDateChange()" />
+      </label>
+    </div>
   </div>
   <div class="drawerProgress">
     <div class="drawerProgressHead">
@@ -20,29 +52,66 @@
       <div class="drawerProgressBar" [style.width.%]="progressPercent"></div>
     </div>
   </div>
-  <div class="drawerLines">
-    @for (line of order.linesSnapshot || []; track line.lineNo) {
-      <div class="drawerLineRow">
-        <div class="lineThumb lineThumb--lg">
-          @if (hasLinePhoto(line)) {
-            <img [src]="linePhotoUrl(line)" [alt]="line.name" loading="lazy" />
-          } @else {
-            <div class="lineThumbPlaceholder" aria-hidden="true">📦</div>
-          }
-        </div>
-        <div class="drawerLineMain">
-          <div class="drawerLineName">{{ line.name }}</div>
-          <div class="drawerLineMeta">
-            {{ line.qty }} {{ line.unit }} · {{ lineWorker(order, line.lineNo) }}
+  <div class="drawerSection">
+    <h4 class="drawerSectionTitle">Позиции</h4>
+    <div class="drawerLines">
+      @for (line of order.linesSnapshot || []; track line.lineNo) {
+        <div class="drawerLineRow">
+          <div class="lineThumb lineThumb--lg">
+            @if (hasLinePhoto(line)) {
+              <img [src]="linePhotoUrl(line)" [alt]="line.name" loading="lazy" />
+            } @else {
+              <div class="lineThumbPlaceholder" aria-hidden="true">📦</div>
+            }
+          </div>
+          <div class="drawerLineMain">
+            <div class="drawerLineName">{{ line.name }}</div>
+            <div class="drawerLineMeta">
+              <span>{{ line.qty }} {{ line.unit }} · {{ lineWorker(order, line.lineNo) }}</span>
+              <span class="lineStatusMeta">
+                <span class="lineStatusDot" [class]="'lineStatusDot lineStatusDot--' + statusClass(lineStatus(order, line.lineNo))"></span>
+                <span class="lineStatusLabel" [class]="'lineStatusLabel lineStatusLabel--' + statusClass(lineStatus(order, line.lineNo))">
+                  {{ statusLabel(lineStatus(order, line.lineNo)) }}
+                </span>
+              </span>
+            </div>
+            <div class="lineMaterials">
+              @for (material of lineMaterials(line); track material.id) {
+                <div class="lineMaterialRow">{{ material.name }} · {{ material.quantity }} {{ material.unit }}</div>
+              } @empty {
+                <div class="lineMaterialEmpty">Материалы не добавлены</div>
+              }
+              @if (addingMaterialLineNo !== line.lineNo) {
+                <button type="button" class="btn btn--secondary small" (click)="openMaterialForm(line.lineNo)">
+                  + Добавить материал
+                </button>
+              } @else {
+                <div class="lineMaterialForm">
+                  <input type="text" placeholder="Название" [ngModel]="materialDraft.name" (ngModelChange)="materialDraft.name = $event" />
+                  <input
+                    type="number"
+                    min="0.001"
+                    step="0.001"
+                    placeholder="Количество"
+                    [ngModel]="materialDraft.quantity"
+                    (ngModelChange)="materialDraft.quantity = $event"
+                  />
+                  <input type="text" placeholder="Ед." [ngModel]="materialDraft.unit" (ngModelChange)="materialDraft.unit = $event" />
+                  <div class="lineMaterialFormActions">
+                    <button type="button" class="drawerAction drawerAction--primary" (click)="saveMaterial(line)">Сохранить</button>
+                    <button type="button" class="drawerAction" (click)="cancelMaterialForm()">Отмена</button>
+                  </div>
+                </div>
+              }
+            </div>
           </div>
         </div>
-        <span class="lineStatusDot" [class]="'lineStatusDot lineStatusDot--' + statusClass(lineStatus(order, line.lineNo))"></span>
-      </div>
-    } @empty {
-      <p class="lineEmpty">Нет позиций</p>
-    }
+      } @empty {
+        <p class="lineEmpty">Нет позиций</p>
+      }
+    </div>
   </div>
-  <div class="drawerActions">
+  <div class="drawerActions drawerActions--primary">
     <button
       type="button"
       class="drawerAction drawerAction--primary"
@@ -51,8 +120,35 @@
     >
       Запустить в работу
     </button>
+    @if (order.productionStatus === 'DONE') {
+      <button
+        type="button"
+        class="drawerAction drawerAction--ship"
+        (click)="onShipOrderClick($event)"
+      >
+        Отгрузить
+      </button>
+    }
+  </div>
+  @if (canForceStatus()) {
+    <div class="drawerForceStatus">
+      <label for="forceStatusSelect"><strong>Изменить статус</strong></label>
+      <select
+        id="forceStatusSelect"
+        class="drawerForceStatusSelect"
+        [ngModel]="forceStatusDraft"
+        (ngModelChange)="onForceStatusSelect($event)"
+      >
+        <option value="">Выберите статус</option>
+        @for (s of forceStatusOptions; track s) {
+          <option [ngValue]="s">{{ statusLabel(s) }}</option>
+        }
+      </select>
+    </div>
+  }
+  <div class="drawerActions drawerActions--secondary">
     <a
-      class="drawerAction drawerAction--primary drawerAction--link"
+      class="drawerAction drawerAction--link"
       [routerLink]="['/производство', order.id]"
       (click)="close.emit()"
       >Открыть</a>

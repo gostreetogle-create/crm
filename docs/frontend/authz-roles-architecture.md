@@ -19,6 +19,7 @@
 ## Поведение матрицы
 
 - Пока для `roleId` **нет** строки в сохранённой матрице — действуют **дефолты по коду** роли.
+- Спец-ключ production-контура: `production.force_status` (принудительная смена статуса заказа).
 - **Дефолты по коду:** в `DEFAULT_ROLE_PERMISSIONS_BY_CODE` (`crm-web/libs/authz-core/src/lib/authz.matrix.ts`) для **`editor`**, **`director`**, **`accountant`** задан типовой рабочий набор **`DEFAULT_PERMISSIONS_BUSINESS_WORKSPACE`** — все ключи из канона, **кроме** `page.admin.settings` (админ-раздел только у суперадмина). Для **`viewer`** — по-прежнему только `page.dictionaries` и плитки хаба (`dict.hub.*`). Кастомный код роли без строки в матрице — **`[]`**.
 - После сохранения набора галочек для роли — **только этот список** (полная замена дефолта для этой роли).
 - Строка в матрице с **пустым массивом** `[]` для `roleId` — явное «нет прав» для этой роли (отличается от отсутствия строки, когда снова действуют дефолты по коду). Кнопка «Сбросить галочки» в UI записывает именно `[]`.
@@ -34,9 +35,11 @@
 ## Чеклист разработчика
 
 1. Меняете канонические роли — правите **один** файл **`backend/shared/canonical-roles.seed.json`**, затем из **`crm-web/`** выполните **`npm run sync:canonical-roles`** и закоммитьте обновлённый **`libs/roles-data-access/src/lib/canonical-roles.generated.ts`** (Prisma seed читает JSON напрямую; фронт и Jest — сгенерированный TS). CI проверяет совпадение (`check:canonical-roles-sync`).
-2. Новый ключ права — добавьте в `authz.catalog` / `PermissionKey`, в `backend/src/lib/authz-permission-keys.ts`, в маршруты при необходимости.
+2. Новый ключ права — добавьте в `authz.catalog` / `PermissionKey`, в `backend/src/lib/authz-permission-keys.ts`, в маршруты при необходимости. Для production force-flow обязателен ключ `production.force_status`.
 3. После `db:reset` при странностях в правах — перелогиниться (кэш матрицы сбросится с сервером).
 4. Прод: в Docker для backend задано `SEED_DIRECTOR_USER=0` (нет тестового `director`/`director`).
+
+Отдельное правило backend-вычисления прав: `admin` (role code) и `isSystem` роль всегда получают полный набор ключей.
 
 ## Связанные файлы
 

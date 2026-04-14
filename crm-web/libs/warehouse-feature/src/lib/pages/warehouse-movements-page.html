@@ -1,0 +1,31 @@
+<app-page-shell>
+  <section class="page">
+    <header class="toolbar">
+      <h1>Журнал движений склада</h1>
+      <a class="btn btn--secondary" routerLink="/warehouse/products">К товарам</a>
+    </header>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Дата</th><th>Товар</th><th>SKU</th><th>Тип</th><th>Кол-во</th><th>Причина</th><th>Кем</th></tr>
+        </thead>
+        <tbody>
+          @for (item of movements(); track item.id) {
+            <tr>
+              <td>{{ item.createdAt | date: 'dd.MM.yyyy HH:mm' }}</td>
+              <td><a [routerLink]="['/warehouse/products', item.productId]">{{ item.product?.name || item.productId }}</a></td>
+              <td>{{ item.product?.sku || '—' }}</td>
+              <td>{{ typeLabel(item.type) }}</td>
+              <td>{{ item.quantity | number: '1.0-2' }}</td>
+              <td>{{ item.reason || '—' }}</td>
+              <td>{{ item.createdBy || '—' }}</td>
+            </tr>
+          } @empty {
+            <tr><td colspan="7">Движения не найдены</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+</app-page-shell>

@@ -1,7 +1,6 @@
 :host {
   display: block;
   height: 100%;
-  --gantt-toolbar-h: 36px;
 }
 
 .ganttRoot {
@@ -40,27 +39,19 @@
 .ganttLabelsColumn {
   position: sticky;
   top: 0;
+  left: 0;
   align-self: flex-start;
   width: 410px;
   flex-shrink: 0;
   border-right: 1px solid var(--border-color);
   background: var(--surface);
-  z-index: 4;
-}
-
-.labelToolbarSpacer {
-  min-height: var(--gantt-toolbar-h);
-  box-sizing: border-box;
-  border-bottom: 1px solid var(--border-color);
-  position: sticky;
-  top: 0;
-  z-index: 3;
-  background: var(--surface);
+  z-index: 10;
+  box-shadow: 8px 0 12px rgb(15 23 42 / 8%);
 }
 
 .labelGrid {
   display: grid;
-  grid-template-columns: 200px 40px 120px 50px;
+  grid-template-columns: minmax(160px, 1fr) 40px 120px minmax(40px, 48px);
   align-items: center;
   column-gap: 0;
   box-sizing: border-box;
@@ -71,7 +62,7 @@
   border-bottom: 1px solid var(--border-color);
   min-height: 38px;
   position: sticky;
-  top: var(--gantt-toolbar-h);
+  top: 0;
   z-index: 3;
   background: var(--surface);
 }
@@ -79,7 +70,8 @@
 .labelHeaderCell {
   font-size: 11px;
   text-transform: uppercase;
-  color: var(--text-secondary, var(--text-muted));
+  letter-spacing: 0.05em;
+  color: #888;
   font-weight: 600;
   padding: 0 4px;
   min-width: 0;
@@ -106,6 +98,12 @@
 .labelCol--num {
   text-align: right;
   font-variant-numeric: tabular-nums;
+  min-width: 40px;
+  max-width: 48px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+  padding-right: 2px;
 }
 
 .labelCol--name {
@@ -144,10 +142,28 @@
 }
 
 .toggleBtn {
-  border: 0;
-  background: transparent;
-  color: var(--text-muted);
+  width: 22px;
+  height: 22px;
+  border: 1px solid color-mix(in srgb, var(--border-color) 75%, #64748b);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--surface-soft) 75%, var(--surface));
+  color: var(--text-primary);
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.toggleBtn:hover {
+  background: color-mix(in srgb, var(--surface-soft) 65%, var(--accent) 35%);
+  border-color: var(--accent);
+}
+
+.toggleBtnIcon {
+  font-size: 16px;
+  line-height: 1;
+  font-weight: 700;
 }
 
 .labelMain {
@@ -158,7 +174,8 @@
 }
 
 .labelMain strong {
-  font-size: 13px;
+  font-size: 14px;
+  font-weight: 700;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -191,40 +208,15 @@
   max-width: 100%;
 }
 
+.lineLabel .labelCol--lineName {
+  padding-left: 22px;
+}
+
 .ganttScrollCol {
   flex: 1;
   min-width: 0;
   overflow-x: auto;
   overflow-y: visible;
-}
-
-.timelineToolbar {
-  display: flex;
-  align-items: center;
-  min-height: var(--gantt-toolbar-h);
-  padding: 0 8px;
-  box-sizing: border-box;
-  border-bottom: 1px solid var(--border-color);
-  position: sticky;
-  top: 0;
-  z-index: 3;
-  background: var(--surface);
-}
-
-.todayScrollBtn {
-  font: inherit;
-  font-size: 12px;
-  font-weight: 600;
-  padding: 6px 12px;
-  border-radius: var(--radius-sm, 6px);
-  border: 1px solid var(--border-color);
-  background: var(--surface-soft);
-  color: var(--text-primary);
-  cursor: pointer;
-}
-
-.todayScrollBtn:hover {
-  background: color-mix(in srgb, var(--surface-soft) 90%, var(--accent) 10%);
 }
 
 .ganttTimelineInner {
@@ -234,7 +226,7 @@
 
 .timelineHeader {
   position: sticky;
-  top: var(--gantt-toolbar-h);
+  top: 0;
   z-index: 3;
   background: var(--surface);
   display: flex;
@@ -243,16 +235,18 @@
   border-bottom: 1px solid var(--border-color);
 }
 
-.weekCell {
-  flex: 1 0 72px;
-  min-width: 72px;
+.timelineCell {
+  flex: 0 0 auto;
+  min-width: 0;
   border-right: 1px solid var(--border-color);
-  font-size: 11px;
+  font-size: 10px;
   padding: 8px 6px;
   white-space: nowrap;
+  text-align: center;
+  box-sizing: border-box;
 }
 
-.weekCell--odd {
+.timelineCell--odd {
   background: color-mix(in srgb, var(--surface) 85%, var(--border-color) 15%);
 }
 
@@ -277,13 +271,14 @@
   min-height: 28px;
 }
 
-.weekStripe {
-  flex: 1 0 72px;
-  min-width: 72px;
+.timelineStripe {
+  flex: 0 0 auto;
+  min-width: 0;
   border-right: 1px solid color-mix(in srgb, var(--border-color) 70%, transparent);
+  box-sizing: border-box;
 }
 
-.weekStripe--odd {
+.timelineStripe--odd {
   background: color-mix(in srgb, var(--surface) 85%, var(--border-color) 15%);
 }
 
@@ -430,12 +425,8 @@
   background: #16a34a;
 }
 
-.lineNoDates {
-  position: absolute;
-  top: 13px;
-  height: 2px;
-  border-top: 2px dashed #94a3b8;
-  opacity: 0.9;
+.bar--line-inherited {
+  opacity: 0.4;
 }
 
 .todayLine {

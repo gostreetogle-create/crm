@@ -3,7 +3,8 @@ import { Component, computed, ElementRef, inject, input, output, signal, viewChi
 import { ProductionAssignment, ProductionLineSnapshot, ProductionOrder } from '../../production.types';
 import { ProductionStore } from '../../state/production.store';
 
-type WeekCell = { key: string; start: Date; end: Date; label: string; odd: boolean };
+type GanttScale = 'DAY' | 'WEEK' | 'MONTH';
+type TimelineCell = { key: string; start: Date; end: Date; label: string; odd: boolean };
 type LineRow = {
   line: ProductionLineSnapshot;
   assignment?: ProductionAssignment;
@@ -14,6 +15,7 @@ type LineRow = {
   widthPx: number;
   fallbackLeftPx: number;
   fallbackWidthPx: number;
+  usesInheritedDates: boolean;
 };
 type OrderRow = {
   order: ProductionOrder;
@@ -32,7 +34,9 @@ type OrderRow = {
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+const DAY_COL_PX = 44;
 const WEEK_COL_PX = 72;
+const MONTH_COL_PX = 96;
 export type ProductionGanttOrderBarClick = { order: ProductionOrder; clientX: number; clientY: number };
 
 @Component({
@@ -48,6 +52,8 @@ export class ProductionGanttComponent {
   private readonly scrollHost = viewChild.required<ElementRef<HTMLElement>>('ganttScrollCol');
 
   readonly orders = input<ProductionOrder[]>([]);
+  readonly scale = input<GanttScale>('WEEK');
+  readonly scaleChange = output<GanttScale>();
   readonly orderSelected = output<ProductionOrder>();
   readonly orderBarSelected = output<ProductionGanttOrderBarClick>();
   readonly lineSelected = output<{ orderId: string; lineNo: number }>();
@@ -61,8 +67,11 @@ export class ProductionGanttComponent {
   private readonly today = this.startOfDay(new Date());
 
   readonly range = computed(() => this.buildRange(this.orders()));
-  readonly weekCells = computed(() => this.buildWeeks(this.range().start, this.range().end));
-  readonly timelineWidthPx = computed(() => Math.max(this.weekCells().length * WEEK_COL_PX, 720));
+  readonly timelineCells = computed(() => this.buildTimelineCells(this.range().start, this.range().end, this.scale()));
+  readonly timelineWidthPx = computed(() => {
+    const minWidth = this.scale() === 'DAY' ? 640 : 720;
+    return Math.max(this.timelineCells().length * this.cellWidthPx(), minWidth);
+  });
   readonly todayLeftPx = computed(() => this.offsetPx(this.today));
   readonly rows = computed(() => this.mapRows(this.orders()));
 
@@ -120,6 +129,11 @@ export class ProductionGanttComponent {
 
   onLineClick(orderId: string, lineNo: number): void {
     this.lineSelected.emit({ orderId, lineNo });
+  }
+
+  setScale(nextScale: GanttScale): void {
+    if (this.scale() === nextScale) return;
+    this.scaleChange.emit(nextScale);
   }
 
   scrollToToday(): void {
@@ -291,19 +305,22 @@ export class ProductionGanttComponent {
         const assignment = order.assignments.find((item) => item.lineNo === line.lineNo);
         const lineStart = this.parseDate(assignment?.startDate);
         const lineEnd = this.parseDate(assignment?.endDate);
+        const effectiveStart = lineStart ?? fallbackStart;
+        const effectiveEnd = lineEnd ?? fallbackEnd;
         return {
           line,
           assignment,
           assignmentId: assignment?.id,
-          start: lineStart ?? undefined,
-          end: lineEnd ?? undefined,
-          leftPx: lineStart ? this.offsetPx(lineStart) : 0,
-          widthPx: lineStart && lineEnd ? this.spanPx(lineStart, lineEnd) : 0,
+          start: effectiveStart,
+          end: effectiveEnd,
+          leftPx: this.offsetPx(effectiveStart),
+          widthPx: this.spanPx(effectiveStart, effectiveEnd),
           fallbackLeftPx: this.offsetPx(fallbackStart),
           fallbackWidthPx: this.spanPx(fallbackStart, fallbackEnd),
+          usesInheritedDates: !(lineStart && lineEnd),
         };
       });
-      const datedLines = lines.filter((line) => line.start && line.end);
+      const datedLines = lines.filter((line) => !line.usesInheritedDates && line.start && line.end);
       const start = datedLines.length
         ? new Date(Math.min(...datedLines.map((line) => line.start!.getTime())))
         : fallbackStart;
@@ -338,25 +355,95 @@ export class ProductionGanttComponent {
   }
 
   private buildRange(orders: ProductionOrder[]): { start: Date; end: Date } {
-    if (!orders.length) {
-      const start = this.startOfWeek(this.addDays(this.today, -7));
-      return { start, end: this.endOfWeek(this.addDays(start, 35)) };
+    const scale = this.scale();
+    if (scale === 'DAY') {
+      const baselineStart = this.startOfDay(this.addDays(this.today, -30));
+      const baselineEnd = this.startOfDay(this.addDays(this.today, 30));
+      const dataBounds = this.collectDataBounds(orders);
+      if (!dataBounds) {
+        return { start: baselineStart, end: baselineEnd };
+      }
+      const dataStart = dataBounds.start;
+      const dataEndWithBuffer = this.startOfDay(this.addDays(dataBounds.end, 7));
+      const baselineSpan = baselineEnd.getTime() - baselineStart.getTime();
+      const dataSpan = dataEndWithBuffer.getTime() - dataStart.getTime();
+      if (dataSpan > baselineSpan) {
+        return { start: dataStart, end: dataEndWithBuffer };
+      }
+      return { start: baselineStart, end: baselineEnd };
     }
-    const starts = orders
-      .map((order) => this.parseDate(order.createdAt) ?? this.parseDate(order.productionStart))
-      .filter((d): d is Date => !!d);
-    const ends = orders.map((order) => this.parseDate(order.deadline)).filter((d): d is Date => !!d);
-    const min = starts.length ? new Date(Math.min(...starts.map((d) => d.getTime()))) : this.today;
-    const max = ends.length ? new Date(Math.max(...ends.map((d) => d.getTime()))) : this.addDays(min, 14);
+    if (scale === 'WEEK') {
+      const start = this.startOfWeek(this.addDays(this.today, -7));
+      const end = this.endOfWeek(this.addDays(start, 7 * 12 - 1));
+      return { start, end };
+    }
+    if (scale === 'MONTH') {
+      const start = this.startOfMonth(this.addMonths(this.today, -2));
+      return { start, end: this.endOfMonth(this.addMonths(start, 11)) };
+    }
+    const fallbackStart = this.startOfWeek(this.addDays(this.today, -7));
+    return { start: fallbackStart, end: this.endOfWeek(this.addDays(fallbackStart, 7 * 12 - 1)) };
+  }
+
+  private collectDataBounds(orders: ProductionOrder[]): { start: Date; end: Date } | null {
+    const starts: Date[] = [];
+    const ends: Date[] = [];
+
+    for (const order of orders) {
+      const orderStart = this.parseDate(order.productionStart) ?? this.parseDate(order.createdAt);
+      const orderEnd = this.parseDate(order.deadline);
+      if (orderStart) starts.push(orderStart);
+      if (orderEnd) ends.push(orderEnd);
+      for (const assignment of order.assignments) {
+        const lineStart = this.parseDate(assignment.startDate);
+        const lineEnd = this.parseDate(assignment.endDate);
+        if (lineStart) starts.push(lineStart);
+        if (lineEnd) ends.push(lineEnd);
+      }
+    }
+
+    if (!starts.length && !ends.length) return null;
+    const minStart = starts.length
+      ? new Date(Math.min(...starts.map((date) => date.getTime())))
+      : this.startOfDay(this.today);
+    const maxEnd = ends.length
+      ? new Date(Math.max(...ends.map((date) => date.getTime())))
+      : new Date(Math.max(...starts.map((date) => date.getTime())));
     return {
-      start: this.startOfWeek(min),
-      end: this.endOfWeek(this.addDays(max, 14)),
+      start: this.startOfDay(minStart),
+      end: this.startOfDay(maxEnd),
     };
   }
 
-  private buildWeeks(start: Date, end: Date): WeekCell[] {
-    const weeks: WeekCell[] = [];
-    const cursor = new Date(start);
+  private buildTimelineCells(start: Date, end: Date, scale: GanttScale): TimelineCell[] {
+    if (scale === 'DAY') return this.buildDayCells(start, end);
+    if (scale === 'MONTH') return this.buildMonthCells(start, end);
+    return this.buildWeekCells(start, end);
+  }
+
+  private buildDayCells(start: Date, end: Date): TimelineCell[] {
+    const days: TimelineCell[] = [];
+    const cursor = this.startOfDay(start);
+    let index = 0;
+    while (cursor <= end) {
+      const dayStart = this.startOfDay(cursor);
+      const dayEnd = this.startOfDay(cursor);
+      days.push({
+        key: `d-${dayStart.getTime()}`,
+        start: dayStart,
+        end: dayEnd,
+        label: String(dayStart.getDate()),
+        odd: index % 2 === 1,
+      });
+      cursor.setDate(cursor.getDate() + 1);
+      index += 1;
+    }
+    return days;
+  }
+
+  private buildWeekCells(start: Date, end: Date): TimelineCell[] {
+    const weeks: TimelineCell[] = [];
+    const cursor = this.startOfWeek(start);
     let index = 0;
     while (cursor <= end) {
       const weekStart = this.startOfWeek(cursor);
@@ -365,13 +452,33 @@ export class ProductionGanttComponent {
         key: `w-${weekStart.getTime()}`,
         start: weekStart,
         end: weekEnd,
-        label: `${this.formatShort(weekStart)} - ${this.formatShort(weekEnd)}`,
+        label: String(weekStart.getDate()),
         odd: index % 2 === 1,
       });
       cursor.setDate(cursor.getDate() + 7);
       index += 1;
     }
     return weeks;
+  }
+
+  private buildMonthCells(start: Date, end: Date): TimelineCell[] {
+    const months: TimelineCell[] = [];
+    const cursor = this.startOfMonth(start);
+    let index = 0;
+    while (cursor <= end) {
+      const monthStart = this.startOfMonth(cursor);
+      const monthEnd = this.endOfMonth(monthStart);
+      months.push({
+        key: `m-${monthStart.getFullYear()}-${monthStart.getMonth() + 1}`,
+        start: monthStart,
+        end: monthEnd,
+        label: this.formatMonth(monthStart),
+        odd: index % 2 === 1,
+      });
+      cursor.setMonth(cursor.getMonth() + 1);
+      index += 1;
+    }
+    return months;
   }
 
   private offsetPx(date: Date): number {
@@ -416,9 +523,23 @@ export class ProductionGanttComponent {
     return this.addDays(start, 6);
   }
 
+  private startOfMonth(date: Date): Date {
+    return new Date(date.getFullYear(), date.getMonth(), 1);
+  }
+
+  private endOfMonth(date: Date): Date {
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0);
+  }
+
   private addDays(base: Date, days: number): Date {
     const d = new Date(base);
     d.setDate(d.getDate() + days);
+    return d;
+  }
+
+  private addMonths(base: Date, months: number): Date {
+    const d = new Date(base);
+    d.setMonth(d.getMonth() + months);
     return d;
   }
 
@@ -426,7 +547,17 @@ export class ProductionGanttComponent {
     return new Intl.DateTimeFormat('ru-RU', { day: '2-digit', month: '2-digit' }).format(date);
   }
 
+  private formatMonth(date: Date): string {
+    return new Intl.DateTimeFormat('ru-RU', { month: 'short', year: '2-digit' }).format(date);
+  }
+
   private formatDate(date: Date): string {
     return new Intl.DateTimeFormat('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(date);
+  }
+
+  cellWidthPx(): number {
+    if (this.scale() === 'DAY') return DAY_COL_PX;
+    if (this.scale() === 'MONTH') return MONTH_COL_PX;
+    return WEEK_COL_PX;
   }
 }

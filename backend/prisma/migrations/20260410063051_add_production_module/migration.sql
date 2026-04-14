@@ -1,9 +1,19 @@
 -- CreateEnum
 CREATE TYPE "ProductionStatus" AS ENUM ('PENDING', 'IN_PROGRESS', 'DONE');
 
--- AlterTable
-ALTER TABLE "Order" ADD COLUMN     "productionStart" TIMESTAMP(3),
-ADD COLUMN     "productionStatus" "ProductionStatus" NOT NULL DEFAULT 'PENDING';
+-- AlterTable (historical-safe: on clean shadow DB "Order" may not exist yet)
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'Order'
+  ) THEN
+    ALTER TABLE "Order"
+      ADD COLUMN IF NOT EXISTS "productionStart" TIMESTAMP(3),
+      ADD COLUMN IF NOT EXISTS "productionStatus" "ProductionStatus" NOT NULL DEFAULT 'PENDING';
+  END IF;
+END $$;
 
 -- CreateTable
 CREATE TABLE "Worker" (
@@ -37,7 +47,18 @@ CREATE TABLE "WorkerAssignment" (
 CREATE UNIQUE INDEX "WorkerAssignment_orderId_workerId_lineNo_key" ON "WorkerAssignment"("orderId", "workerId", "lineNo");
 
 -- AddForeignKey
-ALTER TABLE "WorkerAssignment" ADD CONSTRAINT "WorkerAssignment_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'Order'
+  ) THEN
+    ALTER TABLE "WorkerAssignment"
+      ADD CONSTRAINT "WorkerAssignment_orderId_fkey"
+      FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF;
+END $$;
 
 -- AddForeignKey
 ALTER TABLE "WorkerAssignment" ADD CONSTRAINT "WorkerAssignment_workerId_fkey" FOREIGN KEY ("workerId") REFERENCES "Worker"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

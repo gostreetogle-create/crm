@@ -2,6 +2,12 @@ import { Router } from "express";
 import { z } from "zod";
 import { Prisma, StockMovementType } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
+import {
+  applyIncoming,
+  applyOutgoing,
+  StockInsufficientError,
+  StockProductNotFoundError,
+} from "../services/warehouse/stock-movement.service.js";
 
 export const warehouseRouter = Router();
 
@@ -56,18 +62,6 @@ function movementDelta(type: StockMovementType, quantity: number): number {
   if (type === StockMovementType.INCOMING) return quantity;
   if (type === StockMovementType.OUTGOING) return -quantity;
   return quantity;
-}
-
-class ProductNotFoundError extends Error {
-  constructor() {
-    super("product_not_found");
-  }
-}
-
-class InsufficientStockError extends Error {
-  constructor() {
-    super("insufficient_stock");
-  }
 }
 
 warehouseRouter.get("/products", async (req, res, next) => {
@@ -273,54 +267,40 @@ warehouseRouter.post("/movements", async (req, res, next) => {
     const dbType = mapMovementTypeToDb(body.type);
     const actor = req.auth?.login ?? req.auth?.userId ?? "system";
 
-    const created = await prisma.$transaction(async (tx) => {
-      const product = await tx.warehouseProduct.findUnique({ where: { id: body.productId } });
-      if (!product) {
-        throw new ProductNotFoundError();
+    await prisma.$transaction(async (tx) => {
+      const item = {
+        productId: body.productId,
+        quantity: body.quantity,
+        reason: toNullableString(body.reason),
+        createdBy: actor,
+      };
+      if (dbType === StockMovementType.OUTGOING) {
+        await applyOutgoing(tx, [item]);
+        return;
       }
-      const nextQuantity = product.quantity + movementDelta(dbType, body.quantity);
-      if (nextQuantity < 0) {
-        throw new InsufficientStockError();
-      }
-      const movement = await tx.warehouseStockMovement.create({
-        data: {
-          productId: body.productId,
-          type: dbType,
-          quantity: body.quantity,
-          reason: toNullableString(body.reason),
-          createdBy: actor,
-        },
-      });
-      await tx.warehouseProduct.update({
-        where: { id: body.productId },
-        data: { quantity: nextQuantity },
-      });
-      return movement;
+      await applyIncoming(tx, [item]);
     });
 
     req.log?.info({
       action: "warehouse_movement_created",
-      movementId: created.id,
-      productId: created.productId,
-      type: created.type,
-      quantity: created.quantity,
+      productId: body.productId,
+      type: dbType,
+      quantity: body.quantity,
     });
 
     res.status(201).json({
-      id: created.id,
-      productId: created.productId,
-      type: mapMovementTypeFromDb(created.type),
-      quantity: created.quantity,
-      reason: created.reason,
-      createdBy: created.createdBy,
-      createdAt: created.createdAt.toISOString(),
+      productId: body.productId,
+      type: mapMovementTypeFromDb(dbType),
+      quantity: body.quantity,
+      reason: toNullableString(body.reason),
+      createdBy: actor,
     });
   } catch (error) {
-    if (error instanceof InsufficientStockError) {
+    if (error instanceof StockInsufficientError) {
       res.status(409).json({ error: "insufficient_stock" });
       return;
     }
-    if (error instanceof ProductNotFoundError) {
+    if (error instanceof StockProductNotFoundError) {
       res.status(404).json({ error: "product_not_found" });
       return;
     }

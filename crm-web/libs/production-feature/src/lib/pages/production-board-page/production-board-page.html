@@ -39,9 +39,41 @@
         @if (store.loading()) {
           <p class="hint">Загрузка заказов...</p>
         } @else if (viewMode() === 'GANTT') {
+          <div class="gantt-toolbar">
+            <button type="button" class="btn btn--secondary" (click)="scrollGanttToToday()">Сегодня</button>
+            <div class="scale-switcher" role="group" aria-label="Масштаб шкалы">
+              <button
+                type="button"
+                class="gantt-scale-btn"
+                [class.gantt-scale-btn--active]="ganttScale() === 'DAY'"
+                (click)="setGanttScale('DAY')"
+              >
+                День
+              </button>
+              <button
+                type="button"
+                class="gantt-scale-btn"
+                [class.gantt-scale-btn--active]="ganttScale() === 'WEEK'"
+                (click)="setGanttScale('WEEK')"
+              >
+                Неделя
+              </button>
+              <button
+                type="button"
+                class="gantt-scale-btn"
+                [class.gantt-scale-btn--active]="ganttScale() === 'MONTH'"
+                (click)="setGanttScale('MONTH')"
+              >
+                Месяц
+              </button>
+            </div>
+          </div>
           <div class="ganttHostWrap">
             <app-production-gantt
+              #gantt
               [orders]="store.filteredOrders()"
+              [scale]="ganttScale()"
+              (scaleChange)="setGanttScale($event)"
               (orderSelected)="openOrderDrawer($event)"
               (orderBarSelected)="openGanttOrderPopover($event)"
               (lineSelected)="openPositionDrawer($event)"
@@ -74,6 +106,14 @@
               (click)="setMobileKanbanTab('DONE')"
             >
               Готово
+            </button>
+            <button
+              type="button"
+              class="filterBtn"
+              [class.filterBtn--active]="mobileKanbanTab() === 'SHIPPED'"
+              (click)="setMobileKanbanTab('SHIPPED')"
+            >
+              Отгружено
             </button>
           </div>
 
@@ -149,6 +189,28 @@
                 />
               }
             </section>
+
+            <section
+              class="boardCol boardCol--shipped"
+              [class.boardCol--active-mobile]="mobileKanbanTab() === 'SHIPPED'"
+              cdkDropList
+              [id]="'SHIPPED'"
+              [cdkDropListData]="ordersByStatus('SHIPPED')"
+              [cdkDropListConnectedTo]="dropListConnections.SHIPPED"
+              (cdkDropListDropped)="onDrop($event, 'SHIPPED')"
+            >
+              <h2>Отгружено</h2>
+              @for (order of store.shippedOrders(); track order.id) {
+                <app-production-order-card
+                  [order]="order"
+                  [mediaBaseUrl]="mediaBaseUrl"
+                  [expanded]="isOrderExpanded(order.id)"
+                  (openDrawer)="openOrderDrawer($event)"
+                  (togglePositions)="toggleOrderLines($event)"
+                  (openPositionDrawer)="openPositionDrawer($event)"
+                />
+              }
+            </section>
           </div>
         }
       </section>
@@ -193,6 +255,8 @@
       [progressPercent]="progressPercent(order)"
       (close)="closeOrderDrawer()"
       (startOrder)="startOrder($event)"
+      (shipOrder)="shipOrder($event)"
+      (forceStatusChange)="forceChangeOrderStatus($event)"
       (commentDraftChange)="commentDraft.set($event)"
       (addComment)="addComment()"
     />

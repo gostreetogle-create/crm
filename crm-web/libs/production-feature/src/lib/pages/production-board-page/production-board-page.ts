@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal, viewChild } from '@angular/core';
 import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 import { Router } from '@angular/router';
 import { API_CONFIG } from '@srm/platform-core';
@@ -46,6 +46,7 @@ export class ProductionBoardPage implements OnInit {
   private readonly api = inject(API_CONFIG);
   private readonly router = inject(Router);
   readonly viewMode = signal<'KANBAN' | 'GANTT'>('KANBAN');
+  readonly ganttScale = signal<'DAY' | 'WEEK' | 'MONTH'>('WEEK');
   readonly mediaBaseUrl = this.api.baseUrl.replace(/\/$/, '');
   readonly expandedOrders = signal<Record<string, boolean>>({});
   readonly selectedOrder = signal<ProductionOrder | null>(null);
@@ -64,17 +65,19 @@ export class ProductionBoardPage implements OnInit {
   });
   readonly commentDraft = signal('');
   readonly savingComment = signal(false);
-  readonly columns: ProductionStatus[] = ['PENDING', 'IN_PROGRESS', 'DONE'];
+  readonly columns: ProductionStatus[] = ['PENDING', 'IN_PROGRESS', 'DONE', 'SHIPPED'];
   readonly dropListConnections: Record<ProductionStatus, ProductionStatus[]> = {
-    PENDING: ['IN_PROGRESS', 'DONE'],
-    IN_PROGRESS: ['PENDING', 'DONE'],
-    DONE: ['PENDING', 'IN_PROGRESS'],
+    PENDING: ['IN_PROGRESS'],
+    IN_PROGRESS: ['DONE'],
+    DONE: [],
+    SHIPPED: [],
   };
   readonly filters = [
     { value: 'ALL', label: 'Все' },
     { value: 'PENDING', label: 'Проектирование' },
     { value: 'IN_PROGRESS', label: 'В работе' },
     { value: 'DONE', label: 'Готово' },
+    { value: 'SHIPPED', label: 'Отгружено' },
   ] as const;
 
   /** Активная колонка канбана на узких экранах (табы). */
@@ -89,6 +92,7 @@ export class ProductionBoardPage implements OnInit {
     if (!popover) return null;
     return this.store.orders().find((order) => order.id === popover.orderId) ?? null;
   });
+  private readonly ganttComponent = viewChild(ProductionGanttComponent);
 
   ngOnInit(): void {
     this.store.loadOrders();
@@ -135,11 +139,13 @@ export class ProductionBoardPage implements OnInit {
     const order = this.store.orders().find((item) => item.id === event.orderId);
     if (!order) return;
     const assignment = order.assignments.find((item) => item.lineNo === event.lineNo);
+    const fallbackStart = this.toInputDate(order.productionStart);
+    const fallbackEnd = this.toInputDate(order.deadline);
     this.selectedPosition.set({ orderId: event.orderId, lineNo: event.lineNo });
     this.positionEditor.set({
       workerId: assignment?.workerId ?? '',
-      startDate: this.toInputDate(assignment?.startDate),
-      endDate: this.toInputDate(assignment?.endDate),
+      startDate: this.toInputDate(assignment?.startDate) || fallbackStart,
+      endDate: this.toInputDate(assignment?.endDate) || fallbackEnd,
       status: this.lineSnapshotStatus(order, event.lineNo),
     });
   }
@@ -154,6 +160,18 @@ export class ProductionBoardPage implements OnInit {
       this.store.updateOrderStatus(order.id, 'IN_PROGRESS');
       this.selectedOrder.set({ ...order, productionStatus: 'IN_PROGRESS' });
     }
+  }
+
+  forceChangeOrderStatus(status: ProductionStatus): void {
+    const order = this.selectedOrder();
+    if (!order) return;
+    this.store.updateOrderStatus(order.id, status, { force: true });
+    this.selectedOrder.set({ ...order, productionStatus: status });
+  }
+
+  shipOrder(order: ProductionOrder): void {
+    this.store.shipOrder(order.id);
+    this.selectedOrder.set({ ...order, productionStatus: 'SHIPPED' });
   }
 
   formatLongDate(dateValue: string | null | undefined): string {
@@ -175,6 +193,10 @@ export class ProductionBoardPage implements OnInit {
         return this.store.inProgressOrders();
       case 'DONE':
         return this.store.doneOrders();
+      case 'SHIPPED':
+        return this.store.shippedOrders();
+      default:
+        return [];
     }
   }
 
@@ -187,6 +209,14 @@ export class ProductionBoardPage implements OnInit {
   setView(mode: 'KANBAN' | 'GANTT'): void {
     this.viewMode.set(mode);
     if (mode !== 'GANTT') this.closeGanttOrderPopover();
+  }
+
+  setGanttScale(scale: 'DAY' | 'WEEK' | 'MONTH'): void {
+    this.ganttScale.set(scale);
+  }
+
+  scrollGanttToToday(): void {
+    this.ganttComponent()?.scrollToToday();
   }
 
   openGanttOrderPopover(payload: ProductionGanttOrderBarClick): void {
@@ -210,6 +240,7 @@ export class ProductionBoardPage implements OnInit {
   statusLabel(status: ProductionStatus): string {
     if (status === 'IN_PROGRESS') return 'В работе';
     if (status === 'DONE') return 'Готово';
+    if (status === 'SHIPPED') return 'Отгружено';
     return 'Проектирование';
   }
 

@@ -5,7 +5,6 @@
     <div class="ganttHost">
       <div class="ganttFlex">
         <div class="ganttLabelsColumn">
-          <div class="labelToolbarSpacer" aria-hidden="true"></div>
           <div class="labelHeaderGrid labelGrid">
             <div class="labelHeaderCell">Название</div>
             <div class="labelHeaderCell">Исп.</div>
@@ -17,7 +16,7 @@
               <div class="labelCell orderLabel labelGrid" [class.orderLabel--overdue]="row.isOverdue">
                 <div class="labelCol labelCol--name">
                   <button type="button" class="toggleBtn" (click)="toggleOrder(row.order.id, $event)">
-                    {{ isExpanded(row.order.id) ? '▾' : '▸' }}
+                    <span class="toggleBtnIcon" aria-hidden="true">{{ isExpanded(row.order.id) ? '▼' : '▶' }}</span>
                   </button>
                   <div class="labelMain" (click)="onLabelClick($event, row.order)">
                     <strong>{{ row.order.orderNumber }}</strong>
@@ -45,12 +44,9 @@
         </div>
         <div class="ganttScrollCol" #ganttScrollCol>
           <div class="ganttTimelineInner" [style.width.px]="timelineWidthPx()">
-            <div class="timelineToolbar">
-              <button type="button" class="todayScrollBtn" (click)="scrollToToday()">Сегодня</button>
-            </div>
             <div class="timelineHeader">
-              @for (week of weekCells(); track week.key) {
-                <div class="weekCell" [class.weekCell--odd]="week.odd">{{ week.label }}</div>
+              @for (cell of timelineCells(); track cell.key) {
+                <div class="timelineCell" [class.timelineCell--odd]="cell.odd" [style.width.px]="cellWidthPx()">{{ cell.label }}</div>
               }
               <div class="todayBadge" [style.left.px]="todayLeftPx()">Сегодня</div>
               <div class="todayLine" [style.left.px]="todayLeftPx()"></div>
@@ -58,8 +54,8 @@
             @for (row of rows(); track row.order.id) {
               <div class="trackStack">
                 <div class="trackCell" [class.trackCell--overdue]="row.isOverdue" [title]="tooltipForOrder(row)">
-                  @for (week of weekCells(); track week.key) {
-                    <div class="weekStripe" [class.weekStripe--odd]="week.odd"></div>
+                  @for (cell of timelineCells(); track cell.key) {
+                    <div class="timelineStripe" [class.timelineStripe--odd]="cell.odd" [style.width.px]="cellWidthPx()"></div>
                   }
                   <div class="todayLine" [style.left.px]="todayLeftPx()"></div>
                   @if (row.hasPlanned) {
@@ -105,11 +101,11 @@
                 @if (isExpanded(row.order.id)) {
                   @for (lineRow of row.lines; track lineRow.line.lineNo) {
                     <div class="trackCell trackCell--line" [title]="tooltipForLine(lineRow)">
-                      @for (week of weekCells(); track week.key) {
-                        <div class="weekStripe" [class.weekStripe--odd]="week.odd"></div>
+                      @for (cell of timelineCells(); track cell.key) {
+                        <div class="timelineStripe" [class.timelineStripe--odd]="cell.odd" [style.width.px]="cellWidthPx()"></div>
                       }
                       <div class="todayLine" [style.left.px]="todayLeftPx()"></div>
-                      @if (lineRow.start && lineRow.end && lineRow.assignmentId) {
+                      @if (lineRow.start && lineRow.end && lineRow.assignmentId && !lineRow.usesInheritedDates) {
                         <div
                           [class]="'bar bar--line bar--line-' + lineBarClass(lineRow.line.status) + ' bar--line-draggable'"
                           [style.left.px]="barDragLeftPx(lineRow)"
@@ -129,16 +125,9 @@
                         </div>
                       } @else if (lineRow.start && lineRow.end) {
                         <div
-                          [class]="'bar bar--line bar--line-' + lineBarClass(lineRow.line.status)"
+                          [class]="'bar bar--line bar--line-' + lineBarClass(lineRow.line.status) + (lineRow.usesInheritedDates ? ' bar--line-inherited' : '')"
                           [style.left.px]="barDragLeftPx(lineRow)"
                           [style.width.px]="barDragWidthDeltaPx(lineRow.assignmentId, lineRow.widthPx)"
-                        ></div>
-                      } @else {
-                        <div
-                          class="lineNoDates"
-                          [style.left.px]="lineRow.fallbackLeftPx"
-                          [style.width.px]="lineRow.fallbackWidthPx"
-                          title="Для позиции не заданы даты назначения"
                         ></div>
                       }
                     </div>

@@ -18,50 +18,8 @@ import { PageShellComponent } from '@srm/ui-kit';
   standalone: true,
   selector: 'app-warehouse-product-details-page',
   imports: [CommonModule, FormsModule, RouterLink, PageShellComponent, DecimalPipe],
-  template: `
-    <app-page-shell>
-      <section class="page">
-        <h1>Карточка товара</h1>
-        @if (product()) {
-          <div class="card">
-            <p><strong>{{ product()!.name }}</strong> ({{ product()!.sku }})</p>
-            <p>Категория: {{ product()!.category }}</p>
-            <p>Остаток: {{ product()!.quantity | number: '1.0-2' }} {{ product()!.unit }}</p>
-            <p>Минимум: {{ product()!.minStockLevel | number: '1.0-2' }} {{ product()!.unit }}</p>
-            <p><a [routerLink]="['/warehouse/products', product()!.id, 'edit']">Редактировать</a></p>
-          </div>
-          <form class="movement" (ngSubmit)="createMovement()">
-            <select [(ngModel)]="movementType" name="type">
-              @for (item of movementTypes; track item.value) {
-                <option [ngValue]="item.value">{{ item.label }}</option>
-              }
-            </select>
-            <input type="number" min="0.01" step="0.01" [(ngModel)]="movementQuantity" name="quantity" />
-            <input type="text" placeholder="Причина" [(ngModel)]="movementReason" name="reason" />
-            <button type="submit">Провести движение</button>
-          </form>
-          <section class="table-wrap">
-            <h2>История движений</h2>
-            <table>
-              <thead><tr><th>Дата</th><th>Тип</th><th>Кол-во</th><th>Причина</th><th>Кем</th></tr></thead>
-              <tbody>
-                @for (row of movements(); track row.id) {
-                  <tr>
-                    <td>{{ row.createdAt | date: 'dd.MM.yyyy HH:mm' }}</td>
-                    <td>{{ typeLabel(row.type) }}</td>
-                    <td>{{ row.quantity | number: '1.0-2' }}</td>
-                    <td>{{ row.reason || '—' }}</td>
-                    <td>{{ row.createdBy || '—' }}</td>
-                  </tr>
-                } @empty { <tr><td colspan="5">Движений пока нет</td></tr> }
-              </tbody>
-            </table>
-          </section>
-        }
-      </section>
-    </app-page-shell>
-  `,
-  styles: [`.page{display:grid;gap:12px}.card,.movement,.table-wrap{border:1px solid var(--border-color);border-radius:10px;padding:12px}.movement{display:grid;grid-template-columns:1fr 1fr 2fr auto;gap:8px}table{width:100%;border-collapse:collapse}th,td{padding:8px;border-bottom:1px solid var(--border-color);text-align:left}`],
+  templateUrl: './warehouse-product-details-page.html',
+  styleUrl: './warehouse-product-details-page.scss',
 })
 export class WarehouseProductDetailsPage implements OnInit {
   private readonly repository = inject<WarehouseRepository>(WAREHOUSE_REPOSITORY);
@@ -69,12 +27,14 @@ export class WarehouseProductDetailsPage implements OnInit {
   private readonly router = inject(Router);
   readonly product = signal<any | null>(null);
   readonly movements = signal<WarehouseMovement[]>([]);
+  readonly returnUrl = signal<string | null>(null);
   readonly movementTypes = MOVEMENT_TYPES;
   movementType: StockMovementType = 'INCOMING';
   movementQuantity = 1;
   movementReason = '';
 
   ngOnInit(): void {
+    this.returnUrl.set(this.readReturnUrl());
     const id = this.route.snapshot.paramMap.get('id');
     if (!id) {
       this.router.navigate(['/warehouse/products']);
@@ -109,5 +69,11 @@ export class WarehouseProductDetailsPage implements OnInit {
 
   typeLabel(type: WarehouseMovement['type']): string {
     return getMovementLabel(toStockMovementType(type));
+  }
+
+  private readReturnUrl(): string | null {
+    const raw = this.route.snapshot.queryParamMap.get('returnUrl')?.trim() ?? '';
+    if (!raw.startsWith('/')) return null;
+    return raw;
   }
 }

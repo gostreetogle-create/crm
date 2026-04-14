@@ -1,0 +1,63 @@
+<app-page-shell>
+  <section class="page">
+    <header class="toolbar">
+      <h1>Карточка товара</h1>
+      @if (product()) {
+        <a
+          class="btn btn--secondary"
+          [routerLink]="['/warehouse/products', product()!.id, 'edit']"
+          [queryParams]="returnUrl() ? { returnUrl: returnUrl() } : null"
+        >
+          Редактировать
+        </a>
+      }
+    </header>
+
+    @if (product()) {
+      <div class="card">
+        <p><strong>{{ product()!.name }}</strong> ({{ product()!.sku }})</p>
+        <p>Категория: {{ product()!.category }}</p>
+        <p>Остаток: {{ product()!.quantity | number: '1.0-2' }} {{ product()!.unit }}</p>
+        <p>Минимум: {{ product()!.minStockLevel | number: '1.0-2' }} {{ product()!.unit }}</p>
+      </div>
+
+      <form class="movement" (ngSubmit)="createMovement()">
+        <select class="input-field" [(ngModel)]="movementType" name="type">
+          @for (item of movementTypes; track item.value) {
+            <option [ngValue]="item.value">{{ item.label }}</option>
+          }
+        </select>
+        <input
+          class="input-field"
+          type="number"
+          min="0.01"
+          step="0.01"
+          [(ngModel)]="movementQuantity"
+          name="quantity"
+        />
+        <input class="input-field" type="text" placeholder="Причина" [(ngModel)]="movementReason" name="reason" />
+        <button class="btn btn--primary" type="submit">Провести движение</button>
+      </form>
+
+      <section class="table-wrap">
+        <h2>История движений</h2>
+        <table>
+          <thead><tr><th>Дата</th><th>Тип</th><th>Кол-во</th><th>Причина</th><th>Кем</th></tr></thead>
+          <tbody>
+            @for (row of movements(); track row.id) {
+              <tr>
+                <td>{{ row.createdAt | date: 'dd.MM.yyyy HH:mm' }}</td>
+                <td>{{ typeLabel(row.type) }}</td>
+                <td>{{ row.quantity | number: '1.0-2' }}</td>
+                <td>{{ row.reason || '—' }}</td>
+                <td>{{ row.createdBy || '—' }}</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="5">Движений пока нет</td></tr>
+            }
+          </tbody>
+        </table>
+      </section>
+    }
+  </section>
+</app-page-shell>

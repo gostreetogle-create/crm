@@ -1,4 +1,4 @@
-export type ProductionStatus = 'PENDING' | 'IN_PROGRESS' | 'DONE';
+export type ProductionStatus = 'PENDING' | 'IN_PROGRESS' | 'DONE' | 'SHIPPED';
 export type ProductionLineStatus = 'DESIGNING' | 'IN_PROGRESS' | 'DONE';
 
 export type ProductionAssignment = {
@@ -26,6 +26,17 @@ export type ProductionLineSnapshot = {
   thumbnailUrl?: string | null;
   /** ID товара (TradeGood) из КП — для фото и бэкфилла */
   catalogProductId?: string | null;
+  materials?: ProductionOrderItemMaterial[];
+};
+
+export type ProductionOrderItemMaterial = {
+  id: string;
+  orderItemId: string;
+  name: string;
+  quantity: number;
+  unit: string;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 export type ProductionOrder = {

@@ -9,7 +9,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
-import { LucideSettings } from '@lucide/angular';
+import { LucideArchive, LucideSettings } from '@lucide/angular';
 import type { PermissionKey } from '@srm/authz-core';
 import { PermissionsService } from '@srm/authz-runtime';
 import { SessionAuthService } from '@srm/auth-session-angular';
@@ -18,7 +18,7 @@ import { AppHealthStore } from './app-health.store';
 @Component({
   selector: 'app-app-header',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, LucideSettings],
+  imports: [RouterLink, RouterLinkActive, LucideArchive, LucideSettings],
   templateUrl: './app-header.component.html',
   styleUrl: './app-header.component.scss',
 })

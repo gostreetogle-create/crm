@@ -45,3 +45,26 @@ Operational runbook:
 - Angular dev-server: прокси `proxy.conf.json` в проекте `crm-web` — запросы на `/api/*` уходят на backend.
 - В `api-config.ts`: при работе с реальным API выставить `useMockRepositories: false`; `baseUrl` оставить `''`, чтобы использовать тот же origin и прокси.
 
+## Production / Warehouse / Supply contracts (actual)
+
+### Production
+
+- Жизненный цикл заказа: `PENDING -> IN_PROGRESS -> DONE -> SHIPPED`.
+- Изменение статуса идет через production API и валидируется сервером по state machine.
+- Принудительный переход (`force`) допустим только с правом `production.force_status`.
+- Отгрузка (`DONE -> SHIPPED`) запускает серверную транзакцию: смена статуса + автоматическое складское списание.
+
+### Warehouse
+
+- Складские движения: `INCOMING`, `OUTGOING`, `ADJUSTMENT`.
+- Сводный endpoint: `GET /api/warehouse/summary`.
+- При успешной отгрузке заказа формируются автоматические `OUTGOING` движения.
+- Текущая реализация `ADJUSTMENT`: без отдельной отрицательной ветки (расширение возможно в `stock-movement.service.ts`).
+
+### Supply
+
+- `SupplyRequest` автосоздается после оплаты КП.
+- Приемка факта ("Поступило") создает `INCOMING` через `applyIncoming`.
+- В коде статусы заявки: `OPEN`, `PARTIAL`, `RECEIVED` (есть `CANCELLED` в enum).
+- Для бизнес-текстов допускается маппинг: `PENDING` -> `OPEN`, `PARTIALLY_RECEIVED` -> `PARTIAL`.
+

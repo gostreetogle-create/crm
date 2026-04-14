@@ -1,0 +1,7 @@
+.page { display: grid; gap: 12px; }
+.toolbar { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.filters { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 8px; }
+.table-wrap { border: 1px solid var(--border-color); border-radius: 10px; overflow: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { padding: 8px 10px; border-bottom: 1px solid var(--border-color); text-align: left; }
+.low { background: var(--color-danger-bg, color-mix(in srgb, #bf3e2f 8%, var(--surface))); }

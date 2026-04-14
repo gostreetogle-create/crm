@@ -1,23 +1,25 @@
 <div class="drawerBackdrop" (click)="onBackdropClick()"></div>
 <aside class="orderDrawer lineDrawer" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
   <button type="button" class="drawerClose" (click)="close.emit()">✕</button>
-  <div class="lineDrawerHeader">
-    <div class="lineDrawerImage lineDrawerImage--head">
-      @if (hasLinePhoto(line)) {
-        <img [src]="linePhotoUrl(line)" [alt]="line.name" />
-      } @else {
-        <div class="lineThumbPlaceholder" aria-hidden="true">📦</div>
-      }
+  <header class="drawerHeader lineDrawerHeader">
+    <div class="lineDrawerHeaderMain">
+      <div class="lineDrawerImage lineDrawerImage--head">
+        @if (hasLinePhoto(line)) {
+          <img [src]="linePhotoUrl(line)" [alt]="line.name" />
+        } @else {
+          <div class="lineThumbPlaceholder" aria-hidden="true">📦</div>
+        }
+      </div>
+      <div class="lineDrawerHeaderText">
+        <h3>{{ line.name }}</h3>
+        <p>{{ line.qty }} {{ line.unit }}</p>
+      </div>
     </div>
-    <div class="lineDrawerHeaderText">
-      <h3>{{ line.name }}</h3>
-      <p>{{ line.qty }} {{ line.unit }}</p>
-    </div>
-  </div>
+  </header>
 
-  <section class="lineEditorSection">
+  <section class="lineEditorSection drawerSection">
     <div class="lineSectionHead">
-      <h4>Статус</h4>
+      <h4 class="drawerSectionTitle">Статус</h4>
       <span class="saveHint" [class]="'saveHint saveHint--' + positionSaveState.status">
         @if (positionSaveState.status === 'saving') {
           Сохранение...
@@ -54,9 +56,9 @@
     </div>
   </section>
 
-  <section class="lineEditorSection">
+  <section class="lineEditorSection drawerSection">
     <div class="lineSectionHead">
-      <h4>Рабочий</h4>
+      <h4 class="drawerSectionTitle">Рабочий</h4>
       <span class="saveHint" [class]="'saveHint saveHint--' + positionSaveState.worker">
         @if (positionSaveState.worker === 'saving') {
           Сохранение...
@@ -78,9 +80,9 @@
     </div>
   </section>
 
-  <section class="lineEditorSection">
+  <section class="lineEditorSection drawerSection">
     <div class="lineSectionHead">
-      <h4>Планирование</h4>
+      <h4 class="drawerSectionTitle">Планирование</h4>
       <span class="saveHint" [class]="'saveHint saveHint--' + positionSaveState.dates">
         @if (positionSaveState.dates === 'saving') {
           Сохранение...
@@ -89,7 +91,7 @@
         }
       </span>
     </div>
-    <div class="lineDateGrid">
+    <div class="drawerScheduleGrid">
       <label class="dateField">
         <span>Начало</span>
         <div class="dateInputWrap">

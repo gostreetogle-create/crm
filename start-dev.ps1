@@ -29,18 +29,18 @@ function Stop-ProcessByPort {
 
     $allowedProcessNames = @("node", "npm", "npx")
 
-    foreach ($pid in $pids) {
+    foreach ($procId in $pids) {
         try {
-            $proc = Get-Process -Id $pid -ErrorAction Stop
+            $proc = Get-Process -Id $procId -ErrorAction Stop
             $processName = $proc.ProcessName.ToLowerInvariant()
             if ($allowedProcessNames -contains $processName) {
-                Write-Host "Stopping PID $pid on port $Port ($($proc.ProcessName))..." -ForegroundColor DarkYellow
-                Stop-Process -Id $pid -Force -ErrorAction Stop
+                Write-Host "Stopping PID $procId on port $Port ($($proc.ProcessName))..." -ForegroundColor DarkYellow
+                Stop-Process -Id $procId -Force -ErrorAction Stop
             } else {
-                Write-Host "Skip PID $pid on port $Port ($($proc.ProcessName)): not node/npm/npx." -ForegroundColor Yellow
+                Write-Host "Skip PID $procId on port $Port ($($proc.ProcessName)): not node/npm/npx." -ForegroundColor Yellow
             }
         } catch {
-            Write-Host "Cannot stop PID $pid on port ${Port}: $($_.Exception.Message)" -ForegroundColor DarkGray
+            Write-Host "Cannot stop PID $procId on port ${Port}: $($_.Exception.Message)" -ForegroundColor DarkGray
         }
     }
 }

@@ -13,6 +13,7 @@ export const PERMISSION_CATALOG: Record<
   'page.demo': { labelRu: 'Раздел «Demo»', group: 'page' },
   'page.commercialProposal': { labelRu: 'Раздел «Коммерческое предложение»', group: 'page' },
   'page.production': { labelRu: 'Раздел «Производство»', group: 'page' },
+  'production.force_status': { labelRu: 'Производство: принудительная смена статуса заказа', group: 'page' },
   'page.preferences': { labelRu: 'Раздел «Настройки»', group: 'page' },
   'page.admin.settings': { labelRu: 'Раздел «Админ-настройки»', group: 'page' },
   'dict.hub.materials': { labelRu: 'Плитка «Материалы»', group: 'dict' },
@@ -118,6 +119,7 @@ export const PERMISSION_CATALOG: Record<
 export const PERMISSION_KEYS_ORDERED: readonly PermissionKey[] = [
   'page.dictionaries',
   'page.demo',
+  'production.force_status',
   'page.preferences',
   'page.admin.settings',
   ...DICTIONARY_HUB_PERMISSION_KEYS,

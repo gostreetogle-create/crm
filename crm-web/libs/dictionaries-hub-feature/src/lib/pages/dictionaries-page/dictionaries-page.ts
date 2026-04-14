@@ -1022,8 +1022,9 @@ export class DictionariesPage implements OnDestroy {
   });
 
   /**
-   * Р•Рґ. РёР·Рј. РІ С‚РѕРІР°СЂРµ С…СЂР°РЅРёС‚СЃСЏ РєР°Рє `unitCode` (СЃС‚СЂРѕРєР°); РІ СЃРїСЂР°РІРѕС‡РЅРёРєРµ РµРґРёРЅРёС† вЂ” `code`, РёРЅР°С‡Рµ РїРѕРґСЃС‚Р°РІР»СЏРµРј `name`.
-   * РЎРј. СЃРїСЂР°РІРѕС‡РЅРёРє В«Р•РґРёРЅРёС†С‹ РёР·РјРµСЂРµРЅРёСЏВ» РЅР° С…Р°Р±Рµ.
+   * Ед. изм. в товаре хранится как `unitCode` (строка); в справочнике единиц — `code`,
+   * иначе подставляем `name`.
+   * См. справочник «Единицы измерения» на хабе.
    */
   readonly tradeGoodUnitCatalogOptions = computed(() =>
     this.unitsStore
@@ -1037,12 +1038,12 @@ export class DictionariesPage implements OnDestroy {
       .sort((a, b) => a.label.localeCompare(b.label, 'ru')),
   );
 
-  /** РћРїС†РёРё СЃРµР»РµРєС‚Р° В«Р•Рґ. РёР·Рј.В»; РµСЃР»Рё РІ Р·Р°РїРёСЃРё СѓСЃС‚Р°СЂРµРІС€РёР№ РєРѕРґ вЂ” РѕРґРЅР° СЃС‚СЂРѕРєР° В«РЅРµ РёР· СЃРїСЂР°РІРѕС‡РЅРёРєР°В». */
+  /** Опции селекта «Ед. изм.»; если в записи устаревший код — добавляем строку «не из справочника». */
   tradeGoodUnitSelectOptions(): { value: string; label: string }[] {
     const base = this.tradeGoodUnitCatalogOptions();
     const cur = this.tradeGoodsForm.controls.unitCode.value?.trim() ?? '';
     if (cur && !base.some((o) => o.value === cur)) {
-      return [{ value: cur, label: `${cur} (РЅРµ РёР· СЃРїСЂР°РІРѕС‡РЅРёРєР°)` }, ...base];
+      return [{ value: cur, label: `${cur} (не из справочника)` }, ...base];
     }
     return base;
   }

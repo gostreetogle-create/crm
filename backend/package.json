@@ -16,6 +16,7 @@
     "authz:check": "tsx scripts/authz-integrity-check.ts",
     "authz:check:ci": "tsx scripts/authz-integrity-check.ts --skip-no-db",
     "backfill:images": "tsx scripts/backfill-lines-image-url.ts",
+    "fix:units-encoding": "tsx scripts/fix-units-encoding.ts",
     "regen:thumbs": "tsx scripts/regenerate-thumbs.ts",
     "db:studio": "prisma studio",
     "test": "vitest run",

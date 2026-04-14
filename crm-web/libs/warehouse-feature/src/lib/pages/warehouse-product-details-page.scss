@@ -1,0 +1,7 @@
+.page { display: grid; gap: 12px; }
+.toolbar { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.card, .movement, .table-wrap { border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; }
+.movement { display: grid; grid-template-columns: 1fr 1fr 2fr auto; gap: 8px; align-items: center; }
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: 8px; border-bottom: 1px solid var(--border-color); text-align: left; }
+h2 { margin: 0 0 8px 0; font-size: 16px; }

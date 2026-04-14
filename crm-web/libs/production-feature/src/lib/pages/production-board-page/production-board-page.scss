@@ -24,6 +24,7 @@
 .viewToggle {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .filters {
@@ -114,6 +115,41 @@
 
 .ganttHostWrap {
   min-width: 0;
+}
+
+.gantt-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0 12px;
+}
+
+.gantt-toolbar .scale-switcher {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+
+.gantt-scale-btn {
+  border: 0;
+  border-right: 1px solid var(--border-color);
+  background: var(--surface);
+  color: var(--text-primary);
+  padding: 6px 12px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.gantt-scale-btn:last-child {
+  border-right: 0;
+}
+
+.gantt-scale-btn--active {
+  background: var(--surface-soft);
+  color: var(--text-primary);
+  font-weight: 600;
 }
 
 .ganttPopoverBackdrop {

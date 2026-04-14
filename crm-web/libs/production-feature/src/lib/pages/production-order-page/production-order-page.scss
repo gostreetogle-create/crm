@@ -4,19 +4,27 @@
 
 .orderRoot {
   display: grid;
-  gap: 12px;
+  gap: 16px;
 }
 
 .orderHeader {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
+  gap: 12px;
+  align-items: center;
+}
+
+.orderHeader > div {
+  font-size: 14px;
+  color: var(--text-primary);
 }
 
 .orderActions {
   display: flex;
   gap: 8px;
-  margin-top: 10px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-color);
   align-items: center;
 }
 
@@ -29,11 +37,12 @@
 .actionBtn,
 .smallBtn {
   border: 1px solid var(--border-color);
-  background: var(--surface-soft);
+  background: var(--surface);
   color: var(--text-primary);
   border-radius: var(--radius-pill);
-  padding: 6px 10px;
+  padding: 7px 12px;
   cursor: pointer;
+  font: inherit;
 }
 
 .actionBtn--primary {
@@ -48,6 +57,12 @@
   border-color: #2aa84a;
 }
 
+.smallBtn--primary {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #fff;
+}
+
 .smallBtn--danger {
   border-color: #d52222;
   color: #d52222;
@@ -57,6 +72,13 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  white-space: nowrap;
+}
+
+.tableWrap {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-card);
+  overflow: auto;
 }
 
 .linesTable {
@@ -67,9 +89,18 @@
 .linesTable th,
 .linesTable td {
   border-bottom: 1px solid var(--border-color);
-  padding: 8px;
+  padding: 10px 12px;
   text-align: left;
-  vertical-align: top;
+  vertical-align: middle;
+}
+
+.linesTable th {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .rowActions {
@@ -134,16 +165,21 @@
   word-break: break-word;
 }
 
+.assignRow td {
+  background: color-mix(in srgb, var(--surface-soft) 82%, var(--surface) 18%);
+}
+
 .assignForm {
   display: grid;
-  grid-template-columns: 1fr auto auto auto;
+  grid-template-columns: minmax(220px, 1fr) minmax(150px, 180px) minmax(150px, 180px) auto;
   gap: 8px;
+  align-items: center;
 }
 
 .assignForm select,
 .assignForm input {
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-card);
   padding: 6px 8px;
   background: var(--surface);
   color: var(--text-primary);
@@ -196,7 +232,7 @@
 
 .progressTrack {
   width: 100%;
-  height: 12px;
+  height: 10px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--surface-soft) 88%, var(--text-primary) 12%);
   overflow: hidden;

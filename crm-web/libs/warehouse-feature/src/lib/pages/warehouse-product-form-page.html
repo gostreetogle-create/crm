@@ -1,0 +1,56 @@
+<app-page-shell>
+  <section class="page">
+    <header class="toolbar">
+      <h1>{{ isEditMode() ? 'Редактирование товара' : 'Новый товар' }}</h1>
+    </header>
+
+    <form class="form-grid" (ngSubmit)="submit()">
+      <input class="input-field" placeholder="Наименование" [(ngModel)]="model.name" name="name" required />
+      <input class="input-field" placeholder="SKU" [(ngModel)]="model.sku" name="sku" required />
+      <input class="input-field" placeholder="Категория" [(ngModel)]="model.category" name="category" required />
+      <input
+        class="input-field"
+        type="number"
+        step="0.01"
+        min="0"
+        placeholder="Остаток"
+        [(ngModel)]="model.quantity"
+        name="quantity"
+        required
+      />
+      <select class="input-field" [(ngModel)]="model.unit" name="unit" required>
+        @for (unit of units; track unit) { <option [value]="unit">{{ unit }}</option> }
+      </select>
+      <input
+        class="input-field"
+        type="number"
+        step="0.01"
+        min="0"
+        placeholder="Минимальный остаток"
+        [(ngModel)]="model.minStockLevel"
+        name="minStockLevel"
+        required
+      />
+      <input
+        class="input-field"
+        type="number"
+        step="0.01"
+        min="0"
+        placeholder="Цена"
+        [(ngModel)]="model.price"
+        name="price"
+        required
+      />
+      <input class="input-field" placeholder="Поставщик" [(ngModel)]="model.supplierName" name="supplierName" />
+      <input class="input-field" placeholder="Локация на складе" [(ngModel)]="model.warehouseLocation" name="warehouseLocation" />
+      <div class="actions">
+        <button class="btn btn--primary" type="submit">{{ isEditMode() ? 'Сохранить изменения' : 'Сохранить' }}</button>
+        <a class="btn btn--secondary" [routerLink]="cancelLink()">Отмена</a>
+      </div>
+    </form>
+
+    @if (error()) {
+      <p class="error">{{ error() }}</p>
+    }
+  </section>
+</app-page-shell>

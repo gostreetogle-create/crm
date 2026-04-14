@@ -1,0 +1,65 @@
+<app-page-shell>
+  <section class="page">
+    <header class="toolbar">
+      <h1>Склад</h1>
+      <nav class="actions">
+        <a class="btn btn--secondary" routerLink="/warehouse/products">Товары</a>
+        <a class="btn btn--secondary" routerLink="/warehouse/movements">Движения</a>
+        <a class="btn btn--primary" routerLink="/warehouse/products/new">Добавить товар</a>
+      </nav>
+    </header>
+
+    <div class="summary-grid">
+      <article class="summary-card">
+        <div class="label">Позиций</div>
+        <div class="value">{{ summary()?.totalProducts ?? 0 }}</div>
+      </article>
+      <article class="summary-card">
+        <div class="label">На исходе</div>
+        <div class="value value--warn">{{ summary()?.lowStockCount ?? 0 }}</div>
+      </article>
+      <article class="summary-card">
+        <div class="label">Доля на исходе</div>
+        <div class="value">
+          {{ (summary()?.totalProducts ?? 0) > 0 ? ((summary()?.lowStockCount ?? 0) / (summary()?.totalProducts ?? 1) * 100 | number: '1.0-1') + '%' : '0%' }}
+        </div>
+      </article>
+      <article class="summary-card">
+        <div class="label">Стоимость склада</div>
+        <div class="value">{{ summary()?.totalValue ?? 0 | currency: 'RUB' : 'symbol' : '1.0-2' }}</div>
+      </article>
+    </div>
+
+    <section class="table-wrap">
+      <h2>Товары на исходе</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>SKU</th>
+            <th>Наименование</th>
+            <th>Категория</th>
+            <th>Остаток</th>
+            <th>Мин. остаток</th>
+            <th>Локация</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of lowStockProducts(); track item.id) {
+            <tr class="low">
+              <td><a [routerLink]="['/warehouse/products', item.id]">{{ item.sku }}</a></td>
+              <td>{{ item.name }}</td>
+              <td>{{ item.category }}</td>
+              <td>{{ item.quantity | number: '1.0-2' }} {{ item.unit }}</td>
+              <td>{{ item.minStockLevel | number: '1.0-2' }} {{ item.unit }}</td>
+              <td>{{ item.warehouseLocation || '—' }}</td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="6">Нет позиций ниже минимального остатка.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </section>
+  </section>
+</app-page-shell>

@@ -4,7 +4,7 @@ import { RouterLink } from '@angular/router';
 import { resolveTradeGoodLinePhotoUrl } from '@srm/platform-core';
 import { ContentCardComponent } from '../cards/content-card/content-card.component';
 
-export type ProductionOrderCardStatus = 'PENDING' | 'IN_PROGRESS' | 'DONE';
+export type ProductionOrderCardStatus = 'PENDING' | 'IN_PROGRESS' | 'DONE' | 'SHIPPED';
 export type ProductionOrderCardLineStatus = 'DESIGNING' | 'IN_PROGRESS' | 'DONE';
 
 export type ProductionOrderCardAssignment = {

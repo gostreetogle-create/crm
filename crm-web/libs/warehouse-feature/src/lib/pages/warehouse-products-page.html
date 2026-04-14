@@ -1,0 +1,54 @@
+<app-page-shell>
+  <section class="page">
+    <header class="toolbar">
+      <h1>Товары склада</h1>
+      <a class="btn btn--primary" routerLink="/warehouse/products/new">Добавить товар</a>
+    </header>
+
+    <div class="filters">
+      <input
+        class="input-field"
+        type="text"
+        placeholder="Поиск по SKU, названию, поставщику"
+        [(ngModel)]="search"
+        (ngModelChange)="reload()"
+      />
+      <select class="input-field" [(ngModel)]="category" (ngModelChange)="reload()">
+        <option value="">Все категории</option>
+        @for (c of categories(); track c) { <option [value]="c">{{ c }}</option> }
+      </select>
+      <select class="input-field" [(ngModel)]="sortBy" (ngModelChange)="reload()">
+        <option value="updatedAt">Обновление</option>
+        <option value="name">Название</option>
+        <option value="quantity">Остаток</option>
+        <option value="price">Цена</option>
+      </select>
+      <select class="input-field" [(ngModel)]="sortDir" (ngModelChange)="reload()">
+        <option value="desc">По убыванию</option>
+        <option value="asc">По возрастанию</option>
+      </select>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>SKU</th><th>Наименование</th><th>Категория</th><th>Остаток</th><th>Мин</th><th>Цена</th></tr>
+        </thead>
+        <tbody>
+          @for (item of products(); track item.id) {
+            <tr [class.low]="item.isBelowMinStockLevel">
+              <td><a [routerLink]="['/warehouse/products', item.id]">{{ item.sku }}</a></td>
+              <td>{{ item.name }}</td>
+              <td>{{ item.category }}</td>
+              <td>{{ item.quantity | number: '1.0-2' }} {{ item.unit }}</td>
+              <td>{{ item.minStockLevel | number: '1.0-2' }} {{ item.unit }}</td>
+              <td>{{ item.price | number: '1.2-2' }}</td>
+            </tr>
+          } @empty {
+            <tr><td colspan="6">Нет данных</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+</app-page-shell>

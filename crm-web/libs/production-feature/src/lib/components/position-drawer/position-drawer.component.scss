@@ -9,13 +9,13 @@
   position: fixed;
   top: 0;
   right: 0;
-  width: min(420px, 100%);
+  width: min(400px, 100%);
   height: 100vh;
   z-index: 1201;
   background: var(--surface);
   border-left: 1px solid var(--border-color);
   box-shadow: -16px 0 30px rgb(15 23 42 / 15%);
-  padding: 20px 16px;
+  padding: 20px 16px 32px;
   display: grid;
   gap: 14px;
   overflow-y: auto;
@@ -42,23 +42,28 @@
 }
 
 .lineDrawer {
-  width: min(440px, 100%);
-  padding: 24px;
-  gap: 16px;
-  box-shadow: -18px 0 32px rgb(15 23 42 / 18%);
+  width: min(400px, 100%);
 }
 
-.lineDrawerHeader {
-  display: grid;
-  grid-template-columns: 60px 1fr;
-  gap: 12px;
+.drawerHeader {
+  display: flex;
+  justify-content: space-between;
   align-items: center;
+  gap: 10px;
+}
+
+.lineDrawerHeaderMain {
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
 }
 
 .lineDrawerImage {
   width: 100%;
-  max-height: 220px;
-  border-radius: 14px;
+  height: 100%;
+  border-radius: 12px;
   overflow: hidden;
   border: 1px solid var(--border-color);
   background: var(--surface-soft);
@@ -67,10 +72,9 @@
 }
 
 .lineDrawerImage--head {
-  width: 60px;
-  height: 60px;
-  max-height: 60px;
-  border-radius: 14px;
+  width: 56px;
+  height: 56px;
+  max-height: 56px;
 }
 
 .lineDrawerImage img {
@@ -90,35 +94,37 @@
 
 .lineDrawerHeaderText h3 {
   margin: 0;
-  font-size: 18px;
+  font-size: 22px;
+  line-height: 1.1;
   font-weight: 700;
 }
 
 .lineDrawerHeaderText p {
-  margin: 4px 0 0;
-  color: var(--text-muted);
-  font-size: 13px;
-}
-
-.lineEditorSection {
-  display: grid;
-  gap: 8px;
-  border-top: 1px solid var(--border-color);
-  padding-top: 12px;
-}
-
-.lineEditorSection h4 {
-  margin: 0;
+  margin: 2px 0 0;
+  color: var(--text-secondary);
   font-size: 12px;
-  letter-spacing: 0.04em;
+}
+
+.drawerSection {
+  display: grid;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.drawerSectionTitle {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
   text-transform: uppercase;
-  color: var(--text-muted);
+  color: var(--text-secondary);
+  letter-spacing: 0.05em;
 }
 
 .lineEditorSection select,
 .lineEditorSection input {
   border: 1px solid var(--border-color);
-  border-radius: 10px;
+  border-radius: var(--radius-card);
   background: var(--surface);
   color: var(--text-primary);
   font: inherit;
@@ -133,8 +139,8 @@
 }
 
 .saveHint {
-  font-size: 12px;
-  min-height: 16px;
+  font-size: 11px;
+  min-height: 14px;
 }
 
 .saveHint--saving {
@@ -146,17 +152,20 @@
 }
 
 .statusPills {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
 }
 
 .statusPill {
   border: 1px solid var(--border-color);
   background: var(--surface);
-  border-radius: 999px;
-  padding: 6px 10px;
+  border-radius: var(--radius-pill);
+  min-height: 44px;
+  padding: 8px 10px;
   font-size: 12px;
   cursor: pointer;
+  color: var(--text-primary);
 }
 
 .statusPill--active.statusPill--designing {
@@ -187,7 +196,7 @@
 .workerAvatar {
   width: 28px;
   height: 28px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--accent) 16%, var(--surface-soft));
   display: grid;
   place-items: center;
@@ -195,20 +204,19 @@
   font-weight: 700;
 }
 
-.lineDateGrid {
+.drawerScheduleGrid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: 10px;
 }
 
 .dateField {
   display: grid;
-  gap: 4px;
+  gap: 6px;
 }
 
 .dateField > span {
   font-size: 12px;
-  color: var(--text-muted);
+  color: var(--text-secondary);
 }
 
 .dateInputWrap {
@@ -216,4 +224,5 @@
   grid-template-columns: 18px 1fr;
   align-items: center;
   gap: 6px;
+  color: var(--text-muted);
 }

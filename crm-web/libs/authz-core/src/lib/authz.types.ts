@@ -7,6 +7,7 @@ export type PermissionKey =
   | 'page.demo'
   | 'page.commercialProposal'
   | 'page.production'
+  | 'production.force_status'
   | 'page.preferences'
   | 'page.admin.settings'
   | 'dict.hub.materials'

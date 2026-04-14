@@ -26,7 +26,8 @@
       </app-content-card>
 
       <app-content-card title="Позиции заказа" [hideTitle]="true">
-        <table class="linesTable">
+        <div class="tableWrap">
+          <table class="linesTable">
           <thead>
             <tr>
               <th>№</th>
@@ -115,7 +116,7 @@
                         [ngModel]="assignForm().endDate"
                         (ngModelChange)="assignForm.set({ ...assignForm(), endDate: $event })"
                       />
-                      <button type="button" class="smallBtn" (click)="saveAssign()">Сохранить</button>
+                      <button type="button" class="smallBtn smallBtn--primary" (click)="saveAssign()">Сохранить</button>
                     </div>
                   </td>
                 </tr>
@@ -123,6 +124,7 @@
             }
           </tbody>
         </table>
+        </div>
       </app-content-card>
 
       <app-content-card title="Прогресс выполнения" [hideTitle]="true">

@@ -1,0 +1,5 @@
+.page { display: grid; gap: 12px; }
+.toolbar { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.table-wrap { border: 1px solid var(--border-color); border-radius: 10px; overflow: auto; }
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: 8px 10px; border-bottom: 1px solid var(--border-color); text-align: left; font-size: 13px; }

@@ -47,6 +47,16 @@
 - Field contracts canon: `docs/frontend/field-contracts-canon.md`.
 - CRM/SRM parity canon: `docs/frontend/parity-policy-crm-vs-srm.md`.
 - Master audit source: `docs/frontend/architecture-audit-master.md`.
+- Business modules and lifecycle contracts: `docs/ARCHITECTURE.md`.
+
+## 7.1 Frontend stack and module reality
+
+- Stack baseline: Angular 17+ (фактически Angular 21), Nx monorepo, Signals-based state, CDK DragDrop.
+- UI base layer: `@srm/ui-kit` + `PageShellComponent` для фичевых страниц.
+- Production module (`libs/production-feature`): канбан с DnD и ограничениями переходов статусов.
+- Warehouse module (`libs/warehouse-feature`): dashboard, товары, движения, сводка остатков.
+- Supply module (`libs/supply-feature`): список заявок, карточка заявки, приемка фактического количества.
+- Supply status naming на фронте синхронизирован с backend как `OPEN/PARTIAL/RECEIVED` (а не `PENDING` для статуса заявки).
 
 ## 8. Правила безопасной работы с ИИ-ассистентом
 
