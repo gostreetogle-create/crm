@@ -25,7 +25,16 @@
       <a routerLink="/коммерческое" routerLinkActive="isActive">КП</a>
     }
     @if (canPage('page.production')) {
+      <a routerLink="/orders" routerLinkActive="isActive">Заказы</a>
       <a routerLink="/производство" routerLinkActive="isActive">Производство</a>
+      <a routerLink="/снабжение" routerLinkActive="isActive">
+        <svg lucideArchive [size]="16" aria-hidden="true"></svg>
+        <span>Снабжение</span>
+      </a>
+      <a routerLink="/warehouse" routerLinkActive="isActive">
+        <svg lucideArchive [size]="16" aria-hidden="true"></svg>
+        <span>Склад</span>
+      </a>
     }
     @if (canPage('page.dictionaries')) {
       <a routerLink="/справочники" routerLinkActive="isActive">Справочники</a>

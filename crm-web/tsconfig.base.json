@@ -117,7 +117,11 @@
       "@crm-web/warehouse-data-access": ["libs/warehouse-data-access/src/index.ts"],
       "@srm/warehouse-data-access": ["libs/warehouse-data-access/src/index.ts"],
       "@crm-web/warehouse-feature": ["libs/warehouse-feature/src/index.ts"],
-      "@srm/warehouse-feature": ["libs/warehouse-feature/src/index.ts"]
+      "@srm/warehouse-feature": ["libs/warehouse-feature/src/index.ts"],
+      "@crm-web/supply-feature": ["libs/supply-feature/src/index.ts"],
+      "@srm/supply-feature": ["libs/supply-feature/src/index.ts"],
+      "@crm-web/orders-feature": ["libs/orders-feature/src/index.ts"],
+      "@srm/orders-feature": ["libs/orders-feature/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

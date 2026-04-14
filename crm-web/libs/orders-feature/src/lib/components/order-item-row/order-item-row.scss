@@ -1,0 +1,24 @@
+.itemRow {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 10px;
+  background: var(--surface);
+}
+.itemRowHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.bomList {
+  margin: 10px 0;
+  display: grid;
+  gap: 6px;
+}
+.bomRow {
+  display: flex;
+  justify-content: space-between;
+  color: var(--text-secondary);
+}
+.muted {
+  color: var(--text-secondary);
+}

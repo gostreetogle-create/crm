@@ -1,0 +1,38 @@
+<app-page-shell>
+  <section class="page">
+    @if (store.current(); as order) {
+      <header class="head">
+        <div>
+          <h1>{{ order.number }}</h1>
+          <div class="meta">Клиент: {{ order.clientId || '—' }} · {{ order.createdAt | date: 'dd.MM.yyyy HH:mm' }}</div>
+        </div>
+        <div class="actions">
+          <select [ngModel]="order.status" (ngModelChange)="setStatus($event)">
+            <option value="NEW">Новый</option>
+            <option value="CONFIRMED">Подтвержден</option>
+            <option value="IN_PROGRESS">В работе</option>
+            <option value="DONE">Готов</option>
+            <option value="SHIPPED">Отгружен</option>
+          </select>
+          <button type="button" class="btn btn--secondary" (click)="sendToSupply()">Передать в снабжение</button>
+          <a routerLink="/orders" class="btn btn--secondary">← К заказам</a>
+        </div>
+      </header>
+
+      <section class="items">
+        <div class="itemsHead">
+          <h2>Позиции</h2>
+          <button type="button" class="btn btn--primary" (click)="addItem()">+ Добавить позицию</button>
+        </div>
+        @for (item of order.items; track item.id) {
+          <app-order-item-row [item]="item" (addBom)="activeBomItem.set(item.id)" />
+          @if (activeBomItem() === item.id) {
+            <app-bom-inline-form (save)="addBom(item.id, $event)" />
+          }
+        }
+      </section>
+    } @else {
+      <p>Загрузка...</p>
+    }
+  </section>
+</app-page-shell>

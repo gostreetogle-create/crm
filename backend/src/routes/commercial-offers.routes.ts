@@ -480,6 +480,13 @@ commercialOffersRouter.put("/:id", async (req, res, next) => {
       return;
     }
     const d = parsed.data;
+    if (d.currentStatusKey !== undefined) {
+      res.status(422).json({
+        error: "direct_status_change_forbidden",
+        message: "Нельзя менять currentStatusKey через PUT /commercial-offers/:id. Используйте POST /commercial-offers/:id/status.",
+      });
+      return;
+    }
     const normalizedLines = d.lines !== undefined ? normalizeLineInputs(d.lines) : undefined;
     try {
       const row = await prisma.$transaction(async (tx) => {
@@ -504,12 +511,6 @@ commercialOffersRouter.put("/:id", async (req, res, next) => {
             ...(d.number !== undefined ? { number: cleanString(d.number) } : {}),
             ...(d.title !== undefined ? { title: cleanString(d.title) } : {}),
             ...(d.status !== undefined ? { status: d.status } : {}),
-            ...(d.currentStatusKey !== undefined
-              ? {
-                  currentStatusKey: d.currentStatusKey,
-                  status: mapStatusKeyToLegacyStatus(d.currentStatusKey),
-                }
-              : {}),
             ...(d.organizationId !== undefined ? { organizationId: cleanOptionalId(d.organizationId) } : {}),
             ...(d.clientId !== undefined ? { clientId: cleanOptionalId(d.clientId) } : {}),
             ...(d.organizationContactId !== undefined
@@ -663,11 +664,13 @@ commercialOffersRouter.delete("/:id", async (req, res, next) => {
         where: { id },
         select: {
           currentStatusKey: true,
-          order: {
+          orders: {
             select: {
               id: true,
+              number: true,
               orderNumber: true,
             },
+            take: 1,
           },
         },
       });
@@ -675,14 +678,15 @@ commercialOffersRouter.delete("/:id", async (req, res, next) => {
         res.status(404).json({ error: "not_found" });
         return;
       }
-      if (offer.order) {
+      const linkedOrder = offer.orders[0] ?? null;
+      if (linkedOrder) {
         res.status(409).json({
           error: "offer_has_order",
           message:
             "Для этого КП уже создан заказ. Сначала удалите заказ, затем коммерческое предложение.",
           order: {
-            id: offer.order.id,
-            number: offer.order.orderNumber,
+            id: linkedOrder.id,
+            number: linkedOrder.number || linkedOrder.orderNumber,
           },
         });
         return;

@@ -1,0 +1,17 @@
+<div class="itemRow">
+  <div class="itemRowHead">
+    <strong>{{ item.name }}</strong>
+    <span>{{ item.quantity }} {{ item.unit }} · {{ item.price | number: '1.0-2' }}</span>
+  </div>
+  <div class="bomList">
+    @for (bom of item.bomItems; track bom.id) {
+      <div class="bomRow">
+        <span>{{ bom.name }}</span>
+        <span>{{ bom.quantity }} {{ bom.unit }}</span>
+      </div>
+    } @empty {
+      <div class="muted">Материалы не добавлены</div>
+    }
+  </div>
+  <button type="button" class="btn btn--secondary" (click)="addBom.emit()">+ Добавить материал</button>
+</div>

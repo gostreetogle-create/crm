@@ -14,6 +14,7 @@ import {
   ViewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { HttpClient } from '@angular/common/http';
 import { FormArray, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TRADE_GOODS_REPOSITORY } from '@srm/trade-goods-data-access';
@@ -52,6 +53,8 @@ import {
   type CommercialOfferPayload,
   type ProposalStatusKey,
 } from '@srm/dictionaries-state';
+import { API_CONFIG } from '@srm/platform-core';
+import { firstValueFrom } from 'rxjs';
 
 type CatalogSyncDecision = 'sync' | 'skip' | 'abort';
 
@@ -101,6 +104,8 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
   private readonly tradeGoodsRepository = inject(TRADE_GOODS_REPOSITORY);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly http = inject(HttpClient);
+  private readonly api = inject(API_CONFIG);
 
   readonly offerId = signal<string | null>(null);
   readonly offerStatusKey = signal<ProposalStatusKey>('proposal_draft');
@@ -909,5 +914,30 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
       queryParamsHandling: 'merge',
       replaceUrl: true,
     });
+  }
+
+  async openLinkedOrder(): Promise<void> {
+    const quoteId = this.offerId();
+    if (!quoteId || this.offerStatusKey() !== 'proposal_paid') return;
+    const rows = await firstValueFrom(
+      this.http.get<Array<{ id: string }>>(`${this.api.baseUrl.replace(/\/$/, '')}/api/orders`, {
+        params: { quoteId },
+      }),
+    );
+    const order = Array.isArray(rows) ? rows[0] : null;
+    if (order?.id) {
+      await this.router.navigate(['/orders', order.id]);
+    }
+  }
+
+  async createOrderForPaidOffer(): Promise<void> {
+    const quoteId = this.offerId();
+    if (!quoteId || this.offerStatusKey() !== 'proposal_paid') return;
+    const created = await firstValueFrom(
+      this.http.post<{ id: string }>(`${this.api.baseUrl.replace(/\/$/, '')}/api/orders`, { quoteId }),
+    );
+    if (created?.id) {
+      await this.router.navigate(['/orders', created.id]);
+    }
   }
 }

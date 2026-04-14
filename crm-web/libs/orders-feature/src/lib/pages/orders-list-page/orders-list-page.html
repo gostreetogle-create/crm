@@ -1,0 +1,48 @@
+<app-page-shell>
+  <section class="page">
+    <header class="toolbar">
+      <h1>Заказы</h1>
+      <div class="toolbarActions">
+        <select [(ngModel)]="status" (ngModelChange)="applyFilters()">
+          <option value="">Все статусы</option>
+          <option value="NEW">Новый</option>
+          <option value="CONFIRMED">Подтвержден</option>
+          <option value="IN_PROGRESS">В работе</option>
+          <option value="DONE">Готов</option>
+          <option value="SHIPPED">Отгружен</option>
+        </select>
+        <input [(ngModel)]="search" (ngModelChange)="applyFilters()" placeholder="Поиск по номеру/клиенту" />
+        <button type="button" class="btn btn--primary" (click)="createOrder()">Создать заказ</button>
+      </div>
+    </header>
+
+    <div class="tableWrap">
+      <table>
+        <thead>
+          <tr>
+            <th>№</th>
+            <th>Клиент</th>
+            <th>Статус</th>
+            <th>Позиций</th>
+            <th>Дата</th>
+            <th>Действия</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of store.list(); track row.id) {
+            <tr>
+              <td>{{ row.number }}</td>
+              <td>{{ row.clientId || '—' }}</td>
+              <td><span [class]="statusClass(row.status)">{{ statusLabel(row.status) }}</span></td>
+              <td>{{ row.itemsCount }}</td>
+              <td>{{ row.createdAt | date: 'dd.MM.yyyy HH:mm' }}</td>
+              <td><a [routerLink]="['/orders', row.id]">Открыть</a></td>
+            </tr>
+          } @empty {
+            <tr><td colspan="6">Заказов пока нет</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+</app-page-shell>

@@ -48,16 +48,28 @@ export const appRoutes: Route[] = [
     loadComponent: () => import('@srm/ui-demo-feature').then((m) => m.UiDemoPage),
   },
   {
-    path: 'warehouse',
-    canActivate: [authGuard, permissionGuard],
-    data: { permission: 'page.production' },
-    loadChildren: () => import('@srm/warehouse-feature').then((m) => m.WAREHOUSE_ROUTES),
-  },
-  {
     path: 'производство',
     canActivate: [authGuard, permissionGuard],
     data: { permission: 'page.production' },
     loadChildren: () => import('@srm/production-feature').then((m) => m.PRODUCTION_ROUTES),
+  },
+  {
+    path: 'orders',
+    canActivate: [authGuard, permissionGuard],
+    data: { permission: 'page.production' },
+    loadChildren: () => import('@srm/orders-feature').then((m) => m.ORDERS_FEATURE_ROUTES),
+  },
+  {
+    path: 'снабжение',
+    canActivate: [authGuard, permissionGuard],
+    data: { permission: 'page.production' },
+    loadChildren: () => import('@srm/supply-feature').then((m) => m.SUPPLY_ROUTES),
+  },
+  {
+    path: 'warehouse',
+    canActivate: [authGuard, permissionGuard],
+    data: { permission: 'page.production' },
+    loadChildren: () => import('@srm/warehouse-feature').then((m) => m.WAREHOUSE_ROUTES),
   },
   {
     path: 'коммерческое',

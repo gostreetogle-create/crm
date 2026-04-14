@@ -49,12 +49,26 @@ function normalizeImageUrlForSnapshot(raw: string | null | undefined): string | 
   return s;
 }
 
-function resolveOrderNumber(rawOrderNumber: string | null | undefined, offerNumber: string | null): string {
+async function resolveOrderNumber(
+  tx: Prisma.Prisma.TransactionClient,
+  rawOrderNumber: string | null | undefined,
+): Promise<string> {
   const explicit = cleanString(rawOrderNumber);
   if (explicit) return explicit;
-  const fromOffer = cleanString(offerNumber);
-  if (fromOffer) return fromOffer;
-  return `KP-${Date.now()}`;
+  const rows = await tx.order.findMany({
+    select: { number: true },
+    where: { number: { startsWith: "ORD-" } },
+    orderBy: { createdAt: "desc" },
+    take: 200,
+  });
+  let max = 0;
+  for (const row of rows) {
+    const m = /^ORD-(\d+)$/.exec(String(row.number ?? "").trim());
+    if (!m) continue;
+    const n = Number(m[1]);
+    if (Number.isFinite(n) && n > max) max = n;
+  }
+  return `ORD-${String(max + 1).padStart(6, "0")}`;
 }
 
 function resolveCustomerLabel(params: {
@@ -78,12 +92,12 @@ function resolveCustomerLabel(params: {
 export async function createOrderFromPaidOfferIfNeeded(params: CreateOrderFromPaidOfferParams): Promise<void> {
   const { tx, offer, requestedOrderNumber } = params;
   const existingOrder = await tx.order.findUnique({
-    where: { commercialOfferId: offer.id },
+    where: { quoteId: offer.id },
     select: { id: true },
   });
   if (existingOrder) return;
 
-  const orderNumber = resolveOrderNumber(requestedOrderNumber, offer.number);
+  const orderNumber = await resolveOrderNumber(tx, requestedOrderNumber);
   const customerLabel = resolveCustomerLabel({
     organization: offer.organization,
     client: offer.client,
@@ -91,8 +105,26 @@ export async function createOrderFromPaidOfferIfNeeded(params: CreateOrderFromPa
   });
 
   try {
-    await tx.order.create({
+    const createdOrder = await tx.order.create({
       data: {
+        number: orderNumber,
+        quoteId: offer.id,
+        status: "NEW",
+        comment: cleanString(offer.notes),
+        clientId: null,
+        items: {
+          create: [...offer.lines]
+            .sort((a, b) => a.sortOrder - b.sortOrder)
+            .map((line) => ({
+              name: line.name,
+              sku: null,
+              quantity: line.qty,
+              unit: line.unit,
+              price: line.unitPrice ?? 0,
+            })),
+        },
+
+        // Legacy support for production/supply modules
         commercialOfferId: offer.id,
         orderNumber,
         offerNumber: cleanString(offer.number) ?? "",
@@ -116,6 +148,27 @@ export async function createOrderFromPaidOfferIfNeeded(params: CreateOrderFromPa
           })),
       },
     });
+    const existingSupply = await tx.supplyRequest.findUnique({
+      where: { orderId: createdOrder.id },
+      select: { id: true },
+    });
+    if (!existingSupply) {
+      await tx.supplyRequest.create({
+        data: {
+          orderId: createdOrder.id,
+          items: {
+            create: [...offer.lines]
+              .sort((a, b) => a.sortOrder - b.sortOrder)
+              .map((line) => ({
+                productName: line.name,
+                sku: null,
+                qty: line.qty,
+                unit: line.unit,
+              })),
+          },
+        },
+      });
+    }
   } catch (err: unknown) {
     // Race-safe idempotency: if another transaction created order first, treat as success.
     if (typeof err === "object" && err !== null && "code" in err && (err as { code?: unknown }).code === "P2002") {

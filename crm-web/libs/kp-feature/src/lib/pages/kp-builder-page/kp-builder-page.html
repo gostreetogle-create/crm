@@ -40,6 +40,14 @@
             >
               Оплачено
             </app-ui-button>
+            @if (offerStatusKey() === 'proposal_paid') {
+              <app-ui-button type="button" variant="soft" [disabled]="isSavingOffer()" (clicked)="openLinkedOrder()">
+                Открыть заказ
+              </app-ui-button>
+              <app-ui-button type="button" variant="soft" [disabled]="isSavingOffer()" (clicked)="createOrderForPaidOffer()">
+                Создать заказ
+              </app-ui-button>
+            }
             <div class="kp-builder__print-action">
               <app-ui-button type="button" variant="primary" [disabled]="isSavingOffer()" (clicked)="print()">
                 <span class="kp-builder__btn-with-icon">

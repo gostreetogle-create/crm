@@ -189,6 +189,28 @@ enum ProductionStatus {
   PENDING
   IN_PROGRESS
   DONE
+  SHIPPED
+}
+
+enum OrderStatus {
+  NEW
+  CONFIRMED
+  IN_PROGRESS
+  DONE
+  SHIPPED
+}
+
+enum SupplyRequestStatus {
+  OPEN
+  PARTIAL
+  RECEIVED
+  CANCELLED
+}
+
+enum SupplyItemStatus {
+  PENDING
+  PARTIAL
+  RECEIVED
 }
 
 /// Шапка коммерческого предложения (строки позиций — отдельный шаг).
@@ -220,7 +242,7 @@ model CommercialOffer {
   organizationContact Client? @relation("CommercialOfferOrganizationContact", fields: [organizationContactId], references: [id], onDelete: Restrict)
   lines        CommercialOfferLine[]
   printEvents  CommercialOfferPrintEvent[]
-  order        Order?
+  orders       Order[]
 
   @@index([organizationId])
   @@index([clientId])
@@ -229,30 +251,114 @@ model CommercialOffer {
   @@index([createdAt])
 }
 
-/// Заказ, автоматически созданный из оплаченного КП (1:1 по commercialOfferId).
 model Order {
-  id                String   @id @default(uuid())
-  commercialOfferId String   @unique
-  orderNumber       String
-  offerNumber       String
-  customerLabel     String
+  id                String      @id @default(cuid())
+  number            String      @unique
+  quoteId           String?     @unique
+  quote             CommercialOffer? @relation(fields: [quoteId], references: [id], onDelete: SetNull)
+  clientId          String?
+  status            OrderStatus @default(NEW)
+  comment           String?
+  items             OrderItem[]
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  // Legacy fields for production/supply module compatibility.
+  commercialOfferId String?      @unique
+  orderNumber       String?
+  offerNumber       String?
+  customerLabel     String?
   deadline          DateTime?
-  /**
-   * Снимок состава без цен:
-   * [{ lineNo, name, description, qty, unit, sortOrder }]
-   */
-  linesSnapshot     Json @default("[]")
+  linesSnapshot     Json         @default("[]")
   notes             String?
   productionStatus  ProductionStatus @default(PENDING)
+  stockDeducted     Boolean      @default(false)
   productionStart   DateTime?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  commercialOffer CommercialOffer @relation(fields: [commercialOfferId], references: [id], onDelete: Restrict)
-  assignments     WorkerAssignment[]
+  assignments       WorkerAssignment[]
+  supplyRequest     SupplyRequest?
+  itemMaterials     OrderItemMaterial[]
 
   @@index([orderNumber])
   @@index([createdAt])
+  @@index([status])
+  @@index([clientId])
+}
+
+model OrderItem {
+  id                 String            @id @default(cuid())
+  orderId            String
+  order              Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  warehouseProductId String?
+  warehouseProduct   WarehouseProduct? @relation(fields: [warehouseProductId], references: [id], onDelete: SetNull)
+  name               String
+  sku                String?
+  quantity           Float
+  unit               String            @default("шт.")
+  price              Float             @default(0)
+  bomItems           BomItem[]
+
+  @@index([orderId])
+  @@index([warehouseProductId])
+}
+
+model BomItem {
+  id                 String            @id @default(cuid())
+  orderItemId        String
+  orderItem          OrderItem         @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  warehouseProductId String?
+  warehouseProduct   WarehouseProduct? @relation(fields: [warehouseProductId], references: [id], onDelete: SetNull)
+  name               String
+  sku                String?
+  quantity           Float
+  unit               String            @default("шт.")
+
+  @@index([orderItemId])
+  @@index([warehouseProductId])
+}
+
+model OrderItemMaterial {
+  id          String   @id @default(uuid())
+  orderId     String
+  orderItemId String
+  name        String
+  quantity    Float
+  unit        String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([orderId, orderItemId])
+}
+
+model SupplyRequest {
+  id        String              @id @default(uuid())
+  orderId   String              @unique
+  order     Order               @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  status    SupplyRequestStatus @default(OPEN)
+  items     SupplyRequestItem[]
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+}
+
+model SupplyRequestItem {
+  id                 String        @id @default(uuid())
+  supplyRequestId    String
+  supplyRequest      SupplyRequest @relation(fields: [supplyRequestId], references: [id], onDelete: Cascade)
+  productName        String
+  sku                String?
+  qty                Float
+  unit               String
+  warehouseProductId String?
+  receivedQty        Float         @default(0)
+  status             SupplyItemStatus @default(PENDING)
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  @@index([supplyRequestId])
+  @@index([warehouseProductId])
+  @@index([sku])
 }
 
 model Worker {
@@ -670,6 +776,8 @@ model WarehouseProduct {
   updatedAt         DateTime @updatedAt @map("updated_at")
 
   movements WarehouseStockMovement[]
+  orderItems OrderItem[]
+  bomItems   BomItem[]
 
   @@index([category])
   @@index([quantity, minStockLevel])

@@ -1,0 +1,32 @@
+.page {
+  display: grid;
+  gap: 12px;
+}
+.head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+}
+.meta {
+  color: var(--text-secondary);
+}
+.actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.items {
+  display: grid;
+  gap: 8px;
+}
+.itemsHead {
+  display: flex;
+  justify-content: space-between;
+}
+select {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: var(--surface);
+}

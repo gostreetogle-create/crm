@@ -1,0 +1,7 @@
+<div class="form">
+  <input [(ngModel)]="name" placeholder="Материал" />
+  <input [(ngModel)]="sku" placeholder="SKU" />
+  <input type="number" min="0.01" step="0.01" [(ngModel)]="quantity" />
+  <input [(ngModel)]="unit" placeholder="Ед." />
+  <button type="button" class="btn btn--secondary" (click)="submit()">Добавить</button>
+</div>
