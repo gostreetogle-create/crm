@@ -48,6 +48,12 @@ export const appRoutes: Route[] = [
     loadComponent: () => import('@srm/ui-demo-feature').then((m) => m.UiDemoPage),
   },
   {
+    path: 'warehouse',
+    canActivate: [authGuard, permissionGuard],
+    data: { permission: 'page.production' },
+    loadChildren: () => import('@srm/warehouse-feature').then((m) => m.WAREHOUSE_ROUTES),
+  },
+  {
     path: 'производство',
     canActivate: [authGuard, permissionGuard],
     data: { permission: 'page.production' },

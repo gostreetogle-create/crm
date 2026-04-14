@@ -33,6 +33,7 @@ type OrderRow = {
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const WEEK_COL_PX = 72;
+export type ProductionGanttOrderBarClick = { order: ProductionOrder; clientX: number; clientY: number };
 
 @Component({
   standalone: true,
@@ -48,6 +49,7 @@ export class ProductionGanttComponent {
 
   readonly orders = input<ProductionOrder[]>([]);
   readonly orderSelected = output<ProductionOrder>();
+  readonly orderBarSelected = output<ProductionGanttOrderBarClick>();
   readonly lineSelected = output<{ orderId: string; lineNo: number }>();
 
   private readonly expanded = signal<Record<string, boolean>>({});
@@ -107,7 +109,7 @@ export class ProductionGanttComponent {
 
   onOrderBarClick(event: MouseEvent, row: OrderRow): void {
     event.stopPropagation();
-    this.orderSelected.emit(row.order);
+    this.orderBarSelected.emit({ order: row.order, clientX: event.clientX, clientY: event.clientY });
   }
 
   orderProgress(order: ProductionOrder): string {
@@ -275,7 +277,10 @@ export class ProductionGanttComponent {
   }
 
   private toIsoDate(d: Date): string {
-    return d.toISOString().slice(0, 10);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
   }
 
   private mapRows(orders: ProductionOrder[]): OrderRow[] {
@@ -383,7 +388,11 @@ export class ProductionGanttComponent {
 
   private parseDate(value?: string | null): Date | null {
     if (!value) return null;
-    const date = new Date(value);
+    const isoDate = /^(\d{4})-(\d{2})-(\d{2})$/;
+    const match = isoDate.exec(value.trim());
+    const date = match
+      ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
+      : new Date(value);
     if (Number.isNaN(date.getTime())) return null;
     return this.startOfDay(date);
   }

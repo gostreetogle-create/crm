@@ -113,7 +113,11 @@
       "@crm-web/trade-goods-data-access": ["libs/trade-goods-data-access/src/index.ts"],
       "@srm/trade-goods-data-access": ["libs/trade-goods-data-access/src/index.ts"],
       "@crm-web/catalog-suite-data-access": ["libs/catalog-suite-data-access/src/index.ts"],
-      "@srm/catalog-suite-data-access": ["libs/catalog-suite-data-access/src/index.ts"]
+      "@srm/catalog-suite-data-access": ["libs/catalog-suite-data-access/src/index.ts"],
+      "@crm-web/warehouse-data-access": ["libs/warehouse-data-access/src/index.ts"],
+      "@srm/warehouse-data-access": ["libs/warehouse-data-access/src/index.ts"],
+      "@crm-web/warehouse-feature": ["libs/warehouse-feature/src/index.ts"],
+      "@srm/warehouse-feature": ["libs/warehouse-feature/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

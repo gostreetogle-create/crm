@@ -1,9 +1,13 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
+import { Router } from '@angular/router';
 import { API_CONFIG } from '@srm/platform-core';
 import { OrderDrawerComponent } from '../../components/order-drawer/order-drawer.component';
 import { PositionDrawerComponent } from '../../components/position-drawer/position-drawer.component';
-import { ProductionGanttComponent } from '../../components/production-gantt/production-gantt.component';
+import {
+  ProductionGanttComponent,
+  type ProductionGanttOrderBarClick,
+} from '../../components/production-gantt/production-gantt.component';
 import { TeamPanelComponent, type TeamPanelMember } from '../../components/team-panel/team-panel.component';
 import {
   PageShellComponent,
@@ -40,10 +44,12 @@ import { ProductionStore } from '../../state/production.store';
 export class ProductionBoardPage implements OnInit {
   readonly store = inject(ProductionStore);
   private readonly api = inject(API_CONFIG);
+  private readonly router = inject(Router);
   readonly viewMode = signal<'KANBAN' | 'GANTT'>('KANBAN');
   readonly mediaBaseUrl = this.api.baseUrl.replace(/\/$/, '');
   readonly expandedOrders = signal<Record<string, boolean>>({});
   readonly selectedOrder = signal<ProductionOrder | null>(null);
+  readonly ganttOrderPopover = signal<{ orderId: string; left: number; top: number } | null>(null);
   readonly selectedPosition = signal<{ orderId: string; lineNo: number } | null>(null);
   readonly positionEditor = signal<{ workerId: string; startDate: string; endDate: string; status: ProductionLineStatus }>({
     workerId: '',
@@ -78,6 +84,11 @@ export class ProductionBoardPage implements OnInit {
   readonly teamMembers = computed<TeamPanelMember[]>(() =>
     this.store.workers().map((worker) => this.mapWorkerCard(worker)),
   );
+  readonly ganttPopoverOrder = computed(() => {
+    const popover = this.ganttOrderPopover();
+    if (!popover) return null;
+    return this.store.orders().find((order) => order.id === popover.orderId) ?? null;
+  });
 
   ngOnInit(): void {
     this.store.loadOrders();
@@ -108,6 +119,7 @@ export class ProductionBoardPage implements OnInit {
   }
 
   openOrderDrawer(orderCard: ProductionOrderCardModel): void {
+    this.closeGanttOrderPopover();
     const fullOrder = this.store.orders().find((order) => order.id === orderCard.id);
     this.selectedOrder.set(fullOrder ?? (orderCard as ProductionOrder));
     this.commentDraft.set('');
@@ -119,6 +131,7 @@ export class ProductionBoardPage implements OnInit {
   }
 
   openPositionDrawer(event: ProductionOrderCardPositionOpenEvent): void {
+    this.closeGanttOrderPopover();
     const order = this.store.orders().find((item) => item.id === event.orderId);
     if (!order) return;
     const assignment = order.assignments.find((item) => item.lineNo === event.lineNo);
@@ -173,6 +186,64 @@ export class ProductionBoardPage implements OnInit {
 
   setView(mode: 'KANBAN' | 'GANTT'): void {
     this.viewMode.set(mode);
+    if (mode !== 'GANTT') this.closeGanttOrderPopover();
+  }
+
+  openGanttOrderPopover(payload: ProductionGanttOrderBarClick): void {
+    const margin = 12;
+    const width = 420;
+    const maxLeft = Math.max(margin, window.innerWidth - width - margin);
+    const left = Math.min(Math.max(margin, payload.clientX + 14), maxLeft);
+    const top = Math.max(margin, payload.clientY + 14);
+    this.ganttOrderPopover.set({ orderId: payload.order.id, left, top });
+  }
+
+  closeGanttOrderPopover(): void {
+    this.ganttOrderPopover.set(null);
+  }
+
+  goToOrderFromPopover(order: ProductionOrder): void {
+    this.closeGanttOrderPopover();
+    this.router.navigate(['/производство', order.id]);
+  }
+
+  statusLabel(status: ProductionStatus): string {
+    if (status === 'IN_PROGRESS') return 'В работе';
+    if (status === 'DONE') return 'Готово';
+    return 'Проектирование';
+  }
+
+  lineStatusLabel(status: ProductionLineStatus | undefined): string {
+    if (status === 'IN_PROGRESS') return 'В работе';
+    if (status === 'DONE') return 'Готово';
+    return 'Проектирование';
+  }
+
+  formatShortDate(value: string | null | undefined): string {
+    if (!value) return '—';
+    const date = this.parseDateSafe(value);
+    if (!date) return '—';
+    return new Intl.DateTimeFormat('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(date);
+  }
+
+  plannedRangeLabel(order: ProductionOrder): string {
+    const start = this.parseDateSafe(order.productionStart);
+    const end = this.parseDateSafe(order.deadline);
+    if (!start || !end) return '—';
+    return `${this.formatShortDate(order.productionStart)} — ${this.formatShortDate(order.deadline)}`;
+  }
+
+  actualRangeLabel(order: ProductionOrder): string {
+    const dated = order.assignments
+      .map((assignment) => ({
+        start: this.parseDateSafe(assignment.startDate),
+        end: this.parseDateSafe(assignment.endDate),
+      }))
+      .filter((item): item is { start: Date; end: Date } => !!item.start && !!item.end);
+    if (!dated.length) return '—';
+    const min = new Date(Math.min(...dated.map((item) => item.start.getTime())));
+    const max = new Date(Math.max(...dated.map((item) => item.end.getTime())));
+    return `${this.formatShortDate(min.toISOString())} — ${this.formatShortDate(max.toISOString())}`;
   }
 
   addComment(): void {

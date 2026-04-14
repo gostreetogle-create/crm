@@ -39,6 +39,7 @@ import { dbBackupsRouter } from "./routes/db-backups.routes.js";
 import { systemAdminRouter } from "./routes/system-admin.routes.js";
 import { bulkRouter } from "./routes/bulk.routes.js";
 import { authAuthedRouter, authPublicRouter } from "./routes/auth.routes.js";
+import { warehouseRouter } from "./routes/warehouse.routes.js";
 import { requireAdmin, requireAuth } from "./middleware/auth-jwt.js";
 import { httpErrorHandler } from "./middleware/http-error.js";
 import { requestContextMiddleware } from "./middleware/request-context.js";
@@ -121,6 +122,7 @@ export function createApp() {
   authed.use("/trade-goods", tradeGoodsRouter);
   authed.use("/trade-good-categories", tradeGoodCategoriesRouter);
   authed.use("/trade-good-subcategories", tradeGoodSubcategoriesRouter);
+  authed.use("/warehouse", warehouseRouter);
 
   authed.use("/clients", clientsRouter);
   authed.use("/organizations", organizationsRouter);

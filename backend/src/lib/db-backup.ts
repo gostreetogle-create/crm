@@ -138,7 +138,7 @@ function runCmd(
     const child = spawn(cmd, args, { env, stdio: ["ignore", "pipe", "pipe"] });
     let stderr = "";
     child.stderr?.on("data", (c: Buffer) => {
-      stderr += c.toString();
+      stderr += c.toString("utf8");
     });
     child.on("error", (err: NodeJS.ErrnoException) => {
       const hint =

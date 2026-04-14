@@ -116,6 +116,93 @@
   min-width: 0;
 }
 
+.ganttPopoverBackdrop {
+  position: fixed;
+  inset: 0;
+  background: transparent;
+  z-index: 35;
+}
+
+.ganttOrderPopover {
+  position: fixed;
+  width: min(420px, calc(100vw - 24px));
+  max-height: min(70vh, 560px);
+  overflow: auto;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  background: var(--surface);
+  box-shadow: 0 16px 44px rgba(15, 23, 42, 0.22);
+  padding: 14px;
+  z-index: 36;
+}
+
+.ganttOrderPopoverClose {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.ganttOrderPopoverHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.ganttOrderPopoverStatus {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.ganttOrderPopoverMeta {
+  margin: 0 0 6px;
+  font-size: 12px;
+}
+
+.ganttOrderPopoverLines {
+  margin-top: 8px;
+  border-top: 1px solid var(--border-color);
+  padding-top: 8px;
+  display: grid;
+  gap: 6px;
+}
+
+.ganttOrderPopoverLine {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.ganttOrderPopoverLineName {
+  color: var(--text-primary);
+}
+
+.ganttOrderPopoverLineStatus {
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.ganttOrderPopoverEmpty {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.ganttOrderPopoverAction {
+  margin-top: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-pill);
+  background: var(--surface-soft);
+  color: var(--text-primary);
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
 @media (max-width: 767px) {
   .viewToggleGantt {
     display: none;

@@ -43,6 +43,7 @@
             <app-production-gantt
               [orders]="store.filteredOrders()"
               (orderSelected)="openOrderDrawer($event)"
+              (orderBarSelected)="openGanttOrderPopover($event)"
               (lineSelected)="openPositionDrawer($event)"
             />
           </div>
@@ -153,6 +154,37 @@
       </section>
     </div>
   </section>
+  @if (ganttPopoverOrder(); as order) {
+    <div class="ganttPopoverBackdrop" (click)="closeGanttOrderPopover()"></div>
+    <aside
+      class="ganttOrderPopover"
+      role="dialog"
+      aria-modal="true"
+      [style.left.px]="ganttOrderPopover()!.left"
+      [style.top.px]="ganttOrderPopover()!.top"
+      (click)="$event.stopPropagation()"
+    >
+      <button type="button" class="ganttOrderPopoverClose" (click)="closeGanttOrderPopover()">✕</button>
+      <header class="ganttOrderPopoverHead">
+        <strong>{{ order.orderNumber }}</strong>
+        <span class="ganttOrderPopoverStatus">{{ statusLabel(order.productionStatus) }}</span>
+      </header>
+      <p class="ganttOrderPopoverMeta"><strong>Клиент:</strong> {{ order.customerLabel || '—' }}</p>
+      <p class="ganttOrderPopoverMeta"><strong>План:</strong> {{ plannedRangeLabel(order) }}</p>
+      <p class="ganttOrderPopoverMeta"><strong>Факт:</strong> {{ actualRangeLabel(order) }}</p>
+      <div class="ganttOrderPopoverLines">
+        @for (line of order.linesSnapshot || []; track line.lineNo) {
+          <div class="ganttOrderPopoverLine">
+            <span class="ganttOrderPopoverLineName">{{ line.name }}</span>
+            <span class="ganttOrderPopoverLineStatus">{{ lineStatusLabel(line.status) }}</span>
+          </div>
+        } @empty {
+          <p class="ganttOrderPopoverEmpty">Нет позиций</p>
+        }
+      </div>
+      <button type="button" class="ganttOrderPopoverAction" (click)="goToOrderFromPopover(order)">Перейти в заказ</button>
+    </aside>
+  }
   @if (selectedOrder(); as order) {
     <app-order-drawer
       [order]="order"

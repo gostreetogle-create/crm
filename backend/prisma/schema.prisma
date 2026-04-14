@@ -648,3 +648,45 @@ model ProductLine {
   @@index([productId])
   @@index([productionDetailId])
 }
+
+enum StockMovementType {
+  INCOMING
+  OUTGOING
+  ADJUSTMENT
+}
+
+model WarehouseProduct {
+  id                String   @id @default(uuid())
+  name              String
+  sku               String   @unique
+  category          String
+  quantity          Float    @default(0)
+  unit              String
+  minStockLevel     Float    @default(0) @map("min_stock_level")
+  price             Float    @default(0)
+  supplierName      String?  @map("supplier_name")
+  warehouseLocation String?  @map("warehouse_location")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  movements WarehouseStockMovement[]
+
+  @@index([category])
+  @@index([quantity, minStockLevel])
+  @@map("warehouse_products")
+}
+
+model WarehouseStockMovement {
+  id         String            @id @default(uuid())
+  productId  String            @map("product_id")
+  type       StockMovementType
+  quantity   Float
+  reason     String?
+  createdBy  String?           @map("created_by")
+  createdAt  DateTime          @default(now()) @map("created_at")
+
+  product WarehouseProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId, createdAt])
+  @@map("warehouse_stock_movements")
+}
