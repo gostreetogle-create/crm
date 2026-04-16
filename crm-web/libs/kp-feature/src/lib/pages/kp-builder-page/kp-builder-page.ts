@@ -18,6 +18,7 @@ import { HttpClient } from '@angular/common/http';
 import { FormArray, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TRADE_GOODS_REPOSITORY } from '@srm/trade-goods-data-access';
+import type { TradeGoodItemInput } from '@srm/trade-goods-data-access';
 import { KP_RECIPIENT_ORG_PREFIX } from '../../kp-document-template/kp-document-template.component';
 import { PageShellComponent, UiButtonComponent, UiModal } from '@srm/ui-kit';
 import { KpCatalogVitrineComponent } from '../../kp-catalog-vitrine/kp-catalog-vitrine.component';
@@ -60,6 +61,8 @@ type CatalogSyncDecision = 'sync' | 'skip' | 'abort';
 
 const OFFER_NUMBER_PREFIX = 'КП-';
 const OFFER_NUMBER_PAD = 6;
+const KP_TEMP_ARTICLE_PREFIX = 'KP-TMP';
+const KP_MAX_PHOTO_BYTES = 12 * 1024 * 1024;
 const JSON_IMPORT_EXAMPLE = `[
   {
     "name": "Игровой комплекс",
@@ -124,6 +127,8 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
   readonly jsonImportDraft = signal('');
   readonly jsonImportError = signal<string | null>(null);
   readonly jsonImportExample = JSON_IMPORT_EXAMPLE;
+  readonly photoUploadBusy = signal<Set<number>>(new Set<number>());
+  readonly photoUploadErrorByIndex = signal<Record<number, string>>({});
 
   /** Справочник организаций для выпадающего списка в шаблоне КП. */
   readonly organizations = this.kpBuilderFacade.organizations;
@@ -489,6 +494,44 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
     this.lines().push(this.lineGroup('', '1', 'шт.', '0', '', '', ''));
   }
 
+  clearLinePhoto(index: number): void {
+    if (!this.canEditOffer()) return;
+    const g = this.lines().at(index);
+    if (!g) return;
+    g.patchValue({ imageUrl: '' });
+    this.setLinePhotoError(index, null);
+  }
+
+  async uploadLinePhoto(event: { index: number; file: File }): Promise<void> {
+    if (!this.canEditOffer()) return;
+    const { index, file } = event;
+    if (!file.type.startsWith('image/')) {
+      this.setLinePhotoError(index, 'Поддерживаются только изображения JPEG/PNG/WebP/GIF.');
+      return;
+    }
+    if (file.size > KP_MAX_PHOTO_BYTES) {
+      this.setLinePhotoError(index, 'Файл слишком большой. Максимум 12 МБ.');
+      return;
+    }
+    const line = this.lines().at(index);
+    if (!line) return;
+    this.setLinePhotoBusy(index, true);
+    this.setLinePhotoError(index, null);
+    try {
+      const tradeGoodId = await this.ensureTradeGoodForLine(index);
+      const updated = await firstValueFrom(this.tradeGoodsRepository.uploadPhotos(tradeGoodId, [file], 1));
+      line.patchValue({
+        imageUrl: String(updated.photoUrl ?? '').trim(),
+        catalogProductId: updated.id,
+      });
+      await this.refreshCatalogProducts();
+    } catch {
+      this.setLinePhotoError(index, 'Не удалось загрузить фото. Повторите попытку.');
+    } finally {
+      this.setLinePhotoBusy(index, false);
+    }
+  }
+
   openJsonImportModal(): void {
     if (!this.canEditOffer()) return;
     this.jsonImportError.set(null);
@@ -779,6 +822,77 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
       price === 0 &&
       unitIsDefault
     );
+  }
+
+  private setLinePhotoBusy(index: number, busy: boolean): void {
+    this.photoUploadBusy.update((prev) => {
+      const next = new Set(prev);
+      if (busy) next.add(index);
+      else next.delete(index);
+      return next;
+    });
+  }
+
+  private setLinePhotoError(index: number, message: string | null): void {
+    this.photoUploadErrorByIndex.update((prev) => {
+      const next = { ...prev };
+      if (!message) {
+        delete next[index];
+      } else {
+        next[index] = message;
+      }
+      return next;
+    });
+  }
+
+  private async ensureTradeGoodForLine(index: number): Promise<string> {
+    const group = this.lines().at(index);
+    if (!group) throw new Error('line_not_found');
+    const existingId = String(group.get('catalogProductId')?.value ?? '').trim();
+    if (existingId) {
+      try {
+        const existing = await firstValueFrom(this.tradeGoodsRepository.getById(existingId));
+        if (existing?.id) return existing.id;
+      } catch {
+        // Fall through to create when linked card was deleted.
+      }
+    }
+    const name = String(group.get('name')?.value ?? '').trim() || 'Товар из КП';
+    const description = String(group.get('description')?.value ?? '').trim() || null;
+    const unitCode = String(group.get('unit')?.value ?? '').trim() || null;
+    const priceRaw = parseKpNumber(String(group.get('price')?.value ?? '0'));
+    const input: TradeGoodItemInput = {
+      code: this.buildTemporaryArticleCode(),
+      name,
+      description,
+      categoryId: null,
+      subcategoryId: null,
+      unitCode,
+      priceRub: Number.isFinite(priceRaw) ? priceRaw : 0,
+      costRub: null,
+      notes: null,
+      isActive: true,
+      kind: 'ITEM',
+      lines: [],
+    };
+    const created = await firstValueFrom(this.tradeGoodsRepository.create(input));
+    group.patchValue({ catalogProductId: created.id });
+    return created.id;
+  }
+
+  private buildTemporaryArticleCode(): string {
+    const rnd = Math.random().toString(36).slice(2, 8).toUpperCase();
+    return `${KP_TEMP_ARTICLE_PREFIX}-${Date.now().toString(36).toUpperCase()}-${rnd}`;
+  }
+
+  private async refreshCatalogProducts(): Promise<void> {
+    try {
+      const items = await firstValueFrom(this.tradeGoodsRepository.getItems());
+      const mapped = items.filter((t) => t.isActive).map(mapTradeGoodListItemToKpCatalogProduct);
+      this.kpCatalogProducts.set(mapped);
+    } catch {
+      // Keep previous catalog content if refresh fails.
+    }
   }
 
   /** Справочники: модалка редактирования товара; `returnTo` — возврат после закрытия. */

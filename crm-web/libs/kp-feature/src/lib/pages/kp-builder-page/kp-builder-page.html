@@ -90,8 +90,13 @@
                 [rowsPerPageCtrl]="form.controls.rowsPerPage"
                 [photoThumbMaxPxCtrl]="form.controls.photoThumbMaxPx"
                 [catalogProducts]="kpCatalogProducts()"
+                [canEdit]="canEditOffer()"
+                [photoUploadBusy]="photoUploadBusy()"
+                [photoUploadErrorByIndex]="photoUploadErrorByIndex()"
                 (addLineClick)="addLine()"
                 (openJsonImportClick)="openJsonImportModal()"
+                (linePhotoPick)="uploadLinePhoto($event)"
+                (linePhotoClear)="clearLinePhoto($event)"
               />
             </div>
           </div>

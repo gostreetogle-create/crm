@@ -46,7 +46,8 @@ export class KpBuilderOffersStore {
     this.error.set(null);
     try {
       if (id?.trim()) {
-        return await firstValueFrom(this.http.put<CommercialOfferDto>(this.endpoint(`/${id}`), payload));
+        const { currentStatusKey: _currentStatusKey, ...putPayload } = payload;
+        return await firstValueFrom(this.http.put<CommercialOfferDto>(this.endpoint(`/${id}`), putPayload));
       }
       return await firstValueFrom(this.http.post<CommercialOfferDto>(this.endpoint(), payload));
     } catch {

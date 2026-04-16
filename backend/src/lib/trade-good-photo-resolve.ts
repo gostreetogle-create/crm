@@ -228,6 +228,35 @@ export async function clearTradeGoodPhotoFilesAsync(
   );
 }
 
+/**
+ * Переименовать все файлы фото при смене артикула (`oldStem_*` -> `newStem_*`).
+ * Используем атомарный rename в пределах одного каталога.
+ */
+export async function moveTradeGoodPhotoFilesAsync(
+  dir: string,
+  fromArticleCode: string | null | undefined,
+  toArticleCode: string | null | undefined,
+): Promise<void> {
+  const fromStem = stemFromTradeGoodArticleCode(fromArticleCode);
+  const toStem = stemFromTradeGoodArticleCode(toArticleCode);
+  if (!fromStem || !toStem || fromStem === toStem) return;
+  if (!fs.existsSync(dir) || !fs.statSync(dir).isDirectory()) return;
+  const names = await fs.promises.readdir(dir);
+  const re = new RegExp(`^${escapeRegex(fromStem)}((?:_[0-9]+(?:_[a-z0-9_]+)?)?\\.[^.]+)$`, "i");
+  for (const name of names) {
+    const m = name.match(re);
+    if (!m) continue;
+    const nextName = `${toStem}${m[1]}`;
+    const fromAbs = path.join(dir, name);
+    const toAbs = path.join(dir, nextName);
+    try {
+      await fs.promises.rename(fromAbs, toAbs);
+    } catch {
+      // Если rename не удался, оставляем исходный файл как есть.
+    }
+  }
+}
+
 export function extFromImageMime(mime: string | undefined): string | null {
   const m = (mime ?? "").toLowerCase();
   if (m === "image/jpeg") return ".jpg";

@@ -423,6 +423,55 @@
   min-width: 120px;
 }
 
+.kp-sheet__linePhotoTools {
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.kp-sheet__linePhotoPick {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  padding: 0 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 8.5pt;
+}
+
+.kp-sheet__linePhotoPick input {
+  display: none;
+}
+
+.kp-sheet__linePhotoHint {
+  font-size: 8.5pt;
+  color: rgba(16, 24, 40, 0.62);
+}
+
+.kp-sheet__linePhotoState {
+  font-size: 8.5pt;
+  color: rgba(16, 24, 40, 0.72);
+}
+
+.kp-sheet__linePhotoClear {
+  border: none;
+  background: transparent;
+  color: var(--danger);
+  cursor: pointer;
+  font-size: 8.5pt;
+  padding: 0;
+}
+
+.kp-sheet__linePhotoError {
+  margin-top: 3px;
+  color: var(--danger);
+  font-size: 8.5pt;
+}
+
 .kp-sheet__col-description {
   min-width: 7rem;
   max-width: 42%;

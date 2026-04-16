@@ -1,4 +1,6 @@
 import type { Prisma } from "@prisma/client";
+import { config } from "../config.js";
+import { resolveTradeGoodPhotoDisplayUrlVariant } from "./trade-good-photo-resolve.js";
 
 /**
  * После сохранения строк КП: для строк без валидной связи с TradeGood
@@ -34,9 +36,20 @@ export async function syncCatalogTradeGoodsForOffer(
     if (catalogId) {
       const existingGood = await tx.tradeGood.findUnique({
         where: { id: catalogId },
-        select: { id: true },
+        select: { id: true, code: true, photoPrimaryIndex: true },
       });
       if (existingGood) {
+        const displayUrl =
+          resolveTradeGoodPhotoDisplayUrlVariant(
+            config.tradeGoodsPhotosDir,
+            existingGood.code,
+            existingGood.photoPrimaryIndex,
+            "medium_640",
+          ) ?? null;
+        await tx.commercialOfferLine.update({
+          where: { id: line.id },
+          data: { imageUrl: displayUrl },
+        });
         continue;
       }
       catalogId = null;
@@ -44,14 +57,21 @@ export async function syncCatalogTradeGoodsForOffer(
 
     const matchByName = await tx.tradeGood.findFirst({
       where: { name: { equals: trimmedName, mode: "insensitive" } },
-      select: { id: true },
+      select: { id: true, code: true, photoPrimaryIndex: true },
       orderBy: { createdAt: "asc" },
     });
 
     if (matchByName) {
+      const displayUrl =
+        resolveTradeGoodPhotoDisplayUrlVariant(
+          config.tradeGoodsPhotosDir,
+          matchByName.code,
+          matchByName.photoPrimaryIndex,
+          "medium_640",
+        ) ?? null;
       await tx.commercialOfferLine.update({
         where: { id: line.id },
-        data: { catalogProductId: matchByName.id },
+        data: { catalogProductId: matchByName.id, imageUrl: displayUrl },
       });
       linked += 1;
       continue;
@@ -65,11 +85,18 @@ export async function syncCatalogTradeGoodsForOffer(
         kind: "ITEM",
         isActive: true,
       },
-      select: { id: true },
+      select: { id: true, code: true, photoPrimaryIndex: true },
     });
+    const displayUrl =
+      resolveTradeGoodPhotoDisplayUrlVariant(
+        config.tradeGoodsPhotosDir,
+        newGood.code,
+        newGood.photoPrimaryIndex,
+        "medium_640",
+      ) ?? null;
     await tx.commercialOfferLine.update({
       where: { id: line.id },
-      data: { catalogProductId: newGood.id },
+      data: { catalogProductId: newGood.id, imageUrl: displayUrl },
     });
     created += 1;
   }

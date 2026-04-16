@@ -270,8 +270,36 @@
                       [class.kp-sheet__cell-input--invalid]="lineFieldInvalid(globalIdx, 'name')"
                       [attr.list]="catalogProducts.length ? 'kpCatalogNameSuggestions' : null"
                       (blur)="onKpLineNameCommit(globalIdx)"
+                      (paste)="onPhotoPaste(globalIdx, $event)"
                       aria-label="Наименование"
                     />
+                    <div class="kp-sheet__linePhotoTools kp-no-print">
+                      <label class="kp-sheet__linePhotoPick">
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp,image/gif"
+                          [disabled]="!canEdit || isPhotoUploadBusy(globalIdx)"
+                          (change)="onPhotoFileSelected(globalIdx, $event)"
+                        />
+                        <span>+Фото</span>
+                      </label>
+                      <span class="kp-sheet__linePhotoHint">Ctrl+V</span>
+                      @if (isPhotoUploadBusy(globalIdx)) {
+                        <span class="kp-sheet__linePhotoState">Загрузка...</span>
+                      }
+                      @if (imageUrlTrimmed(globalIdx) && canEdit) {
+                        <button
+                          type="button"
+                          class="kp-sheet__linePhotoClear"
+                          (click)="linePhotoClear.emit(globalIdx)"
+                        >
+                          Убрать
+                        </button>
+                      }
+                    </div>
+                    @if (photoUploadError(globalIdx)) {
+                      <div class="kp-sheet__linePhotoError kp-no-print">{{ photoUploadError(globalIdx) }}</div>
+                    }
                   </td>
                   @if (showDescriptionColumn()) {
                     <td class="kp-sheet__col-description">

@@ -83,6 +83,8 @@ export class KpDocumentTemplateComponent {
   @Output() readonly addLineClick = new EventEmitter<void>();
   /** Открыть модалку вставки позиций из JSON. */
   @Output() readonly openJsonImportClick = new EventEmitter<void>();
+  @Output() readonly linePhotoPick = new EventEmitter<{ index: number; file: File }>();
+  @Output() readonly linePhotoClear = new EventEmitter<number>();
 
   /** Строки КП: редактирование и удаление в превью; в печати кнопки скрываются через `kp-no-print`. */
   @Input({ required: true }) linesForm!: FormArray;
@@ -128,6 +130,9 @@ export class KpDocumentTemplateComponent {
    * При точном совпадении названия (после blur) подставляются id, цена, ед., фото.
    */
   @Input() catalogProducts: readonly KpCatalogProduct[] = [];
+  @Input() canEdit = true;
+  @Input() photoUploadBusy: ReadonlySet<number> = new Set<number>();
+  @Input() photoUploadErrorByIndex: Readonly<Record<number, string>> = {};
 
   /** Пользователь нажал «Описание» под таблицей — показать колонку, пока не очистят все тексты. */
   private readonly descriptionColumnForced = signal(false);
@@ -296,6 +301,14 @@ export class KpDocumentTemplateComponent {
     return this.descriptionColumnForced() && !this.hasDescriptionData();
   }
 
+  isPhotoUploadBusy(index: number): boolean {
+    return this.photoUploadBusy.has(index);
+  }
+
+  photoUploadError(index: number): string {
+    return this.photoUploadErrorByIndex[index] ?? '';
+  }
+
   lineGroupAt(index: number): FormGroup {
     return this.linesForm.at(index) as FormGroup;
   }
@@ -325,6 +338,38 @@ export class KpDocumentTemplateComponent {
       return;
     }
     this.linesForm.removeAt(index);
+  }
+
+  onPhotoFileSelected(index: number, event: Event): void {
+    if (!this.canEdit) {
+      return;
+    }
+    const input = event.target as HTMLInputElement | null;
+    const file = input?.files?.[0] ?? null;
+    if (file) {
+      this.linePhotoPick.emit({ index, file });
+    }
+    if (input) {
+      input.value = '';
+    }
+  }
+
+  onPhotoPaste(index: number, event: ClipboardEvent): void {
+    if (!this.canEdit) {
+      return;
+    }
+    const items = event.clipboardData?.items;
+    if (!items) {
+      return;
+    }
+    for (const item of Array.from(items)) {
+      if (!item.type.startsWith('image/')) continue;
+      const file = item.getAsFile();
+      if (!file) continue;
+      event.preventDefault();
+      this.linePhotoPick.emit({ index, file });
+      return;
+    }
   }
 
   /**

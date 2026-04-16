@@ -10,6 +10,7 @@ import {
   extFromImageMime,
   listTradeGoodPhotoPublicUrls,
   listTradeGoodPhotoVariantPublicUrls,
+  moveTradeGoodPhotoFilesAsync,
   resolveTradeGoodPhotoDisplayUrl,
   resolveTradeGoodPhotoDisplayUrlVariant,
   stemFromTradeGoodArticleCode,
@@ -321,6 +322,15 @@ function parsePositiveInt(raw: unknown, fallback: number): number {
   return Number.isFinite(n) && n >= 1 ? n : fallback;
 }
 
+function parsePhotoSlotFromUrl(url: string | null | undefined): number {
+  const raw = String(url ?? "");
+  const noQuery = raw.split("?")[0] ?? raw;
+  const m = noQuery.match(/_([0-9]+)_(thumb_320|medium_640|original)\.webp$/i);
+  if (!m) return 1;
+  const n = Number.parseInt(m[1] ?? "1", 10);
+  return Number.isFinite(n) && n >= 1 ? n : 1;
+}
+
 tradeGoodsRouter.get("/", async (req, res, next) => {
   try {
     const page = parsePositiveInt(req.query["page"], 1);
@@ -557,7 +567,18 @@ tradeGoodsRouter.put("/:id", async (req, res, next) => {
       const oldStem = stemFromTradeGoodArticleCode(existing.code);
       const newStem = stemFromTradeGoodArticleCode(strOrNull(p.code));
       if (oldStem && newStem && oldStem !== newStem) {
-        await clearTradeGoodPhotoFilesAsync(config.tradeGoodsPhotosDir, existing.code);
+        await moveTradeGoodPhotoFilesAsync(config.tradeGoodsPhotosDir, existing.code, strOrNull(p.code));
+        const linkedLines = await tx.commercialOfferLine.findMany({
+          where: { catalogProductId: id, imageUrl: { contains: `/media/trade-goods/${oldStem}_` } },
+          select: { id: true, imageUrl: true },
+        });
+        for (const line of linkedLines) {
+          const slot = parsePhotoSlotFromUrl(line.imageUrl);
+          await tx.commercialOfferLine.update({
+            where: { id: line.id },
+            data: { imageUrl: `/media/trade-goods/${newStem}_${slot}_medium_640.webp` },
+          });
+        }
       }
       if (oldStem && !newStem) {
         await clearTradeGoodPhotoFilesAsync(config.tradeGoodsPhotosDir, existing.code);

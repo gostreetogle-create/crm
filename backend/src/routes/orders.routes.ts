@@ -52,35 +52,47 @@ async function nextOrderNumber(): Promise<string> {
 
 ordersRouter.get("/", async (req, res, next) => {
   try {
-    const status = typeof req.query["status"] === "string" ? req.query["status"] : "";
     const search = typeof req.query["search"] === "string" ? req.query["search"].trim() : "";
     const quoteId = typeof req.query["quoteId"] === "string" ? req.query["quoteId"].trim() : "";
-    const rows = await prisma.order.findMany({
-      where: {
-        ...(status ? { status: status as z.infer<typeof OrderStatusSchema> } : {}),
-        ...(quoteId ? { quoteId } : {}),
-        ...(search
-          ? {
-              OR: [
-                { number: { contains: search, mode: "insensitive" } },
-                { customerLabel: { contains: search, mode: "insensitive" } },
-              ],
-            }
-          : {}),
-      },
-      include: { items: true },
-      orderBy: { createdAt: "desc" },
-    });
+    const params: Array<string> = [];
+    const where: string[] = [];
+    if (quoteId) {
+      params.push(quoteId);
+      where.push(`"commercialOfferId" = $${params.length}`);
+    }
+    if (search) {
+      params.push(`%${search}%`);
+      const idx = params.length;
+      where.push(`("orderNumber" ILIKE $${idx} OR "offerNumber" ILIKE $${idx} OR "customerLabel" ILIKE $${idx})`);
+    }
+    const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+    const sql =
+      `SELECT "id","commercialOfferId","orderNumber","offerNumber","customerLabel","deadline","notes","linesSnapshot","createdAt","updatedAt"` +
+      ` FROM "Order" ${whereSql} ORDER BY "createdAt" DESC`;
+    const rows = await prisma.$queryRawUnsafe<Array<{
+      id: string;
+      commercialOfferId: string | null;
+      orderNumber: string | null;
+      offerNumber: string | null;
+      customerLabel: string | null;
+      deadline: Date | null;
+      notes: string | null;
+      linesSnapshot: unknown;
+      createdAt: Date;
+      updatedAt: Date;
+    }>>(sql, ...params);
     res.json(
       rows.map((row) => ({
         id: row.id,
-        number: row.number,
-        quoteId: row.quoteId,
-        clientId: row.clientId,
-        status: row.status,
-        comment: row.comment,
-        itemsCount: row.items.length,
+        commercialOfferId: row.commercialOfferId,
+        orderNumber: row.orderNumber ?? "",
+        offerNumber: row.offerNumber ?? "",
+        customerLabel: row.customerLabel ?? "",
+        deadline: row.deadline ? row.deadline.toISOString() : null,
+        notes: row.notes ?? "",
+        linesSnapshot: Array.isArray(row.linesSnapshot) ? row.linesSnapshot : [],
         createdAt: row.createdAt.toISOString(),
+        updatedAt: row.updatedAt.toISOString(),
       })),
     );
   } catch (e) {
