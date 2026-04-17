@@ -1,4 +1,4 @@
-import { mapOfferDtoToPayload, mapOfferStatus } from './commercial-offers.mapper';
+import { mapOfferDtoToPayload, mapOfferStatus, parseOfferNotes, stringifyOfferNotes } from './commercial-offers.mapper';
 
 describe('commercial-offers.mapper', () => {
   describe('mapOfferDtoToPayload', () => {
@@ -80,6 +80,39 @@ describe('commercial-offers.mapper', () => {
     it('maps legacy status aliases through common rules', () => {
       expect(mapOfferStatus('proposal_approved')).toBe('proposal_waiting');
       expect(mapOfferStatus('unexpected')).toBe('proposal_draft');
+    });
+  });
+
+  describe('offer notes helpers', () => {
+    it('keeps legacy plain string notes', () => {
+      expect(parseOfferNotes('Обычная заметка')).toEqual({
+        extraTexts: [],
+        legacyNoteText: 'Обычная заметка',
+        validityDays: 10,
+        extraTextsTopPx: 800,
+      });
+    });
+
+    it('parses json notes payload with extra texts', () => {
+      expect(
+        parseOfferNotes(
+          '{"extraTexts":["  Первый  ","","Второй"],"legacyNoteText":" Примечание ","validityDays":14,"extraTextsTopPx":930}',
+        ),
+      ).toEqual({
+        extraTexts: ['Первый', 'Второй'],
+        legacyNoteText: 'Примечание',
+        validityDays: 14,
+        extraTextsTopPx: 930,
+      });
+    });
+
+    it('serializes notes only when content exists', () => {
+      expect(stringifyOfferNotes({ extraTexts: [], legacyNoteText: null, validityDays: 10, extraTextsTopPx: 800 })).toBeNull();
+      expect(
+        stringifyOfferNotes({ extraTexts: ['  A  ', ''], legacyNoteText: '  legacy ', validityDays: 18, extraTextsTopPx: 920 }),
+      ).toBe(
+        '{"extraTexts":["A"],"legacyNoteText":"legacy","validityDays":18,"extraTextsTopPx":920}',
+      );
     });
   });
 });

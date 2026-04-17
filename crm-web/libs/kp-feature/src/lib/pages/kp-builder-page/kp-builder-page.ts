@@ -15,7 +15,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HttpClient } from '@angular/common/http';
-import { FormArray, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormArray, FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TRADE_GOODS_REPOSITORY } from '@srm/trade-goods-data-access';
 import type { TradeGoodItemInput } from '@srm/trade-goods-data-access';
@@ -50,6 +50,8 @@ import {
   labelByStatusKey,
   mapOfferDtoToPayload,
   normalizeStatusKey,
+  parseOfferNotes,
+  stringifyOfferNotes,
   type CommercialOfferDto,
   type CommercialOfferPayload,
   type ProposalStatusKey,
@@ -129,6 +131,7 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
   readonly jsonImportExample = JSON_IMPORT_EXAMPLE;
   readonly photoUploadBusy = signal<Set<number>>(new Set<number>());
   readonly photoUploadErrorByIndex = signal<Record<number, string>>({});
+  readonly legacyNoteText = signal<string | null>(null);
 
   /** Справочник организаций для выпадающего списка в шаблоне КП. */
   readonly organizations = this.kpBuilderFacade.organizations;
@@ -178,6 +181,7 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
     number: this.fb.nonNullable.control(''),
     createdAt: this.fb.nonNullable.control(new Date().toISOString()),
     validUntil: this.fb.nonNullable.control(''),
+    validityDays: this.fb.nonNullable.control('10', [Validators.pattern(/^\d{1,3}$/)]),
     prepaymentPercent: this.fb.nonNullable.control('80', [Validators.pattern(/^\d{1,3}$/)]),
     productionLeadDays: this.fb.nonNullable.control('30', [Validators.pattern(/^\d{1,3}$/)]),
     /** Ставка НДС, % (по умолчанию 22). */
@@ -186,6 +190,10 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
     vatAmount: this.fb.nonNullable.control('', [kpVatAmountOptionalValidator()]),
     /** Максимальный размер миниатюры в колонке «Фото», px. */
     photoThumbMaxPx: this.fb.nonNullable.control('80', [kpPhotoThumbMaxPxValidator()]),
+    /** Дополнительные текстовые строки под таблицей КП. */
+    extraTexts: this.fb.array<FormControl<string>>([]),
+    /** Положение блока доп. текстов по вертикали в пределах листа, px. */
+    extraTextsTopPx: this.fb.nonNullable.control('800', [Validators.pattern(/^\d{1,4}$/)]),
     // Стартуем с одной пустой строки, чтобы в КП не попадали моковые позиции.
     lines: this.fb.array([this.lineGroup('', '1', 'шт.', '0', '', '', '')]),
   });
@@ -241,9 +249,13 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
     if (offerIdFromRoute) {
       void this.loadOffer(offerIdFromRoute);
     } else {
-      void this.prefillNextOfferNumber();
+      void this.prefillDefaultsForNewOffer();
     }
     void this.refreshDraftOffers();
+  }
+
+  private async prefillDefaultsForNewOffer(force = false): Promise<void> {
+    await Promise.all([this.prefillNextOfferNumber(force), this.prefillLastSharedExtraTexts(force)]);
   }
 
   private async prefillNextOfferNumber(force = false): Promise<void> {
@@ -345,7 +357,7 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
     await this.refreshDraftOffers();
     if (deletingCurrent) {
       this.resetOfferForm();
-      await this.prefillNextOfferNumber();
+      await this.prefillDefaultsForNewOffer();
       void this.router.navigate([], {
         relativeTo: this.route,
         queryParams: { offerId: null },
@@ -355,7 +367,7 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
     if (!this.offerId()) {
-      await this.prefillNextOfferNumber(true);
+      await this.prefillDefaultsForNewOffer(true);
     }
   }
 
@@ -370,13 +382,17 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
         number: '',
         createdAt: new Date().toISOString(),
         validUntil: '',
+        validityDays: '10',
         prepaymentPercent: '80',
         productionLeadDays: '30',
         vatPercent: '22',
         vatAmount: '0',
+        extraTextsTopPx: '800',
       },
       { emitEvent: false },
     );
+    this.legacyNoteText.set(null);
+    this.setExtraTexts([]);
     const arr = this.lines();
     arr.clear();
     arr.push(this.lineGroup('', '1', 'шт.', '0', '', '', ''));
@@ -486,6 +502,10 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
 
   lines(): FormArray {
     return this.form.controls.lines;
+  }
+
+  extraTexts(): FormArray<FormControl<string>> {
+    return this.form.controls.extraTexts;
   }
 
   /** Новая строка с типовыми значениями для быстрого ввода. */
@@ -935,6 +955,12 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private buildOfferPayload(skipCatalogSync: boolean): CommercialOfferPayload {
+    const notes = stringifyOfferNotes({
+      extraTexts: this.extraTexts().getRawValue(),
+      legacyNoteText: this.legacyNoteText(),
+      validityDays: parseKpNumber(this.form.controls.validityDays.value),
+      extraTextsTopPx: parseKpNumber(this.form.controls.extraTextsTopPx.value),
+    });
     const source: CommercialOfferDto = {
       id: this.offerId() ?? '',
       number: this.form.controls.number.value || null,
@@ -947,6 +973,7 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
       vatAmount: parseKpNumber(this.form.controls.vatAmount.value),
       prepaymentPercent: parseKpNumber(this.form.controls.prepaymentPercent.value),
       productionLeadDays: parseKpNumber(this.form.controls.productionLeadDays.value),
+      notes,
       lines: (this.lines().getRawValue() as KpLineItem[])
         .map((line, idx) => ({
           lineNo: idx + 1,
@@ -1002,6 +1029,11 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
       },
       { emitEvent: false },
     );
+    const parsedNotes = parseOfferNotes(offer.notes ?? null);
+    this.legacyNoteText.set(parsedNotes.legacyNoteText);
+    this.setExtraTexts(parsedNotes.extraTexts);
+    this.form.controls.validityDays.patchValue(String(parsedNotes.validityDays), { emitEvent: false });
+    this.form.controls.extraTextsTopPx.patchValue(String(parsedNotes.extraTextsTopPx), { emitEvent: false });
     const arr = this.lines();
     arr.clear();
     const sortedLines = [...(offer.lines ?? [])].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
@@ -1028,6 +1060,27 @@ export class KpBuilderPage implements OnInit, AfterViewInit, OnDestroy {
       queryParamsHandling: 'merge',
       replaceUrl: true,
     });
+  }
+
+  private extraTextControl(value = ''): FormControl<string> {
+    return this.fb.nonNullable.control(String(value ?? '').trim(), [Validators.maxLength(2000)]);
+  }
+
+  private setExtraTexts(texts: readonly string[]): void {
+    const arr = this.extraTexts();
+    arr.clear();
+    for (const text of texts) {
+      const normalized = String(text ?? '').trim();
+      if (!normalized) continue;
+      arr.push(this.extraTextControl(normalized));
+    }
+  }
+
+  private async prefillLastSharedExtraTexts(force = false): Promise<void> {
+    if (this.offerId()) return;
+    if (!force && this.extraTexts().length > 0) return;
+    const texts = await this.kpBuilderOffersStore.loadLastExtraTexts();
+    this.setExtraTexts(texts);
   }
 
   async openLinkedOrder(): Promise<void> {

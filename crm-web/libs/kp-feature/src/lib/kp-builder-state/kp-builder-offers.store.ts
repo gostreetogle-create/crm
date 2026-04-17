@@ -17,6 +17,12 @@ export type DraftOfferListItemDto = {
   status?: string | null;
 };
 
+export type LastExtraTextsDto = {
+  extraTexts?: string[] | null;
+  sourceOfferId?: string | null;
+  updatedAt?: string | null;
+};
+
 @Injectable({ providedIn: 'root' })
 export class KpBuilderOffersStore {
   private readonly http = inject(HttpClient);
@@ -140,6 +146,20 @@ export class KpBuilderOffersStore {
       return offers?.[0]?.number?.trim() || null;
     } catch {
       return null;
+    }
+  }
+
+  async loadLastExtraTexts(): Promise<string[]> {
+    try {
+      const data = await firstValueFrom(this.http.get<LastExtraTextsDto>(this.endpoint('/last-extra-texts')));
+      if (!Array.isArray(data?.extraTexts)) {
+        return [];
+      }
+      return data.extraTexts
+        .map((item) => (typeof item === 'string' ? item.trim() : ''))
+        .filter((item) => item.length > 0);
+    } catch {
+      return [];
     }
   }
 

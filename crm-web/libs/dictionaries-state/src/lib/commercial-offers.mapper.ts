@@ -61,6 +61,20 @@ export type CommercialOfferPayload = {
   }>;
 };
 
+export type OfferNotesJson = {
+  extraTexts: string[];
+  legacyNoteText?: string;
+  validityDays?: number;
+  extraTextsTopPx?: number;
+};
+
+export type ParsedOfferNotes = {
+  extraTexts: string[];
+  legacyNoteText: string | null;
+  validityDays: number;
+  extraTextsTopPx: number;
+};
+
 function toNumber(value: unknown, fallback = 0): number {
   if (value == null) return fallback;
   if (typeof value === 'string' && value.trim() === '') return fallback;
@@ -70,6 +84,58 @@ function toNumber(value: unknown, fallback = 0): number {
 
 function toTrimmed(value: unknown): string {
   return String(value ?? '').trim();
+}
+
+function parseStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => (typeof item === 'string' ? item.trim() : ''))
+    .filter((item) => item.length > 0);
+}
+
+function hasNotesShape(value: unknown): value is Partial<OfferNotesJson> {
+  return typeof value === 'object' && value !== null;
+}
+
+export function parseOfferNotes(raw: string | null | undefined): ParsedOfferNotes {
+  const input = String(raw ?? '').trim();
+  if (!input) {
+    return { extraTexts: [], legacyNoteText: null, validityDays: 10, extraTextsTopPx: 800 };
+  }
+  try {
+    const parsed: unknown = JSON.parse(input);
+    if (!hasNotesShape(parsed)) {
+      return { extraTexts: [], legacyNoteText: input, validityDays: 10, extraTextsTopPx: 800 };
+    }
+    const extraTexts = parseStringArray(parsed.extraTexts);
+    const legacyRaw = typeof parsed.legacyNoteText === 'string' ? parsed.legacyNoteText.trim() : '';
+    const validityRaw = Number((parsed as OfferNotesJson).validityDays);
+    const validityDays = Number.isFinite(validityRaw) && validityRaw > 0 ? Math.trunc(validityRaw) : 10;
+    const topRaw = Number((parsed as OfferNotesJson).extraTextsTopPx);
+    const extraTextsTopPx = Number.isFinite(topRaw) ? Math.min(2000, Math.max(0, Math.trunc(topRaw))) : 800;
+    return { extraTexts, legacyNoteText: legacyRaw || null, validityDays, extraTextsTopPx };
+  } catch {
+    return { extraTexts: [], legacyNoteText: input, validityDays: 10, extraTextsTopPx: 800 };
+  }
+}
+
+export function stringifyOfferNotes(notes: ParsedOfferNotes): string | null {
+  const extraTexts = parseStringArray(notes.extraTexts);
+  const legacy = String(notes.legacyNoteText ?? '').trim();
+  const validityRaw = Number(notes.validityDays);
+  const validityDays = Number.isFinite(validityRaw) && validityRaw > 0 ? Math.trunc(validityRaw) : 10;
+  const topRaw = Number(notes.extraTextsTopPx);
+  const extraTextsTopPx = Number.isFinite(topRaw) ? Math.min(2000, Math.max(0, Math.trunc(topRaw))) : 800;
+  if (extraTexts.length === 0 && !legacy && validityDays === 10 && extraTextsTopPx === 800) {
+    return null;
+  }
+  const payload: OfferNotesJson = {
+    extraTexts,
+    ...(legacy ? { legacyNoteText: legacy } : {}),
+    ...(validityDays !== 10 ? { validityDays } : {}),
+    ...(extraTextsTopPx !== 800 ? { extraTextsTopPx } : {}),
+  };
+  return JSON.stringify(payload);
 }
 
 export function mapOfferDtoToPayload(source: CommercialOfferDto, options?: { copyTitle?: boolean; skipCatalogSync?: boolean }): CommercialOfferPayload {

@@ -17,13 +17,22 @@
   margin: 0 auto;
   overflow: hidden;
   background-color: #fff;
-  background-repeat: no-repeat;
-  background-position: center top;
-  background-size: 100% 100%;
   color: #101828;
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   font-size: 10.5pt;
   line-height: 1.45;
+}
+
+.kp-sheet::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: var(--kp-sheet-bg);
+  background-repeat: no-repeat;
+  background-position: 0 0;
+  background-size: 100% 100%;
 }
 
 .kp-sheet--continuation {
@@ -340,15 +349,17 @@
   width: 80px;
 }
 
-.kp-sheet__table tbody .kp-sheet__num {
-  text-align: right;
+.kp-col-del {
+  width: 36px;
+  min-width: 36px;
+  padding: 0 !important;
+  text-align: center;
+  border-left: none !important;
+  background: transparent;
 }
 
-.kp-sheet__col-actions {
-  width: 40px;
-  padding: 4px !important;
-  vertical-align: middle;
-  text-align: center;
+.kp-sheet__table tbody .kp-sheet__num {
+  text-align: right;
 }
 
 .kp-sheet__col-num-cell {
@@ -356,10 +367,19 @@
   font-variant-numeric: tabular-nums;
 }
 
-.kp-sheet__actions {
-  padding: 2px 4px !important;
-  vertical-align: middle;
-  text-align: center;
+.kp-sheet__col-nameCell {
+  position: relative;
+}
+
+.kp-row-photo-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+  font-size: 11px;
+  line-height: 1;
+  opacity: 0.6;
+  flex-wrap: wrap;
 }
 
 /* Как в CrudLayout: квадрат с серой рамкой, иконка корзины — var(--danger) */
@@ -423,14 +443,6 @@
   min-width: 120px;
 }
 
-.kp-sheet__linePhotoTools {
-  margin-top: 4px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
 .kp-sheet__linePhotoPick {
   display: inline-flex;
   align-items: center;
@@ -467,9 +479,11 @@
 }
 
 .kp-sheet__linePhotoError {
-  margin-top: 3px;
+  margin-top: 0;
   color: var(--danger);
   font-size: 8.5pt;
+  max-width: 92px;
+  line-height: 1.2;
 }
 
 .kp-sheet__col-description {
@@ -592,6 +606,100 @@
   margin-top: 0.35em;
 }
 
+.kp-sheet__extraTexts {
+  position: absolute;
+  left: 4mm;
+  right: 4mm;
+  z-index: 10;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.kp-sheet__extraTextsOffset {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  font-size: 9pt;
+  color: rgba(16, 24, 40, 0.78);
+}
+
+.kp-sheet__extraTextsOffsetLabel {
+  font-weight: 600;
+}
+
+.kp-sheet__extraTextsOffsetInput {
+  box-sizing: border-box;
+  width: 4rem;
+  height: var(--ui-row-action-size, 28px);
+  margin: 0;
+  padding: 0 0.35rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--surface, rgba(255, 255, 255, 0.96));
+  color: inherit;
+  font: inherit;
+  font-size: 9.5pt;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.kp-sheet__extraTextsOffsetInput:focus {
+  outline: 2px solid rgba(59, 130, 246, 0.45);
+  outline-offset: 0;
+}
+
+.kp-sheet__extraTextsOffsetInput.kp-sheet__cell-input--invalid {
+  border-color: var(--danger, #dc2626);
+}
+
+.kp-sheet__extraTextsOffsetUnit {
+  font-variant-numeric: tabular-nums;
+}
+
+.kp-sheet__extraTextRow {
+  position: relative;
+  display: block;
+}
+
+.kp-sheet__extraTextInput {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 24px;
+  height: auto;
+  border: 1px solid rgba(16, 24, 40, 0.2);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.92);
+  padding: 2px 4px;
+  color: inherit;
+  font: inherit;
+  line-height: 1.35;
+  overflow: hidden;
+  resize: none;
+}
+
+.kp-sheet__extraTextInput:focus {
+  outline: 2px solid rgba(59, 130, 246, 0.45);
+  outline-offset: 0;
+}
+
+.kp-sheet__extraTextAdd {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 6px);
+  display: inline-flex;
+}
+
+.kp-sheet__extraTextDelete {
+  position: absolute;
+  right: -40px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
 .kp-sheet__totalLead--vat {
   display: flex;
   flex-wrap: wrap;
@@ -659,6 +767,12 @@
 }
 
 @media print {
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+  }
+
   .kp-stack {
     gap: 0;
   }
@@ -690,6 +804,12 @@
     overflow: visible;
   }
 
+  .kp-sheet__extraTexts {
+    position: absolute;
+    left: 4mm;
+    right: 4mm;
+  }
+
   .kp-sheet__table thead {
     display: table-header-group;
   }
@@ -707,6 +827,7 @@
   /* Поля ввода в печати выглядят как обычный текст */
   .kp-sheet__cell-input,
   textarea.kp-sheet__cell-input,
+  .kp-sheet__extraTextInput,
   .kp-sheet__totalLead--vat .kp-sheet__cell-input,
   .kp-sheet__vatAmountWrap .kp-sheet__cell-input,
   .kp-sheet__metaInput {

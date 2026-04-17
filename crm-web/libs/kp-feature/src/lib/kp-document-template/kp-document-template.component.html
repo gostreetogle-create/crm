@@ -8,14 +8,14 @@
   }
   @for (chunk of pageChunks(); track chunk.displayOffset; let chunkIndex = $index) {
     <section
-      class="kp-sheet"
-      [class.kp-sheet--continuation]="!chunk.useFirstBackground"
-      [style.background-image]="
-        chunk.useFirstBackground
-          ? backgroundImageCssUrl(resolvedBgPage1())
-          : backgroundImageCssUrl(resolvedBgPage2())
-      "
-    >
+        class="kp-sheet"
+        [class.kp-sheet--continuation]="!chunk.useFirstBackground"
+        [style.--kp-sheet-bg]="
+          chunk.useFirstBackground
+            ? backgroundImageCssUrl(resolvedBgPage1())
+            : backgroundImageCssUrl(resolvedBgPage2())
+        "
+      >
       @if (totalKpPages() > 1) {
         <div
           class="kp-sheet__pageMark"
@@ -67,11 +67,17 @@
                   </div>
                   <div class="kp-sheet__metaLine">
                     <span class="kp-sheet__metaLabel">Действует до:</span>
-                    <span class="kp-sheet__metaValue">{{ validUntilLabel() || '—' }}</span>
+                    <span class="kp-sheet__metaInline">
+                      <input
+                        type="text"
+                        class="kp-sheet__metaInput kp-sheet__metaInput--narrow"
+                        [class.kp-sheet__cell-input--invalid]="formCtrlInvalid(validityDaysCtrl)"
+                        [value]="validityDaysEffective()"
+                        (input)="validityDaysCtrl?.setValue($any($event.target).value ?? '')"
+                      />
+                      <span>рабочих дней</span>
+                    </span>
                   </div>
-                  @if (isValidUntilExpired()) {
-                    <div class="kp-sheet__metaWarning">Срок действия истёк</div>
-                  }
                   <div class="kp-sheet__metaLine">
                     <span class="kp-sheet__metaLabel">Предоплата:</span>
                     <span class="kp-sheet__metaInline">
@@ -128,11 +134,17 @@
                     </div>
                     <div class="kp-sheet__metaLine">
                       <span class="kp-sheet__metaLabel">Действует до:</span>
-                      <span class="kp-sheet__metaValue">{{ validUntilLabel() || '—' }}</span>
+                      <span class="kp-sheet__metaInline">
+                        <input
+                          type="text"
+                          class="kp-sheet__metaInput kp-sheet__metaInput--narrow"
+                          [class.kp-sheet__cell-input--invalid]="formCtrlInvalid(validityDaysCtrl)"
+                          [value]="validityDaysEffective()"
+                          (input)="validityDaysCtrl?.setValue($any($event.target).value ?? '')"
+                        />
+                        <span>рабочих дней</span>
+                      </span>
                     </div>
-                    @if (isValidUntilExpired()) {
-                      <div class="kp-sheet__metaWarning">Срок действия истёк</div>
-                    }
                     <div class="kp-sheet__metaLine">
                       <span class="kp-sheet__metaLabel">Предоплата:</span>
                       <span class="kp-sheet__metaInline">
@@ -180,11 +192,17 @@
                     </div>
                     <div class="kp-sheet__metaLine">
                       <span class="kp-sheet__metaLabel">Действует до:</span>
-                      <span class="kp-sheet__metaValue">{{ validUntilLabel() || '—' }}</span>
+                      <span class="kp-sheet__metaInline">
+                        <input
+                          type="text"
+                          class="kp-sheet__metaInput kp-sheet__metaInput--narrow"
+                          [class.kp-sheet__cell-input--invalid]="formCtrlInvalid(validityDaysCtrl)"
+                          [value]="validityDaysEffective()"
+                          (input)="validityDaysCtrl?.setValue($any($event.target).value ?? '')"
+                        />
+                        <span>рабочих дней</span>
+                      </span>
                     </div>
-                    @if (isValidUntilExpired()) {
-                      <div class="kp-sheet__metaWarning">Срок действия истёк</div>
-                    }
                     <div class="kp-sheet__metaLine">
                       <span class="kp-sheet__metaLabel">Предоплата:</span>
                       <span class="kp-sheet__metaInline">
@@ -214,10 +232,7 @@
               </div>
             }
         }
-        <section
-          class="kp-sheet__table-wrap"
-          [style.--kp-thumb-max.px]="photoThumbMaxPxEffective()"
-        >
+        <section class="kp-sheet__table-wrap" [style.--kp-thumb-max.px]="photoThumbMaxPxEffective()">
           <table class="kp-sheet__table">
             <thead>
               <tr>
@@ -233,7 +248,7 @@
                 <th class="kp-sheet__col-unit">Ед.</th>
                 <th class="kp-sheet__col-price">Цена</th>
                 <th class="kp-sheet__col-sum">Сумма</th>
-                <th class="kp-sheet__col-actions kp-no-print" scope="col" aria-hidden="true"></th>
+                <th class="kp-col-del kp-no-print"></th>
               </tr>
             </thead>
             <tbody>
@@ -262,7 +277,7 @@
                       }
                     </td>
                   }
-                  <td>
+                  <td class="kp-sheet__col-nameCell">
                     <input
                       type="text"
                       formControlName="name"
@@ -273,7 +288,7 @@
                       (paste)="onPhotoPaste(globalIdx, $event)"
                       aria-label="Наименование"
                     />
-                    <div class="kp-sheet__linePhotoTools kp-no-print">
+                    <div class="kp-row-photo-controls kp-no-print">
                       <label class="kp-sheet__linePhotoPick">
                         <input
                           type="file"
@@ -296,10 +311,10 @@
                           Убрать
                         </button>
                       }
+                      @if (photoUploadError(globalIdx)) {
+                        <div class="kp-sheet__linePhotoError">{{ photoUploadError(globalIdx) }}</div>
+                      }
                     </div>
-                    @if (photoUploadError(globalIdx)) {
-                      <div class="kp-sheet__linePhotoError kp-no-print">{{ photoUploadError(globalIdx) }}</div>
-                    }
                   </td>
                   @if (showDescriptionColumn()) {
                     <td class="kp-sheet__col-description">
@@ -350,7 +365,7 @@
                       <span class="kp-sheet__rubSuffix" aria-hidden="true">₽</span>
                     </span>
                   </td>
-                  <td class="kp-sheet__actions kp-no-print">
+                  <td class="kp-col-del kp-no-print">
                     <button
                       type="button"
                       class="kp-sheet__rowActionBtn kp-sheet__rowActionBtn--danger"
@@ -482,6 +497,66 @@
                 <span class="kp-sheet__totalAmount kp-sheet__totalAmount--pay">{{ totalPayable() | number: '1.0-2' }} ₽</span>
               }
             </div>
+            @if (extraTextsForm && (extraTextsForm.length > 0 || canEdit)) {
+              <section
+                class="kp-sheet__extraTexts"
+                [style.top.px]="extraTextsTopPxEffective()"
+                aria-label="Дополнительные тексты коммерческого предложения"
+              >
+                @if (canEdit && extraTextsTopPxCtrl) {
+                  <label class="kp-sheet__extraTextsOffset kp-no-print">
+                    <span class="kp-sheet__extraTextsOffsetLabel">Положение от верха:</span>
+                    <input
+                      type="text"
+                      class="kp-sheet__extraTextsOffsetInput"
+                      [formControl]="extraTextsTopPxCtrl"
+                      [class.kp-sheet__cell-input--invalid]="formCtrlInvalid(extraTextsTopPxCtrl)"
+                      inputmode="numeric"
+                      autocomplete="off"
+                      aria-label="Положение блока дополнительных текстов от верха, px"
+                    />
+                    <span class="kp-sheet__extraTextsOffsetUnit" aria-hidden="true">px</span>
+                  </label>
+                }
+                @for (ctrl of extraTextsForm.controls; track $index; let i = $index) {
+                  <div class="kp-sheet__extraTextRow">
+                    <textarea
+                      #extraTextArea
+                      rows="1"
+                      class="kp-sheet__extraTextInput"
+                      [formControl]="$any(ctrl)"
+                      (input)="autoResize($event)"
+                      placeholder="Дополнительный текст"
+                    ></textarea>
+                    @if (canEdit) {
+                      <button
+                        type="button"
+                        class="kp-sheet__extraTextDelete kp-sheet__rowActionBtn kp-sheet__rowActionBtn--danger kp-no-print"
+                        title="Удалить строку текста"
+                        aria-label="Удалить строку текста"
+                        (click)="removeExtraTextLine(i)"
+                      >
+                        <svg lucideTrash2 [size]="16" aria-hidden="true"></svg>
+                      </button>
+                    }
+                  </div>
+                }
+                @if (canEdit) {
+                  <div class="kp-sheet__extraTextAdd kp-no-print">
+                    <app-ui-button
+                      type="button"
+                      variant="primary"
+                      [square]="true"
+                      ariaLabel="Добавить строку текста"
+                      title="Добавить строку текста"
+                      (clicked)="addExtraTextLine()"
+                    >
+                      <svg lucidePlus [size]="18" aria-hidden="true"></svg>
+                    </app-ui-button>
+                  </div>
+                }
+              </section>
+            }
           }
         </section>
       </div>

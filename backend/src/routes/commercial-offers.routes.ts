@@ -180,6 +180,28 @@ type OfferRow = {
   }>;
 };
 
+type LastExtraTextsResponse = {
+  extraTexts: string[];
+  sourceOfferId: string | null;
+  updatedAt: string | null;
+};
+
+function parseExtraTextsFromNotes(raw: string | null | undefined): string[] {
+  const input = String(raw ?? "").trim();
+  if (!input) return [];
+  try {
+    const parsed: unknown = JSON.parse(input);
+    if (typeof parsed !== "object" || parsed === null) return [];
+    const candidate = (parsed as { extraTexts?: unknown }).extraTexts;
+    if (!Array.isArray(candidate)) return [];
+    return candidate
+      .map((item) => (typeof item === "string" ? item.trim() : ""))
+      .filter((item) => item.length > 0);
+  } catch {
+    return [];
+  }
+}
+
 function mapOffer(row: OfferRow) {
   const clientLabel = row.client
     ? [row.client.lastName, row.client.firstName, row.client.patronymic]
@@ -292,6 +314,43 @@ commercialOffersRouter.get("/", async (req, res, next) => {
       include: offerInclude,
     });
     res.json(rows.map((r) => mapOffer(r as OfferRow)));
+  } catch (e) {
+    next(e);
+  }
+});
+
+commercialOffersRouter.get("/last-extra-texts", async (_req, res, next) => {
+  try {
+    const rows = await prisma.commercialOffer.findMany({
+      where: {
+        notes: { not: null, contains: '"extraTexts"' },
+      },
+      orderBy: { updatedAt: "desc" },
+      take: 100,
+      select: {
+        id: true,
+        notes: true,
+        updatedAt: true,
+      },
+    });
+    for (const row of rows) {
+      const extraTexts = parseExtraTextsFromNotes(row.notes);
+      if (extraTexts.length > 0) {
+        const response: LastExtraTextsResponse = {
+          extraTexts,
+          sourceOfferId: row.id,
+          updatedAt: row.updatedAt.toISOString(),
+        };
+        res.json(response);
+        return;
+      }
+    }
+    const empty: LastExtraTextsResponse = {
+      extraTexts: [],
+      sourceOfferId: null,
+      updatedAt: null,
+    };
+    res.json(empty);
   } catch (e) {
     next(e);
   }

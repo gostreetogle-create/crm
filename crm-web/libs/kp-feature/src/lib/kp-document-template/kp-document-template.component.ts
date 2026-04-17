@@ -1,5 +1,6 @@
 import { DecimalPipe } from '@angular/common';
-import { Component, EventEmitter, Input, Output, signal } from '@angular/core';
+import { AfterViewInit, Component, DestroyRef, ElementRef, EventEmitter, Input, Output, QueryList, ViewChildren, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormArray, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import type { ClientItem } from '@srm/clients-data-access';
 import { formatClientFio } from '@srm/clients-data-access';
@@ -79,6 +80,10 @@ export const KP_RECIPIENT_CONTACT_PREFIX = 'contact:';
   styleUrl: './kp-document-template.component.scss',
 })
 export class KpDocumentTemplateComponent {
+  private readonly destroyRef = inject(DestroyRef);
+
+  @ViewChildren('extraTextArea') private readonly extraTextAreas!: QueryList<ElementRef<HTMLTextAreaElement>>;
+
   /** Добавить строку в таблицу КП (кнопка под таблицей в превью). */
   @Output() readonly addLineClick = new EventEmitter<void>();
   /** Открыть модалку вставки позиций из JSON. */
@@ -106,6 +111,7 @@ export class KpDocumentTemplateComponent {
   @Input() offerNumberCtrl: FormControl<string> | null = null;
   @Input() createdAtCtrl: FormControl<string> | null = null;
   @Input() validUntilCtrl: FormControl<string> | null = null;
+  @Input() validityDaysCtrl: FormControl<string> | null = null;
   @Input() prepaymentPercentCtrl: FormControl<string> | null = null;
   @Input() productionLeadDaysCtrl: FormControl<string> | null = null;
 
@@ -124,6 +130,10 @@ export class KpDocumentTemplateComponent {
 
   /** Максимальный размер миниатюры в колонке «Фото», px (панель под таблицей). */
   @Input() photoThumbMaxPxCtrl: FormControl<string> | null = null;
+  /** Дополнительные текстовые строки под таблицей (последний лист КП). */
+  @Input() extraTextsForm: FormArray | null = null;
+  /** Вертикальная позиция блока доп. текстов, px от верха листа. */
+  @Input() extraTextsTopPxCtrl: FormControl<string> | null = null;
 
   /**
    * Подсказки по наименованию: тот же каталог, что и витрина КП (`GET /api/trade-goods`).
@@ -161,6 +171,24 @@ export class KpDocumentTemplateComponent {
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const year = d.getFullYear();
     return `${day}.${month}.${year}г.`;
+  }
+
+  validityDaysEffective(): string {
+    const raw = String(this.validityDaysCtrl?.value ?? '').trim();
+    const n = parseInt(raw, 10);
+    if (!Number.isFinite(n) || n <= 0) {
+      return '10';
+    }
+    return String(Math.trunc(n));
+  }
+
+  extraTextsTopPxEffective(): number {
+    const raw = String(this.extraTextsTopPxCtrl?.value ?? '').trim();
+    const n = parseInt(raw, 10);
+    if (!Number.isFinite(n)) {
+      return 800;
+    }
+    return Math.min(2000, Math.max(0, Math.trunc(n)));
   }
 
   isValidUntilExpired(): boolean {
@@ -340,6 +368,44 @@ export class KpDocumentTemplateComponent {
     this.linesForm.removeAt(index);
   }
 
+  addExtraTextLine(): void {
+    if (!this.extraTextsForm || !this.canEdit) return;
+    this.extraTextsForm.push(new FormControl('', { nonNullable: true }));
+  }
+
+  removeExtraTextLine(index: number): void {
+    if (!this.extraTextsForm || !this.canEdit) return;
+    if (index < 0 || index >= this.extraTextsForm.length) return;
+    this.extraTextsForm.removeAt(index);
+  }
+
+  ngAfterViewInit(): void {
+    this.resizeAllExtraTextAreas();
+
+    this.extraTextAreas.changes.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.resizeAllExtraTextAreas();
+    });
+  }
+
+  autoResize(event: Event): void {
+    const el = event.target as HTMLTextAreaElement | null;
+    if (!el) return;
+    this.resizeExtraTextArea(el);
+  }
+
+  private resizeAllExtraTextAreas(): void {
+    queueMicrotask(() => {
+      for (const ref of this.extraTextAreas.toArray()) {
+        this.resizeExtraTextArea(ref.nativeElement);
+      }
+    });
+  }
+
+  private resizeExtraTextArea(el: HTMLTextAreaElement): void {
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  }
+
   onPhotoFileSelected(index: number, event: Event): void {
     if (!this.canEdit) {
       return;
@@ -476,4 +542,5 @@ export class KpDocumentTemplateComponent {
   rowRefsForChunk(chunk: KpPageChunk): { idx: number }[] {
     return chunk.formIndices.map((idx) => ({ idx }));
   }
+
 }
