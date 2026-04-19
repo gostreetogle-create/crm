@@ -58,8 +58,18 @@ export function makeOfferForRoute(overrides: Partial<OfferListShape> = {}): Offe
 }
 
 export function makeOfferDeleteProbe(overrides: { currentStatusKey?: string; order?: { id: string; orderNumber: string } | null } = {}) {
+  const order = overrides.order ?? null;
   return {
     currentStatusKey: overrides.currentStatusKey ?? "proposal_draft",
-    order: overrides.order ?? null,
+    /** Relation shape expected by `commercialOffersRouter.delete` (`offer.orders[0]`). */
+    orders: order
+      ? [
+          {
+            id: order.id,
+            number: order.orderNumber,
+            orderNumber: order.orderNumber,
+          },
+        ]
+      : [],
   };
 }

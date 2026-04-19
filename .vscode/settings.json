@@ -1,0 +1,10 @@
+{
+    "kiroAgent.configureMCP": "Disabled",
+    "kiroAgent.trustedCommands": [
+        "*"
+    ],
+    "kiroAgent.agentIgnoreFiles": [
+        ""
+    ],
+    "kiroAgent.enableCodebaseIndexing": true
+}

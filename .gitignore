@@ -22,3 +22,4 @@ backend/backups/
 docs/frontend/nx-graph.html
 docs/frontend/static/
 
+.aider*

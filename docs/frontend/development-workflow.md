@@ -19,6 +19,8 @@
 
 **Минимальный release gate (critical tests):** [`../release-gates.md`](../release-gates.md).
 
+**Короткий спринт до сдачи (~6 дней):** чеклисты MVP, smoke и вечерние gate — [`../dev-sprint-6d-runbook.md`](../dev-sprint-6d-runbook.md).
+
 ## Прод-деплой на VPS (фронт)
 
 **Один только `git push` новый UI на сервер не доставляет:** статика не в git, она лежит на диске VPS в **`deploy/prebuilt-web/`**.

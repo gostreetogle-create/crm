@@ -22,6 +22,8 @@ function makePrismaMock(currentStatusKey: string | null) {
             description: null,
             qty: 1,
             unit: "шт",
+            unitPrice: 0,
+            lineSum: 0,
             sortOrder: 0,
           },
         ],
@@ -29,7 +31,12 @@ function makePrismaMock(currentStatusKey: string | null) {
     },
     order: {
       findUnique: vi.fn().mockResolvedValue(null),
+      findMany: vi.fn().mockResolvedValue([]),
       create: vi.fn().mockResolvedValue({ id: "order-1" }),
+    },
+    supplyRequest: {
+      findUnique: vi.fn().mockResolvedValue(null),
+      create: vi.fn().mockResolvedValue({ id: "sr-1" }),
     },
   };
 
@@ -111,7 +118,7 @@ describe("changeCommercialOfferStatus", () => {
       prisma: prisma as never,
       offerId: "offer-1",
       nextStatus: "proposal_paid",
-      orderNumber: "ORD-LEGACY-1",
+      requestedOrderNumber: "ORD-LEGACY-1",
     });
 
     expect(tx.commercialOffer.update).toHaveBeenCalledTimes(1);
@@ -119,6 +126,8 @@ describe("changeCommercialOfferStatus", () => {
     expect(tx.order.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
+          quoteId: "offer-1",
+          number: "ORD-LEGACY-1",
           commercialOfferId: "offer-1",
           orderNumber: "ORD-LEGACY-1",
         }),
@@ -132,7 +141,7 @@ describe("changeCommercialOfferStatus", () => {
       prisma: prisma as never,
       offerId: "offer-1",
       nextStatus: "proposal_paid",
-      orderNumber: "ORD-77",
+      requestedOrderNumber: "ORD-77",
     });
 
     expect(tx.commercialOffer.update).toHaveBeenCalledTimes(1);
@@ -141,6 +150,8 @@ describe("changeCommercialOfferStatus", () => {
     expect(tx.order.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
+          quoteId: "offer-1",
+          number: "ORD-77",
           commercialOfferId: "offer-1",
           orderNumber: "ORD-77",
         }),
@@ -176,10 +187,15 @@ describe("changeCommercialOfferStatus", () => {
           .fn()
           .mockResolvedValueOnce(null)
           .mockResolvedValueOnce(null),
+        findMany: vi.fn().mockResolvedValue([]),
         create: vi
           .fn()
           .mockResolvedValueOnce({ id: "order-1" })
           .mockRejectedValueOnce({ code: "P2002" }),
+      },
+      supplyRequest: {
+        findUnique: vi.fn().mockResolvedValue(null),
+        create: vi.fn().mockResolvedValue({ id: "sr-1" }),
       },
     };
 

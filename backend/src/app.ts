@@ -161,7 +161,6 @@ export function createApp() {
 
   const mg = materialGeometryProtected();
   app.use(mg);
-  app.use("/api", mg);
 
   app.get("/", (_req, res) =>
     res.json({

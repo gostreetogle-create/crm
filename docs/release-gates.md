@@ -4,6 +4,8 @@
 
 По умолчанию команды ниже запускаются из **корня репозитория** (если не указано иное).
 
+**Спринт до сдачи (~6 дней):** чеклисты MVP, ручной smoke и вечерний прогон `doctor` + `build` + `test:critical` (оба пакета) — [dev-sprint-6d-runbook.md](./dev-sprint-6d-runbook.md); скрипты `deploy/scripts/run-daily-gates.ps1` и `deploy/scripts/run-daily-gates.sh` (`-Help` / `--help`).
+
 ## Быстрый self-check
 
 Перед прогоном gate можно быстро проверить, что скрипты доступны и флаги читаются:

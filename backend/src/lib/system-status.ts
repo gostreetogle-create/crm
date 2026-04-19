@@ -235,15 +235,24 @@ function buildNotices(params: {
       title: "Миграция из другой версии",
       summary: extraSummary,
       nextSteps:
-        "Обычно база новее или старее твоего кода. Подтяни тот же коммит, что на сервере, или базу под свой код. reset без бэкапа не делай.",
+        "API сравнивает папки в prisma/migrations на диске процесса backend с таблицей _prisma_migrations. Если папки нет в образе/деплое — будет эта жёлтая карточка даже при «нормальном» Git на ноутбуке. Подтяни тот же коммит/образ, что собирался с полным prisma/migrations, или базу под свой код. reset без бэкапа не делай.",
       commands: [
         {
-          label: "1. Какой сейчас коммит",
-          snippet: "git log -1 --oneline",
+          label: "1. Есть ли миграция в образе backend (Docker на сервере)",
+          snippet:
+            'docker compose exec backend sh -lc "ls -1 prisma/migrations | grep -F 20260406140000 || echo НЕТ_В_ОБРАЗЕ"',
         },
         {
-          label: "2. Какая ветка",
-          snippet: "git branch --show-current",
+          label: "2. Статус Prisma (тот же контейнер, что и API)",
+          snippet: "docker compose exec backend npx prisma migrate status",
+        },
+        {
+          label: "3. SHA деплоя на сервере (из корня клона репозитория)",
+          snippet: "git rev-parse HEAD",
+        },
+        {
+          label: "4. Локально после git pull",
+          snippet: "git log -1 --oneline && git branch --show-current",
         },
       ],
       aiPrompt:

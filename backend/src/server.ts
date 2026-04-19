@@ -1,5 +1,3 @@
-import cors from "cors";
-console.log("CORS middleware initialized with origin: true");
 import { createApp } from "./app.js";
 import { config } from "./config.js";
 import { writeDiagnostic } from "./lib/diagnostic-log.js";
@@ -16,6 +14,9 @@ process.on("unhandledRejection", (reason) => {
         ? reason.stack.slice(0, 2000)
         : undefined,
   });
+  if (config.nodeEnv === "production") {
+    process.exit(1);
+  }
 });
 
 process.on("uncaughtException", (err) => {
@@ -26,6 +27,7 @@ process.on("uncaughtException", (err) => {
     name: err.name,
     stack: err.stack ? err.stack.slice(0, 2000) : undefined,
   });
+  process.exit(1);
 });
 
 const app = createApp();

@@ -1,6 +1,6 @@
 {
   "name": "@crm-web/source",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "license": "MIT",
   "scripts": {
     "start": "nx serve crm-web --host 0.0.0.0 --port 4200 --proxyConfig=proxy.conf.json",

@@ -8,6 +8,11 @@ import {
   changeCommercialOfferStatus,
   ChangeOfferStatusError,
 } from "../services/commercial-offers/change-offer-status.service.js";
+import {
+  guardCommercialOfferRow,
+  respondCommercialOfferNotFound,
+  respondPaidOfferLocked,
+} from "./helpers/commercial-offers-http.js";
 
 export const commercialOffersRouter = Router();
 
@@ -429,10 +434,7 @@ commercialOffersRouter.post("/duplicate/:id", async (req, res, next) => {
         include: offerInclude,
       });
     });
-    if (!duplicated) {
-      res.status(404).json({ error: "not_found" });
-      return;
-    }
+    if (!guardCommercialOfferRow(duplicated, res)) return;
     res.status(201).json(mapOffer(duplicated as OfferRow));
   } catch (e) {
     next(e);
@@ -446,10 +448,7 @@ commercialOffersRouter.get("/:id", async (req, res, next) => {
       where: { id },
       include: offerInclude,
     });
-    if (!row) {
-      res.status(404).json({ error: "not_found" });
-      return;
-    }
+    if (!guardCommercialOfferRow(row, res)) return;
     res.json(mapOffer(row as OfferRow));
   } catch (e) {
     next(e);
@@ -629,18 +628,15 @@ commercialOffersRouter.put("/:id", async (req, res, next) => {
           include: offerInclude,
         });
       });
-      if (!row) {
-        res.status(404).json({ error: "not_found" });
-        return;
-      }
+      if (!guardCommercialOfferRow(row, res)) return;
       res.json(mapOffer(row as OfferRow));
     } catch (err: unknown) {
       if (err instanceof Error && err.message === "paid_offer_locked") {
-        res.status(409).json({ error: "paid_offer_locked" });
+        respondPaidOfferLocked(res);
         return;
       }
       if (typeof err === 'object' && err !== null && 'code' in err && (err as { code: string }).code === 'P2025') {
-        res.status(404).json({ error: 'not_found' });
+        respondCommercialOfferNotFound(res);
         return;
       }
       throw err;
@@ -669,7 +665,7 @@ commercialOffersRouter.post("/:id/status", async (req, res, next) => {
     } catch (err: unknown) {
       if (err instanceof ChangeOfferStatusError) {
         if (err.code === "not_found") {
-          res.status(404).json({ error: "not_found" });
+          respondCommercialOfferNotFound(res);
           return;
         }
         res.status(409).json({ error: err.code, ...(err.details ?? {}) });
@@ -681,10 +677,7 @@ commercialOffersRouter.post("/:id/status", async (req, res, next) => {
       where: { id },
       include: offerInclude,
     });
-    if (!updated) {
-      res.status(404).json({ error: "not_found" });
-      return;
-    }
+    if (!guardCommercialOfferRow(updated, res)) return;
     res.json(mapOffer(updated as OfferRow));
   } catch (e) {
     next(e);
@@ -698,10 +691,7 @@ commercialOffersRouter.post("/:id/print", async (req, res, next) => {
       where: { id },
       select: { id: true },
     });
-    if (!offer) {
-      res.status(404).json({ error: "not_found" });
-      return;
-    }
+    if (!guardCommercialOfferRow(offer, res)) return;
     const actorUserId = req.auth?.userId ?? null;
     const event = await prisma.commercialOfferPrintEvent.create({
       data: {
@@ -733,10 +723,7 @@ commercialOffersRouter.delete("/:id", async (req, res, next) => {
           },
         },
       });
-      if (!offer) {
-        res.status(404).json({ error: "not_found" });
-        return;
-      }
+      if (!guardCommercialOfferRow(offer, res)) return;
       const linkedOrder = offer.orders[0] ?? null;
       if (linkedOrder) {
         res.status(409).json({
@@ -751,14 +738,14 @@ commercialOffersRouter.delete("/:id", async (req, res, next) => {
         return;
       }
       if (offer.currentStatusKey === "proposal_paid") {
-        res.status(409).json({ error: "paid_offer_locked" });
+        respondPaidOfferLocked(res);
         return;
       }
       await prisma.commercialOffer.delete({ where: { id } });
       res.status(204).send();
     } catch (err: unknown) {
       if (typeof err === 'object' && err !== null && 'code' in err && (err as { code: string }).code === 'P2025') {
-        res.status(404).json({ error: 'not_found' });
+        respondCommercialOfferNotFound(res);
         return;
       }
       throw err;

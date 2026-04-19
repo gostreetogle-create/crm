@@ -17,6 +17,8 @@ describe("createOrderFromPaidOfferIfNeeded", () => {
         description: null,
         qty: 2,
         unit: "шт",
+        unitPrice: 0,
+        lineSum: 0,
         sortOrder: 0,
       },
     ],
@@ -26,7 +28,12 @@ describe("createOrderFromPaidOfferIfNeeded", () => {
     const tx = {
       order: {
         findUnique: vi.fn().mockResolvedValue(null),
+        findMany: vi.fn().mockResolvedValue([]),
         create: vi.fn().mockResolvedValue({ id: "order-1" }),
+      },
+      supplyRequest: {
+        findUnique: vi.fn().mockResolvedValue(null),
+        create: vi.fn().mockResolvedValue({ id: "sr-1" }),
       },
     };
 
@@ -52,6 +59,11 @@ describe("createOrderFromPaidOfferIfNeeded", () => {
     const tx = {
       order: {
         findUnique: vi.fn().mockResolvedValue({ id: "existing-order" }),
+        findMany: vi.fn(),
+        create: vi.fn(),
+      },
+      supplyRequest: {
+        findUnique: vi.fn(),
         create: vi.fn(),
       },
     };
@@ -70,7 +82,12 @@ describe("createOrderFromPaidOfferIfNeeded", () => {
     const tx = {
       order: {
         findUnique: vi.fn().mockResolvedValue(null),
+        findMany: vi.fn().mockResolvedValue([]),
         create: vi.fn().mockRejectedValue({ code: "P2002" }),
+      },
+      supplyRequest: {
+        findUnique: vi.fn().mockResolvedValue(null),
+        create: vi.fn(),
       },
     };
 

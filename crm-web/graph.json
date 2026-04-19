@@ -1,0 +1,3622 @@
+{
+  "graph": {
+    "nodes": {
+      "material-characteristics-data-access": {
+        "name": "material-characteristics-data-access",
+        "type": "lib",
+        "data": {
+          "root": "libs/material-characteristics-data-access",
+          "targets": {
+            "eslint:lint": {
+              "cache": true,
+              "options": {
+                "cwd": "libs/material-characteristics-data-access",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.base.config.mjs",
+                "{workspaceRoot}/libs/material-characteristics-data-access/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            }
+          },
+          "name": "material-characteristics-data-access",
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/material-characteristics-data-access/src",
+          "prefix": "lib",
+          "projectType": "library",
+          "tags": [
+            "scope:dictionaries",
+            "type:data-access"
+          ],
+          "implicitDependencies": []
+        }
+      },
+      "production-work-types-data-access": {
+        "name": "production-work-types-data-access",
+        "type": "lib",
+        "data": {
+          "root": "libs/production-work-types-data-access",
+          "targets": {
+            "eslint:lint": {
+              "cache": true,
+              "options": {
+                "cwd": "libs/production-work-types-data-access",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.base.config.mjs",
+                "{workspaceRoot}/libs/production-work-types-data-access/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            }
+          },
+          "name": "production-work-types-data-access",
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/production-work-types-data-access/src",
+          "prefix": "lib",
+          "projectType": "library",
+          "tags": [
+            "scope:dictionaries",
+            "type:data-access"
+          ],
+          "implicitDependencies": []
+        }
+      },
+      "production-details-data-access": {
+        "name": "production-details-data-access",
+        "type": "lib",
+        "data": {
+          "root": "libs/production-details-data-access",
+          "targets": {
+            "eslint:lint": {
+              "cache": true,
+              "options": {
+                "cwd": "libs/production-details-data-access",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.base.config.mjs",
+                "{workspaceRoot}/libs/production-details-data-access/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            }
+          },
+          "name": "production-details-data-access",
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/production-details-data-access/src",
+          "prefix": "lib",
+          "projectType": "library",
+          "tags": [
+            "scope:dictionaries",
+            "type:data-access"
+          ],
+          "implicitDependencies": []
+        }
+      },
+      "surface-finishes-data-access": {
+        "name": "surface-finishes-data-access",
+        "type": "lib",
+        "data": {
+          "root": "libs/surface-finishes-data-access",
+          "targets": {
+            "eslint:lint": {
+              "cache": true,
+              "options": {
+                "cwd": "libs/surface-finishes-data-access",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.base.config.mjs",
+                "{workspaceRoot}/libs/surface-finishes-data-access/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            }
+          },
+          "name": "surface-finishes-data-access",
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/surface-finishes-data-access/src",
+          "prefix": "lib",
+          "projectType": "library",
+          "tags": [
+            "scope:dictionaries",
+            "type:data-access"
+          ],
+          "implicitDependencies": []
+        }
+      },
+      "catalog-suite-data-access": {
+        "name": "catalog-suite-data-access",
+        "type": "lib",
+        "data": {
+          "root": "libs/catalog-suite-data-access",
+          "targets": {
+            "eslint:lint": {
+              "cache": true,
+              "options": {
+                "cwd": "libs/catalog-suite-data-access",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.base.config.mjs",
+                "{workspaceRoot}/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            }
+          },
+          "name": "catalog-suite-data-access",
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/catalog-suite-data-access/src",
+          "prefix": "lib",
+          "projectType": "library",
+          "tags": [
+            "scope:dictionaries",
+            "type:data-access"
+          ],
+          "implicitDependencies": []
+        }
+      },
+      "organizations-data-access": {
+        "name": "organizations-data-access",
+        "type": "lib",
+        "data": {
+          "root": "libs/organizations-data-access",
+          "targets": {
+            "eslint:lint": {
+              "cache": true,
+              "options": {
+                "cwd": "libs/organizations-data-access",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.base.config.mjs",
+                "{workspaceRoot}/libs/organizations-data-access/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            }
+          },
+          "name": "organizations-data-access",
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/organizations-data-access/src",
+          "prefix": "lib",
+          "projectType": "library",
+          "tags": [
+            "scope:dictionaries",
+            "type:data-access"
+          ],
+          "implicitDependencies": []
+        }
+      },
+      "dictionaries-hub-feature": {
+        "name": "dictionaries-hub-feature",
+        "type": "lib",
+        "data": {
+          "root": "libs/dictionaries-hub-feature",
+          "targets": {
+            "test": {
+              "executor": "@nx/jest:jest",
+              "outputs": [
+                "{workspaceRoot}/coverage/{projectRoot}"
+              ],
+              "options": {
+                "jestConfig": "libs/dictionaries-hub-feature/jest.config.cts",
+                "passWithNoTests": false
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "eslint:lint": {
+              "cache": true,
+              "options": {
+                "cwd": "libs/dictionaries-hub-feature",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.base.config.mjs",
+                "{workspaceRoot}/libs/dictionaries-hub-feature/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            }
+          },
+          "name": "dictionaries-hub-feature",
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/dictionaries-hub-feature/src",
+          "prefix": "lib",
+          "projectType": "library",
+          "tags": [
+            "scope:dictionaries",
+            "type:feature"
+          ],
+          "implicitDependencies": []
+        }
+      },
+      "trade-goods-data-access": {
+        "name": "trade-goods-data-access",
+        "type": "lib",
+        "data": {
+          "root": "libs/trade-goods-data-access",
+          "targets": {
+            "eslint:lint": {
+              "cache": true,
+              "options": {
+                "cwd": "libs/trade-goods-data-access",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.base.config.mjs",
+                "{workspaceRoot}/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            }
+          },
+          "name": "trade-goods-data-access",
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/trade-goods-data-access/src",
+          "prefix": "lib",
+          "projectType": "library",
+          "tags": [
+            "scope:dictionaries",
+            "type:data-access"
+          ],
+          "implicitDependencies": []
+        }
+      },
+      "geometries-data-access": {
+        "name": "geometries-data-access",
+        "type": "lib",
+        "data": {
+          "root": "libs/geometries-data-access",
+          "targets": {
+            "eslint:lint": {
+              "cache": true,
+              "options": {
+                "cwd": "libs/geometries-data-access",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.base.config.mjs",
+                "{workspaceRoot}/libs/geometries-data-access/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            }
+          },
+          "name": "geometries-data-access",
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/geometries-data-access/src",
+          "prefix": "lib",
+          "projectType": "library",
+          "tags": [
+            "scope:dictionaries",
+            "type:data-access"
+          ],
+          "implicitDependencies": []
+        }
+      },
+      "kp-photos-data-access": {
+        "name": "kp-photos-data-access",
+        "type": "lib",
+        "data": {
+          "root": "libs/kp-photos-data-access",
+          "targets": {
+            "eslint:lint": {
+              "cache": true,
+              "options": {
+                "cwd": "libs/kp-photos-data-access",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.base.config.mjs",
+                "{workspaceRoot}/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            }
+          },
+          "name": "kp-photos-data-access",
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/kp-photos-data-access/src",
+          "prefix": "lib",
+          "projectType": "library",
+          "tags": [
+            "scope:dictionaries",
+            "type:data-access"
+          ],
+          "implicitDependencies": []
+        }
+      },
+      "materials-data-access": {
+        "name": "materials-data-access",
+        "type": "lib",
+        "data": {
+          "root": "libs/materials-data-access",
+          "targets": {
+            "eslint:lint": {
+              "cache": true,
+              "options": {
+                "cwd": "libs/materials-data-access",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.base.config.mjs",
+                "{workspaceRoot}/libs/materials-data-access/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            }
+          },
+          "name": "materials-data-access",
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/materials-data-access/src",
+          "prefix": "lib",
+          "projectType": "library",
+          "tags": [
+            "scope:dictionaries",
+            "type:data-access"
+          ],
+          "implicitDependencies": []
+        }
+      },
+      "auth-session-angular": {
+        "name": "auth-session-angular",
+        "type": "lib",
+        "data": {
+          "root": "libs/auth-session-angular",
+          "targets": {
+            "eslint:lint": {
+              "cache": true,
+              "options": {
+                "cwd": "libs/auth-session-angular",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.base.config.mjs",
+                "{workspaceRoot}/libs/auth-session-angular/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            }
+          },
+          "name": "auth-session-angular",
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/auth-session-angular/src",
+          "projectType": "library",
+          "tags": [
+            "scope:platform",
+            "type:core"
+          ],
+          "implicitDependencies": []
+        }
+      },
+      "coatings-data-access": {
+        "name": "coatings-data-access",
+        "type": "lib",
+        "data": {
+          "root": "libs/coatings-data-access",
+          "targets": {
+            "eslint:lint": {
+              "cache": true,
+              "options": {
+                "cwd": "libs/coatings-data-access",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.base.config.mjs",
+                "{workspaceRoot}/libs/coatings-data-access/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            }
+          },
+          "name": "coatings-data-access",
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/coatings-data-access/src",
+          "prefix": "lib",
+          "projectType": "library",
+          "tags": [
+            "scope:dictionaries",
+            "type:data-access"
+          ],
+          "implicitDependencies": []
+        }
+      },
+      "products-data-access": {
+        "name": "products-data-access",
+        "type": "lib",
+        "data": {
+          "root": "libs/products-data-access",
+          "targets": {
+            "eslint:lint": {
+              "cache": true,
+              "options": {
+                "cwd": "libs/products-data-access",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.base.config.mjs",
+                "{workspaceRoot}/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            }
+          },
+          "name": "products-data-access",
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/products-data-access/src",
+          "prefix": "lib",
+          "projectType": "library",
+          "tags": [
+            "scope:dictionaries",
+            "type:data-access"
+          ],
+          "implicitDependencies": []
+        }
+      },
+      "clients-data-access": {
+        "name": "clients-data-access",
+        "type": "lib",
+        "data": {
+          "root": "libs/clients-data-access",
+          "targets": {
+            "eslint:lint": {
+              "cache": true,
+              "options": {
+                "cwd": "libs/clients-data-access",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.base.config.mjs",
+                "{workspaceRoot}/libs/clients-data-access/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            }
+          },
+          "name": "clients-data-access",
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/clients-data-access/src",
+          "prefix": "lib",
+          "projectType": "library",
+          "tags": [
+            "scope:dictionaries",
+            "type:data-access"
+          ],
+          "implicitDependencies": []
+        }
+      },
+      "colors-data-access": {
+        "name": "colors-data-access",
+        "type": "lib",
+        "data": {
+          "root": "libs/colors-data-access",
+          "targets": {
+            "eslint:lint": {
+              "cache": true,
+              "options": {
+                "cwd": "libs/colors-data-access",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.base.config.mjs",
+                "{workspaceRoot}/libs/colors-data-access/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            }
+          },
+          "name": "colors-data-access",
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/colors-data-access/src",
+          "prefix": "lib",
+          "projectType": "library",
+          "tags": [
+            "scope:dictionaries",
+            "type:data-access"
+          ],
+          "implicitDependencies": []
+        }
+      },
+      "dictionaries-state": {
+        "name": "dictionaries-state",
+        "type": "lib",
+        "data": {
+          "root": "libs/dictionaries-state",
+          "targets": {
+            "test": {
+              "options": {
+                "cwd": "libs/dictionaries-state",
+                "env": {
+                  "TS_NODE_COMPILER_OPTIONS": "{\"moduleResolution\":\"node10\",\"module\":\"commonjs\",\"customConditions\":null}"
+                },
+                "command": "jest"
+              },
+              "metadata": {
+                "technologies": [
+                  "jest"
+                ],
+                "description": "Run Jest Tests",
+                "help": {
+                  "command": "pnpm exec jest --help",
+                  "example": {
+                    "options": {
+                      "coverage": true
+                    }
+                  }
+                }
+              },
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                "{workspaceRoot}/jest.preset.js",
+                {
+                  "externalDependencies": [
+                    "jest",
+                    "@nx/jest",
+                    "ts-jest"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{workspaceRoot}\\coverage\\libs\\dictionaries-state"
+              ],
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "eslint:lint": {
+              "cache": true,
+              "options": {
+                "cwd": "libs/dictionaries-state",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.base.config.mjs",
+                "{workspaceRoot}/libs/dictionaries-state/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            }
+          },
+          "name": "dictionaries-state",
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/dictionaries-state/src",
+          "prefix": "lib",
+          "projectType": "library",
+          "tags": [
+            "scope:dictionaries",
+            "type:core"
+          ],
+          "implicitDependencies": []
+        }
+      },
+      "dictionaries-utils": {
+        "name": "dictionaries-utils",
+        "type": "lib",
+        "data": {
+          "root": "libs/dictionaries-utils",
+          "targets": {
+            "eslint:lint": {
+              "cache": true,
+              "options": {
+                "cwd": "libs/dictionaries-utils",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.base.config.mjs",
+                "{workspaceRoot}/libs/dictionaries-utils/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            }
+          },
+          "name": "dictionaries-utils",
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/dictionaries-utils/src",
+          "prefix": "lib",
+          "projectType": "library",
+          "tags": [
+            "scope:dictionaries",
+            "type:core"
+          ],
+          "implicitDependencies": []
+        }
+      },
+      "production-feature": {
+        "name": "production-feature",
+        "type": "lib",
+        "data": {
+          "root": "libs/production-feature",
+          "targets": {
+            "eslint:lint": {
+              "cache": true,
+              "options": {
+                "cwd": "libs/production-feature",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.base.config.mjs",
+                "{workspaceRoot}/libs/production-feature/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            }
+          },
+          "name": "production-feature",
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/production-feature/src",
+          "prefix": "lib",
+          "projectType": "library",
+          "tags": [
+            "scope:srm",
+            "type:feature"
+          ],
+          "implicitDependencies": []
+        }
+      },
+      "auth-session-core": {
+        "name": "auth-session-core",
+        "type": "lib",
+        "data": {
+          "root": "libs/auth-session-core",
+          "targets": {
+            "eslint:lint": {
+              "cache": true,
+              "options": {
+                "cwd": "libs/auth-session-core",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.base.config.mjs",
+                "{workspaceRoot}/libs/auth-session-core/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            }
+          },
+          "name": "auth-session-core",
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/auth-session-core/src",
+          "projectType": "library",
+          "tags": [
+            "scope:platform",
+            "type:core"
+          ],
+          "implicitDependencies": []
+        }
+      },
+      "roles-data-access": {
+        "name": "roles-data-access",
+        "type": "lib",
+        "data": {
+          "root": "libs/roles-data-access",
+          "targets": {
+            "eslint:lint": {
+              "cache": true,
+              "options": {
+                "cwd": "libs/roles-data-access",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.base.config.mjs",
+                "{workspaceRoot}/libs/roles-data-access/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            }
+          },
+          "name": "roles-data-access",
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/roles-data-access/src",
+          "prefix": "lib",
+          "projectType": "library",
+          "tags": [
+            "scope:dictionaries",
+            "type:data-access"
+          ],
+          "implicitDependencies": []
+        }
+      },
+      "units-data-access": {
+        "name": "units-data-access",
+        "type": "lib",
+        "data": {
+          "root": "libs/units-data-access",
+          "targets": {
+            "eslint:lint": {
+              "cache": true,
+              "options": {
+                "cwd": "libs/units-data-access",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.base.config.mjs",
+                "{workspaceRoot}/libs/units-data-access/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            }
+          },
+          "name": "units-data-access",
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/units-data-access/src",
+          "prefix": "lib",
+          "projectType": "library",
+          "tags": [
+            "scope:dictionaries",
+            "type:data-access"
+          ],
+          "implicitDependencies": []
+        }
+      },
+      "users-data-access": {
+        "name": "users-data-access",
+        "type": "lib",
+        "data": {
+          "root": "libs/users-data-access",
+          "targets": {
+            "eslint:lint": {
+              "cache": true,
+              "options": {
+                "cwd": "libs/users-data-access",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.base.config.mjs",
+                "{workspaceRoot}/libs/users-data-access/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            }
+          },
+          "name": "users-data-access",
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/users-data-access/src",
+          "prefix": "lib",
+          "projectType": "library",
+          "tags": [
+            "scope:dictionaries",
+            "type:data-access"
+          ],
+          "implicitDependencies": []
+        }
+      },
+      "settings-feature": {
+        "name": "settings-feature",
+        "type": "lib",
+        "data": {
+          "root": "libs/settings-feature",
+          "targets": {
+            "eslint:lint": {
+              "cache": true,
+              "options": {
+                "cwd": "libs/settings-feature",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.base.config.mjs",
+                "{workspaceRoot}/libs/settings-feature/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            }
+          },
+          "name": "settings-feature",
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/settings-feature/src",
+          "prefix": "lib",
+          "projectType": "library",
+          "tags": [
+            "scope:srm",
+            "type:feature"
+          ],
+          "implicitDependencies": []
+        }
+      },
+      "ui-demo-feature": {
+        "name": "ui-demo-feature",
+        "type": "lib",
+        "data": {
+          "root": "libs/ui-demo-feature",
+          "targets": {
+            "eslint:lint": {
+              "cache": true,
+              "options": {
+                "cwd": "libs/ui-demo-feature",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.base.config.mjs",
+                "{workspaceRoot}/libs/ui-demo-feature/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            }
+          },
+          "name": "ui-demo-feature",
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/ui-demo-feature/src",
+          "prefix": "lib",
+          "projectType": "library",
+          "tags": [
+            "scope:srm",
+            "type:feature"
+          ],
+          "implicitDependencies": []
+        }
+      },
+      "authz-runtime": {
+        "name": "authz-runtime",
+        "type": "lib",
+        "data": {
+          "root": "libs/authz-runtime",
+          "targets": {
+            "test": {
+              "executor": "@nx/jest:jest",
+              "outputs": [
+                "{workspaceRoot}/coverage/{projectRoot}"
+              ],
+              "options": {
+                "jestConfig": "libs/authz-runtime/jest.config.cts",
+                "tsConfig": "libs/authz-runtime/tsconfig.spec.json",
+                "passWithNoTests": false
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "eslint:lint": {
+              "cache": true,
+              "options": {
+                "cwd": "libs/authz-runtime",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.base.config.mjs",
+                "{workspaceRoot}/libs/authz-runtime/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            }
+          },
+          "name": "authz-runtime",
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/authz-runtime/src",
+          "projectType": "library",
+          "tags": [
+            "scope:platform",
+            "type:core"
+          ],
+          "implicitDependencies": []
+        }
+      },
+      "login-feature": {
+        "name": "login-feature",
+        "type": "lib",
+        "data": {
+          "root": "libs/login-feature",
+          "targets": {
+            "eslint:lint": {
+              "cache": true,
+              "options": {
+                "cwd": "libs/login-feature",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.base.config.mjs",
+                "{workspaceRoot}/libs/login-feature/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            }
+          },
+          "name": "login-feature",
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/login-feature/src",
+          "prefix": "lib",
+          "projectType": "library",
+          "tags": [
+            "scope:srm",
+            "type:feature"
+          ],
+          "implicitDependencies": []
+        }
+      },
+      "platform-core": {
+        "name": "platform-core",
+        "type": "lib",
+        "data": {
+          "root": "libs/platform-core",
+          "targets": {
+            "test": {
+              "options": {
+                "cwd": "libs/platform-core",
+                "env": {
+                  "TS_NODE_COMPILER_OPTIONS": "{\"moduleResolution\":\"node10\",\"module\":\"commonjs\",\"customConditions\":null}"
+                },
+                "command": "jest"
+              },
+              "metadata": {
+                "technologies": [
+                  "jest"
+                ],
+                "description": "Run Jest Tests",
+                "help": {
+                  "command": "pnpm exec jest --help",
+                  "example": {
+                    "options": {
+                      "coverage": true
+                    }
+                  }
+                }
+              },
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                "{workspaceRoot}/jest.preset.js",
+                {
+                  "externalDependencies": [
+                    "jest",
+                    "@nx/jest",
+                    "ts-jest"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{workspaceRoot}\\coverage\\libs\\platform-core"
+              ],
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "eslint:lint": {
+              "cache": true,
+              "options": {
+                "cwd": "libs/platform-core",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.base.config.mjs",
+                "{workspaceRoot}/libs/platform-core/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            }
+          },
+          "name": "platform-core",
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/platform-core/src",
+          "projectType": "library",
+          "tags": [
+            "scope:platform",
+            "type:core"
+          ],
+          "implicitDependencies": []
+        }
+      },
+      "settings-core": {
+        "name": "settings-core",
+        "type": "lib",
+        "data": {
+          "root": "libs/settings-core",
+          "targets": {
+            "eslint:lint": {
+              "cache": true,
+              "options": {
+                "cwd": "libs/settings-core",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.base.config.mjs",
+                "{workspaceRoot}/libs/settings-core/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            }
+          },
+          "name": "settings-core",
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/settings-core/src",
+          "projectType": "library",
+          "tags": [
+            "scope:platform",
+            "type:core"
+          ],
+          "implicitDependencies": []
+        }
+      },
+      "shared-types": {
+        "name": "shared-types",
+        "type": "lib",
+        "data": {
+          "root": "libs/shared-types",
+          "targets": {
+            "test": {
+              "executor": "@nx/jest:jest",
+              "outputs": [
+                "{workspaceRoot}/coverage/{projectRoot}"
+              ],
+              "options": {
+                "jestConfig": "libs/shared-types/jest.config.cts",
+                "passWithNoTests": true
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "eslint:lint": {
+              "cache": true,
+              "options": {
+                "cwd": "libs/shared-types",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.base.config.mjs",
+                "{workspaceRoot}/libs/shared-types/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            }
+          },
+          "name": "shared-types",
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/shared-types/src",
+          "projectType": "library",
+          "tags": [
+            "scope:shared",
+            "type:types"
+          ],
+          "implicitDependencies": []
+        }
+      },
+      "authz-core": {
+        "name": "authz-core",
+        "type": "lib",
+        "data": {
+          "root": "libs/authz-core",
+          "targets": {
+            "eslint:lint": {
+              "cache": true,
+              "options": {
+                "cwd": "libs/authz-core",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.base.config.mjs",
+                "{workspaceRoot}/libs/authz-core/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            }
+          },
+          "name": "authz-core",
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/authz-core/src",
+          "projectType": "library",
+          "tags": [
+            "scope:platform",
+            "type:core"
+          ],
+          "implicitDependencies": []
+        }
+      },
+      "kp-feature": {
+        "name": "kp-feature",
+        "type": "lib",
+        "data": {
+          "root": "libs/kp-feature",
+          "targets": {
+            "eslint:lint": {
+              "cache": true,
+              "options": {
+                "cwd": "libs/kp-feature",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.base.config.mjs",
+                "{workspaceRoot}/libs/kp-feature/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            }
+          },
+          "name": "kp-feature",
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/kp-feature/src",
+          "prefix": "lib",
+          "projectType": "library",
+          "tags": [
+            "scope:srm",
+            "type:feature"
+          ],
+          "implicitDependencies": []
+        }
+      },
+      "theme-core": {
+        "name": "theme-core",
+        "type": "lib",
+        "data": {
+          "root": "libs/theme-core",
+          "targets": {
+            "eslint:lint": {
+              "cache": true,
+              "options": {
+                "cwd": "libs/theme-core",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.base.config.mjs",
+                "{workspaceRoot}/libs/theme-core/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            }
+          },
+          "name": "theme-core",
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/theme-core/src",
+          "projectType": "library",
+          "tags": [
+            "scope:platform",
+            "type:core"
+          ],
+          "implicitDependencies": []
+        }
+      },
+      "ui-kit": {
+        "name": "ui-kit",
+        "type": "lib",
+        "data": {
+          "root": "libs/ui-kit",
+          "targets": {
+            "test": {
+              "executor": "@nx/jest:jest",
+              "outputs": [
+                "{workspaceRoot}/coverage/{projectRoot}"
+              ],
+              "options": {
+                "jestConfig": "libs/ui-kit/jest.config.cts",
+                "tsConfig": "libs/ui-kit/tsconfig.spec.json",
+                "passWithNoTests": true
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "eslint:lint": {
+              "cache": true,
+              "options": {
+                "cwd": "libs/ui-kit",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.base.config.mjs",
+                "{workspaceRoot}/libs/ui-kit/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            }
+          },
+          "name": "ui-kit",
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/ui-kit/src",
+          "prefix": "lib",
+          "projectType": "library",
+          "tags": [
+            "scope:shared",
+            "type:ui"
+          ],
+          "implicitDependencies": []
+        }
+      },
+      "srm-front": {
+        "name": "srm-front",
+        "type": "app",
+        "data": {
+          "root": "srm-front",
+          "targets": {
+            "test": {
+              "executor": "@nx/jest:jest",
+              "outputs": [
+                "{workspaceRoot}/coverage/{projectRoot}"
+              ],
+              "options": {
+                "jestConfig": "srm-front/jest.config.cts",
+                "tsConfig": "srm-front/tsconfig.spec.json"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "eslint:lint": {
+              "cache": true,
+              "options": {
+                "cwd": "srm-front",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.base.config.mjs",
+                "{workspaceRoot}/srm-front/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "build": {
+              "executor": "@angular/build:application",
+              "outputs": [
+                "{options.outputPath}"
+              ],
+              "options": {
+                "outputPath": "dist/srm-front",
+                "browser": "srm-front/src/main.ts",
+                "tsConfig": "srm-front/tsconfig.app.json",
+                "inlineStyleLanguage": "scss",
+                "assets": [
+                  {
+                    "glob": "**/*",
+                    "input": "srm-front/public"
+                  },
+                  {
+                    "glob": "**/*",
+                    "input": "public/branding/kp",
+                    "output": "/branding/kp"
+                  },
+                  {
+                    "glob": "**/*",
+                    "input": "public/kp-media",
+                    "output": "/kp-media"
+                  }
+                ],
+                "styles": [
+                  "src/styles.scss",
+                  "srm-front/src/styles.scss"
+                ]
+              },
+              "configurations": {
+                "production": {
+                  "budgets": [
+                    {
+                      "type": "initial",
+                      "maximumWarning": "1300kb",
+                      "maximumError": "8mb"
+                    },
+                    {
+                      "type": "anyComponentStyle",
+                      "maximumWarning": "23kb",
+                      "maximumError": "25kb"
+                    }
+                  ],
+                  "outputHashing": "all"
+                },
+                "development": {
+                  "optimization": false,
+                  "extractLicenses": false,
+                  "sourceMap": true,
+                  "budgets": [
+                    {
+                      "type": "initial",
+                      "maximumWarning": "50mb",
+                      "maximumError": "50mb"
+                    },
+                    {
+                      "type": "anyComponentStyle",
+                      "maximumWarning": "50mb",
+                      "maximumError": "50mb"
+                    }
+                  ]
+                }
+              },
+              "defaultConfiguration": "production",
+              "parallelism": true,
+              "cache": true,
+              "dependsOn": [
+                "^build"
+              ],
+              "inputs": [
+                "production",
+                "^production"
+              ]
+            },
+            "serve": {
+              "continuous": true,
+              "executor": "@angular/build:dev-server",
+              "options": {
+                "proxyConfig": "proxy.conf.json"
+              },
+              "configurations": {
+                "production": {
+                  "buildTarget": "srm-front:build:production"
+                },
+                "development": {
+                  "buildTarget": "srm-front:build:development"
+                }
+              },
+              "defaultConfiguration": "development",
+              "parallelism": true
+            },
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "configurations": {},
+              "options": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            },
+            "serve-static": {
+              "continuous": true,
+              "executor": "@nx/web:file-server",
+              "options": {
+                "buildTarget": "srm-front:build",
+                "staticFilePath": "dist/srm-front/browser",
+                "spa": true
+              },
+              "configurations": {},
+              "parallelism": true
+            }
+          },
+          "name": "srm-front",
+          "$schema": "../node_modules/nx/schemas/project-schema.json",
+          "projectType": "application",
+          "prefix": "app",
+          "sourceRoot": "srm-front/src",
+          "tags": [
+            "scope:srm",
+            "type:app"
+          ],
+          "implicitDependencies": []
+        }
+      },
+      "crm-web": {
+        "name": "crm-web",
+        "type": "app",
+        "data": {
+          "root": ".",
+          "targets": {
+            "eslint:lint": {
+              "cache": true,
+              "options": {
+                "cwd": ".",
+                "command": "eslint ./src"
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.base.config.mjs",
+                "{workspaceRoot}/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "pnpm exec eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "build": {
+              "executor": "@angular/build:application",
+              "outputs": [
+                "{options.outputPath}"
+              ],
+              "options": {
+                "outputPath": "dist/crm-web",
+                "browser": "./src/main.ts",
+                "tsConfig": "tsconfig.app.json",
+                "inlineStyleLanguage": "scss",
+                "assets": [
+                  {
+                    "glob": "**/*",
+                    "input": "public"
+                  }
+                ],
+                "styles": [
+                  "./src/styles.scss"
+                ]
+              },
+              "configurations": {
+                "production": {
+                  "optimization": true,
+                  "sourceMap": false,
+                  "extractLicenses": true,
+                  "namedChunks": false,
+                  "outputHashing": "all"
+                },
+                "development": {
+                  "optimization": false,
+                  "extractLicenses": false,
+                  "sourceMap": true
+                }
+              },
+              "defaultConfiguration": "production",
+              "parallelism": true,
+              "cache": true,
+              "dependsOn": [
+                "^build"
+              ],
+              "inputs": [
+                "production",
+                "^production"
+              ]
+            },
+            "serve": {
+              "continuous": true,
+              "executor": "@angular/build:dev-server",
+              "options": {
+                "proxyConfig": "proxy.conf.json",
+                "host": "0.0.0.0",
+                "port": 4200
+              },
+              "configurations": {
+                "production": {
+                  "buildTarget": "crm-web:build:production"
+                },
+                "development": {
+                  "buildTarget": "crm-web:build:development"
+                }
+              },
+              "defaultConfiguration": "development",
+              "parallelism": true
+            },
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "options": {
+                "lintFilePatterns": [
+                  "./src"
+                ]
+              },
+              "configurations": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            },
+            "test": {
+              "executor": "@nx/jest:jest",
+              "outputs": [
+                "{workspaceRoot}/coverage/crm-web"
+              ],
+              "options": {
+                "jestConfig": "jest.config.app.ts"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "serve-static": {
+              "continuous": true,
+              "executor": "@nx/web:file-server",
+              "options": {
+                "buildTarget": "crm-web:build",
+                "staticFilePath": "dist/crm-web/browser",
+                "spa": true
+              },
+              "configurations": {},
+              "parallelism": true
+            }
+          },
+          "name": "crm-web",
+          "includedScripts": [],
+          "tags": [
+            "npm:private",
+            "scope:legacy",
+            "type:app"
+          ],
+          "metadata": {
+            "targetGroups": {},
+            "js": {
+              "packageName": "@crm-web/source",
+              "packageVersion": "0.0.0",
+              "isInPackageManagerWorkspaces": true
+            }
+          },
+          "$schema": "node_modules/nx/schemas/project-schema.json",
+          "projectType": "application",
+          "prefix": "app",
+          "sourceRoot": "./src",
+          "implicitDependencies": []
+        }
+      }
+    },
+    "dependencies": {
+      "material-characteristics-data-access": [
+        {
+          "source": "material-characteristics-data-access",
+          "target": "platform-core",
+          "type": "static"
+        }
+      ],
+      "production-work-types-data-access": [
+        {
+          "source": "production-work-types-data-access",
+          "target": "platform-core",
+          "type": "static"
+        }
+      ],
+      "production-details-data-access": [
+        {
+          "source": "production-details-data-access",
+          "target": "platform-core",
+          "type": "static"
+        }
+      ],
+      "surface-finishes-data-access": [
+        {
+          "source": "surface-finishes-data-access",
+          "target": "platform-core",
+          "type": "static"
+        },
+        {
+          "source": "surface-finishes-data-access",
+          "target": "shared-types",
+          "type": "static"
+        }
+      ],
+      "catalog-suite-data-access": [
+        {
+          "source": "catalog-suite-data-access",
+          "target": "platform-core",
+          "type": "static"
+        }
+      ],
+      "organizations-data-access": [
+        {
+          "source": "organizations-data-access",
+          "target": "platform-core",
+          "type": "static"
+        }
+      ],
+      "dictionaries-hub-feature": [
+        {
+          "source": "dictionaries-hub-feature",
+          "target": "ui-kit",
+          "type": "static"
+        },
+        {
+          "source": "dictionaries-hub-feature",
+          "target": "colors-data-access",
+          "type": "static"
+        },
+        {
+          "source": "dictionaries-hub-feature",
+          "target": "clients-data-access",
+          "type": "static"
+        },
+        {
+          "source": "dictionaries-hub-feature",
+          "target": "dictionaries-state",
+          "type": "static"
+        },
+        {
+          "source": "dictionaries-hub-feature",
+          "target": "coatings-data-access",
+          "type": "static"
+        },
+        {
+          "source": "dictionaries-hub-feature",
+          "target": "geometries-data-access",
+          "type": "static"
+        },
+        {
+          "source": "dictionaries-hub-feature",
+          "target": "material-characteristics-data-access",
+          "type": "static"
+        },
+        {
+          "source": "dictionaries-hub-feature",
+          "target": "materials-data-access",
+          "type": "static"
+        },
+        {
+          "source": "dictionaries-hub-feature",
+          "target": "organizations-data-access",
+          "type": "static"
+        },
+        {
+          "source": "dictionaries-hub-feature",
+          "target": "production-details-data-access",
+          "type": "static"
+        },
+        {
+          "source": "dictionaries-hub-feature",
+          "target": "products-data-access",
+          "type": "static"
+        },
+        {
+          "source": "dictionaries-hub-feature",
+          "target": "trade-goods-data-access",
+          "type": "static"
+        },
+        {
+          "source": "dictionaries-hub-feature",
+          "target": "production-work-types-data-access",
+          "type": "static"
+        },
+        {
+          "source": "dictionaries-hub-feature",
+          "target": "surface-finishes-data-access",
+          "type": "static"
+        },
+        {
+          "source": "dictionaries-hub-feature",
+          "target": "kp-photos-data-access",
+          "type": "static"
+        },
+        {
+          "source": "dictionaries-hub-feature",
+          "target": "units-data-access",
+          "type": "static"
+        },
+        {
+          "source": "dictionaries-hub-feature",
+          "target": "catalog-suite-data-access",
+          "type": "static"
+        },
+        {
+          "source": "dictionaries-hub-feature",
+          "target": "authz-runtime",
+          "type": "static"
+        },
+        {
+          "source": "dictionaries-hub-feature",
+          "target": "authz-core",
+          "type": "static"
+        },
+        {
+          "source": "dictionaries-hub-feature",
+          "target": "dictionaries-utils",
+          "type": "static"
+        },
+        {
+          "source": "dictionaries-hub-feature",
+          "target": "roles-data-access",
+          "type": "static"
+        },
+        {
+          "source": "dictionaries-hub-feature",
+          "target": "users-data-access",
+          "type": "static"
+        },
+        {
+          "source": "dictionaries-hub-feature",
+          "target": "platform-core",
+          "type": "static"
+        }
+      ],
+      "trade-goods-data-access": [
+        {
+          "source": "trade-goods-data-access",
+          "target": "platform-core",
+          "type": "static"
+        }
+      ],
+      "geometries-data-access": [
+        {
+          "source": "geometries-data-access",
+          "target": "platform-core",
+          "type": "static"
+        }
+      ],
+      "kp-photos-data-access": [
+        {
+          "source": "kp-photos-data-access",
+          "target": "platform-core",
+          "type": "static"
+        }
+      ],
+      "materials-data-access": [
+        {
+          "source": "materials-data-access",
+          "target": "platform-core",
+          "type": "static"
+        }
+      ],
+      "auth-session-angular": [
+        {
+          "source": "auth-session-angular",
+          "target": "auth-session-core",
+          "type": "static"
+        },
+        {
+          "source": "auth-session-angular",
+          "target": "platform-core",
+          "type": "static"
+        },
+        {
+          "source": "auth-session-angular",
+          "target": "authz-runtime",
+          "type": "static"
+        },
+        {
+          "source": "auth-session-angular",
+          "target": "dictionaries-state",
+          "type": "static"
+        }
+      ],
+      "coatings-data-access": [
+        {
+          "source": "coatings-data-access",
+          "target": "platform-core",
+          "type": "static"
+        },
+        {
+          "source": "coatings-data-access",
+          "target": "shared-types",
+          "type": "static"
+        }
+      ],
+      "products-data-access": [
+        {
+          "source": "products-data-access",
+          "target": "platform-core",
+          "type": "static"
+        }
+      ],
+      "clients-data-access": [
+        {
+          "source": "clients-data-access",
+          "target": "platform-core",
+          "type": "static"
+        }
+      ],
+      "colors-data-access": [
+        {
+          "source": "colors-data-access",
+          "target": "platform-core",
+          "type": "static"
+        },
+        {
+          "source": "colors-data-access",
+          "target": "shared-types",
+          "type": "static"
+        }
+      ],
+      "dictionaries-state": [
+        {
+          "source": "dictionaries-state",
+          "target": "catalog-suite-data-access",
+          "type": "static"
+        },
+        {
+          "source": "dictionaries-state",
+          "target": "clients-data-access",
+          "type": "static"
+        },
+        {
+          "source": "dictionaries-state",
+          "target": "coatings-data-access",
+          "type": "static"
+        },
+        {
+          "source": "dictionaries-state",
+          "target": "colors-data-access",
+          "type": "static"
+        },
+        {
+          "source": "dictionaries-state",
+          "target": "platform-core",
+          "type": "static"
+        },
+        {
+          "source": "dictionaries-state",
+          "target": "products-data-access",
+          "type": "static"
+        },
+        {
+          "source": "dictionaries-state",
+          "target": "trade-goods-data-access",
+          "type": "static"
+        },
+        {
+          "source": "dictionaries-state",
+          "target": "surface-finishes-data-access",
+          "type": "static"
+        },
+        {
+          "source": "dictionaries-state",
+          "target": "geometries-data-access",
+          "type": "static"
+        },
+        {
+          "source": "dictionaries-state",
+          "target": "dictionaries-utils",
+          "type": "static"
+        },
+        {
+          "source": "dictionaries-state",
+          "target": "kp-photos-data-access",
+          "type": "static"
+        },
+        {
+          "source": "dictionaries-state",
+          "target": "material-characteristics-data-access",
+          "type": "static"
+        },
+        {
+          "source": "dictionaries-state",
+          "target": "materials-data-access",
+          "type": "static"
+        },
+        {
+          "source": "dictionaries-state",
+          "target": "organizations-data-access",
+          "type": "static"
+        },
+        {
+          "source": "dictionaries-state",
+          "target": "production-details-data-access",
+          "type": "static"
+        },
+        {
+          "source": "dictionaries-state",
+          "target": "production-work-types-data-access",
+          "type": "static"
+        },
+        {
+          "source": "dictionaries-state",
+          "target": "auth-session-core",
+          "type": "static"
+        },
+        {
+          "source": "dictionaries-state",
+          "target": "roles-data-access",
+          "type": "static"
+        },
+        {
+          "source": "dictionaries-state",
+          "target": "units-data-access",
+          "type": "static"
+        },
+        {
+          "source": "dictionaries-state",
+          "target": "users-data-access",
+          "type": "static"
+        }
+      ],
+      "dictionaries-utils": [
+        {
+          "source": "dictionaries-utils",
+          "target": "geometries-data-access",
+          "type": "static"
+        },
+        {
+          "source": "dictionaries-utils",
+          "target": "colors-data-access",
+          "type": "static"
+        },
+        {
+          "source": "dictionaries-utils",
+          "target": "coatings-data-access",
+          "type": "static"
+        },
+        {
+          "source": "dictionaries-utils",
+          "target": "surface-finishes-data-access",
+          "type": "static"
+        },
+        {
+          "source": "dictionaries-utils",
+          "target": "material-characteristics-data-access",
+          "type": "static"
+        },
+        {
+          "source": "dictionaries-utils",
+          "target": "roles-data-access",
+          "type": "static"
+        }
+      ],
+      "production-feature": [
+        {
+          "source": "production-feature",
+          "target": "authz-runtime",
+          "type": "static"
+        },
+        {
+          "source": "production-feature",
+          "target": "platform-core",
+          "type": "static"
+        },
+        {
+          "source": "production-feature",
+          "target": "ui-kit",
+          "type": "static"
+        }
+      ],
+      "auth-session-core": [],
+      "roles-data-access": [
+        {
+          "source": "roles-data-access",
+          "target": "platform-core",
+          "type": "static"
+        }
+      ],
+      "units-data-access": [
+        {
+          "source": "units-data-access",
+          "target": "platform-core",
+          "type": "static"
+        }
+      ],
+      "users-data-access": [
+        {
+          "source": "users-data-access",
+          "target": "platform-core",
+          "type": "static"
+        },
+        {
+          "source": "users-data-access",
+          "target": "roles-data-access",
+          "type": "static"
+        }
+      ],
+      "settings-feature": [
+        {
+          "source": "settings-feature",
+          "target": "ui-kit",
+          "type": "static"
+        },
+        {
+          "source": "settings-feature",
+          "target": "authz-core",
+          "type": "static"
+        },
+        {
+          "source": "settings-feature",
+          "target": "settings-core",
+          "type": "static"
+        },
+        {
+          "source": "settings-feature",
+          "target": "authz-runtime",
+          "type": "static"
+        },
+        {
+          "source": "settings-feature",
+          "target": "roles-data-access",
+          "type": "static"
+        },
+        {
+          "source": "settings-feature",
+          "target": "dictionaries-state",
+          "type": "static"
+        },
+        {
+          "source": "settings-feature",
+          "target": "platform-core",
+          "type": "static"
+        }
+      ],
+      "ui-demo-feature": [
+        {
+          "source": "ui-demo-feature",
+          "target": "ui-kit",
+          "type": "static"
+        },
+        {
+          "source": "ui-demo-feature",
+          "target": "authz-runtime",
+          "type": "static"
+        }
+      ],
+      "authz-runtime": [
+        {
+          "source": "authz-runtime",
+          "target": "authz-core",
+          "type": "static"
+        },
+        {
+          "source": "authz-runtime",
+          "target": "platform-core",
+          "type": "static"
+        },
+        {
+          "source": "authz-runtime",
+          "target": "dictionaries-state",
+          "type": "static"
+        }
+      ],
+      "login-feature": [
+        {
+          "source": "login-feature",
+          "target": "ui-kit",
+          "type": "static"
+        },
+        {
+          "source": "login-feature",
+          "target": "auth-session-angular",
+          "type": "static"
+        }
+      ],
+      "platform-core": [],
+      "settings-core": [
+        {
+          "source": "settings-core",
+          "target": "platform-core",
+          "type": "static"
+        }
+      ],
+      "shared-types": [],
+      "authz-core": [],
+      "kp-feature": [
+        {
+          "source": "kp-feature",
+          "target": "platform-core",
+          "type": "static"
+        },
+        {
+          "source": "kp-feature",
+          "target": "dictionaries-state",
+          "type": "static"
+        },
+        {
+          "source": "kp-feature",
+          "target": "clients-data-access",
+          "type": "static"
+        },
+        {
+          "source": "kp-feature",
+          "target": "organizations-data-access",
+          "type": "static"
+        },
+        {
+          "source": "kp-feature",
+          "target": "ui-kit",
+          "type": "static"
+        },
+        {
+          "source": "kp-feature",
+          "target": "dictionaries-hub-feature",
+          "type": "static"
+        },
+        {
+          "source": "kp-feature",
+          "target": "trade-goods-data-access",
+          "type": "static"
+        }
+      ],
+      "theme-core": [],
+      "ui-kit": [
+        {
+          "source": "ui-kit",
+          "target": "authz-core",
+          "type": "static"
+        },
+        {
+          "source": "ui-kit",
+          "target": "authz-runtime",
+          "type": "static"
+        },
+        {
+          "source": "ui-kit",
+          "target": "auth-session-angular",
+          "type": "static"
+        },
+        {
+          "source": "ui-kit",
+          "target": "platform-core",
+          "type": "static"
+        },
+        {
+          "source": "ui-kit",
+          "target": "shared-types",
+          "type": "static"
+        },
+        {
+          "source": "ui-kit",
+          "target": "theme-core",
+          "type": "static"
+        }
+      ],
+      "srm-front": [
+        {
+          "source": "srm-front",
+          "target": "platform-core",
+          "type": "static"
+        },
+        {
+          "source": "srm-front",
+          "target": "authz-runtime",
+          "type": "static"
+        },
+        {
+          "source": "srm-front",
+          "target": "roles-data-access",
+          "type": "static"
+        },
+        {
+          "source": "srm-front",
+          "target": "users-data-access",
+          "type": "static"
+        },
+        {
+          "source": "srm-front",
+          "target": "organizations-data-access",
+          "type": "static"
+        },
+        {
+          "source": "srm-front",
+          "target": "clients-data-access",
+          "type": "static"
+        },
+        {
+          "source": "srm-front",
+          "target": "trade-goods-data-access",
+          "type": "static"
+        },
+        {
+          "source": "srm-front",
+          "target": "auth-session-angular",
+          "type": "static"
+        },
+        {
+          "source": "srm-front",
+          "target": "dictionaries-state",
+          "type": "static"
+        },
+        {
+          "source": "srm-front",
+          "target": "dictionaries-hub-feature",
+          "type": "static"
+        },
+        {
+          "source": "srm-front",
+          "target": "dictionaries-hub-feature",
+          "type": "dynamic"
+        },
+        {
+          "source": "srm-front",
+          "target": "login-feature",
+          "type": "dynamic"
+        },
+        {
+          "source": "srm-front",
+          "target": "ui-demo-feature",
+          "type": "dynamic"
+        },
+        {
+          "source": "srm-front",
+          "target": "kp-feature",
+          "type": "dynamic"
+        },
+        {
+          "source": "srm-front",
+          "target": "settings-feature",
+          "type": "dynamic"
+        },
+        {
+          "source": "srm-front",
+          "target": "ui-kit",
+          "type": "static"
+        }
+      ],
+      "crm-web": [
+        {
+          "source": "crm-web",
+          "target": "ui-kit",
+          "type": "static"
+        },
+        {
+          "source": "crm-web",
+          "target": "platform-core",
+          "type": "static"
+        },
+        {
+          "source": "crm-web",
+          "target": "authz-runtime",
+          "type": "static"
+        },
+        {
+          "source": "crm-web",
+          "target": "roles-data-access",
+          "type": "static"
+        },
+        {
+          "source": "crm-web",
+          "target": "users-data-access",
+          "type": "static"
+        },
+        {
+          "source": "crm-web",
+          "target": "organizations-data-access",
+          "type": "static"
+        },
+        {
+          "source": "crm-web",
+          "target": "clients-data-access",
+          "type": "static"
+        },
+        {
+          "source": "crm-web",
+          "target": "trade-goods-data-access",
+          "type": "static"
+        },
+        {
+          "source": "crm-web",
+          "target": "auth-session-angular",
+          "type": "static"
+        },
+        {
+          "source": "crm-web",
+          "target": "dictionaries-state",
+          "type": "static"
+        },
+        {
+          "source": "crm-web",
+          "target": "dictionaries-hub-feature",
+          "type": "static"
+        },
+        {
+          "source": "crm-web",
+          "target": "dictionaries-hub-feature",
+          "type": "dynamic"
+        },
+        {
+          "source": "crm-web",
+          "target": "login-feature",
+          "type": "dynamic"
+        },
+        {
+          "source": "crm-web",
+          "target": "ui-demo-feature",
+          "type": "dynamic"
+        },
+        {
+          "source": "crm-web",
+          "target": "production-feature",
+          "type": "dynamic"
+        },
+        {
+          "source": "crm-web",
+          "target": "kp-feature",
+          "type": "dynamic"
+        },
+        {
+          "source": "crm-web",
+          "target": "settings-feature",
+          "type": "dynamic"
+        },
+        {
+          "source": "crm-web",
+          "target": "authz-core",
+          "type": "static"
+        },
+        {
+          "source": "crm-web",
+          "target": "auth-session-core",
+          "type": "static"
+        },
+        {
+          "source": "crm-web",
+          "target": "geometries-data-access",
+          "type": "static"
+        },
+        {
+          "source": "crm-web",
+          "target": "dictionaries-utils",
+          "type": "static"
+        },
+        {
+          "source": "crm-web",
+          "target": "material-characteristics-data-access",
+          "type": "static"
+        },
+        {
+          "source": "crm-web",
+          "target": "colors-data-access",
+          "type": "static"
+        },
+        {
+          "source": "crm-web",
+          "target": "coatings-data-access",
+          "type": "static"
+        },
+        {
+          "source": "crm-web",
+          "target": "surface-finishes-data-access",
+          "type": "static"
+        },
+        {
+          "source": "crm-web",
+          "target": "materials-data-access",
+          "type": "static"
+        },
+        {
+          "source": "crm-web",
+          "target": "theme-core",
+          "type": "static"
+        }
+      ]
+    }
+  }
+}
